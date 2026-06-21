@@ -132,7 +132,23 @@
       "PowerShell(npm --prefix web install @supabase/supabase-js 2>&1)",
       "WebFetch(domain:autoembed.cc)",
       "PowerShell($p = Start-Process node -ArgumentList \"server/src/index.js\" -PassThru -WindowStyle Hidden; Start-Sleep -Seconds 3; try { Write-Output \"Fate/Zero details \\(anilistId\\):\"; \\(Invoke-RestMethod \"http://localhost:5175/api/details?type=anime&id=10087\"\\) | Select-Object malId,anilistId,episodeCount | Format-List; Write-Output \"Sources \\(mal=10087 anilist=10087 ep=8\\):\"; \\(Invoke-RestMethod \"http://localhost:5175/api/sources?mal=10087&anilist=10087&episode=8&audio=sub\"\\).embeds | Format-Table provider,embedUrl -AutoSize } finally { Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue })",
-      "PowerShell($p = Start-Process node -ArgumentList \"server/src/index.js\" -PassThru -WindowStyle Hidden; Start-Sleep -Seconds 3; try { Write-Output \"Demon Slayer \\(MAL 38000\\):\"; \\(Invoke-RestMethod \"http://localhost:5175/api/details?type=anime&id=38000\"\\) | Select-Object malId,anilistId | Format-List } finally { Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue })"
+      "PowerShell($p = Start-Process node -ArgumentList \"server/src/index.js\" -PassThru -WindowStyle Hidden; Start-Sleep -Seconds 3; try { Write-Output \"Demon Slayer \\(MAL 38000\\):\"; \\(Invoke-RestMethod \"http://localhost:5175/api/details?type=anime&id=38000\"\\) | Select-Object malId,anilistId | Format-List } finally { Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue })",
+      "PowerShell(npm --prefix server install @consumet/extensions 2>&1)",
+      "Bash(node /c/tmp/testconsumet.mjs 22297 5)",
+      "Bash(cp /c/tmp/testconsumet.mjs /c/Users/Boda/Documents/Coding/server/_tc.mjs)",
+      "Bash(node _tc.mjs 22297 5)",
+      "Bash(rm -f _tc.mjs)",
+      "Bash(node -e \"import\\('@consumet/extensions'\\).then\\(m=>{console.log\\('ANIME:',Object.keys\\(m.ANIME\\)\\);console.log\\('META:',Object.keys\\(m.META\\)\\);}\\)\")",
+      "PowerShell(npm --prefix server install aniwatch 2>&1)",
+      "Bash(node -e \"import\\('aniwatch'\\).then\\(m=>console.log\\(Object.keys\\(m\\)\\)\\)\")",
+      "Bash(node _ta.mjs)",
+      "PowerShell(Write-Output \"cwd-independent check:\"; Test-Path \"C:\\\\Users\\\\Boda\\\\Documents\\\\Coding\\\\server\\\\node_modules\\\\aniwatch\"; Write-Output \"package.json deps:\"; \\(Get-Content \"C:\\\\Users\\\\Boda\\\\Documents\\\\Coding\\\\server\\\\package.json\" -Raw\\); Write-Output \"npm ls:\"; npm --prefix \"C:\\\\Users\\\\Boda\\\\Documents\\\\Coding\\\\server\" ls aniwatch 2>&1 | Select-Object -Last 5)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" --max-time 15 https://hianime.to/)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" --max-time 15 https://aniwatchtv.to/)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" --max-time 15 https://hianimez.to/)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" --max-time 15 https://megaplay.buzz/stream/mal/22297/1/sub)",
+      "PowerShell(Set-Location \"C:\\\\Users\\\\Boda\\\\Documents\\\\Coding\\\\server\"; npm uninstall @consumet/extensions aniwatch 2>&1 | Select-Object -Last 3; Write-Output \"deps restantes:\"; \\(Get-Content package.json -Raw | ConvertFrom-Json\\).dependencies.PSObject.Properties.Name)",
+      "PowerShell(Set-Location \"C:\\\\Users\\\\Boda\\\\Documents\\\\Coding\"; npm run build 2>&1 | Select-String -Pattern \"built in|error\" | Select-Object -Last 2; $p = Start-Process node -ArgumentList \"server/src/index.js\" -PassThru -WindowStyle Hidden; Start-Sleep -Seconds 3; try { \\(Invoke-RestMethod \"http://localhost:5175/api/sources?mal=22297&anilist=19603&episode=5&audio=sub\"\\).embeds | Format-Table provider,embedUrl -AutoSize } finally { Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue })"
     ],
     "additionalDirectories": [
       "\\tmp"

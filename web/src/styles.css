@@ -1353,6 +1353,44 @@ h2 {
   background: rgba(0, 0, 0, 0.8);
 }
 
+/* Botao de recarregar (ao lado do fullscreen) */
+.player-reload {
+  position: absolute;
+  top: 12px;
+  right: 60px;
+  z-index: 5;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s, background 0.2s;
+}
+
+.player-reload svg {
+  width: 19px;
+  height: 19px;
+}
+
+.player:hover .player-reload,
+.player-reload:focus-visible {
+  opacity: 1;
+}
+
+.player-reload:hover {
+  background: rgba(0, 0, 0, 0.8);
+}
+
+.player:fullscreen .player-reload {
+  opacity: 1;
+}
+
 /* Em fullscreen, o container do player ocupa tudo */
 .player:fullscreen {
   width: 100vw;

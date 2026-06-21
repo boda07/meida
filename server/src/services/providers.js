@@ -86,6 +86,13 @@ export const ANIME_PROVIDERS = [
     url: "https://megaplay.buzz/stream/mal/{mal}/{ep}/{audio}",
   },
   {
+    // Mesma fonte, mapeamento por AniList — util quando a por MAL engasga (520).
+    id: "megaplay-ani",
+    name: "MegaPlay 2 (anime)",
+    idType: "anilist",
+    url: "https://megaplay.buzz/stream/ani/{anilist}/{ep}/{audio}",
+  },
+  {
     // VidPlus usa AniList id — cobertura diferente, bom quando o MegaPlay falha.
     id: "vidplus-anime",
     name: "VidPlus (anime)",
