@@ -29,9 +29,9 @@ libraryRouter.get("/library/item", (req, res) => {
 
 // Cria/atualiza visto e/ou nota. Faz merge com o estado existente.
 libraryRouter.post("/library", (req, res) => {
-  const { tmdbId, type, title, poster, watched, watchlist, score } = req.body || {};
-  if (!tmdbId || (type !== "movie" && type !== "tv")) {
-    return res.status(400).json({ error: "tmdbId e type (movie|tv) sao obrigatorios" });
+  const { tmdbId, type, title, poster, watched, watchlist, score, genres } = req.body || {};
+  if (!tmdbId || (type !== "movie" && type !== "tv" && type !== "anime")) {
+    return res.status(400).json({ error: "tmdbId e type (movie|tv|anime) sao obrigatorios" });
   }
   if (score != null && (score < 1 || score > 10)) {
     return res.status(400).json({ error: "score tem de estar entre 1 e 10" });
@@ -44,6 +44,7 @@ libraryRouter.post("/library", (req, res) => {
     type,
     title: title ?? existing?.title ?? null,
     poster: poster ?? existing?.poster ?? null,
+    genres: Array.isArray(genres) ? genres : existing?.genres ?? [],
     watched: watched != null ? (watched ? 1 : 0) : existing?.watched ?? 0,
     watchlist: watchlist != null ? (watchlist ? 1 : 0) : existing?.watchlist ?? 0,
     score: score !== undefined ? score : existing?.score ?? null,

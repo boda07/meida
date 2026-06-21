@@ -35,6 +35,7 @@ export default function Library() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
+  const [genreFilter, setGenreFilter] = useState("all");
 
   useEffect(() => {
     if (!user) {
@@ -48,13 +49,22 @@ export default function Library() {
       .finally(() => setLoading(false));
   }, [user]);
 
+  // Generos/temas disponiveis na lista (ordenados), para o dropdown.
+  const allGenres = useMemo(() => {
+    const set = new Set();
+    for (const i of items) for (const g of i.genres || []) set.add(g);
+    return [...set].sort((a, b) => a.localeCompare(b));
+  }, [items]);
+
   const shown = useMemo(() => {
     let arr = items;
     if (filter === "watchlist") arr = arr.filter((i) => i.watchlist);
     else if (filter === "watched") arr = arr.filter((i) => i.watched);
     if (typeFilter !== "all") arr = arr.filter((i) => i.type === typeFilter);
+    if (genreFilter !== "all")
+      arr = arr.filter((i) => (i.genres || []).includes(genreFilter));
     return arr;
-  }, [items, filter, typeFilter]);
+  }, [items, filter, typeFilter, genreFilter]);
 
   if (ready && !user)
     return (
@@ -89,6 +99,23 @@ export default function Library() {
               {f.label}
             </button>
           ))}
+          {allGenres.length > 0 && (
+            <>
+              <span className="lib-filters-sep" />
+              <select
+                className="lib-genre-select"
+                value={genreFilter}
+                onChange={(e) => setGenreFilter(e.target.value)}
+              >
+                <option value="all">Todos os generos/temas</option>
+                {allGenres.map((g) => (
+                  <option key={g} value={g}>
+                    {g}
+                  </option>
+                ))}
+              </select>
+            </>
+          )}
         </div>
       </div>
 

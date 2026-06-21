@@ -34,6 +34,7 @@ export default function LibraryControls({ details }) {
         type: details.type,
         title: details.title,
         poster: details.poster,
+        genres: details.genres || [],
         ...patch,
       });
       setEntry(d.item);

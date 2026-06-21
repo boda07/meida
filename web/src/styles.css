@@ -931,6 +931,19 @@ h2 {
   font-weight: 600;
 }
 
+/* Dropdown de genero na minha lista */
+.lib-genre-select {
+  padding: 6px 12px;
+  border-radius: var(--radius-pill);
+  background: var(--bg-surface);
+  border: 1px solid #333;
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  max-width: 220px;
+}
+
 /* ===== Escolhe algo para mim ===== */
 .pick-page .want {
   color: #1db954;

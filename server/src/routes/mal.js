@@ -91,6 +91,7 @@ malRouter.post("/mal/import", requireAuth, async (req, res, next) => {
         title: titleEn || titleRomaji, // ingles por default
         titleEn: titleEn || null,
         titleRomaji: titleRomaji || null,
+        genres: (node.genres || []).map((g) => g.name),
         poster: node.main_picture?.large || node.main_picture?.medium || null,
         watched: watched ? 1 : 0,
         watchlist: watchlist ? 1 : 0,
