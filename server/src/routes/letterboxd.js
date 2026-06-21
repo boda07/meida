@@ -1,6 +1,12 @@
 import { Router } from "express";
 import { requireAuth } from "../services/auth.js";
-import { upsertLibrary, getLibraryItem, setLetterboxd, getLetterboxd } from "../store.js";
+import {
+  upsertLibrary,
+  getLibraryItem,
+  setLetterboxd,
+  getLetterboxd,
+  importProgress,
+} from "../store.js";
 import { importDiary, importFilms, importWatchlist } from "../services/letterboxd.js";
 
 export const letterboxdRouter = Router();
@@ -82,7 +88,34 @@ letterboxdRouter.post("/letterboxd/import", async (req, res, next) => {
       wl++;
     }
 
-    res.json({ imported: films.length, watchlist: wl });
+    // Diario: o RSS do Letterboxd traz as datas em que viste os filmes mais
+    // recentes (~50). Cria entradas no diario com essas datas.
+    let diary = 0;
+    if (doFilms) {
+      try {
+        const recent = await importDiary(lb.username);
+        for (const d of recent) {
+          if (!d.watchedDate) continue;
+          const dt = new Date(`${d.watchedDate}T12:00:00Z`);
+          if (isNaN(dt.getTime())) continue;
+          const li = getLibraryItem(req.user.id, d.tmdbId, "movie");
+          importProgress({
+            userId: req.user.id,
+            type: "movie",
+            tmdbId: d.tmdbId,
+            title: li?.title || d.title,
+            poster: li?.poster || d.poster || null,
+            finishedAt: dt.toISOString(),
+            status: "finished",
+          });
+          diary++;
+        }
+      } catch {
+        /* sem RSS -> importa na mesma o resto */
+      }
+    }
+
+    res.json({ imported: films.length, watchlist: wl, diary });
   } catch (err) {
     next(err);
   }

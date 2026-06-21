@@ -358,26 +358,43 @@ export default function Details() {
 
       {details.isAnime ? (
         <div className="watch">
-          {animeExtractorOn && (
+          {(animeExtractorOn || details.imdbId) && (
             <div className="mode-tabs">
               <button
-                className={mode !== "extract" ? "active" : ""}
+                className={mode !== "extract" && mode !== "torrents" ? "active" : ""}
                 onClick={() => setMode("providers")}
               >
                 Fontes
               </button>
-              <button
-                className={mode === "extract" ? "active" : ""}
-                onClick={() => setMode("extract")}
-              >
-                Sem anúncios
-              </button>
+              {animeExtractorOn && (
+                <button
+                  className={mode === "extract" ? "active" : ""}
+                  onClick={() => setMode("extract")}
+                >
+                  Sem anúncios
+                </button>
+              )}
+              {details.imdbId && (
+                <button
+                  className={mode === "torrents" ? "active" : ""}
+                  onClick={() => setMode("torrents")}
+                >
+                  Torrents
+                </button>
+              )}
             </div>
           )}
 
           {animeExtractorOn && mode === "extract" ? (
             <AnimeExtract
               details={details}
+              episode={details.isMovie ? 1 : episode}
+            />
+          ) : mode === "torrents" && details.imdbId ? (
+            <Torrents
+              type={details.isMovie ? "movie" : "tv"}
+              imdb={details.imdbId}
+              season={1}
               episode={details.isMovie ? 1 : episode}
             />
           ) : (

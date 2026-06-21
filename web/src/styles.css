@@ -678,19 +678,19 @@ h2 {
 
 .hero::after {
   inset: auto 0 0;
-  height: 30%;
+  height: 48%;
   z-index: 1;
   background: linear-gradient(
     0deg,
     #070708 0%,
-    rgba(7, 7, 8, 0.92) 18%,
-    rgba(7, 7, 8, 0.56) 56%,
+    rgba(7, 7, 8, 0.82) 26%,
+    rgba(7, 7, 8, 0.4) 62%,
     rgba(7, 7, 8, 0) 100%
   );
-  backdrop-filter: blur(7px);
-  -webkit-backdrop-filter: blur(7px);
-  mask-image: linear-gradient(0deg, #000 0%, #000 52%, transparent 100%);
-  -webkit-mask-image: linear-gradient(0deg, #000 0%, #000 52%, transparent 100%);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  mask-image: linear-gradient(0deg, #000 0%, #000 30%, transparent 100%);
+  -webkit-mask-image: linear-gradient(0deg, #000 0%, #000 30%, transparent 100%);
 }
 
 .hero {
@@ -1024,23 +1024,32 @@ h2 {
   overflow: hidden;
 }
 
-/* Fundo desfocado por tras do cabecalho (cover = nunca estica). */
+/* Wallpaper por tras do cabecalho (cover = nunca estica). Pouco desfocado, para
+   parecer mesmo um fundo e nao uma mancha. Fade gradual ate ao conteudo. */
 .details-backdrop {
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
-  height: 520px;
+  height: 640px;
   background-size: cover;
-  background-position: center 20%;
+  background-position: center 18%;
   background-repeat: no-repeat;
-  filter: blur(28px) saturate(1.1);
-  transform: scale(1.1);
-  opacity: 0.35;
+  filter: blur(8px) saturate(1.15);
+  transform: scale(1.06);
+  opacity: 0.6;
   z-index: 0;
   pointer-events: none;
-  -webkit-mask-image: linear-gradient(180deg, #000 0%, rgba(0, 0, 0, 0.5) 55%, transparent 100%);
-  mask-image: linear-gradient(180deg, #000 0%, rgba(0, 0, 0, 0.5) 55%, transparent 100%);
+  -webkit-mask-image: linear-gradient(180deg, #000 0%, rgba(0, 0, 0, 0.65) 45%, rgba(0, 0, 0, 0.2) 80%, transparent 100%);
+  mask-image: linear-gradient(180deg, #000 0%, rgba(0, 0, 0, 0.65) 45%, rgba(0, 0, 0, 0.2) 80%, transparent 100%);
+}
+
+/* Escurece a base do wallpaper para o texto continuar legivel por cima. */
+.details-backdrop::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(7, 7, 8, 0.1) 0%, rgba(7, 7, 8, 0.45) 100%);
 }
 
 .details-head {

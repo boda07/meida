@@ -1,7 +1,9 @@
 // Catalogo, pesquisa e detalhes de anime via Jikan (API publica do MyAnimeList,
 // sem chave). O anime e SEMPRE focado no MAL: catalogo, poster, sinopse, titulo
 // e episodios vem todos do MAL. A reproducao usa os providers de anime por id do
-// MAL (MegaPlay/VidLink/VidSrc.cc). O TMDB so serve para filmes e series.
+// MAL (MegaPlay/VidLink/VidSrc.cc). O TMDB so serve para filmes e series — e para
+// arranjar o IMDB id que os torrents precisam (match best-effort).
+import { findTmdbMatch, getExternalImdb } from "./tmdb.js";
 
 const JIKAN = "https://api.jikan.moe/v4";
 
@@ -267,11 +269,27 @@ export async function getAnimeDetails(malId, opts = {}) {
 
   const anilistId = await malToAnilist(malId);
 
+  // Match best-effort no TMDB so para arranjar o IMDB id (torrents). Nao afeta
+  // poster/titulo/sinopse (esses ficam sempre do MAL).
+  let imdbId = null;
+  let tmdbType = isMovie ? "movie" : "tv";
+  try {
+    const match = await findTmdbMatch(base.title, base.year, isMovie);
+    if (match?.tmdbId) {
+      tmdbType = match.mediaType;
+      imdbId = await getExternalImdb(match.mediaType, match.tmdbId);
+    }
+  } catch {
+    /* sem match -> sem torrents para este anime */
+  }
+
   return {
     id: Number(malId),
     type: "anime",
     malId: Number(malId),
     anilistId,
+    imdbId,
+    tmdbType,
     isAnime: true,
     isMovie,
     title: base.title,

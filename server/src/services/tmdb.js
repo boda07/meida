@@ -201,9 +201,17 @@ export async function getDetails(type, id, opts = {}) {
     throw new Error("type tem de ser 'movie' ou 'tv'");
   }
   const { overview, title } = langsFrom(opts);
-  // Em paralelo: sinopse (overview), titulo localizado e ingles (fallback).
+  const titleShort = (title || "en-US").slice(0, 2); // "pt" | "en"
+  // Em paralelo: sinopse (overview) + imagens localizadas, titulo localizado e ingles.
   const [data, locData, enData] = await Promise.all([
-    tmdbFetch(`/${type}/${id}`, { append_to_response: "external_ids,credits" }, overview),
+    tmdbFetch(
+      `/${type}/${id}`,
+      {
+        append_to_response: "external_ids,credits,images",
+        include_image_language: `${titleShort},en,null`,
+      },
+      overview
+    ),
     title === overview ? Promise.resolve(null) : tmdbFetch(`/${type}/${id}`, {}, title),
     title !== "en-US" && overview !== "en-US"
       ? tmdbFetch(`/${type}/${id}`, {}, "en-US")
@@ -211,6 +219,12 @@ export async function getDetails(type, id, opts = {}) {
   ]);
 
   const base = normalizeMedia({ ...data, media_type: type });
+  // Cartaz no idioma escolhido (cai para ingles e, por fim, para o default).
+  const posters = data.images?.posters || [];
+  const poster =
+    posters.find((p) => p.iso_639_1 === titleShort) ||
+    posters.find((p) => p.iso_639_1 === "en");
+  if (poster?.file_path) base.poster = poster.file_path;
   // Titulo no idioma escolhido, com fallback para ingles quando nao ha traducao.
   const localized = locData || data;
   if (title === "en-US") {
@@ -385,6 +399,17 @@ export async function getMeta(type, id) {
 // Media da comunidade (vote_average) de um filme/serie. Best-effort: null se falhar.
 export async function getRating(type, id) {
   return (await getMeta(type, id)).rating;
+}
+
+// IMDB id de um filme/serie do TMDB (para torrents). Best-effort: null se falhar.
+export async function getExternalImdb(type, id) {
+  if (type !== "movie" && type !== "tv") return null;
+  try {
+    const d = await tmdbFetch(`/${type}/${id}/external_ids`, {}, "en-US");
+    return d?.imdb_id || null;
+  } catch {
+    return null;
+  }
 }
 
 // Lista de generos (TMDB) por tipo, para o "Escolhe algo para mim".

@@ -1,7 +1,17 @@
 import { Router } from "express";
 import crypto from "node:crypto";
 import { requireAuth } from "../services/auth.js";
-import { upsertLibrary } from "../store.js";
+import { upsertLibrary, importProgress } from "../store.js";
+
+// "2020-12-15" | "2020-12" | "2020" -> ISO (meio-dia UTC) ou null.
+function isoDate(d) {
+  const parts = String(d || "").split("-");
+  if (!/^\d{4}$/.test(parts[0])) return null;
+  const mo = /^\d{2}$/.test(parts[1] || "") ? parts[1] : "01";
+  const da = /^\d{2}$/.test(parts[2] || "") ? parts[2] : "01";
+  const dt = new Date(`${parts[0]}-${mo}-${da}T12:00:00Z`);
+  return isNaN(dt.getTime()) ? null : dt.toISOString();
+}
 import {
   malEnabled,
   makeVerifier,
@@ -76,6 +86,7 @@ malRouter.post("/mal/import", requireAuth, async (req, res, next) => {
   try {
     const list = await getAnimeList(req.user.id);
     let count = 0;
+    let diary = 0;
     for (const it of list) {
       const node = it.node || {};
       const ls = it.list_status || {};
@@ -84,6 +95,7 @@ malRouter.post("/mal/import", requireAuth, async (req, res, next) => {
       const watchlist = ls.status === "plan_to_watch" || ls.status === "watching";
       const titleRomaji = node.title || "";
       const titleEn = node.alternative_titles?.en || "";
+      const poster = node.main_picture?.large || node.main_picture?.medium || null;
       upsertLibrary({
         userId: req.user.id,
         tmdbId: node.id, // id do MAL (a app trata "anime" por malId)
@@ -92,14 +104,35 @@ malRouter.post("/mal/import", requireAuth, async (req, res, next) => {
         titleEn: titleEn || null,
         titleRomaji: titleRomaji || null,
         genres: (node.genres || []).map((g) => g.name),
-        poster: node.main_picture?.large || node.main_picture?.medium || null,
+        poster,
         watched: watched ? 1 : 0,
         watchlist: watchlist ? 1 : 0,
         score: ls.score ? ls.score : null,
       });
       count++;
+
+      // Diario: usa as datas de inicio/fim que o MAL guarda por anime.
+      const startedAt = isoDate(ls.start_date);
+      const finishedAt = isoDate(ls.finish_date);
+      if (startedAt || finishedAt) {
+        const watching = ls.status === "watching";
+        const seen = ls.num_episodes_watched || 0;
+        importProgress({
+          userId: req.user.id,
+          type: "anime",
+          tmdbId: node.id,
+          title: titleEn || titleRomaji,
+          poster,
+          // "A ver" -> retoma no episodio seguinte; concluido -> ultimo visto.
+          episode: watching ? seen + 1 : seen || null,
+          startedAt,
+          finishedAt,
+          status: watching ? "watching" : "finished",
+        });
+        diary++;
+      }
     }
-    res.json({ imported: count });
+    res.json({ imported: count, diary });
   } catch (err) {
     next(err);
   }

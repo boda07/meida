@@ -47,6 +47,7 @@ export async function importDiary(username) {
       title: tag(b, "letterboxd:filmTitle") || tag(b, "title") || "",
       year: tag(b, "letterboxd:filmYear") || "",
       rating: rating10 && rating10 >= 1 && rating10 <= 10 ? rating10 : null,
+      watchedDate: tag(b, "letterboxd:watchedDate") || null, // "YYYY-MM-DD"
       poster,
     });
   }
