@@ -9,6 +9,7 @@ import Details from "./pages/Details.jsx";
 import Library from "./pages/Library.jsx";
 import Login from "./pages/Login.jsx";
 import Settings from "./pages/Settings.jsx";
+import PickForMe from "./pages/PickForMe.jsx";
 
 export default function App() {
   return (
@@ -26,6 +27,7 @@ export default function App() {
           <Route path="/details/:type/:id" element={<Details />} />
           <Route path="/library" element={<Library />} />
           <Route path="/settings" element={<Settings />} />
+          <Route path="/pick" element={<PickForMe />} />
           <Route path="/login" element={<Login mode="login" />} />
           <Route path="/register" element={<Login mode="register" />} />
         </Routes>

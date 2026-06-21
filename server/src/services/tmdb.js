@@ -251,6 +251,45 @@ export async function findTmdbMatch(title, year, isMovie) {
   return null;
 }
 
+// Lista de generos (TMDB) por tipo, para o "Escolhe algo para mim".
+const genreCache = {};
+export async function getGenres(type) {
+  if (type !== "movie" && type !== "tv") throw new Error("type invalido");
+  if (genreCache[type]) return genreCache[type];
+  const data = await tmdbFetch(`/genre/${type}/list`, {}, "en-US");
+  const list = (data.genres || []).map((g) => ({ id: g.id, name: g.name }));
+  genreCache[type] = list;
+  return list;
+}
+
+// Escolhe um titulo aleatorio (discover) com generos a incluir/excluir.
+export async function pickRandom({ type, genres = [], without = [] }, opts = {}) {
+  const { title } = langsFrom(opts);
+  const params = {
+    sort_by: "popularity.desc",
+    "vote_count.gte": 40,
+    include_adult: "false",
+  };
+  if (genres.length) params.with_genres = genres.join(",");
+  if (without.length) params.without_genres = without.join(",");
+
+  const first = await tmdbFetch(`/discover/${type}`, params, title);
+  const totalPages = Math.min(first.total_pages || 1, 30);
+  let results = first.results || [];
+  if (totalPages > 1) {
+    const page = 1 + Math.floor(Math.random() * totalPages);
+    try {
+      const d = await tmdbFetch(`/discover/${type}`, { ...params, page }, title);
+      if (d.results?.length) results = d.results;
+    } catch {
+      /* fica com a 1a pagina */
+    }
+  }
+  if (!results.length) return null;
+  const pick = results[Math.floor(Math.random() * results.length)];
+  return normalizeMedia({ ...pick, media_type: type });
+}
+
 export async function getSeason(id, seasonNumber, opts = {}) {
   const { overview } = langsFrom(opts);
   const data = await tmdbFetch(`/tv/${id}/season/${seasonNumber}`, {}, overview);

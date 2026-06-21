@@ -97,6 +97,49 @@ export async function getAnimeCatalog(opts = {}) {
   return rows;
 }
 
+// Lista de generos + temas de anime (Jikan), para o "Escolhe algo para mim".
+// Junta generos (ex.: Slice of Life) e temas (ex.: Gore), que partilham o mesmo
+// espaco de ids no filtro do Jikan.
+let animeGenresCache = null;
+export async function getAnimeGenres() {
+  if (animeGenresCache) return animeGenresCache;
+  const [g, t] = await Promise.all([
+    jikanFetch(`/genres/anime`),
+    jikanFetch(`/genres/anime?filter=themes`),
+  ]);
+  const seen = new Set();
+  const list = [...(g.data || []), ...(t.data || [])]
+    .map((x) => ({ id: x.mal_id, name: x.name }))
+    .filter((x) => (seen.has(x.id) ? false : seen.add(x.id)))
+    .sort((a, b) => a.name.localeCompare(b.name));
+  animeGenresCache = list;
+  return list;
+}
+
+// Escolhe um anime aleatorio com generos a incluir/excluir.
+export async function pickAnime({ genres = [], exclude = [] }, opts = {}) {
+  const romaji = isRomaji(opts);
+  let q = `/anime?order_by=popularity&sort=asc&sfw=true&limit=25`;
+  if (genres.length) q += `&genres=${genres.join(",")}`;
+  if (exclude.length) q += `&genres_exclude=${exclude.join(",")}`;
+
+  const first = await jikanFetch(q);
+  const totalPages = Math.min(first?.pagination?.last_visible_page || 1, 20);
+  let items = first.data || [];
+  if (totalPages > 1) {
+    const page = 1 + Math.floor(Math.random() * totalPages);
+    try {
+      const d = await jikanFetch(`${q}&page=${page}`);
+      if (d.data?.length) items = d.data;
+    } catch {
+      /* fica com a 1a pagina */
+    }
+  }
+  const list = items.map((a) => normalizeAnime(a, romaji)).filter(Boolean);
+  if (!list.length) return null;
+  return list[Math.floor(Math.random() * list.length)];
+}
+
 // Converte um id do MyAnimeList no id do AniList (alguns providers de anime
 // usam AniList). Cache em memoria; falha em silencio (devolve null).
 const anilistCache = new Map();

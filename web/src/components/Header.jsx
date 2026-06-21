@@ -40,6 +40,18 @@ function StarIcon() {
   );
 }
 
+function DiceIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <rect x="3" y="3" width="18" height="18" rx="3" />
+      <circle cx="8.5" cy="8.5" r="1.3" fill="currentColor" stroke="none" />
+      <circle cx="15.5" cy="15.5" r="1.3" fill="currentColor" stroke="none" />
+      <circle cx="15.5" cy="8.5" r="1.3" fill="currentColor" stroke="none" />
+      <circle cx="8.5" cy="15.5" r="1.3" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
 function SearchIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -111,6 +123,10 @@ export default function Header() {
           <NavLink to="/anime" title="Anime">
             <StarIcon />
             <span>Anime</span>
+          </NavLink>
+          <NavLink to="/pick" title="Escolhe algo para mim">
+            <DiceIcon />
+            <span>Para mim</span>
           </NavLink>
         </nav>
       </div>

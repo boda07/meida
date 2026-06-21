@@ -5,8 +5,16 @@ import {
   search,
   getDetails,
   getSeason,
+  getGenres,
+  pickRandom,
 } from "../services/tmdb.js";
-import { getAnimeCatalog, getAnimeDetails, searchAnime } from "../services/jikan.js";
+import {
+  getAnimeCatalog,
+  getAnimeDetails,
+  searchAnime,
+  getAnimeGenres,
+  pickAnime,
+} from "../services/jikan.js";
 
 export const catalogRouter = Router();
 
@@ -65,6 +73,40 @@ catalogRouter.get("/details", async (req, res, next) => {
       return res.json(await getAnimeDetails(String(id), langOpts(req)));
     }
     res.json(await getDetails(String(type), String(id), langOpts(req)));
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Lista de generos para o "Escolhe algo para mim".
+catalogRouter.get("/genres", async (req, res, next) => {
+  try {
+    const type = req.query.type;
+    if (type === "anime") return res.json({ genres: await getAnimeGenres() });
+    if (type === "movie" || type === "tv") {
+      return res.json({ genres: await getGenres(type) });
+    }
+    res.status(400).json({ error: "type tem de ser movie, tv ou anime" });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Escolhe um titulo aleatorio segundo generos a incluir/excluir.
+catalogRouter.get("/pick", async (req, res, next) => {
+  try {
+    const { type } = req.query;
+    const genres = String(req.query.genres || "").split(",").filter(Boolean);
+    const exclude = String(req.query.exclude || "").split(",").filter(Boolean);
+    let item = null;
+    if (type === "anime") {
+      item = await pickAnime({ genres, exclude }, langOpts(req));
+    } else if (type === "movie" || type === "tv") {
+      item = await pickRandom({ type, genres, without: exclude }, langOpts(req));
+    } else {
+      return res.status(400).json({ error: "type tem de ser movie, tv ou anime" });
+    }
+    res.json({ item });
   } catch (err) {
     next(err);
   }

@@ -931,6 +931,86 @@ h2 {
   font-weight: 600;
 }
 
+/* ===== Escolhe algo para mim ===== */
+.pick-page .want {
+  color: #1db954;
+}
+.pick-page .avoid {
+  color: #ff6b6b;
+}
+
+.genre-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 18px 0;
+}
+
+.genre-chip {
+  padding: 7px 14px;
+  border-radius: var(--radius-pill);
+  background: var(--bg-surface);
+  border: 1px solid #333;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  transition: all 0.15s;
+}
+
+.genre-chip:hover {
+  color: var(--text);
+  border-color: #555;
+}
+
+.genre-chip.want {
+  background: rgba(29, 185, 84, 0.16);
+  border-color: #1db954;
+  color: #4ade80;
+}
+
+.genre-chip.avoid {
+  background: rgba(255, 107, 107, 0.14);
+  border-color: #ff6b6b;
+  color: #ff8787;
+  text-decoration: line-through;
+}
+
+.pick-btn {
+  margin-top: 6px;
+  padding: 13px 24px;
+  border-radius: var(--radius-pill);
+  border: none;
+  background: var(--accent);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: transform 0.15s, filter 0.15s;
+}
+
+.pick-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  filter: brightness(1.1);
+}
+
+.pick-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.pick-result {
+  margin-top: 28px;
+}
+
+.pick-result-row {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+
 /* ===== Blocos de episodios (animes longos) ===== */
 .ep-ranges {
   display: flex;
