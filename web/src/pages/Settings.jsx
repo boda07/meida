@@ -275,6 +275,21 @@ export default function Settings() {
       </section>
 
       <section className="set-section">
+        <h3>Anime: titulos</h3>
+        <p className="muted">
+          Como mostrar os nomes dos animes (catalogo, pesquisa e a tua lista).
+        </p>
+        <div className="set-row">
+          <Choice value="en" current={settings.animeTitleLang} onPick={(v) => update({ animeTitleLang: v })}>
+            Ingles
+          </Choice>
+          <Choice value="romaji" current={settings.animeTitleLang} onPick={(v) => update({ animeTitleLang: v })}>
+            Romaji
+          </Choice>
+        </div>
+      </section>
+
+      <section className="set-section">
         <h3>Separador inicial</h3>
         <p className="muted">Onde abrir por defeito ao ver um titulo.</p>
         <div className="set-row">

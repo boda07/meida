@@ -28,12 +28,16 @@ function yearOf(a) {
 
 // Normaliza um anime para o formato dos cartoes. O poster e um URL COMPLETO
 // (o imageUrl no frontend deixa passar URLs completos).
-export function normalizeAnime(a) {
+export function normalizeAnime(a, romaji = false) {
   if (!a?.mal_id) return null;
+  // a.title = romaji/default; a.title_english = ingles. Ingles por default.
+  const title = romaji
+    ? a.title || a.title_english || a.title_japanese || ""
+    : a.title_english || a.title || a.title_japanese || "";
   return {
     id: a.mal_id,
     type: "anime",
-    title: a.title_english || a.title || a.title_japanese || "",
+    title,
     overview: a.synopsis || "",
     poster: a.images?.jpg?.large_image_url || a.images?.jpg?.image_url || null,
     backdrop: null,
@@ -42,7 +46,10 @@ export function normalizeAnime(a) {
   };
 }
 
-const clean = (d) => (d.data || []).map(normalizeAnime).filter(Boolean);
+const clean = (d, romaji) =>
+  (d.data || []).map((a) => normalizeAnime(a, romaji)).filter(Boolean);
+
+const isRomaji = (opts) => opts?.animeTitleLang === "romaji";
 
 // Remove duplicados por id (o Jikan repete entradas entre listas as vezes).
 function dedupe(items) {
@@ -51,12 +58,16 @@ function dedupe(items) {
 }
 
 // Cache em memoria: evita martelar o Jikan a cada visita/refresh.
-let catalogCache = null; // { at, rows }
+// Chaveada por idioma de titulo (en/romaji).
+const catalogCache = {}; // { [key]: { at, rows } }
 const CATALOG_TTL = 10 * 60 * 1000;
 
-export async function getAnimeCatalog() {
-  if (catalogCache && Date.now() - catalogCache.at < CATALOG_TTL) {
-    return catalogCache.rows;
+export async function getAnimeCatalog(opts = {}) {
+  const romaji = isRomaji(opts);
+  const key = romaji ? "romaji" : "en";
+  const cached = catalogCache[key];
+  if (cached && Date.now() - cached.at < CATALOG_TTL) {
+    return cached.rows;
   }
 
   const defs = [
@@ -71,7 +82,7 @@ export async function getAnimeCatalog() {
   for (const [id, title, path] of defs) {
     let items = [];
     try {
-      items = dedupe(clean(await jikanFetch(path)));
+      items = dedupe(clean(await jikanFetch(path), romaji));
     } catch {
       items = [];
     }
@@ -81,7 +92,7 @@ export async function getAnimeCatalog() {
 
   // So guarda em cache se a maioria das linhas veio com conteudo.
   if (rows.filter((r) => r.items.length).length >= 2) {
-    catalogCache = { at: Date.now(), rows };
+    catalogCache[key] = { at: Date.now(), rows };
   }
   return rows;
 }
@@ -112,9 +123,9 @@ export async function malToAnilist(malId) {
 
 // Detalhes de um anime: 100% MyAnimeList (poster, titulo, sinopse, episodios).
 // A reproducao usa os providers de anime por id do MAL (ver providers.js).
-export async function getAnimeDetails(malId) {
+export async function getAnimeDetails(malId, opts = {}) {
   const full = (await jikanFetch(`/anime/${malId}/full`)).data;
-  const base = normalizeAnime(full);
+  const base = normalizeAnime(full, isRomaji(opts));
   const isMovie = /movie|music/i.test(full?.type || "");
 
   let episodeCount = full?.episodes || 0;
@@ -161,17 +172,19 @@ export async function getAnimeDetails(malId) {
 const searchCache = new Map(); // q -> { at, items }
 const SEARCH_TTL = 5 * 60 * 1000;
 
-export async function searchAnime(query) {
+export async function searchAnime(query, opts = {}) {
   const q = String(query || "").trim().toLowerCase();
   if (!q) return [];
-  const cached = searchCache.get(q);
+  const romaji = isRomaji(opts);
+  const key = `${romaji ? "r" : "e"}:${q}`;
+  const cached = searchCache.get(key);
   if (cached && Date.now() - cached.at < SEARCH_TTL) return cached.items;
   try {
     const d = await jikanFetch(
       `/anime?q=${encodeURIComponent(q)}&limit=10&sfw=true&order_by=members&sort=desc`
     );
-    const items = dedupe(clean(d));
-    searchCache.set(q, { at: Date.now(), items });
+    const items = dedupe(clean(d, romaji));
+    searchCache.set(key, { at: Date.now(), items });
     return items;
   } catch {
     return [];

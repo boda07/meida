@@ -13,6 +13,7 @@ const SETTINGS_KEY = "streamapp_settings";
 export const DEFAULT_SETTINGS = {
   titleLang: "en", // idioma dos titulos: "en" | "pt"
   overviewLang: "pt", // idioma das sinopses: "en" | "pt"
+  animeTitleLang: "en", // titulos de anime: "en" (ingles) | "romaji"
   subtitleLang: "pt", // legenda preferida: "pt" | "en" | "off"
   defaultTab: "providers", // separador inicial: providers | extract | torrents
   animeAudio: "sub", // anime: "sub" (legendado) ou "dub" (dobrado)
@@ -41,7 +42,11 @@ export const settingsStore = {
 // Parametros de idioma a juntar aos pedidos de catalogo.
 function langParams() {
   const s = settingsStore.get();
-  return { titleLang: s.titleLang, overviewLang: s.overviewLang };
+  return {
+    titleLang: s.titleLang,
+    overviewLang: s.overviewLang,
+    animeTitleLang: s.animeTitleLang,
+  };
 }
 
 // Lista de idiomas (OpenSubtitles) a partir da preferencia de legendas.

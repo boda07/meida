@@ -15,6 +15,7 @@ function langOpts(req) {
   return {
     titleLang: req.query.titleLang,
     overviewLang: req.query.overviewLang,
+    animeTitleLang: req.query.animeTitleLang,
   };
 }
 
@@ -30,7 +31,7 @@ catalogRouter.get("/catalog/:category", async (req, res, next) => {
   try {
     // Anime vem do Jikan (MyAnimeList), nao do TMDB.
     if (req.params.category === "anime") {
-      return res.json({ rows: await getAnimeCatalog() });
+      return res.json({ rows: await getAnimeCatalog(langOpts(req)) });
     }
     res.json({ rows: await getCategory(req.params.category, langOpts(req)) });
   } catch (err) {
@@ -45,7 +46,7 @@ catalogRouter.get("/search", async (req, res, next) => {
     // Filmes/series do TMDB (sem anime) + anime do MAL (Jikan), sem duplicados.
     const [media, anime] = await Promise.all([
       search(q, langOpts(req)),
-      searchAnime(q),
+      searchAnime(q, langOpts(req)),
     ]);
     res.json({ results: [...media, ...anime] });
   } catch (err) {
@@ -61,7 +62,7 @@ catalogRouter.get("/details", async (req, res, next) => {
     }
     // Anime: detalhes 100% MyAnimeList (Jikan).
     if (type === "anime") {
-      return res.json(await getAnimeDetails(String(id)));
+      return res.json(await getAnimeDetails(String(id), langOpts(req)));
     }
     res.json(await getDetails(String(type), String(id), langOpts(req)));
   } catch (err) {

@@ -77,6 +77,8 @@ function toApi(r) {
     tmdbId: r.tmdb_id,
     type: r.media_type,
     title: r.title,
+    titleEn: r.title_en ?? null, // anime: titulo em ingles
+    titleRomaji: r.title_romaji ?? null, // anime: titulo em romaji
     poster: r.poster,
     watched: r.watched,
     watchlist: r.watchlist,
@@ -109,6 +111,8 @@ export function upsertLibrary(entry) {
     data.library.push(r);
   }
   r.title = entry.title;
+  if (entry.titleEn !== undefined) r.title_en = entry.titleEn;
+  if (entry.titleRomaji !== undefined) r.title_romaji = entry.titleRomaji;
   r.poster = entry.poster;
   r.watched = entry.watched;
   r.watchlist = entry.watchlist;

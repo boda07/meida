@@ -106,7 +106,7 @@ export async function getAnimeList(userId) {
   const token = await getValidToken(userId);
   const out = [];
   let url =
-    "/users/@me/animelist?fields=list_status,num_episodes,main_picture,start_season,media_type&limit=1000&nsfw=true";
+    "/users/@me/animelist?fields=list_status,num_episodes,main_picture,start_season,media_type,alternative_titles&limit=1000&nsfw=true";
   // Pagina enquanto houver "next".
   for (let i = 0; i < 10; i++) {
     const data = await apiGet(url, token);

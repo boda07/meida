@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { api, imageUrl } from "../api/client.js";
 import { useAuth } from "../auth/AuthContext.jsx";
+import { useSettings } from "../settings/SettingsContext.jsx";
 
 const FILTERS = [
   { id: "all", label: "Tudo" },
@@ -16,8 +17,19 @@ const TYPE_FILTERS = [
   { id: "anime", label: "Anime" },
 ];
 
+// Titulo a mostrar: para anime respeita a opcao ingles/romaji.
+function displayTitle(it, romaji) {
+  if (it.type === "anime") {
+    return romaji
+      ? it.titleRomaji || it.title
+      : it.titleEn || it.title;
+  }
+  return it.title;
+}
+
 export default function Library() {
   const { user, ready } = useAuth();
+  const { settings } = useSettings();
   const [items, setItems] = useState([]);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -88,7 +100,9 @@ export default function Library() {
         </p>
       ) : (
         <div className="grid">
-          {shown.map((it) => (
+          {shown.map((it) => {
+            const t = displayTitle(it, settings.animeTitleLang === "romaji");
+            return (
             <Link
               key={`${it.type}-${it.tmdbId}`}
               to={`/details/${it.type}/${it.tmdbId}`}
@@ -96,9 +110,9 @@ export default function Library() {
             >
               <div className="card-poster">
                 {imageUrl(it.poster, "w342") ? (
-                  <img src={imageUrl(it.poster, "w342")} alt={it.title} loading="lazy" />
+                  <img src={imageUrl(it.poster, "w342")} alt={t} loading="lazy" />
                 ) : (
-                  <div className="card-noposter">{it.title}</div>
+                  <div className="card-noposter">{t}</div>
                 )}
                 <div className="card-scrim" />
                 {it.score ? <span className="card-rating">{it.score}/10</span> : null}
@@ -107,11 +121,12 @@ export default function Library() {
                   <span className="card-watchlist">+</span>
                 ) : null}
                 <div className="card-footer">
-                  <h3 className="card-title">{it.title}</h3>
+                  <h3 className="card-title">{t}</h3>
                 </div>
               </div>
             </Link>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

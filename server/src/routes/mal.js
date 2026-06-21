@@ -82,11 +82,15 @@ malRouter.post("/mal/import", requireAuth, async (req, res, next) => {
       if (!node.id) continue;
       const watched = ls.status === "completed";
       const watchlist = ls.status === "plan_to_watch" || ls.status === "watching";
+      const titleRomaji = node.title || "";
+      const titleEn = node.alternative_titles?.en || "";
       upsertLibrary({
         userId: req.user.id,
         tmdbId: node.id, // id do MAL (a app trata "anime" por malId)
         type: "anime",
-        title: node.title || "",
+        title: titleEn || titleRomaji, // ingles por default
+        titleEn: titleEn || null,
+        titleRomaji: titleRomaji || null,
         poster: node.main_picture?.large || node.main_picture?.medium || null,
         watched: watched ? 1 : 0,
         watchlist: watchlist ? 1 : 0,
