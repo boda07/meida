@@ -12,6 +12,9 @@ ipcMain.handle("open-external", (_e, url) => {
   if (/^https?:\/\//i.test(url)) shell.openExternal(url);
 });
 
+// Versao instalada da app (para o "o que mudou" depois de atualizar).
+ipcMain.handle("app-version", () => app.getVersion());
+
 // Desinstalar a app: pede confirmacao e corre o desinstalador do NSIS.
 ipcMain.handle("uninstall-app", async () => {
   if (!app.isPackaged) return { ok: false, error: "So funciona na app instalada." };

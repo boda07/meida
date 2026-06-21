@@ -5,4 +5,5 @@ const { contextBridge, ipcRenderer } = require("electron");
 contextBridge.exposeInMainWorld("electronAPI", {
   openExternal: (url) => ipcRenderer.invoke("open-external", url),
   uninstall: () => ipcRenderer.invoke("uninstall-app"),
+  appVersion: () => ipcRenderer.invoke("app-version"),
 });
