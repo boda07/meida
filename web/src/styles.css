@@ -931,6 +931,14 @@ h2 {
   font-weight: 600;
 }
 
+/* ===== Blocos de episodios (animes longos) ===== */
+.ep-ranges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
 /* ===== Pesquisa por categorias ===== */
 .search-group {
   margin-top: 28px;
@@ -1429,6 +1437,39 @@ h2 {
 
 .fs-btn:hover {
   background: rgba(0, 0, 0, 0.8);
+}
+
+/* Overlay "Reproduzir" quando o autoplay esta desligado */
+.player-start {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  border: none;
+  background: radial-gradient(circle at center, rgba(20, 20, 28, 0.5), #000 80%);
+  color: #fff;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.player-start svg {
+  width: 64px;
+  height: 64px;
+  padding: 16px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  transition: transform 0.15s;
+}
+
+.player-start:hover svg {
+  transform: scale(1.08);
 }
 
 /* Botao de recarregar (ao lado do fullscreen) */

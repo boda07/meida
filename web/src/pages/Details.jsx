@@ -20,6 +20,7 @@ export default function Details() {
   const [season, setSeason] = useState(1);
   const [episodes, setEpisodes] = useState([]);
   const [episode, setEpisode] = useState(1);
+  const [epStart, setEpStart] = useState(0); // inicio do bloco de 100 visivel
 
   // Fontes / player
   const [embeds, setEmbeds] = useState([]);
@@ -142,10 +143,26 @@ export default function Details() {
     party.send("session", { season, episode, mode });
   }, [party, season, episode, mode]);
 
+  // Mantem o bloco de 100 visivel alinhado com o episodio atual/selecionado.
+  useEffect(() => {
+    setEpStart(Math.floor((episode - 1) / 100) * 100);
+  }, [episode]);
+
   if (error) return <p className="status error">{error}</p>;
   if (!details) return <p className="status">A carregar...</p>;
 
   const backdrop = imageUrl(details.backdrop, "w1280");
+
+  // Animes longos (1000+ eps): divide a lista em blocos de 100.
+  const EP_BLOCK = 100;
+  const manyEps = episodes.length > EP_BLOCK;
+  const epRanges = [];
+  if (manyEps) {
+    for (let i = 0; i < episodes.length; i += EP_BLOCK) epRanges.push(i);
+  }
+  const visibleEpisodes = manyEps
+    ? episodes.slice(epStart, epStart + EP_BLOCK)
+    : episodes;
 
   return (
     <div className="details">
@@ -200,8 +217,24 @@ export default function Details() {
               </select>
             </div>
           )}
+          {manyEps && (
+            <div className="ep-ranges">
+              {epRanges.map((start) => {
+                const end = Math.min(start + EP_BLOCK, episodes.length);
+                return (
+                  <button
+                    key={start}
+                    className={`tf-chip ${epStart === start ? "active" : ""}`}
+                    onClick={() => setEpStart(start)}
+                  >
+                    {start + 1}-{end}
+                  </button>
+                );
+              })}
+            </div>
+          )}
           <div className="episode-list">
-            {episodes.map((ep) => (
+            {visibleEpisodes.map((ep) => (
               <button
                 key={ep.episodeNumber}
                 className={`episode-btn ${
