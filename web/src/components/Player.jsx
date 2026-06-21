@@ -2,8 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import FullscreenButton from "./FullscreenButton.jsx";
 import { useSettings } from "../settings/SettingsContext.jsx";
 
-// Ajusta o URL do embed conforme as definicoes de autoplay/autoskip.
-// (Nos iframes externos so podemos influenciar via parametros do URL.)
+// Ajusta o URL do embed conforme as definições de autoplay/autoskip.
+// (Nos iframes externos só podemos influenciar via parametros do URL.)
 function applyPlaybackPrefs(src, { autoplay, autoskip }) {
   let url = src;
   const val = autoplay ? "true" : "false";
@@ -25,9 +25,9 @@ export default function Player({ src, title }) {
   const ref = useRef(null);
   const { settings } = useSettings();
   const [reloadKey, setReloadKey] = useState(0);
-  // Com autoplay desligado, so carregamos o iframe quando o utilizador clica
+  // Com autoplay desligado, só carregamos o iframe quando o utilizador clica
   // (muitos providers ignoram parametros e arrancam sozinhos — esta e a unica
-  // forma fiavel de nao comecar ate ao clique).
+  // forma fiavel de não começar ate ao clique).
   const [started, setStarted] = useState(settings.autoplay);
 
   useEffect(() => {
@@ -42,7 +42,7 @@ export default function Player({ src, title }) {
       {started ? (
         <>
           {/* Sem sandbox: estes providers detetam e recusam iframes em sandbox.
-              O custo sao popups/anuncios, inerentes a este tipo de fonte. */}
+              O custo são popups/anúncios, inerentes a este tipo de fonte. */}
           <iframe
             key={reloadKey}
             src={finalSrc}
@@ -54,7 +54,7 @@ export default function Player({ src, title }) {
           <button
             type="button"
             className="player-reload"
-            title="Recarregar fonte (se nao carregar / erro 520)"
+            title="Recarregar fonte (se não carregar / erro 520)"
             aria-label="Recarregar fonte"
             onClick={() => setReloadKey((k) => k + 1)}
           >

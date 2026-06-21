@@ -4,7 +4,7 @@ import FullscreenButton from "./FullscreenButton.jsx";
 import { useVideoSync } from "../watchparty/useVideoSync.js";
 import { useSettings } from "../settings/SettingsContext.jsx";
 
-// Player HTML5 proprio para streams de torrent (sem anuncios).
+// Player HTML5 próprio para streams de torrent (sem anúncios).
 export default function VideoPlayer({ src, infoHash, subtitles = [] }) {
   const videoRef = useRef(null);
   const containerRef = useRef(null);
@@ -46,7 +46,7 @@ export default function VideoPlayer({ src, infoHash, subtitles = [] }) {
       <SubtitleMenu videoRef={videoRef} subtitles={subtitles} />
       {err && (
         <p className="vhint">
-          O browser nao consegue reproduzir este ficheiro (provavelmente .mkv ou
+          O browser não consegue reproduzir este ficheiro (provavelmente .mkv ou
           codec x265). Experimenta um torrent <b>1080p em .mp4 / x264</b>.
         </p>
       )}

@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { api, imageUrl } from "../api/client.js";
 import { useAuth } from "../auth/AuthContext.jsx";
 
-// Link de detalhe que retoma na posicao guardada (?s=temporada&e=episodio).
+// Link de detalhe que retoma na posição guardada (?s=temporada&e=episódio).
 function resumeLink(it) {
   const q = new URLSearchParams();
   if (it.season != null) q.set("s", it.season);

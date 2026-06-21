@@ -8,19 +8,19 @@ export const tokenStore = {
   clear: () => localStorage.removeItem(TOKEN_KEY),
 };
 
-// Definicoes do utilizador (idiomas, etc.) guardadas em localStorage.
+// Definições do utilizador (idiomas, etc.) guardadas em localStorage.
 const SETTINGS_KEY = "streamapp_settings";
 export const DEFAULT_SETTINGS = {
-  titleLang: "en", // idioma dos titulos: "en" | "pt"
+  titleLang: "en", // idioma dos títulos: "en" | "pt"
   overviewLang: "pt", // idioma das sinopses: "en" | "pt"
-  animeTitleLang: "en", // titulos de anime: "en" (ingles) | "romaji"
+  animeTitleLang: "en", // títulos de anime: "en" (ingles) | "romaji"
   subtitleLang: "pt", // legenda preferida: "pt" | "en" | "off"
   defaultTab: "providers", // separador inicial: providers | extract | torrents
   animeAudio: "sub", // anime: "sub" (legendado) ou "dub" (dobrado)
   accent: "#c90303", // cor de destaque da UI (botoes, realces)
   bgColor: "#070708", // cor de fundo da app
-  recentAccent: [], // ultimas cores de destaque escolhidas no picker
-  recentBg: [], // ultimas cores de fundo escolhidas no picker
+  recentAccent: [], // últimas cores de destaque escolhidas no picker
+  recentBg: [], // últimas cores de fundo escolhidas no picker
   cardW: 184, // largura dos cartazes (px)
   cardH: 272, // altura dos cartazes (px)
   autoplay: true, // reproduzir automaticamente ao abrir uma fonte
@@ -39,7 +39,7 @@ export const settingsStore = {
   },
 };
 
-// Parametros de idioma a juntar aos pedidos de catalogo.
+// Parametros de idioma a juntar aos pedidos de catálogo.
 function langParams() {
   const s = settingsStore.get();
   return {
@@ -49,7 +49,7 @@ function langParams() {
   };
 }
 
-// Lista de idiomas (OpenSubtitles) a partir da preferencia de legendas.
+// Lista de idiomas (OpenSubtitles) a partir da preferência de legendas.
 function subtitleLangs() {
   const map = { pt: "pt,pt-br,en", en: "en,pt", off: "pt,pt-br,en" };
   return map[settingsStore.get().subtitleLang] || "pt,pt-br,en";
@@ -146,7 +146,7 @@ export const api = {
   malUnlink: () => post("/api/mal/unlink", {}),
   malScrobble: (malId, episode) => post("/api/mal/scrobble", { malId, episode }),
 
-  // Diario / continua a ver
+  // Diário / continua a ver
   progress: () => get("/api/progress"),
   progressItem: (type, tmdb) => get("/api/progress/item", { type, tmdb }),
   progressStart: (entry) => post("/api/progress/start", entry),
@@ -172,7 +172,7 @@ export function openExternal(url) {
 
 export function imageUrl(path, size = "w342") {
   if (!path) return null;
-  // Ja e um URL completo (ex.: posters do Jikan/MyAnimeList) -> usa tal e qual.
+  // Já e um URL completo (ex.: posters do Jikan/MyAnimeList) -> usa tal e qual.
   if (/^https?:\/\//i.test(path)) return path;
   return `https://image.tmdb.org/t/p/${size}${path}`;
 }

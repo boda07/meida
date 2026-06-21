@@ -3,7 +3,7 @@ import { useWatchParty } from "./WatchPartyContext.jsx";
 
 // Sincroniza um elemento <video> com a sala (play/pause/seek).
 // Qualquer participante que mexa propaga para os outros; "pausa = pausa p/ todos".
-// Liga aos players NOSSOS (HLS/torrent) — nos iframes nao e possivel.
+// Liga aos players NOSSOS (HLS/torrent) — nos iframes não e possível.
 export function useVideoSync(videoRef) {
   const party = useWatchParty();
   const active = party?.active;
@@ -15,14 +15,14 @@ export function useVideoSync(videoRef) {
     const video = videoRef.current;
     if (!video) return;
 
-    // Enquanto aplicamos um evento remoto, nao reemitimos (evita loops).
+    // Enquanto aplicamos um evento remoto, não reemitimos (evita loops).
     let applying = false;
     const guard = (fn) => {
       applying = true;
       try {
         fn();
       } finally {
-        // Liberta no proximo tick (depois dos eventos play/pause/seeked).
+        // Liberta no próximo tick (depois dos eventos play/pause/seeked).
         setTimeout(() => {
           applying = false;
         }, 80);
@@ -57,7 +57,7 @@ export function useVideoSync(videoRef) {
       });
     });
 
-    // Pede o estado atual a quem ja esta a ver.
+    // Pede o estado atual a quem já esta a ver.
     send("sync-request", {});
 
     return () => {

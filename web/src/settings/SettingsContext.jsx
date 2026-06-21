@@ -15,7 +15,7 @@ function shade(hex, amount) {
   return `#${ch.map((c) => c.toString(16).padStart(2, "0")).join("")}`;
 }
 
-// Definicoes do utilizador (idiomas, legendas, cor, separador inicial). Guardadas
+// Definições do utilizador (idiomas, legendas, cor, separador inicial). Guardadas
 // em localStorage via settingsStore; este contexto torna-as reativas na UI.
 export function SettingsProvider({ children }) {
   const [settings, setSettings] = useState(() => settingsStore.get());

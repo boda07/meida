@@ -7,7 +7,7 @@ import MediaRow from "../components/MediaRow.jsx";
 const TYPE_FILTERS = [
   { id: "all", label: "Tudo" },
   { id: "movie", label: "Filmes" },
-  { id: "tv", label: "Series" },
+  { id: "tv", label: "Séries" },
   { id: "anime", label: "Anime" },
 ];
 
@@ -43,10 +43,10 @@ export default function Search() {
   if (!results.length)
     return <p className="status muted">Sem resultados para "{q}".</p>;
 
-  // Agrupa por tipo (estilo Stremio): Filmes / Series / Anime.
+  // Agrupa por tipo (estilo Stremio): Filmes / Séries / Anime.
   const groups = [
     { type: "movie", label: "Filmes" },
-    { type: "tv", label: "Series" },
+    { type: "tv", label: "Séries" },
     { type: "anime", label: "Anime" },
   ]
     .filter((g) => typeFilter === "all" || typeFilter === g.type)

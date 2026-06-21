@@ -3,7 +3,7 @@ import { api } from "../api/client.js";
 import { useSettings } from "../settings/SettingsContext.jsx";
 import HlsPlayer from "./HlsPlayer.jsx";
 
-// Reproducao de anime "sem anuncios" no nosso player (via extrator alojado).
+// Reprodução de anime "sem anúncios" no nosso player (via extrator alojado).
 // Da legendas soft (toggle no player) e sync no watch party (HlsPlayer).
 export default function AnimeExtract({ details, episode }) {
   const { settings } = useSettings();
@@ -29,16 +29,16 @@ export default function AnimeExtract({ details, episode }) {
   if (loading)
     return (
       <p className="muted">
-        A extrair stream sem anuncios (a 1a vez pode demorar ~30s a acordar o
+        A extrair stream sem anúncios (a 1a vez pode demorar ~30s a acordar o
         servidor)...
       </p>
     );
   if (error || !data?.sources?.length)
     return (
       <div className="extract-empty">
-        <p>Sem stream sem anuncios para este episodio de momento.</p>
+        <p>Sem stream sem anúncios para este episódio de momento.</p>
         <p className="muted">
-          {error || "O extrator nao devolveu fontes."} — usa o separador{" "}
+          {error || "O extrator não devolveu fontes."} — usa o separador{" "}
           <b>Fontes</b>.
         </p>
       </div>

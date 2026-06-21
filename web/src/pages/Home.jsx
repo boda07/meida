@@ -33,7 +33,7 @@ export default function Home() {
   if (error)
     return (
       <div className="status error">
-        <p>Nao consegui carregar o catalogo: {error}</p>
+        <p>Não consegui carregar o catálogo: {error}</p>
         <p className="muted">
           Verifica que criaste <code>server/.env</code> com a tua chave do TMDB.
         </p>

@@ -55,7 +55,7 @@ export default function Category({ category, title }) {
       return next;
     });
 
-  // Fecha o modal de generos com Escape.
+  // Fecha o modal de géneros com Escape.
   useEffect(() => {
     if (!genreOpen) return;
     const onKey = (e) => e.key === "Escape" && setGenreOpen(false);
@@ -77,7 +77,7 @@ export default function Category({ category, title }) {
       .finally(() => setLoading(false));
   }, [category, settings.titleLang, settings.overviewLang, settings.animeTitleLang]);
 
-  // Ao mudar de pagina/tipo, repoe os controlos e recarrega os generos.
+  // Ao mudar de página/tipo, repoe os controlos e recarrega os géneros.
   useEffect(() => {
     setSort("featured");
     setDir("desc");
@@ -89,7 +89,7 @@ export default function Category({ category, title }) {
       .catch(() => setAllGenres([]));
   }, [type]);
 
-  // Corre o discover quando os filtros/ordenacao mudam (pagina 1).
+  // Corre o discover quando os filtros/ordenação mudam (página 1).
   useEffect(() => {
     if (!discoverActive) {
       setItems([]);
@@ -164,7 +164,7 @@ export default function Category({ category, title }) {
             className={`tf-chip ${genreSel.size ? "active" : ""}`}
             onClick={() => setGenreOpen(true)}
           >
-            Genero{genreSel.size ? ` (${genreSel.size})` : ""}
+            Género{genreSel.size ? ` (${genreSel.size})` : ""}
           </button>
         )}
       </div>
@@ -204,7 +204,7 @@ export default function Category({ category, title }) {
         <div className="modal-overlay" onClick={() => setGenreOpen(false)}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-head">
-              <h3>Filtrar por genero{type === "anime" ? "/tema" : ""}</h3>
+              <h3>Filtrar por género{type === "anime" ? "/tema" : ""}</h3>
               <button
                 className="modal-close"
                 aria-label="Fechar"

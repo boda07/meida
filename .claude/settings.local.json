@@ -163,7 +163,19 @@
       "Bash(git -c core.autocrlf=false -c user.email=white072007@gmail.com -c user.name=boda07 commit -qm \"Auto-deteta dominio HiAnime vivo \\(import dinamico\\)\")",
       "Bash(git -c core.autocrlf=false -c user.email=white072007@gmail.com -c user.name=boda07 commit -qm \"Sondagem valida a pesquisa \\(nao so a homepage\\)\")",
       "Bash(curl -s -I --max-time 25 -H \"User-Agent: Mozilla/5.0\" \"https://megaplay.buzz/stream/mal/10087/1/sub\")",
-      "Bash(curl -sL --max-time 25 -H \"User-Agent: Mozilla/5.0\" \"https://megaplay.buzz/stream/mal/10087/1/sub\")"
+      "Bash(curl -sL --max-time 25 -H \"User-Agent: Mozilla/5.0\" \"https://megaplay.buzz/stream/mal/10087/1/sub\")",
+      "Bash(git commit *)",
+      "Bash(gh release *)",
+      "Bash(node --check src/routes/library.js)",
+      "Bash(node --check src/store.js)",
+      "Bash(node --check src/services/mal.js)",
+      "Bash(node --input-type=module -e ' *)",
+      "Read(//c/Users/Boda/.claude/projects/c--Users-Boda-Documents-Coding/memory//**)",
+      "Read(//c/Users/Boda/.claude/projects/c--Users-Boda-Documents-Coding/memory/**)",
+      "Bash(node -e \"const fs=require\\('fs'\\);const b=fs.readFileSync\\('logo.png'\\);console.log\\('logo.png size',b.length\\);console.log\\('dims hint',b.readUInt32BE\\(16\\),b.readUInt32BE\\(20\\)\\)\")",
+      "Bash(xargs wc -l)",
+      "Bash(node /c/tmp/accent-fix.cjs \"c:/Users/Boda/Documents/Coding/web/src\")",
+      "Bash(grep -viE \"^\\\\S+:\\\\s*//|video|audio\")"
     ],
     "additionalDirectories": [
       "\\tmp"

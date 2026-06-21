@@ -13,17 +13,17 @@ const FILTERS = [
 const TYPE_FILTERS = [
   { id: "all", label: "Todos" },
   { id: "movie", label: "Filmes" },
-  { id: "tv", label: "Series" },
+  { id: "tv", label: "Séries" },
   { id: "anime", label: "Anime" },
 ];
 
 const SORTS = [
   { id: "recent", label: "Adicionados" },
-  { id: "title", label: "Titulo" },
+  { id: "title", label: "Título" },
   { id: "rating", label: "Nota da comunidade" },
 ];
 
-// Titulo a mostrar: para anime respeita a opcao ingles/romaji.
+// Título a mostrar: para anime respeita a opção ingles/romaji.
 function displayTitle(it, romaji) {
   if (it.type === "anime") {
     return romaji
@@ -43,11 +43,13 @@ export default function Library() {
   const [typeFilter, setTypeFilter] = useState("all");
   const [sort, setSort] = useState("recent");
   const [dir, setDir] = useState("desc"); // "desc" | "asc"
-  // Generos/temas selecionados. Vazio = sem filtro de tags.
+  // Géneros/temas selecionados. Vazio = sem filtro de tags.
   const [genreSel, setGenreSel] = useState(() => new Set());
   const [genreOpen, setGenreOpen] = useState(false);
   const [wlOpen, setWlOpen] = useState(false); // modal "limpar watchlist"
   const [clearing, setClearing] = useState(false);
+  const [page, setPage] = useState(1);
+  const PER_PAGE = 60;
 
   // Fecha os modais com a tecla Escape.
   useEffect(() => {
@@ -97,7 +99,7 @@ export default function Library() {
     }
   }
 
-  // Generos/temas disponiveis na lista (ordenados), para o dropdown.
+  // Géneros/temas disponiveis na lista (ordenados), para o dropdown.
   const allGenres = useMemo(() => {
     const set = new Set();
     for (const i of items) for (const g of i.genres || []) set.add(g);
@@ -115,13 +117,13 @@ export default function Library() {
         for (const sel of genreSel) if (!g.includes(sel)) return false;
         return true;
       });
-    // Ordenacao. Comparador base (ascendente); a direcao inverte no fim.
+    // Ordenação. Comparador base (ascendente); a direção inverte no fim.
     const romaji = settings.animeTitleLang === "romaji";
     let cmp;
     if (sort === "title") {
       cmp = (a, b) => displayTitle(a, romaji).localeCompare(displayTitle(b, romaji));
     } else if (sort === "rating") {
-      // Sem nota da comunidade -> sempre no fim, independente da direcao.
+      // Sem nota da comunidade -> sempre no fim, independente da direção.
       cmp = (a, b) => {
         const ra = a.rating,
           rb = b.rating;
@@ -138,6 +140,23 @@ export default function Library() {
     arr = [...arr].sort((a, b) => cmp(a, b) * sign);
     return arr;
   }, [items, filter, typeFilter, genreSel, sort, dir, settings.animeTitleLang]);
+
+  // Paginacao: volta a página 1 sempre que a lista filtrada/ordenada muda.
+  useEffect(() => {
+    setPage(1);
+  }, [filter, typeFilter, genreSel, sort, dir]);
+
+  const pageCount = Math.max(1, Math.ceil(shown.length / PER_PAGE));
+  const safePage = Math.min(page, pageCount);
+  const paged = useMemo(
+    () => shown.slice((safePage - 1) * PER_PAGE, safePage * PER_PAGE),
+    [shown, safePage]
+  );
+
+  // Sobe ao topo ao trocar de página (mais agradavel em listas grandes).
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [safePage]);
 
   if (ready && !user)
     return (
@@ -201,7 +220,7 @@ export default function Library() {
                 className={`tf-chip ${genreSel.size ? "active" : ""}`}
                 onClick={() => setGenreOpen(true)}
               >
-                Genero{genreSel.size ? ` (${genreSel.size})` : ""}
+                Género{genreSel.size ? ` (${genreSel.size})` : ""}
               </button>
             </>
           )}
@@ -223,13 +242,13 @@ export default function Library() {
               </button>
             </div>
             <p className="muted" style={{ padding: "0 20px" }}>
-              Remove os titulos da watchlist (os que ja viste ou avaliaste ficam,
-              so perdem a marca de watchlist). Que watchlist queres apagar?
+              Remove os títulos da watchlist (os que já viste ou avaliaste ficam,
+              só perdem a marca de watchlist). Que watchlist queres apagar?
             </p>
             <div className="wl-clear-opts">
               {[
                 { id: "movie", label: "Filmes" },
-                { id: "tv", label: "Series" },
+                { id: "tv", label: "Séries" },
                 { id: "anime", label: "Anime" },
                 { id: "all", label: "Todos" },
               ].map((o) => (
@@ -251,7 +270,7 @@ export default function Library() {
         <div className="modal-overlay" onClick={() => setGenreOpen(false)}>
           <div className="modal lib-genre-modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-head">
-              <h3>Filtrar por genero/tema</h3>
+              <h3>Filtrar por género/tema</h3>
               <button
                 className="modal-close"
                 aria-label="Fechar"
@@ -291,11 +310,12 @@ export default function Library() {
         <p className="muted">
           {items.length
             ? "Nada nesta categoria."
-            : "A tua lista esta vazia. Abre um filme/serie e adiciona a watchlist, marca como visto ou da nota."}
+            : "A tua lista esta vazia. Abre um filme/série e adiciona a watchlist, marca como visto ou da nota."}
         </p>
       ) : (
+        <>
         <div className="grid">
-          {shown.map((it) => {
+          {paged.map((it) => {
             const t = displayTitle(it, settings.animeTitleLang === "romaji");
             return (
             <Link
@@ -323,6 +343,28 @@ export default function Library() {
             );
           })}
         </div>
+        {pageCount > 1 && (
+          <div className="lib-pager">
+            <button
+              className="lib-pager-btn"
+              disabled={safePage <= 1}
+              onClick={() => setPage(safePage - 1)}
+            >
+              ← Anterior
+            </button>
+            <span className="lib-pager-info">
+              Página {safePage} de {pageCount} · {shown.length} títulos
+            </span>
+            <button
+              className="lib-pager-btn"
+              disabled={safePage >= pageCount}
+              onClick={() => setPage(safePage + 1)}
+            >
+              Seguinte →
+            </button>
+          </div>
+        )}
+        </>
       )}
     </div>
   );

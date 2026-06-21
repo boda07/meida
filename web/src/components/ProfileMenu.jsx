@@ -42,7 +42,7 @@ export default function ProfileMenu() {
             A minha lista
           </Link>
           <Link to="/diary" onClick={() => setOpen(false)}>
-            Diario
+            Diário
           </Link>
           <Link to="/settings" onClick={() => setOpen(false)}>
             Definições

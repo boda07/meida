@@ -82,7 +82,7 @@ export default function Header() {
       setQuery(q);
       setSearchOpen(true);
     }
-    // so na montagem inicial
+    // só na montagem inicial
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -91,7 +91,7 @@ export default function Header() {
     setQuery(value);
     const q = value.trim();
     if (q) {
-      // replace: nao enche o historico a cada tecla.
+      // replace: não enche o histórico a cada tecla.
       navigate(`/search?q=${encodeURIComponent(q)}`, { replace: true });
     } else if (onSearchPage) {
       navigate("/search", { replace: true });
@@ -108,17 +108,17 @@ export default function Header() {
     <header className="nav-bar">
       <div className="nav-left">
         <nav className="nav-links">
-          <NavLink to="/" end title="Inicio">
+          <NavLink to="/" end title="Início">
             <HomeIcon />
-            <span>Inicio</span>
+            <span>Início</span>
           </NavLink>
           <NavLink to="/movies" title="Filmes">
             <FilmIcon />
             <span>Filmes</span>
           </NavLink>
-          <NavLink to="/series" title="Series">
+          <NavLink to="/series" title="Séries">
             <TVIcon />
-            <span>Series</span>
+            <span>Séries</span>
           </NavLink>
           <NavLink to="/anime" title="Anime">
             <StarIcon />
@@ -147,7 +147,7 @@ export default function Header() {
           <input
             ref={inputRef}
             type="text"
-            placeholder="Titulos, pessoas, generos"
+            placeholder="Títulos, pessoas, géneros"
             value={query}
             onChange={(e) => onChange(e.target.value)}
             onBlur={() => { if (!query.trim() && !onSearchPage) setSearchOpen(false); }}

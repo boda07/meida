@@ -1167,6 +1167,43 @@ h2 {
 }
 
 /* Botao destrutivo "limpar watchlist" na barra de filtros. */
+/* Paginacao da "minha lista". */
+.lib-pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin: 28px 0 40px;
+  flex-wrap: wrap;
+}
+
+.lib-pager-btn {
+  background: var(--bg-surface);
+  color: var(--text);
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.12));
+  padding: 8px 16px;
+  border-radius: var(--radius-pill);
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.2s, opacity 0.2s;
+}
+
+.lib-pager-btn:hover:not(:disabled) {
+  background: var(--accent);
+  color: #fff;
+}
+
+.lib-pager-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.lib-pager-info {
+  color: var(--text-muted, #9aa0a6);
+  font-size: 13px;
+}
+
 .lib-wl-clear {
   border-color: rgba(255, 90, 90, 0.5);
   color: #ff8a8a;
@@ -2169,7 +2206,7 @@ h2 {
   align-items: center;
   gap: 12px;
   flex-wrap: wrap;
-  margin-bottom: 16px;
+  margin-top: 20px;
 }
 
 .scrobble-btn {

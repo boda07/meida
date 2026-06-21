@@ -66,7 +66,7 @@ export function WatchPartyProvider({ children }) {
     (code, nickname, host) => {
       const supabase = getSupabase();
       if (!supabase) {
-        setError("Watch Party nao configurado neste app.");
+        setError("Watch Party não configurado neste app.");
         return;
       }
       setError(null);

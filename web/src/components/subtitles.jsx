@@ -33,7 +33,7 @@ export function SubtitleTracks({ subtitles = [] }) {
 }
 
 // Menu para escolher a legenda ativa, controlando textTracks do video.
-// Ativa automaticamente a legenda do idioma preferido das definicoes.
+// Ativa automaticamente a legenda do idioma preferido das definições.
 export function SubtitleMenu({ videoRef, subtitles = [] }) {
   const { settings } = useSettings();
   const [val, setVal] = useState("-1");
@@ -52,7 +52,7 @@ export function SubtitleMenu({ videoRef, subtitles = [] }) {
   useEffect(() => {
     if (!subtitles.length) return;
     const idx = preferredIndex(subtitles, settings.subtitleLang);
-    // As textTracks podem ainda nao estar prontas; tenta no proximo frame.
+    // As textTracks podem ainda não estar prontas; tenta no próximo frame.
     const id = requestAnimationFrame(() => apply(idx));
     return () => cancelAnimationFrame(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps

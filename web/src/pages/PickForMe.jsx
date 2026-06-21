@@ -4,20 +4,20 @@ import MediaCard from "../components/MediaCard.jsx";
 
 const TYPES = [
   { id: "movie", label: "Filmes" },
-  { id: "tv", label: "Series" },
+  { id: "tv", label: "Séries" },
   { id: "anime", label: "Anime" },
 ];
 
 export default function PickForMe() {
   const [type, setType] = useState("anime");
   const [genres, setGenres] = useState([]);
-  // estado por genero: 1 = quero, 2 = nao quero (ausente = indiferente)
+  // estado por género: 1 = quero, 2 = não quero (ausente = indiferente)
   const [picks, setPicks] = useState({});
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState(null);
 
-  // Carrega os generos quando muda o tipo (e limpa as escolhas).
+  // Carrega os géneros quando muda o tipo (e limpa as escolhas).
   useEffect(() => {
     setGenres([]);
     setPicks({});
@@ -29,7 +29,7 @@ export default function PickForMe() {
       .catch(() => setGenres([]));
   }, [type]);
 
-  // Clicar num genero cicla: indiferente -> quero -> nao quero -> indiferente.
+  // Clicar num género cicla: indiferente -> quero -> não quero -> indiferente.
   function cycle(id) {
     setPicks((p) => {
       const cur = p[id] || 0;
@@ -66,8 +66,8 @@ export default function PickForMe() {
     <div className="sub-page pick-page">
       <h2 className="row-title">Escolhe algo para mim</h2>
       <p className="muted">
-        Escolhe o tipo e toca nos generos: 1x = <b className="want">quero</b>, 2x
-        = <b className="avoid">nao quero</b>. Depois carrega no botao.
+        Escolhe o tipo e toca nos géneros: 1x = <b className="want">quero</b>, 2x
+        = <b className="avoid">não quero</b>. Depois carrega no botao.
       </p>
 
       <div className="lib-filters" style={{ marginTop: 14 }}>
@@ -96,7 +96,7 @@ export default function PickForMe() {
             </button>
           );
         })}
-        {!genres.length && <p className="muted">A carregar generos...</p>}
+        {!genres.length && <p className="muted">A carregar géneros...</p>}
       </div>
 
       <button className="pick-btn" onClick={pick} disabled={loading}>

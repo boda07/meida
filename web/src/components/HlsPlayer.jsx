@@ -5,7 +5,7 @@ import FullscreenButton from "./FullscreenButton.jsx";
 import { useVideoSync } from "../watchparty/useVideoSync.js";
 import { useSettings } from "../settings/SettingsContext.jsx";
 
-// Player HLS proprio (sem anuncios) com legendas.
+// Player HLS próprio (sem anúncios) com legendas.
 export default function HlsPlayer({ sources = [], subtitles = [] }) {
   const videoRef = useRef(null);
   const containerRef = useRef(null);

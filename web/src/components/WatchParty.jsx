@@ -29,7 +29,7 @@ export default function WatchParty() {
     return () => document.removeEventListener("mousedown", onDoc);
   }, []);
 
-  if (!party?.enabled) return null; // Watch Party nao configurado neste build
+  if (!party?.enabled) return null; // Watch Party não configurado neste build
 
   const copy = () => {
     navigator.clipboard?.writeText(party.room).then(() => {
@@ -57,7 +57,7 @@ export default function WatchParty() {
             <>
               <p className="muted">
                 Veem o mesmo ao mesmo tempo. Pausa/play e sincronizado nos
-                separadores <b>Sem anuncios</b> e <b>Torrents</b>.
+                separadores <b>Sem anúncios</b> e <b>Torrents</b>.
               </p>
               <div className="wp-code">
                 <span>{party.room}</span>

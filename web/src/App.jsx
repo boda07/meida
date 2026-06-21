@@ -22,7 +22,7 @@ export default function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/movies" element={<Category category="movies" title="Filmes" />} />
-          <Route path="/series" element={<Category category="tv" title="Series" />} />
+          <Route path="/series" element={<Category category="tv" title="Séries" />} />
           <Route path="/anime" element={<Category category="anime" title="Anime" />} />
           <Route path="/search" element={<Search />} />
           <Route path="/details/:type/:id" element={<Details />} />

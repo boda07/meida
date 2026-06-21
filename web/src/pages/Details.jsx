@@ -20,13 +20,13 @@ export default function Details() {
   const [details, setDetails] = useState(null);
   const [error, setError] = useState(null);
 
-  // Retomar no episodio vindo do "Continua a ver" (?s=temporada&e=episodio).
+  // Retomar no episódio vindo do "Continua a ver" (?s=temporada&e=episódio).
   const resumeRef = useRef({
     season: Number(searchParams.get("s")) || null,
     episode: Number(searchParams.get("e")) || null,
     pending: true,
   });
-  // Devolve o episodio inicial: o de retoma (uma vez) ou 1.
+  // Devolve o episódio inicial: o de retoma (uma vez) ou 1.
   function takeResumeEpisode() {
     const r = resumeRef.current;
     if (r.pending && r.episode) {
@@ -36,7 +36,7 @@ export default function Details() {
     return 1;
   }
 
-  // Estado de series
+  // Estado de séries
   const [season, setSeason] = useState(1);
   const [episodes, setEpisodes] = useState([]);
   const [episode, setEpisode] = useState(1);
@@ -46,9 +46,9 @@ export default function Details() {
   const [embeds, setEmbeds] = useState([]);
   const [active, setActive] = useState(null);
 
-  // Separador inicial vindo das definicoes (providers/extract/torrents)
+  // Separador inicial vindo das definições (providers/extract/torrents)
   const [mode, setMode] = useState(settings.defaultTab || "providers");
-  // O extrator de anime (player proprio) esta configurado no servidor?
+  // O extrator de anime (player próprio) esta configurado no servidor?
   const [animeExtractorOn, setAnimeExtractorOn] = useState(false);
   useEffect(() => {
     api.animeEnabled().then((d) => setAnimeExtractorOn(d.enabled)).catch(() => {});
@@ -75,15 +75,15 @@ export default function Details() {
       .catch((e) => setError(e.message));
   }, [type, id, settings.titleLang, settings.overviewLang]);
 
-  // Carregar episodios quando a temporada muda
+  // Carregar episódios quando a temporada muda
   useEffect(() => {
-    // Anime (serie): lista de episodios gerada a partir do total do MAL.
+    // Anime (série): lista de episódios gerada a partir do total do MAL.
     if (details?.isAnime && !details.isMovie) {
       const n = details.episodeCount || 12;
       setEpisodes(
         Array.from({ length: n }, (_, i) => ({
           episodeNumber: i + 1,
-          name: `Episodio ${i + 1}`,
+          name: `Episódio ${i + 1}`,
         }))
       );
       setEpisode(takeResumeEpisode());
@@ -135,8 +135,8 @@ export default function Details() {
       .catch((e) => setError(e.message));
   }, [details, season, episode, settings.animeAudio]);
 
-  // Diario: regista o ARRANQUE ~8s depois de uma fonte ficar ativa (so 1x por
-  // episodio/sessao). Guarda a posicao para o "Continua a ver".
+  // Diário: regista o ARRANQUE ~8s depois de uma fonte ficar ativa (só 1x por
+  // episódio/sessao). Guarda a posição para o "Continua a ver".
   const startedRef = useRef(new Set());
   useEffect(() => {
     if (!user || !details || !active) return;
@@ -160,7 +160,7 @@ export default function Details() {
     return () => clearTimeout(t);
   }, [user, details, active, season, episode]);
 
-  // Proxima posicao (para avancar o "continua a ver" ao concluir um episodio).
+  // Próxima posição (para avançar o "continua a ver" ao concluir um episódio).
   function nextEpisodePos() {
     if (details.type === "anime") {
       return episode < episodes.length ? { season: null, episode: episode + 1 } : null;
@@ -174,7 +174,7 @@ export default function Details() {
     return null;
   }
 
-  // Marca como acabado (filme) / conclui o episodio atual (serie/anime).
+  // Marca como acabado (filme) / conclui o episódio atual (série/anime).
   const [finishing, setFinishing] = useState(false);
   const [finishMsg, setFinishMsg] = useState(null);
   const isMovieLike = details?.isMovie || details?.type === "movie";
@@ -217,15 +217,15 @@ export default function Details() {
           api.malScrobble(details.malId, episode).catch(() => {});
         }
       }
-      setFinishMsg("Guardado no diario.");
+      setFinishMsg("Guardado no diário.");
     } catch {
-      setFinishMsg("Nao foi possivel guardar.");
+      setFinishMsg("Não foi possível guardar.");
     } finally {
       setFinishing(false);
     }
   }
 
-  // Watch Party: sincroniza temporada/episodio/separador entre a sala.
+  // Watch Party: sincroniza temporada/episódio/separador entre a sala.
   const applyingUntil = useRef(0);
   useEffect(() => {
     if (!party?.active) return;
@@ -249,7 +249,7 @@ export default function Details() {
     party.send("session", { season, episode, mode });
   }, [party, season, episode, mode]);
 
-  // Mantem o bloco de 100 visivel alinhado com o episodio atual/selecionado.
+  // Mantem o bloco de 100 visivel alinhado com o episódio atual/selecionado.
   useEffect(() => {
     setEpStart(Math.floor((episode - 1) / 100) * 100);
   }, [episode]);
@@ -356,29 +356,6 @@ export default function Details() {
         </div>
       )}
 
-      {user && (
-        <div className="scrobble-bar">
-          <button className="btn scrobble-btn" onClick={markFinished} disabled={finishing}>
-            {finishing
-              ? "A guardar..."
-              : isMovieLike
-              ? "✓ Marcar como visto"
-              : `✓ Terminei o episodio ${episode}`}
-          </button>
-          {!isMovieLike && (
-            <span className="muted" style={{ fontSize: 12 }}>
-              Guarda no diario e avanca o "Continua a ver" para o proximo episodio
-              {details.isAnime ? " (e marca no MAL)" : ""}.
-            </span>
-          )}
-          {finishMsg && (
-            <span className="muted" style={{ fontSize: 12 }}>
-              {finishMsg}
-            </span>
-          )}
-        </div>
-      )}
-
       {details.isAnime ? (
         <div className="watch">
           {animeExtractorOn && (
@@ -393,7 +370,7 @@ export default function Details() {
                 className={mode === "extract" ? "active" : ""}
                 onClick={() => setMode("extract")}
               >
-                Sem anuncios
+                Sem anúncios
               </button>
             </div>
           )}
@@ -417,7 +394,7 @@ export default function Details() {
               )}
               <p className="muted" style={{ fontSize: 12, marginTop: 8 }}>
                 Fontes dedicadas de anime (sub/dub via MyAnimeList). Muda entre
-                legendado e dobrado nas Definicoes.
+                legendado e dobrado nas Definições.
               </p>
             </>
           )}
@@ -435,7 +412,7 @@ export default function Details() {
             className={mode === "extract" ? "active" : ""}
             onClick={() => setMode("extract")}
           >
-            Sem anuncios
+            Sem anúncios
           </button>
           <button
             className={mode === "torrents" ? "active" : ""}
@@ -458,8 +435,8 @@ export default function Details() {
               <p className="muted">A carregar fontes...</p>
             )}
             <p className="muted" style={{ fontSize: 12, marginTop: 8 }}>
-              As legendas proprias so funcionam nos separadores{" "}
-              <b>Sem anuncios</b> e <b>Torrents</b> (os Providers sao paginas
+              As legendas próprias só funcionam nos separadores{" "}
+              <b>Sem anúncios</b> e <b>Torrents</b> (os Providers são páginas
               externas em iframe).
             </p>
           </>
@@ -476,6 +453,29 @@ export default function Details() {
           />
         )}
       </div>
+      )}
+
+      {user && (
+        <div className="scrobble-bar">
+          <button className="btn scrobble-btn" onClick={markFinished} disabled={finishing}>
+            {finishing
+              ? "A guardar..."
+              : isMovieLike
+              ? "✓ Marcar como visto"
+              : `✓ Terminei o episódio ${episode}`}
+          </button>
+          {!isMovieLike && (
+            <span className="muted" style={{ fontSize: 12 }}>
+              Guarda no diário e avança o "Continua a ver" para o próximo episódio
+              {details.isAnime ? " (e marca no MAL)" : ""}.
+            </span>
+          )}
+          {finishMsg && (
+            <span className="muted" style={{ fontSize: 12 }}>
+              {finishMsg}
+            </span>
+          )}
+        </div>
       )}
     </div>
   );

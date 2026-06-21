@@ -54,11 +54,11 @@ export default function Login({ mode = "login" }) {
         <p className="auth-switch">
           {isRegister ? (
             <>
-              Ja tens conta? <Link to="/login">Entrar</Link>
+              Já tens conta? <Link to="/login">Entrar</Link>
             </>
           ) : (
             <>
-              Nao tens conta? <Link to="/register">Criar conta</Link>
+              Não tens conta? <Link to="/register">Criar conta</Link>
             </>
           )}
         </p>

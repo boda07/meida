@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { api, openExternal } from "../api/client.js";
 import { useAuth } from "../auth/AuthContext.jsx";
 
-// Controlos de biblioteca para a pagina de detalhe: marcar como visto e nota 1-10.
+// Controlos de biblioteca para a página de detalhe: marcar como visto e nota 1-10.
 export default function LibraryControls({ details }) {
   const { user } = useAuth();
   const [entry, setEntry] = useState(null);

@@ -108,17 +108,17 @@ export default function Diary() {
   if (ready && !user)
     return (
       <p className="status muted">
-        <Link to="/login">Entra</Link> para veres o teu diario.
+        <Link to="/login">Entra</Link> para veres o teu diário.
       </p>
     );
-  if (loading) return <p className="status">A carregar o diario...</p>;
+  if (loading) return <p className="status">A carregar o diário...</p>;
 
   const shown = filter === "all" ? items : items.filter((i) => i.status === filter);
 
   return (
     <div className="sub-page">
       <div className="lib-header">
-        <h2 className="row-title">Diario</h2>
+        <h2 className="row-title">Diário</h2>
         <div className="lib-toolbar">
           <div className="lib-filters">
             {FILTERS.map((f) => (
@@ -136,7 +136,7 @@ export default function Diary() {
 
       {!shown.length ? (
         <p className="muted">
-          Ainda nao ha nada no diario. Abre um filme/serie e comeca a ver.
+          Ainda não ha nada no diário. Abre um filme/série e começa a ver.
         </p>
       ) : (
         <div className="diary-list">
@@ -156,7 +156,7 @@ export default function Diary() {
                     {pos(it) && <span className="diary-pos"> · {pos(it)}</span>}
                   </h3>
                   <div className="diary-dates">
-                    {fmt(it.startedAt) && <span>Comecou: {fmt(it.startedAt)}</span>}
+                    {fmt(it.startedAt) && <span>Começou: {fmt(it.startedAt)}</span>}
                     {it.status === "finished" && fmt(it.finishedAt) ? (
                       <span>Acabou: {fmt(it.finishedAt)}</span>
                     ) : (
@@ -209,7 +209,7 @@ export default function Diary() {
                 </select>
               </label>
               <label>
-                Comecou
+                Começou
                 <input
                   type="date"
                   value={form.started}
@@ -238,7 +238,7 @@ export default function Diary() {
                     </label>
                   )}
                   <label>
-                    Episodio
+                    Episódio
                     <input
                       type="number"
                       min="1"

@@ -73,7 +73,7 @@ function MalSection({ user }) {
   if (!enabled) {
     return (
       <p className="muted">
-        O servidor nao tem o MyAnimeList configurado (falta MAL_CLIENT_ID).
+        O servidor não tem o MyAnimeList configurado (falta MAL_CLIENT_ID).
       </p>
     );
   }
@@ -83,8 +83,8 @@ function MalSection({ user }) {
       {linked ? (
         <>
           <p className="muted">
-            Ligado como <b>{username || "?"}</b>. Os episodios de anime que vires
-            sao marcados no teu MAL automaticamente.
+            Ligado como <b>{username || "?"}</b>. Os episódios de anime que vires
+            são marcados no teu MAL automaticamente.
           </p>
           <div className="set-row">
             <button className="set-choice active" onClick={importList} disabled={busy}>
@@ -96,7 +96,7 @@ function MalSection({ user }) {
       ) : (
         <>
           <p className="muted">
-            Liga a tua conta para importar a tua lista e marcar episodios vistos.
+            Liga a tua conta para importar a tua lista e marcar episódios vistos.
           </p>
           <button className="set-choice active" onClick={link}>
             Ligar MyAnimeList
@@ -260,7 +260,7 @@ function addRecent(list, color) {
   return [c, ...(list || []).filter((x) => x.toLowerCase() !== c)].slice(0, 6);
 }
 
-// Seletor de cor: presets + ultimas escolhidas (recentes) + picker livre.
+// Seletor de cor: presets + últimas escolhidas (recentes) + picker livre.
 function ColorField({ presets, value, recent, onPick, onCommit, fallback }) {
   const norm = (value || "").toLowerCase();
   const presetSet = new Set(presets.map((c) => c.toLowerCase()));
@@ -332,15 +332,15 @@ export default function Settings() {
 
   return (
     <div className="sub-page settings-page">
-      <h2 className="row-title">Definicoes</h2>
+      <h2 className="row-title">Definições</h2>
 
       {/* ===== Idiomas ===== */}
       <section className="set-section">
-        <h3>Titulos</h3>
-        <p className="muted">Idioma dos nomes de filmes, series e anime.</p>
+        <h3>Títulos</h3>
+        <p className="muted">Idioma dos nomes de filmes, séries e anime.</p>
         <div className="set-row">
           <Choice value="en" current={settings.titleLang} onPick={(v) => update({ titleLang: v })}>
-            Ingles
+            Inglês
           </Choice>
           <Choice value="pt" current={settings.titleLang} onPick={(v) => update({ titleLang: v })}>
             Portugues
@@ -356,7 +356,7 @@ export default function Settings() {
             Portugues
           </Choice>
           <Choice value="en" current={settings.overviewLang} onPick={(v) => update({ overviewLang: v })}>
-            Ingles
+            Inglês
           </Choice>
         </div>
       </section>
@@ -364,7 +364,7 @@ export default function Settings() {
       <section className="set-section">
         <h3>Legendas</h3>
         <p className="muted">
-          Legenda preferida (ativada automaticamente nos players sem anuncios e
+          Legenda preferida (ativada automaticamente nos players sem anúncios e
           de torrents).
         </p>
         <div className="set-row">
@@ -372,7 +372,7 @@ export default function Settings() {
             Portugues
           </Choice>
           <Choice value="en" current={settings.subtitleLang} onPick={(v) => update({ subtitleLang: v })}>
-            Ingles
+            Inglês
           </Choice>
           <Choice value="off" current={settings.subtitleLang} onPick={(v) => update({ subtitleLang: v })}>
             Desligadas
@@ -397,13 +397,13 @@ export default function Settings() {
       </section>
 
       <section className="set-section">
-        <h3>Anime: titulos</h3>
+        <h3>Anime: títulos</h3>
         <p className="muted">
-          Como mostrar os nomes dos animes (catalogo, pesquisa e a tua lista).
+          Como mostrar os nomes dos animes (catálogo, pesquisa e a tua lista).
         </p>
         <div className="set-row">
           <Choice value="en" current={settings.animeTitleLang} onPick={(v) => update({ animeTitleLang: v })}>
-            Ingles
+            Inglês
           </Choice>
           <Choice value="romaji" current={settings.animeTitleLang} onPick={(v) => update({ animeTitleLang: v })}>
             Romaji
@@ -413,13 +413,13 @@ export default function Settings() {
 
       <section className="set-section">
         <h3>Separador inicial</h3>
-        <p className="muted">Onde abrir por defeito ao ver um titulo.</p>
+        <p className="muted">Onde abrir por defeito ao ver um título.</p>
         <div className="set-row">
           <Choice value="providers" current={settings.defaultTab} onPick={(v) => update({ defaultTab: v })}>
             Providers
           </Choice>
           <Choice value="extract" current={settings.defaultTab} onPick={(v) => update({ defaultTab: v })}>
-            Sem anuncios
+            Sem anúncios
           </Choice>
           <Choice value="torrents" current={settings.defaultTab} onPick={(v) => update({ defaultTab: v })}>
             Torrents
@@ -427,11 +427,11 @@ export default function Settings() {
         </div>
       </section>
 
-      {/* ===== Reproducao ===== */}
+      {/* ===== Reprodução ===== */}
       <section className="set-section">
-        <h3>Reproducao</h3>
+        <h3>Reprodução</h3>
         <p className="muted">
-          Autoplay liga/desliga o arranque automatico. Autoskip tenta saltar a
+          Autoplay liga/desliga o arranque automático. Autoskip tenta saltar a
           intro/genericos (funciona nos nossos players; nos providers externos
           depende do site).
         </p>
@@ -457,7 +457,7 @@ export default function Settings() {
       <section className="set-section">
         <h3>Tamanho dos cartazes</h3>
         <p className="muted">
-          Ajusta a largura e a altura dos posters (util em ecras pequenos).
+          Ajusta a largura e a altura dos posters (útil em ecras pequenos).
         </p>
         <div className="set-slider">
           <label>
@@ -499,7 +499,7 @@ export default function Settings() {
       <section className="set-section">
         <h3>Cor de destaque</h3>
         <p className="muted">
-          Cor dos botoes e realces. Predefinidas, as tuas ultimas escolhas, ou o
+          Cor dos botoes e realces. Predefinidas, as tuas últimas escolhas, ou o
           picker.
         </p>
         <ColorField
@@ -516,7 +516,7 @@ export default function Settings() {
       <section className="set-section">
         <h3>Cor de fundo</h3>
         <p className="muted">
-          Fundo da app. Predefinidas (escuras, texto legivel), as tuas ultimas
+          Fundo da app. Predefinidas (escuras, texto legivel), as tuas últimas
           escolhas, ou o picker.
         </p>
         <ColorField
@@ -601,7 +601,7 @@ export default function Settings() {
         )}
       </section>
 
-      {/* ===== App (so na app instalada) ===== */}
+      {/* ===== App (só na app instalada) ===== */}
       {typeof window !== "undefined" && window.electronAPI?.uninstall && (
         <section className="set-section">
           <h3>App</h3>

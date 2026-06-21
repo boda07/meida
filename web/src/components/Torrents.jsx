@@ -57,7 +57,7 @@ export default function Torrents({ type, imdb, season, episode }) {
     return QUALITY_ORDER.filter((q) => set.has(q));
   }, [list]);
 
-  // Aplica filtro de qualidade + ordenacao.
+  // Aplica filtro de qualidade + ordenação.
   const shown = useMemo(() => {
     let arr = list || [];
     if (quality !== "all") arr = arr.filter((t) => t.quality === quality);
@@ -69,7 +69,7 @@ export default function Torrents({ type, imdb, season, episode }) {
   }, [list, quality, sortBy]);
 
   if (!imdb)
-    return <p className="muted">Este titulo nao tem IMDB id — torrents indisponiveis.</p>;
+    return <p className="muted">Este título não tem IMDB id — torrents indisponiveis.</p>;
   if (error) return <p className="auth-error">{error}</p>;
   if (!list) return <p className="muted">A procurar torrents...</p>;
   if (!list.length) return <p className="muted">Nenhum torrent encontrado.</p>;
