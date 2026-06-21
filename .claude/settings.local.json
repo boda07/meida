@@ -89,7 +89,18 @@
       "PowerShell($env:Path += \";C:\\\\Program Files\\\\GitHub CLI\"; gh release edit v0.1.1 --repo boda07/meida --draft=false --latest; \"exit=$LASTEXITCODE\")",
       "PowerShell($env:Path += \";C:\\\\Program Files\\\\GitHub CLI\"; gh auth setup-git 2>&1; \"exit=$LASTEXITCODE\")",
       "Bash(git add *)",
-      "Bash(grep -iE \"\\\\.env$|node_modules|/dist/|release/|server/data\")"
+      "Bash(grep -iE \"\\\\.env$|node_modules|/dist/|release/|server/data\")",
+      "Bash(git -c core.autocrlf=false commit -q -m ' *)",
+      "Bash(git branch *)",
+      "Bash(git remote *)",
+      "PowerShell($env:Path += \";C:\\\\Program Files\\\\GitHub CLI\"; gh release edit v0.1.1 --repo boda07/meida --draft=false --latest; \"exit=$LASTEXITCODE\"; \"=== releases ===\"; gh release list --repo boda07/meida)",
+      "PowerShell($env:Path += \";C:\\\\Program Files\\\\GitHub CLI\"; \"=== Assets da release ===\"; gh release view v0.1.1 --repo boda07/meida --json assets --jq '.assets[].name'; \"=== Ficheiros no repo \\(top\\) ===\"; gh api repos/boda07/meida/contents --jq '.[].name' | Select-Object -First 12)",
+      "Bash(ELECTRON_RUN_AS_NODE=1 ./node_modules/electron/dist/electron.exe -e \"console.log\\(process.versions.node\\)\")",
+      "Bash(ELECTRON_RUN_AS_NODE=1 ./node_modules/electron/dist/electron.exe -e \"try{require\\('node:sqlite'\\);console.log\\('SIM'\\)}catch\\(e\\){console.log\\('NAO -> '+e.message\\)}\")",
+      "Bash(node --check server/src/store.js)",
+      "Bash(node --check server/src/services/auth.js)",
+      "Bash(node --check server/src/routes/library.js)",
+      "Bash(git push *)"
     ],
     "additionalDirectories": [
       "\\tmp"
