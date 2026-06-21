@@ -136,6 +136,7 @@ export const api = {
   libraryItem: (type, tmdb) => get("/api/library/item", { type, tmdb }),
   saveLibrary: (entry) => post("/api/library", entry),
   removeLibrary: (type, tmdb) => del("/api/library/item", { type, tmdb }),
+  clearWatchlist: (type) => del("/api/library/watchlist", { type }),
 
   // MyAnimeList
   malEnabled: () => get("/api/mal/enabled"),
@@ -157,7 +158,7 @@ export const api = {
   letterboxdStatus: () => get("/api/letterboxd/status"),
   letterboxdLink: (username) => post("/api/letterboxd/link", { username }),
   letterboxdUnlink: () => post("/api/letterboxd/unlink", {}),
-  letterboxdImport: () => post("/api/letterboxd/import", {}),
+  letterboxdImport: (what = "all") => post("/api/letterboxd/import", { what }),
 };
 
 // Abre um URL no browser do sistema (Electron) ou numa nova aba (web).

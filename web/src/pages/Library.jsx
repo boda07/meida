@@ -46,16 +46,21 @@ export default function Library() {
   // Generos/temas selecionados. Vazio = sem filtro de tags.
   const [genreSel, setGenreSel] = useState(() => new Set());
   const [genreOpen, setGenreOpen] = useState(false);
+  const [wlOpen, setWlOpen] = useState(false); // modal "limpar watchlist"
+  const [clearing, setClearing] = useState(false);
 
-  // Fecha o modal de generos com a tecla Escape.
+  // Fecha os modais com a tecla Escape.
   useEffect(() => {
-    if (!genreOpen) return;
+    if (!genreOpen && !wlOpen) return;
     const onKey = (e) => {
-      if (e.key === "Escape") setGenreOpen(false);
+      if (e.key === "Escape") {
+        setGenreOpen(false);
+        setWlOpen(false);
+      }
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
-  }, [genreOpen]);
+  }, [genreOpen, wlOpen]);
 
   const toggleGenre = (g) =>
     setGenreSel((prev) => {
@@ -64,17 +69,33 @@ export default function Library() {
       return next;
     });
 
+  function load() {
+    return api
+      .library()
+      .then((d) => setItems(d.items))
+      .catch((e) => setError(e.message));
+  }
+
   useEffect(() => {
     if (!user) {
       setLoading(false);
       return;
     }
-    api
-      .library()
-      .then((d) => setItems(d.items))
-      .catch((e) => setError(e.message))
-      .finally(() => setLoading(false));
+    load().finally(() => setLoading(false));
   }, [user]);
+
+  async function clearWatchlist(type) {
+    setClearing(true);
+    try {
+      await api.clearWatchlist(type);
+      await load();
+      setWlOpen(false);
+    } catch {
+      /* ignora */
+    } finally {
+      setClearing(false);
+    }
+  }
 
   // Generos/temas disponiveis na lista (ordenados), para o dropdown.
   const allGenres = useMemo(() => {
@@ -184,9 +205,47 @@ export default function Library() {
               </button>
             </>
           )}
+          <span className="lib-filters-sep" />
+          <button className="tf-chip lib-wl-clear" onClick={() => setWlOpen(true)}>
+            Limpar watchlist
+          </button>
         </div>
         </div>
       </div>
+
+      {wlOpen && (
+        <div className="modal-overlay" onClick={() => setWlOpen(false)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-head">
+              <h3>Limpar watchlist</h3>
+              <button className="modal-close" aria-label="Fechar" onClick={() => setWlOpen(false)}>
+                ✕
+              </button>
+            </div>
+            <p className="muted" style={{ padding: "0 20px" }}>
+              Remove os titulos da watchlist (os que ja viste ou avaliaste ficam,
+              so perdem a marca de watchlist). Que watchlist queres apagar?
+            </p>
+            <div className="wl-clear-opts">
+              {[
+                { id: "movie", label: "Filmes" },
+                { id: "tv", label: "Series" },
+                { id: "anime", label: "Anime" },
+                { id: "all", label: "Todos" },
+              ].map((o) => (
+                <button
+                  key={o.id}
+                  className={`modal-btn ${o.id === "all" ? "" : "ghost"}`}
+                  disabled={clearing}
+                  onClick={() => clearWatchlist(o.id)}
+                >
+                  {o.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {genreOpen && (
         <div className="modal-overlay" onClick={() => setGenreOpen(false)}>

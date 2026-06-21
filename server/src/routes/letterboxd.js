@@ -38,10 +38,15 @@ letterboxdRouter.post("/letterboxd/import", async (req, res, next) => {
     const lb = getLetterboxd(req.user.id);
     if (!lb?.username) return res.status(400).json({ error: "Liga primeiro a tua conta Letterboxd." });
 
+    // what: "films" (so vistos) | "watchlist" (so watchlist) | "all" (ambos).
+    const what = req.body?.what || "all";
+    const doFilms = what === "all" || what === "films";
+    const doWatch = what === "all" || what === "watchlist";
+
     // Filmes vistos = lista completa (/films/, com nota); watchlist = paginas.
     const [films, watchlist] = await Promise.all([
-      importFilms(lb.username),
-      importWatchlist(lb.username),
+      doFilms ? importFilms(lb.username) : Promise.resolve([]),
+      doWatch ? importWatchlist(lb.username) : Promise.resolve([]),
     ]);
 
     const watchedIds = new Set();

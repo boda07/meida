@@ -1166,6 +1166,29 @@ h2 {
   font-weight: 600;
 }
 
+/* Botao destrutivo "limpar watchlist" na barra de filtros. */
+.lib-wl-clear {
+  border-color: rgba(255, 90, 90, 0.5);
+  color: #ff8a8a;
+}
+
+.lib-wl-clear:hover {
+  background: rgba(255, 90, 90, 0.15);
+}
+
+/* Opcoes do modal "limpar watchlist" (por tipo). */
+.wl-clear-opts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 16px 20px 4px;
+}
+
+.wl-clear-opts .modal-btn {
+  flex: 1 1 auto;
+  min-width: 90px;
+}
+
 /* Modal de filtro de generos/temas na minha lista */
 .modal-overlay {
   position: fixed;

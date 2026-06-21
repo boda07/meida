@@ -141,14 +141,14 @@ function LetterboxdSection({ user }) {
     }
   }
 
-  async function importList() {
+  async function importList(what) {
     setBusy(true);
     setMsg(null);
     try {
-      const d = await api.letterboxdImport();
-      setMsg(
-        `Importados ${d.imported} vistos + ${d.watchlist} da watchlist.`
-      );
+      const d = await api.letterboxdImport(what);
+      if (what === "films") setMsg(`Importados ${d.imported} filmes vistos.`);
+      else if (what === "watchlist") setMsg(`Importados ${d.watchlist} da watchlist.`);
+      else setMsg(`Importados ${d.imported} vistos + ${d.watchlist} da watchlist.`);
     } catch (e) {
       setMsg(e.message);
     } finally {
@@ -179,17 +179,25 @@ function LetterboxdSection({ user }) {
             (na tua lista) passa a vir do Letterboxd.
           </p>
           <div className="set-row">
-            <button className="set-choice active" onClick={importList} disabled={busy}>
-              {busy ? "A importar..." : "Importar do Letterboxd"}
+            <button className="set-choice active" onClick={() => importList("films")} disabled={busy}>
+              {busy ? "A importar..." : "Importar vistos"}
             </button>
+            <button className="set-choice active" onClick={() => importList("watchlist")} disabled={busy}>
+              {busy ? "A importar..." : "Importar watchlist"}
+            </button>
+            <button className="set-choice" onClick={() => importList("all")} disabled={busy}>
+              {busy ? "A importar..." : "Importar tudo"}
+            </button>
+          </div>
+          <div className="set-row" style={{ marginTop: 8 }}>
             <button className="set-clear" onClick={unlink}>
               Desligar conta
             </button>
           </div>
           <p className="muted" style={{ fontSize: 12, marginTop: 8 }}>
-            Importa a tua conta toda: todos os filmes vistos (com as tuas notas) e
-            a watchlist completa. Em listas grandes pode demorar alguns segundos.
-            Em cada filme tens um botao para o abrir no Letterboxd.
+            Importa todos os filmes vistos (com as tuas notas) e/ou a watchlist
+            completa. Em listas grandes pode demorar alguns segundos. Em cada
+            filme tens um botao para o abrir no Letterboxd.
           </p>
         </>
       ) : (

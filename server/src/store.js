@@ -158,6 +158,24 @@ export function deleteLibrary(userId, tmdbId, type) {
   save();
 }
 
+// Limpa a watchlist (flag) por tipo ("movie"|"tv"|"anime"|"all"). Itens que
+// fiquem sem nada (sem visto/nota) sao removidos; os vistos/avaliados ficam.
+export function clearWatchlist(userId, type) {
+  let cleared = 0;
+  for (const r of data.library) {
+    if (r.user_id !== userId) continue;
+    if (type !== "all" && r.media_type !== type) continue;
+    if (!r.watchlist) continue;
+    r.watchlist = 0;
+    cleared++;
+  }
+  data.library = data.library.filter(
+    (r) => !(r.user_id === userId && !r.watched && !r.watchlist && r.score == null)
+  );
+  save();
+  return cleared;
+}
+
 /* ===== Progresso / Diario =====
    Uma linha por titulo (movie/tv/anime). Guarda quando comecou e quando acabou
    de ver, e a posicao atual (temporada/episodio) para o "Continua a ver". */

@@ -4,6 +4,7 @@ import {
   getLibraryItem,
   upsertLibrary,
   setLibraryRating,
+  clearWatchlist,
   deleteLibrary,
 } from "../store.js";
 import { requireAuth } from "../services/auth.js";
@@ -108,6 +109,16 @@ libraryRouter.post("/library", (req, res) => {
     score: score !== undefined ? score : existing?.score ?? null,
   });
   res.json({ item: normalizeRow(getLibraryItem(req.user.id, Number(tmdbId), type)) });
+});
+
+// Limpa a watchlist por tipo (movie|tv|anime|all).
+libraryRouter.delete("/library/watchlist", (req, res) => {
+  const type = req.query.type || "all";
+  if (!["movie", "tv", "anime", "all"].includes(type)) {
+    return res.status(400).json({ error: "type invalido" });
+  }
+  const cleared = clearWatchlist(req.user.id, type);
+  res.json({ ok: true, cleared });
 });
 
 // Remove um titulo da biblioteca.
