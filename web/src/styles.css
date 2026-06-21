@@ -805,9 +805,10 @@ h2 {
 }
 
 .details-poster {
-  width: 220px;
-  aspect-ratio: 2 / 3;
+  width: 300px;
+  height: 450px;
   object-fit: cover;
+  object-position: center;
   border-radius: var(--radius-card);
   flex: 0 0 auto;
 }
@@ -1121,7 +1122,21 @@ h2 {
 
 .lib-filters {
   display: flex;
+  flex-wrap: wrap;
+  align-items: center;
   gap: 6px;
+}
+
+.lib-filters-sep {
+  width: 1px;
+  align-self: stretch;
+  margin: 2px 6px;
+  background: rgba(255, 255, 255, 0.14);
+}
+
+/* Na pesquisa, espaco antes dos grupos de resultados. */
+.sub-page > .lib-filters {
+  margin-bottom: 4px;
 }
 
 .tf-chip {

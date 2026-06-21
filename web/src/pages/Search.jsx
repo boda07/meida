@@ -4,6 +4,13 @@ import { api } from "../api/client.js";
 import { useSettings } from "../settings/SettingsContext.jsx";
 import MediaCard from "../components/MediaCard.jsx";
 
+const TYPE_FILTERS = [
+  { id: "all", label: "Tudo" },
+  { id: "movie", label: "Filmes" },
+  { id: "tv", label: "Series" },
+  { id: "anime", label: "Anime" },
+];
+
 export default function Search() {
   const [params] = useSearchParams();
   const { settings } = useSettings();
@@ -11,6 +18,7 @@ export default function Search() {
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [typeFilter, setTypeFilter] = useState("all");
 
   useEffect(() => {
     if (!q) {
@@ -41,12 +49,24 @@ export default function Search() {
     { type: "tv", label: "Series" },
     { type: "anime", label: "Anime" },
   ]
+    .filter((g) => typeFilter === "all" || typeFilter === g.type)
     .map((g) => ({ ...g, items: results.filter((r) => r.type === g.type) }))
     .filter((g) => g.items.length);
 
   return (
     <div className="sub-page">
       <h2 className="row-title">Resultados para "{q}"</h2>
+      <div className="lib-filters">
+        {TYPE_FILTERS.map((f) => (
+          <button
+            key={f.id}
+            className={`tf-chip ${typeFilter === f.id ? "active" : ""}`}
+            onClick={() => setTypeFilter(f.id)}
+          >
+            {f.label}
+          </button>
+        ))}
+      </div>
       {groups.map((g) => (
         <section className="search-group" key={g.type}>
           <h3 className="search-group-title">

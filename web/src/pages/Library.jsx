@@ -9,12 +9,20 @@ const FILTERS = [
   { id: "watched", label: "Vistos" },
 ];
 
+const TYPE_FILTERS = [
+  { id: "all", label: "Todos" },
+  { id: "movie", label: "Filmes" },
+  { id: "tv", label: "Series" },
+  { id: "anime", label: "Anime" },
+];
+
 export default function Library() {
   const { user, ready } = useAuth();
   const [items, setItems] = useState([]);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all");
+  const [typeFilter, setTypeFilter] = useState("all");
 
   useEffect(() => {
     if (!user) {
@@ -29,10 +37,12 @@ export default function Library() {
   }, [user]);
 
   const shown = useMemo(() => {
-    if (filter === "watchlist") return items.filter((i) => i.watchlist);
-    if (filter === "watched") return items.filter((i) => i.watched);
-    return items;
-  }, [items, filter]);
+    let arr = items;
+    if (filter === "watchlist") arr = arr.filter((i) => i.watchlist);
+    else if (filter === "watched") arr = arr.filter((i) => i.watched);
+    if (typeFilter !== "all") arr = arr.filter((i) => i.type === typeFilter);
+    return arr;
+  }, [items, filter, typeFilter]);
 
   if (ready && !user)
     return (
@@ -53,6 +63,16 @@ export default function Library() {
               key={f.id}
               className={`tf-chip ${filter === f.id ? "active" : ""}`}
               onClick={() => setFilter(f.id)}
+            >
+              {f.label}
+            </button>
+          ))}
+          <span className="lib-filters-sep" />
+          {TYPE_FILTERS.map((f) => (
+            <button
+              key={f.id}
+              className={`tf-chip ${typeFilter === f.id ? "active" : ""}`}
+              onClick={() => setTypeFilter(f.id)}
             >
               {f.label}
             </button>
