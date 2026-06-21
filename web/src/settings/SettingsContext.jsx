@@ -28,6 +28,19 @@ export function SettingsProvider({ children }) {
     root.style.setProperty("--accent-hover", shade(accent, 0.18));
   }, [settings.accent]);
 
+  // Aplica o tamanho dos cartazes (largura nas rows + minimo nas grelhas).
+  useEffect(() => {
+    const root = document.documentElement;
+    const sizes = {
+      small: { cardW: "140px", gridMin: "120px" },
+      medium: { cardW: "184px", gridMin: "170px" },
+      large: { cardW: "220px", gridMin: "210px" },
+    };
+    const s = sizes[settings.cardSize] || sizes.medium;
+    root.style.setProperty("--card-w", s.cardW);
+    root.style.setProperty("--grid-min", s.gridMin);
+  }, [settings.cardSize]);
+
   function update(patch) {
     setSettings((prev) => {
       const next = { ...prev, ...patch };

@@ -9,6 +9,8 @@
   --text-secondary: rgba(255, 255, 255, 0.6);
   --text-eyebrow: rgba(255, 255, 255, 0.72);
   --text-muted: rgba(255, 255, 255, 0.82);
+  --card-w: 184px; /* largura dos cartazes (rows) — ajustavel nas Definicoes */
+  --grid-min: 170px; /* largura minima dos cartazes nas grelhas */
   --radius-pill: 999px;
   --radius-card: 11px;
   --radius-modal: 18px;
@@ -645,8 +647,8 @@ h2 {
 }
 
 .card-portrait {
-  width: 184px;
-  height: 272px;
+  width: var(--card-w, 184px);
+  aspect-ratio: 184 / 272;
 }
 
 .card-landscape {
@@ -732,7 +734,7 @@ h2 {
 /* ===== Grid (pesquisa/lista) ===== */
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(var(--grid-min, 170px), 1fr));
   gap: 26px 18px;
   margin-top: 40px;
 }

@@ -233,6 +233,25 @@ export default function Settings() {
         </div>
       </section>
 
+      {/* ===== Tamanho dos cartazes ===== */}
+      <section className="set-section">
+        <h3>Tamanho dos cartazes</h3>
+        <p className="muted">
+          Ajusta o tamanho dos posters (util em ecras pequenos/portateis).
+        </p>
+        <div className="set-row">
+          <Choice value="small" current={settings.cardSize} onPick={(v) => update({ cardSize: v })}>
+            Pequeno
+          </Choice>
+          <Choice value="medium" current={settings.cardSize} onPick={(v) => update({ cardSize: v })}>
+            Medio
+          </Choice>
+          <Choice value="large" current={settings.cardSize} onPick={(v) => update({ cardSize: v })}>
+            Grande
+          </Choice>
+        </div>
+      </section>
+
       {/* ===== Cor da UI ===== */}
       <section className="set-section">
         <h3>Cor de destaque</h3>
