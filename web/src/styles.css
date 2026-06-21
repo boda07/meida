@@ -518,6 +518,73 @@ h2 {
   background: rgba(255, 255, 255, 0.04);
 }
 
+.diary-main {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.diary-actions {
+  display: flex;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+
+.diary-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: transparent;
+  color: var(--text);
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.diary-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.diary-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 4px 20px;
+}
+
+.diary-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary, rgba(255, 255, 255, 0.7));
+}
+
+.diary-form input,
+.diary-form select {
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: var(--bg, #0e0e10);
+  border: 1px solid #333;
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.diary-form-row {
+  display: flex;
+  gap: 12px;
+}
+
+.diary-form-row label {
+  flex: 1;
+}
+
 .diary-poster {
   flex: 0 0 auto;
   width: 56px;

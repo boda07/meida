@@ -187,10 +187,9 @@ function LetterboxdSection({ user }) {
             </button>
           </div>
           <p className="muted" style={{ fontSize: 12, marginTop: 8 }}>
-            Importa a watchlist completa e os filmes vistos recentemente (o
-            Letterboxd so expoe os ~50 vistos mais recentes — volta a importar de
-            vez em quando para apanhar o resto). Em cada filme tens um botao para
-            o abrir no Letterboxd.
+            Importa a tua conta toda: todos os filmes vistos (com as tuas notas) e
+            a watchlist completa. Em listas grandes pode demorar alguns segundos.
+            Em cada filme tens um botao para o abrir no Letterboxd.
           </p>
         </>
       ) : (

@@ -5,6 +5,7 @@ import {
   getProgress,
   startProgress,
   finishProgress,
+  updateProgress,
   deleteProgress,
 } from "../store.js";
 
@@ -58,6 +59,15 @@ progressRouter.post("/progress/finish", (req, res) => {
       nextEpisode: nextEpisode ?? null,
     }),
   });
+});
+
+// Edicao manual de uma entrada do diario.
+progressRouter.patch("/progress/item", (req, res) => {
+  const { type, tmdbId } = req.body || {};
+  if (!type || !tmdbId) return res.status(400).json({ error: "faltam type e tmdbId" });
+  const item = updateProgress(req.user.id, type, Number(tmdbId), req.body);
+  if (!item) return res.status(404).json({ error: "entrada nao encontrada" });
+  res.json({ item });
 });
 
 // Remover do "continua a ver" / diario.

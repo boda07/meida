@@ -240,6 +240,22 @@ export function finishProgress(e) {
   return toApiProgress(r);
 }
 
+// Edicao manual de uma entrada do diario (estado, datas, posicao).
+export function updateProgress(userId, type, tmdbId, patch) {
+  const r = data.progress.find(
+    (x) => x.user_id === userId && x.type === type && x.tmdb_id === tmdbId
+  );
+  if (!r) return null;
+  if (patch.status !== undefined) r.status = patch.status;
+  if (patch.startedAt !== undefined) r.started_at = patch.startedAt;
+  if (patch.finishedAt !== undefined) r.finished_at = patch.finishedAt;
+  if (patch.season !== undefined) r.season = patch.season;
+  if (patch.episode !== undefined) r.episode = patch.episode;
+  r.updated_at = new Date().toISOString();
+  save();
+  return toApiProgress(r);
+}
+
 export function deleteProgress(userId, type, tmdbId) {
   data.progress = data.progress.filter(
     (x) => !(x.user_id === userId && x.type === type && x.tmdb_id === tmdbId)

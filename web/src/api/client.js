@@ -150,6 +150,7 @@ export const api = {
   progressItem: (type, tmdb) => get("/api/progress/item", { type, tmdb }),
   progressStart: (entry) => post("/api/progress/start", entry),
   progressFinish: (entry) => post("/api/progress/finish", entry),
+  progressUpdate: (patch) => patch_("/api/progress/item", patch),
   progressRemove: (type, tmdb) => del("/api/progress/item", { type, tmdb }),
 
   // Letterboxd (filmes)

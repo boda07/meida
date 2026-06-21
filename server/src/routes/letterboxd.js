@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { requireAuth } from "../services/auth.js";
 import { upsertLibrary, getLibraryItem, setLetterboxd, getLetterboxd } from "../store.js";
-import { importDiary, importWatchlist } from "../services/letterboxd.js";
+import { importDiary, importFilms, importWatchlist } from "../services/letterboxd.js";
 
 export const letterboxdRouter = Router();
 letterboxdRouter.use(requireAuth);
@@ -38,13 +38,14 @@ letterboxdRouter.post("/letterboxd/import", async (req, res, next) => {
     const lb = getLetterboxd(req.user.id);
     if (!lb?.username) return res.status(400).json({ error: "Liga primeiro a tua conta Letterboxd." });
 
-    const [diary, watchlist] = await Promise.all([
-      importDiary(lb.username),
+    // Filmes vistos = lista completa (/films/, com nota); watchlist = paginas.
+    const [films, watchlist] = await Promise.all([
+      importFilms(lb.username),
       importWatchlist(lb.username),
     ]);
 
     const watchedIds = new Set();
-    for (const f of diary) {
+    for (const f of films) {
       watchedIds.add(f.tmdbId);
       upsertLibrary({
         userId: req.user.id,
@@ -76,7 +77,7 @@ letterboxdRouter.post("/letterboxd/import", async (req, res, next) => {
       wl++;
     }
 
-    res.json({ imported: diary.length, watchlist: wl });
+    res.json({ imported: films.length, watchlist: wl });
   } catch (err) {
     next(err);
   }

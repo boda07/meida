@@ -55,6 +55,71 @@ export async function importDiary(username) {
   return items.filter((i) => (seen.has(i.tmdbId) ? false : seen.add(i.tmdbId)));
 }
 
+function decodeEntities(s) {
+  return String(s)
+    .replace(/&amp;/g, "&")
+    .replace(/&#0?39;/g, "'")
+    .replace(/&#x27;/gi, "'")
+    .replace(/&quot;/g, '"')
+    .replace(/&hellip;/g, "...");
+}
+
+// Importa TODOS os filmes vistos do utilizador (paginas /films/), com a nota
+// pessoal (estrelas -> 0-10). Resolve cada filme para um id do TMDB pela
+// pesquisa do TMDB. Substitui o RSS, que so dava os ~50 mais recentes.
+export async function importFilms(username, maxPages = 60) {
+  const user = String(username || "").trim().toLowerCase().replace(/[^a-z0-9_]/g, "");
+  if (!user) throw httpError(400, "Nome de utilizador do Letterboxd invalido.");
+
+  const films = [];
+  const seenName = new Set();
+  for (let page = 1; page <= maxPages; page++) {
+    const url =
+      page === 1
+        ? `https://letterboxd.com/${user}/films/`
+        : `https://letterboxd.com/${user}/films/page/${page}/`;
+    const res = await fetch(url, { headers: { "user-agent": UA, accept: "text/html" } });
+    if (!res.ok) break;
+    const html = await res.text();
+    let added = 0;
+    // Cada <li> tem data-item-name="Titulo (Ano)" e, se avaliado, "rated-N" (N=0-10).
+    for (const li of html.split("</li>")) {
+      const raw = (li.match(/data-item-name="([^"]+)"/) || [])[1];
+      if (!raw) continue;
+      const name = decodeEntities(raw);
+      if (seenName.has(name)) continue;
+      seenName.add(name);
+      const m = name.match(/^(.*?)\s*\((\d{4})\)\s*$/);
+      const rated = (li.match(/rated-(\d+)/) || [])[1];
+      films.push({
+        title: m ? m[1] : name,
+        year: m ? m[2] : "",
+        rating: rated ? Number(rated) : null,
+      });
+      added++;
+    }
+    if (!added) break;
+    if (!new RegExp(`/${user}/films/page/${page + 1}/`).test(html)) break; // sem proxima
+    await sleep(200);
+  }
+
+  const out = [];
+  const seen = new Set();
+  let i = 0;
+  async function worker() {
+    while (i < films.length) {
+      const f = films[i++];
+      const hit = await findMovieByTitle(f.title, f.year);
+      if (hit?.tmdbId && !seen.has(hit.tmdbId)) {
+        seen.add(hit.tmdbId);
+        out.push({ ...hit, rating: f.rating });
+      }
+    }
+  }
+  await Promise.all(Array.from({ length: 8 }, worker));
+  return out;
+}
+
 // Importa a watchlist publica do utilizador. Sem RSS, por isso le as paginas
 // HTML (titulo + ano de cada filme) e resolve o id do TMDB pela pesquisa do
 // proprio TMDB (mais rapido e fiavel do que abrir cada pagina do Letterboxd).
