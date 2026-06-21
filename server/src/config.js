@@ -24,6 +24,14 @@ export const config = {
       process.env.MAL_REDIRECT_URI?.trim() ||
       "http://localhost:5175/api/mal/callback",
   },
+  // Letterboxd (filmes). A leitura (importar diario + nota da comunidade) usa
+  // recursos publicos e nao precisa de chaves. A ESCRITA (marcar visto no
+  // Letterboxd) precisa da API oficial, que e fechada e requer aprovacao:
+  // pede acesso em https://letterboxd.com/api-beta/ e poe as chaves aqui.
+  letterboxd: {
+    apiKey: process.env.LETTERBOXD_API_KEY?.trim() || "",
+    apiSecret: process.env.LETTERBOXD_API_SECRET?.trim() || "",
+  },
   tmdb: {
     apiKey: process.env.TMDB_API_KEY?.trim() || "",
     accessToken: process.env.TMDB_ACCESS_TOKEN?.trim() || "",

@@ -124,9 +124,8 @@ export default function Header() {
             <StarIcon />
             <span>Anime</span>
           </NavLink>
-          <NavLink to="/pick" title="Escolhe algo para mim">
+          <NavLink to="/pick" title="Escolhe algo para mim" className="nav-dice">
             <DiceIcon />
-            <span>Para mim</span>
           </NavLink>
         </nav>
       </div>

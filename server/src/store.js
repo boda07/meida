@@ -71,6 +71,20 @@ export function getMalTokens(id) {
   return u?.mal || null;
 }
 
+/* ===== Letterboxd (por utilizador) ===== */
+export function setLetterboxd(id, lb) {
+  const u = data.users.find((x) => x.id === id);
+  if (u) {
+    u.letterboxd = lb; // { username } ou null
+    save();
+  }
+}
+
+export function getLetterboxd(id) {
+  const u = data.users.find((x) => x.id === id);
+  return u?.letterboxd || null;
+}
+
 /* ===== Biblioteca ===== */
 function toApi(r) {
   return {
@@ -83,7 +97,8 @@ function toApi(r) {
     poster: r.poster,
     watched: r.watched,
     watchlist: r.watchlist,
-    score: r.score,
+    score: r.score, // nota pessoal (1-10)
+    rating: r.rating ?? null, // media da comunidade (MAL/TMDB)
     updatedAt: r.updated_at,
   };
 }
@@ -115,12 +130,25 @@ export function upsertLibrary(entry) {
   if (entry.titleEn !== undefined) r.title_en = entry.titleEn;
   if (entry.titleRomaji !== undefined) r.title_romaji = entry.titleRomaji;
   if (entry.genres !== undefined) r.genres = entry.genres;
+  if (entry.rating !== undefined) r.rating = entry.rating;
   r.poster = entry.poster;
   r.watched = entry.watched;
   r.watchlist = entry.watchlist;
   r.score = entry.score;
   r.updated_at = new Date().toISOString();
   save();
+}
+
+// Atualiza so a media da comunidade, sem mexer no updated_at (preserva a ordem
+// "adicionados recentemente"). Usado no backfill de itens antigos.
+export function setLibraryRating(userId, tmdbId, type, rating) {
+  const r = data.library.find(
+    (x) => x.user_id === userId && x.tmdb_id === tmdbId && x.media_type === type
+  );
+  if (r) {
+    r.rating = rating;
+    save();
+  }
 }
 
 export function deleteLibrary(userId, tmdbId, type) {

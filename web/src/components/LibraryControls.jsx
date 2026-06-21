@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { api } from "../api/client.js";
+import { api, openExternal } from "../api/client.js";
 import { useAuth } from "../auth/AuthContext.jsx";
 
 // Controlos de biblioteca para a pagina de detalhe: marcar como visto e nota 1-10.
@@ -35,6 +35,7 @@ export default function LibraryControls({ details }) {
         title: details.title,
         poster: details.poster,
         genres: details.genres || [],
+        rating: details.rating ?? null,
         ...patch,
       });
       setEntry(d.item);
@@ -79,6 +80,16 @@ export default function LibraryControls({ details }) {
           ))}
         </select>
       </label>
+
+      {details.type === "movie" && (
+        <button
+          className="lib-letterboxd"
+          onClick={() => openExternal(`https://letterboxd.com/tmdb/${details.id}/`)}
+          title="Abrir no Letterboxd"
+        >
+          Letterboxd
+        </button>
+      )}
 
       {error && <span className="auth-error">{error}</span>}
     </div>

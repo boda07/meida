@@ -112,6 +112,7 @@ export const api = {
   health: () => get("/api/health"),
   catalog: () => get("/api/catalog", langParams()),
   category: (c) => get(`/api/catalog/${c}`, langParams()),
+  discover: (opts) => get("/api/discover", { ...opts, ...langParams() }),
   search: (q) => get("/api/search", { q, ...langParams() }),
   details: (type, id) => get("/api/details", { type, id, ...langParams() }),
   season: (id, season) => get("/api/season", { id, season, ...langParams() }),
@@ -143,6 +144,12 @@ export const api = {
   malImport: () => post("/api/mal/import", {}),
   malUnlink: () => post("/api/mal/unlink", {}),
   malScrobble: (malId, episode) => post("/api/mal/scrobble", { malId, episode }),
+
+  // Letterboxd (filmes)
+  letterboxdStatus: () => get("/api/letterboxd/status"),
+  letterboxdLink: (username) => post("/api/letterboxd/link", { username }),
+  letterboxdUnlink: () => post("/api/letterboxd/unlink", {}),
+  letterboxdImport: () => post("/api/letterboxd/import", {}),
 };
 
 // Abre um URL no browser do sistema (Electron) ou numa nova aba (web).

@@ -118,6 +118,26 @@ export async function getAnimeList(userId) {
   return out;
 }
 
+// Mapa malId -> media da comunidade (mean) da lista do utilizador. Pagina a
+// lista toda (1000/pagina) num minimo de pedidos. Usado no backfill de notas.
+export async function getMeanScores(userId) {
+  const token = await getValidToken(userId);
+  const out = new Map();
+  let url = "/users/@me/animelist?fields=mean&limit=1000&nsfw=true";
+  for (let i = 0; i < 10; i++) {
+    const data = await apiGet(url, token);
+    for (const it of data.data || []) {
+      const id = it.node?.id;
+      const mean = it.node?.mean;
+      if (id && mean != null) out.set(Number(id), Math.round(mean * 10) / 10);
+    }
+    const next = data.paging?.next;
+    if (!next) break;
+    url = next.replace(API, "");
+  }
+  return out;
+}
+
 // Marca/atualiza o progresso de um anime no MAL.
 export async function updateEpisode(userId, animeId, episode) {
   const token = await getValidToken(userId);

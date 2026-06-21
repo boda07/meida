@@ -7,13 +7,16 @@ import {
   getSeason,
   getGenres,
   pickRandom,
+  discover,
 } from "../services/tmdb.js";
 import {
   getAnimeCatalog,
   getAnimeDetails,
+  getAnimeMovies,
   searchAnime,
   getAnimeGenres,
   pickAnime,
+  discoverAnime,
 } from "../services/jikan.js";
 
 export const catalogRouter = Router();
@@ -41,7 +44,35 @@ catalogRouter.get("/catalog/:category", async (req, res, next) => {
     if (req.params.category === "anime") {
       return res.json({ rows: await getAnimeCatalog(langOpts(req)) });
     }
-    res.json({ rows: await getCategory(req.params.category, langOpts(req)) });
+    const rows = await getCategory(req.params.category, langOpts(req));
+    // Nos Filmes, junta tambem filmes de anime (vindos do MAL).
+    if (req.params.category === "movies") {
+      const animeMovies = await getAnimeMovies(langOpts(req));
+      if (animeMovies.length) {
+        rows.push({ id: "m-anime", title: "Filmes de anime", items: animeMovies });
+      }
+    }
+    res.json({ rows });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Grelha filtravel/ordenavel por tipo (Filmes/Series/Anime), com paginacao.
+catalogRouter.get("/discover", async (req, res, next) => {
+  try {
+    const { type } = req.query;
+    const genres = String(req.query.genres || "").split(",").filter(Boolean);
+    const sort = req.query.sort || "popularity";
+    const dir = req.query.dir === "asc" ? "asc" : "desc";
+    const page = Math.max(1, Number(req.query.page) || 1);
+    if (type === "anime") {
+      return res.json(await discoverAnime({ genres, sort, dir, page }, langOpts(req)));
+    }
+    if (type === "movie" || type === "tv") {
+      return res.json(await discover({ type, genres, sort, dir, page }, langOpts(req)));
+    }
+    res.status(400).json({ error: "type tem de ser movie, tv ou anime" });
   } catch (err) {
     next(err);
   }

@@ -97,6 +97,55 @@ export async function getAnimeCatalog(opts = {}) {
   return rows;
 }
 
+// Filmes de anime (MAL), para mostrar tambem na pagina de Filmes.
+// Cache em memoria, chaveada por idioma do titulo.
+const animeMoviesCache = {}; // { [key]: { at, items } }
+export async function getAnimeMovies(opts = {}) {
+  const romaji = isRomaji(opts);
+  const key = romaji ? "romaji" : "en";
+  const cached = animeMoviesCache[key];
+  if (cached && Date.now() - cached.at < CATALOG_TTL) return cached.items;
+  try {
+    const items = dedupe(
+      clean(await jikanFetch(`/top/anime?type=movie&limit=24`), romaji)
+    );
+    if (items.length) animeMoviesCache[key] = { at: Date.now(), items };
+    return items;
+  } catch {
+    return [];
+  }
+}
+
+// Grelha filtravel/ordenavel de anime (pagina de Anime). Usa /anime do Jikan.
+// sort: "popularity" | "rating" | "recent"; dir: "asc" | "desc".
+export async function discoverAnime(
+  { genres = [], sort = "popularity", dir = "desc", page = 1 },
+  opts = {}
+) {
+  const romaji = isRomaji(opts);
+  // "members" desc = mais popular (intuitivo); "popularity" do Jikan e um rank invertido.
+  const order =
+    { popularity: "members", rating: "score", recent: "start_date" }[sort] || "members";
+  const params = new URLSearchParams({
+    page: String(Math.max(1, Number(page) || 1)),
+    limit: "24",
+    sfw: "true",
+    order_by: order,
+    sort: dir === "asc" ? "asc" : "desc",
+  });
+  if (genres.length) params.set("genres", genres.join(","));
+  try {
+    const d = await jikanFetch(`/anime?${params}`);
+    return {
+      items: dedupe(clean(d, romaji)),
+      page: d?.pagination?.current_page || Number(page) || 1,
+      hasMore: Boolean(d?.pagination?.has_next_page),
+    };
+  } catch {
+    return { items: [], page: Number(page) || 1, hasMore: false };
+  }
+}
+
 // Lista de generos + temas de anime (Jikan), para o "Escolhe algo para mim".
 // Junta generos (ex.: Slice of Life) e temas (ex.: Gore), que partilham o mesmo
 // espaco de ids no filtro do Jikan.
@@ -138,6 +187,34 @@ export async function pickAnime({ genres = [], exclude = [] }, opts = {}) {
   const list = items.map((a) => normalizeAnime(a, romaji)).filter(Boolean);
   if (!list.length) return null;
   return list[Math.floor(Math.random() * list.length)];
+}
+
+// Media da comunidade para varios anime de uma vez, via AniList (filtra por
+// idMal_in, 50 por pedido). Devolve Map(malId -> nota 0-10). Best-effort.
+// Usado como fallback do backfill quando a conta MAL nao esta ligada.
+export async function getAnimeRatingsBatch(malIds) {
+  const out = new Map();
+  const ids = [...new Set(malIds.map(Number).filter(Boolean))];
+  const query = `query($ids:[Int]){Page(perPage:50){media(idMal_in:$ids,type:ANIME){idMal averageScore meanScore}}}`;
+  for (let i = 0; i < ids.length; i += 50) {
+    const chunk = ids.slice(i, i + 50);
+    try {
+      const res = await fetch("https://graphql.anilist.co", {
+        method: "POST",
+        headers: { "content-type": "application/json", accept: "application/json" },
+        body: JSON.stringify({ query, variables: { ids: chunk } }),
+      });
+      const j = await res.json();
+      for (const m of j?.data?.Page?.media || []) {
+        const s = m.averageScore ?? m.meanScore;
+        if (m.idMal && s != null) out.set(Number(m.idMal), Math.round(s) / 10);
+      }
+    } catch {
+      /* ignora este lote; fica para a proxima carga */
+    }
+    await sleep(700); // respeita o rate limit do AniList
+  }
+  return out;
 }
 
 // Converte um id do MyAnimeList no id do AniList (alguns providers de anime

@@ -108,6 +108,121 @@ function MalSection({ user }) {
   );
 }
 
+// Seccao de ligacao ao Letterboxd (filmes).
+function LetterboxdSection({ user }) {
+  const [username, setUsername] = useState(null);
+  const [input, setInput] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState(null);
+
+  function refresh() {
+    api
+      .letterboxdStatus()
+      .then((d) => setUsername(d.username))
+      .catch(() => {});
+  }
+
+  useEffect(() => {
+    if (user) refresh();
+  }, [user]);
+
+  async function link() {
+    setBusy(true);
+    setMsg(null);
+    try {
+      const d = await api.letterboxdLink(input.trim());
+      setUsername(d.username);
+      setInput("");
+      setMsg("Conta ligada. Carrega em Importar para trazer os teus filmes.");
+    } catch (e) {
+      setMsg(e.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function importList() {
+    setBusy(true);
+    setMsg(null);
+    try {
+      const d = await api.letterboxdImport();
+      setMsg(
+        `Importados ${d.imported} vistos + ${d.watchlist} da watchlist.`
+      );
+    } catch (e) {
+      setMsg(e.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function unlink() {
+    await api.letterboxdUnlink().catch(() => {});
+    setUsername(null);
+    setMsg(null);
+  }
+
+  if (!user) {
+    return (
+      <p className="muted">
+        <Link to="/login">Entra</Link> para ligares o Letterboxd.
+      </p>
+    );
+  }
+
+  return (
+    <div>
+      {username ? (
+        <>
+          <p className="muted">
+            Ligado como <b>{username}</b>. A nota da comunidade dos teus filmes
+            (na tua lista) passa a vir do Letterboxd.
+          </p>
+          <div className="set-row">
+            <button className="set-choice active" onClick={importList} disabled={busy}>
+              {busy ? "A importar..." : "Importar do Letterboxd"}
+            </button>
+            <button className="set-clear" onClick={unlink}>
+              Desligar conta
+            </button>
+          </div>
+          <p className="muted" style={{ fontSize: 12, marginTop: 8 }}>
+            Importa a watchlist completa e os filmes vistos recentemente (o
+            Letterboxd so expoe os ~50 vistos mais recentes — volta a importar de
+            vez em quando para apanhar o resto). Em cada filme tens um botao para
+            o abrir no Letterboxd.
+          </p>
+        </>
+      ) : (
+        <>
+          <p className="muted">
+            Indica o teu username do Letterboxd para importar a tua watchlist e
+            os filmes vistos (com as tuas notas), e usar a nota da comunidade do
+            Letterboxd.
+          </p>
+          <div className="set-img-url">
+            <input
+              type="text"
+              placeholder="username do Letterboxd"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && input.trim() && link()}
+            />
+            <button
+              className="lib-watched"
+              onClick={link}
+              disabled={busy || !input.trim()}
+            >
+              {busy ? "A ligar..." : "Ligar"}
+            </button>
+          </div>
+        </>
+      )}
+      {msg && <p className="muted" style={{ marginTop: 10 }}>{msg}</p>}
+    </div>
+  );
+}
+
 // Cores de destaque predefinidas.
 const ACCENT_PRESETS = [
   "#c90303", // vermelho (default)
@@ -411,6 +526,12 @@ export default function Settings() {
       <section className="set-section">
         <h3>MyAnimeList</h3>
         <MalSection user={user} />
+      </section>
+
+      {/* ===== Letterboxd ===== */}
+      <section className="set-section">
+        <h3>Letterboxd</h3>
+        <LetterboxdSection user={user} />
       </section>
 
       {/* ===== Avatar ===== */}

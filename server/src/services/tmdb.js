@@ -251,6 +251,76 @@ export async function findTmdbMatch(title, year, isMovie) {
   return null;
 }
 
+// Grelha filtravel/ordenavel (pagina de Filmes/Series). Usa /discover do TMDB.
+// sort: "popularity" | "rating" | "recent"; dir: "asc" | "desc".
+export async function discover(
+  { type, genres = [], sort = "popularity", dir = "desc", page = 1 },
+  opts = {}
+) {
+  const kind = type === "tv" ? "tv" : "movie";
+  const field =
+    { popularity: "popularity", rating: "vote_average", recent: kind === "tv" ? "first_air_date" : "primary_release_date" }[
+      sort
+    ] || "popularity";
+  const params = {
+    sort_by: `${field}.${dir === "asc" ? "asc" : "desc"}`,
+    include_adult: "false",
+    page: Math.max(1, Number(page) || 1),
+  };
+  if (genres.length) params.with_genres = genres.join(",");
+  // Sem um minimo de votos, a ordenacao por nota enche-se de titulos obscuros.
+  if (sort === "rating") params["vote_count.gte"] = kind === "tv" ? 50 : 100;
+
+  const { overview, title } = langsFrom(opts);
+  const base = await tmdbFetch(`/discover/${kind}`, params, overview);
+  let items = (base.results || [])
+    .map((r) => normalizeMedia({ ...r, media_type: kind }))
+    .filter(Boolean);
+  if (title !== overview) {
+    const t = await tmdbFetch(`/discover/${kind}`, params, title);
+    const titles = new Map((t.results || []).map((it) => [it.id, it.title || it.name || ""]));
+    items = items.map((m) => ({ ...m, title: titles.get(m.id) || m.title }));
+  }
+  return {
+    items,
+    page: base.page || 1,
+    hasMore: (base.page || 1) < (base.total_pages || 1),
+  };
+}
+
+// Encontra um filme no TMDB por titulo (+ ano). Devolve {tmdbId, title, poster}
+// ou null. Usado para resolver a watchlist do Letterboxd (que so da titulo/ano).
+export async function findMovieByTitle(title, year) {
+  if (!title) return null;
+  try {
+    let data = await tmdbFetch(
+      "/search/movie",
+      { query: title, year: year || undefined, include_adult: "false" },
+      "en-US"
+    );
+    let r = (data.results || [])[0];
+    if (!r && year) {
+      data = await tmdbFetch("/search/movie", { query: title, include_adult: "false" }, "en-US");
+      r = (data.results || [])[0];
+    }
+    if (!r) return null;
+    return { tmdbId: r.id, title: r.title || title, poster: r.poster_path || null };
+  } catch {
+    return null;
+  }
+}
+
+// Media da comunidade (vote_average) de um filme/serie. Best-effort: null se falhar.
+export async function getRating(type, id) {
+  if (type !== "movie" && type !== "tv") return null;
+  try {
+    const d = await tmdbFetch(`/${type}/${id}`, {}, "en-US");
+    return d?.vote_average ? Math.round(d.vote_average * 10) / 10 : null;
+  } catch {
+    return null;
+  }
+}
+
 // Lista de generos (TMDB) por tipo, para o "Escolhe algo para mim".
 const genreCache = {};
 export async function getGenres(type) {
