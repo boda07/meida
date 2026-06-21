@@ -72,7 +72,7 @@ export default function Library() {
             <Link
               key={`${it.type}-${it.tmdbId}`}
               to={`/details/${it.type}/${it.tmdbId}`}
-              className="card"
+              className="card card-portrait"
             >
               <div className="card-poster">
                 {imageUrl(it.poster, "w342") ? (
@@ -80,13 +80,16 @@ export default function Library() {
                 ) : (
                   <div className="card-noposter">{it.title}</div>
                 )}
+                <div className="card-scrim" />
                 {it.score ? <span className="card-rating">{it.score}/10</span> : null}
                 {it.watched ? <span className="card-watched">✓</span> : null}
                 {it.watchlist && !it.watched ? (
                   <span className="card-watchlist">+</span>
                 ) : null}
+                <div className="card-footer">
+                  <h3 className="card-title">{it.title}</h3>
+                </div>
               </div>
-              <div className="card-title">{it.title}</div>
             </Link>
           ))}
         </div>

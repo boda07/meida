@@ -18,7 +18,8 @@ export const DEFAULT_SETTINGS = {
   animeAudio: "sub", // anime: "sub" (legendado) ou "dub" (dobrado)
   accent: "#c90303", // cor de destaque da UI (botoes, realces)
   bgColor: "#070708", // cor de fundo da app
-  cardSize: "medium", // tamanho dos cartazes: "small" | "medium" | "large"
+  cardW: 184, // largura dos cartazes (px)
+  cardH: 272, // altura dos cartazes (px)
 };
 export const settingsStore = {
   get() {

@@ -37,18 +37,15 @@ export function SettingsProvider({ children }) {
     root.style.setProperty("--bg-surface2", shade(bg, 0.13));
   }, [settings.bgColor]);
 
-  // Aplica o tamanho dos cartazes (largura nas rows + minimo nas grelhas).
+  // Aplica o tamanho dos cartazes: largura, e a proporcao (largura/altura) que
+  // mantem a forma sem esticar (object-fit: cover no poster).
   useEffect(() => {
     const root = document.documentElement;
-    const sizes = {
-      small: { cardW: "140px", gridMin: "120px" },
-      medium: { cardW: "184px", gridMin: "170px" },
-      large: { cardW: "220px", gridMin: "210px" },
-    };
-    const s = sizes[settings.cardSize] || sizes.medium;
-    root.style.setProperty("--card-w", s.cardW);
-    root.style.setProperty("--grid-min", s.gridMin);
-  }, [settings.cardSize]);
+    const w = settings.cardW || 184;
+    const h = settings.cardH || 272;
+    root.style.setProperty("--card-w", `${w}px`);
+    root.style.setProperty("--poster-ratio", `${w} / ${h}`);
+  }, [settings.cardW, settings.cardH]);
 
   function update(patch) {
     setSettings((prev) => {

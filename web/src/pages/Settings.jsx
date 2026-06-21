@@ -247,19 +247,42 @@ export default function Settings() {
       <section className="set-section">
         <h3>Tamanho dos cartazes</h3>
         <p className="muted">
-          Ajusta o tamanho dos posters (util em ecras pequenos/portateis).
+          Ajusta a largura e a altura dos posters (util em ecras pequenos).
         </p>
-        <div className="set-row">
-          <Choice value="small" current={settings.cardSize} onPick={(v) => update({ cardSize: v })}>
-            Pequeno
-          </Choice>
-          <Choice value="medium" current={settings.cardSize} onPick={(v) => update({ cardSize: v })}>
-            Medio
-          </Choice>
-          <Choice value="large" current={settings.cardSize} onPick={(v) => update({ cardSize: v })}>
-            Grande
-          </Choice>
+        <div className="set-slider">
+          <label>
+            <span>Largura</span>
+            <b>{settings.cardW || 184}px</b>
+          </label>
+          <input
+            type="range"
+            min="110"
+            max="280"
+            step="2"
+            value={settings.cardW || 184}
+            onChange={(e) => update({ cardW: Number(e.target.value) })}
+          />
         </div>
+        <div className="set-slider">
+          <label>
+            <span>Altura</span>
+            <b>{settings.cardH || 272}px</b>
+          </label>
+          <input
+            type="range"
+            min="150"
+            max="420"
+            step="2"
+            value={settings.cardH || 272}
+            onChange={(e) => update({ cardH: Number(e.target.value) })}
+          />
+        </div>
+        <button
+          className="set-clear"
+          onClick={() => update({ cardW: 184, cardH: 272 })}
+        >
+          Repor tamanho
+        </button>
       </section>
 
       {/* ===== Cor da UI ===== */}

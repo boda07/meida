@@ -9,8 +9,8 @@
   --text-secondary: rgba(255, 255, 255, 0.6);
   --text-eyebrow: rgba(255, 255, 255, 0.72);
   --text-muted: rgba(255, 255, 255, 0.82);
-  --card-w: 184px; /* largura dos cartazes (rows) — ajustavel nas Definicoes */
-  --grid-min: 170px; /* largura minima dos cartazes nas grelhas */
+  --card-w: 184px; /* largura dos cartazes — ajustavel nas Definicoes */
+  --poster-ratio: 184 / 272; /* proporcao (largura/altura) dos cartazes */
   --radius-pill: 999px;
   --radius-card: 11px;
   --radius-modal: 18px;
@@ -648,7 +648,7 @@ h2 {
 
 .card-portrait {
   width: var(--card-w, 184px);
-  aspect-ratio: 184 / 272;
+  aspect-ratio: var(--poster-ratio, 184 / 272);
 }
 
 .card-landscape {
@@ -734,9 +734,17 @@ h2 {
 /* ===== Grid (pesquisa/lista) ===== */
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(var(--grid-min, 170px), 1fr));
+  grid-template-columns: repeat(auto-fill, var(--card-w, 184px));
+  justify-content: center;
   gap: 26px 18px;
   margin-top: 40px;
+}
+
+/* Cartazes nas grelhas: forma fixa pela proporcao (nunca esticam). */
+.grid .card-poster {
+  width: 100%;
+  height: auto;
+  aspect-ratio: var(--poster-ratio, 184 / 272);
 }
 
 /* ===== Status ===== */
@@ -891,6 +899,29 @@ h2 {
   background: rgba(255, 255, 255, 0.08);
   font-size: 12px;
   font-weight: 600;
+}
+
+/* ===== Slider (Definicoes) ===== */
+.set-slider {
+  max-width: 360px;
+  margin-bottom: 14px;
+}
+
+.set-slider label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  margin-bottom: 6px;
+  color: var(--text-secondary);
+}
+
+.set-slider label b {
+  color: var(--text);
+}
+
+.set-slider input[type="range"] {
+  width: 100%;
+  accent-color: var(--accent);
 }
 
 /* ===== Seletor de cor (Definicoes) ===== */
