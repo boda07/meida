@@ -101,9 +101,11 @@ export async function getAnimeDetails(malId, langOpts = {}) {
   }
 
   if (match) {
-    // Usa os detalhes do TMDB (id/imdb/temporadas) para a reproducao funcionar.
+    // Usa os detalhes do TMDB (id/imdb/temporadas) para a reproducao funcionar,
+    // mas a SINOPSE vem do MAL (melhor para anime). So cai no TMDB se o MAL nao
+    // tiver sinopse.
     const details = await getDetails(match.mediaType, match.tmdbId, langOpts);
-    if (!details.overview) details.overview = base.overview;
+    if (base.overview) details.overview = base.overview;
     details.malId = malId;
     details.isAnime = true;
     details.matched = true;

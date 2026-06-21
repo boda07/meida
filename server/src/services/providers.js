@@ -79,6 +79,13 @@ export const PROVIDERS = [
  */
 export const ANIME_PROVIDERS = [
   {
+    // MegaPlay (o mesmo backend do anisuge.tv) aceita o id do MAL diretamente.
+    // E o mais fiavel para anime sub/dub neste momento.
+    id: "megaplay-anime",
+    name: "MegaPlay (anime)",
+    url: "https://megaplay.buzz/stream/mal/{mal}/{ep}/{audio}",
+  },
+  {
     id: "vidlink-anime",
     name: "VidLink (anime)",
     url: "https://vidlink.pro/anime/{mal}/{ep}/{audio}",

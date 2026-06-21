@@ -108,7 +108,13 @@
       "PowerShell($env:Path += \";C:\\\\Program Files\\\\GitHub CLI\"; gh release list --repo boda07/meida | Select-Object -First 3)",
       "Bash(node --check server/src/services/mal.js)",
       "Bash(node --check server/src/routes/mal.js)",
-      "Bash(node --check electron/preload.cjs)"
+      "Bash(node --check electron/preload.cjs)",
+      "PowerShell($env:Path += \";C:\\\\Program Files\\\\GitHub CLI\"; Remove-Item Env:ELECTRON_RUN_AS_NODE -ErrorAction SilentlyContinue; $env:GH_TOKEN = \\(gh auth token\\); $env:CSC_IDENTITY_AUTO_DISCOVERY = \"false\"; npm run app:publish 2>&1 | Select-Object -Last 7)",
+      "PowerShell($env:Path += \";C:\\\\Program Files\\\\GitHub CLI\"; gh release list --repo boda07/meida | Select-Object -First 2)",
+      "WebFetch(domain:anisuge.tv)",
+      "WebFetch(domain:megaplay.buzz)",
+      "WebFetch(domain:vidnest.fun)",
+      "PowerShell(git add -A)"
     ],
     "additionalDirectories": [
       "\\tmp"
