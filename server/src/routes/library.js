@@ -9,7 +9,7 @@ import {
   deleteLibrary,
 } from "../store.js";
 import { requireAuth } from "../services/auth.js";
-import { getMeta, getGenreVocab, getLocalizedTitle } from "../services/tmdb.js";
+import { getMeta, getGenreVocab, getLocalizedMeta } from "../services/tmdb.js";
 import { getAnimeRatingsBatch } from "../services/jikan.js";
 import { status as malStatus, getMeanScores } from "../services/mal.js";
 import { getRatings as getLetterboxdRatings } from "../services/letterboxd.js";
@@ -113,13 +113,15 @@ libraryRouter.get("/library", async (req, res) => {
     }
   }
 
-  // Titulos de filmes/series no idioma escolhido (ex.: watchlist importada do
-  // Letterboxd vinha em ingles). Em cache, por isso so a 1a vez e mais lento.
+  // Titulos E cartazes de filmes/series no idioma escolhido (ex.: watchlist
+  // importada do Letterboxd vinha em ingles). Em cache, por isso so a 1a vez e
+  // mais lento.
   const localizable = items.filter((i) => i.type === "movie" || i.type === "tv");
   if (localizable.length) {
     await pMap(localizable, 12, async (i) => {
-      const t = await getLocalizedTitle(i.type, i.tmdbId, req.query.titleLang);
-      if (t) i.title = t;
+      const m = await getLocalizedMeta(i.type, i.tmdbId, req.query.titleLang);
+      if (m?.title) i.title = m.title;
+      if (m?.poster) i.poster = m.poster;
     });
   }
 

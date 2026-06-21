@@ -354,29 +354,49 @@ export async function findMovieByTitle(title, year) {
   }
 }
 
-// Titulo de um filme/serie no idioma pedido (com fallback PT->EN), em cache por
-// (tipo, id, idioma) para nao repetir pedidos a cada abertura da lista.
-const titleCache = new Map();
-export async function getLocalizedTitle(type, id, titleLang) {
+// Escolhe o cartaz no idioma pedido: idioma -> sem texto (neutro) -> ingles.
+// Assim, sem cartaz em PT, prefere um sem texto a um em ingles.
+function pickPoster(posters, short) {
+  if (!posters?.length) return null;
+  const p =
+    posters.find((x) => x.iso_639_1 === short) ||
+    posters.find((x) => x.iso_639_1 === null) ||
+    posters.find((x) => x.iso_639_1 === "en");
+  return p?.file_path || null;
+}
+
+// Titulo + cartaz de um filme/serie no idioma pedido (titulo com fallback PT->EN;
+// cartaz no idioma). Em cache por (tipo, id, idioma) para nao repetir pedidos a
+// cada abertura da lista. Os dois vem do(s) mesmo(s) pedido(s) — sem custo extra.
+const localMetaCache = new Map();
+export async function getLocalizedMeta(type, id, titleLang) {
   if (type !== "movie" && type !== "tv") return null;
   const target =
     LANG_MAP[titleLang] || (String(titleLang || "").includes("-") ? titleLang : "en-US");
+  const short = target.slice(0, 2);
   const key = `${type}:${id}:${target}`;
-  if (titleCache.has(key)) return titleCache.get(key);
+  if (localMetaCache.has(key)) return localMetaCache.get(key);
   try {
-    let t;
+    const imgParams = {
+      append_to_response: "images",
+      include_image_language: `${short},en,null`,
+    };
+    let title, poster;
     if (target === "en-US") {
-      const en = await tmdbFetch(`/${type}/${id}`, {}, "en-US");
-      t = en.title || en.name || null;
+      const en = await tmdbFetch(`/${type}/${id}`, imgParams, "en-US");
+      title = en.title || en.name || null;
+      poster = pickPoster(en.images?.posters, "en");
     } else {
       const [loc, en] = await Promise.all([
-        tmdbFetch(`/${type}/${id}`, {}, target),
+        tmdbFetch(`/${type}/${id}`, imgParams, target),
         tmdbFetch(`/${type}/${id}`, {}, "en-US"),
       ]);
-      t = bestTitle(loc, en.title || en.name || "") || null;
+      title = bestTitle(loc, en.title || en.name || "") || null;
+      poster = pickPoster(loc.images?.posters, short);
     }
-    titleCache.set(key, t);
-    return t;
+    const out = { title, poster };
+    localMetaCache.set(key, out);
+    return out;
   } catch {
     return null;
   }
