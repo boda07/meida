@@ -99,12 +99,24 @@ export default function Library() {
     }
   }
 
-  // Géneros/temas disponiveis na lista (ordenados), para o dropdown.
-  const allGenres = useMemo(() => {
-    const set = new Set();
-    for (const i of items) for (const g of i.genres || []) set.add(g);
-    return [...set].sort((a, b) => a.localeCompare(b));
+  // Géneros/temas disponiveis na lista, agrupados por tipo (filmes/series/anime),
+  // para os mostrar em seccoes separadas no modal de filtro.
+  const genreGroups = useMemo(() => {
+    const sets = { movie: new Set(), tv: new Set(), anime: new Set() };
+    for (const i of items) {
+      if (!sets[i.type]) continue;
+      for (const g of i.genres || []) sets[i.type].add(g);
+    }
+    const sort = (s) => [...s].sort((a, b) => a.localeCompare(b));
+    return [
+      { id: "movie", label: "Filmes", genres: sort(sets.movie) },
+      { id: "tv", label: "Séries", genres: sort(sets.tv) },
+      { id: "anime", label: "Anime", genres: sort(sets.anime) },
+    ].filter((g) => g.genres.length);
   }, [items]);
+
+  // Existe pelo menos um genero em alguma categoria?
+  const hasGenres = genreGroups.length > 0;
 
   const shown = useMemo(() => {
     let arr = items;
@@ -213,7 +225,7 @@ export default function Library() {
               {f.label}
             </button>
           ))}
-          {allGenres.length > 0 && (
+          {hasGenres && (
             <>
               <span className="lib-filters-sep" />
               <button
@@ -279,15 +291,22 @@ export default function Library() {
                 ✕
               </button>
             </div>
-            <div className="lib-genre-tags">
-              {allGenres.map((g) => (
-                <button
-                  key={g}
-                  className={`tf-chip ${genreSel.has(g) ? "active" : ""}`}
-                  onClick={() => toggleGenre(g)}
-                >
-                  {g}
-                </button>
+            <div className="lib-genre-groups">
+              {genreGroups.map((grp) => (
+                <div key={grp.id} className="lib-genre-group">
+                  <h4 className="lib-genre-group-title">{grp.label}</h4>
+                  <div className="lib-genre-tags">
+                    {grp.genres.map((g) => (
+                      <button
+                        key={g}
+                        className={`tf-chip ${genreSel.has(g) ? "active" : ""}`}
+                        onClick={() => toggleGenre(g)}
+                      >
+                        {g}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               ))}
             </div>
             <div className="modal-actions">

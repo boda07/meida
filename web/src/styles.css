@@ -1347,12 +1347,33 @@ h2 {
   opacity: 1;
 }
 
+/* Modal de generos agrupado por tipo (Filmes / Series / Anime). */
+.lib-genre-groups {
+  overflow-y: auto;
+  padding: 0 20px 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.lib-genre-group-title {
+  margin: 0 0 8px;
+  font-size: 13px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-secondary, #9aa0a6);
+  position: sticky;
+  top: 0;
+  background: var(--bg-surface, #15151a);
+  padding: 4px 0;
+  z-index: 1;
+}
+
 .lib-genre-tags {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  overflow-y: auto;
-  padding: 0 20px 4px;
 }
 
 .modal-actions {
