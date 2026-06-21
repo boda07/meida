@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { api } from "../api/client.js";
 import { useSettings } from "../settings/SettingsContext.jsx";
-import MediaCard from "../components/MediaCard.jsx";
+import MediaRow from "../components/MediaRow.jsx";
 
 const TYPE_FILTERS = [
   { id: "all", label: "Tudo" },
@@ -67,18 +67,15 @@ export default function Search() {
           </button>
         ))}
       </div>
-      {groups.map((g) => (
-        <section className="search-group" key={g.type}>
-          <h3 className="search-group-title">
-            {g.label} <span className="search-count">{g.items.length}</span>
-          </h3>
-          <div className="grid">
-            {g.items.map((item) => (
-              <MediaCard key={`${item.type}-${item.id}`} item={item} />
-            ))}
-          </div>
-        </section>
-      ))}
+      <div className="rows">
+        {groups.map((g) => (
+          <MediaRow
+            key={g.type}
+            title={`${g.label} (${g.items.length})`}
+            items={g.items}
+          />
+        ))}
+      </div>
     </div>
   );
 }
