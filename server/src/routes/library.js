@@ -9,7 +9,7 @@ import {
   deleteLibrary,
 } from "../store.js";
 import { requireAuth } from "../services/auth.js";
-import { getMeta } from "../services/tmdb.js";
+import { getMeta, getGenreMap, translateGenres, getLocalizedTitle } from "../services/tmdb.js";
 import { getAnimeRatingsBatch } from "../services/jikan.js";
 import { status as malStatus, getMeanScores } from "../services/mal.js";
 import { getRatings as getLetterboxdRatings } from "../services/letterboxd.js";
@@ -92,6 +92,21 @@ libraryRouter.get("/library", async (req, res) => {
     await pMap(needMeta, 12, async (i) =>
       applyMeta(req.user.id, i, await getMeta(i.type, i.tmdbId))
     );
+  }
+
+  // Traduz os generos para o idioma escolhido (so na resposta; o que esta guardado
+  // continua em ingles, por isso mudar de idioma volta a traduzir na hora).
+  const map = await getGenreMap(req.query.overviewLang);
+  if (map) for (const i of items) i.genres = translateGenres(i.genres, map);
+
+  // Titulos de filmes/series no idioma escolhido (ex.: watchlist importada do
+  // Letterboxd vinha em ingles). Em cache, por isso so a 1a vez e mais lento.
+  const localizable = items.filter((i) => i.type === "movie" || i.type === "tv");
+  if (localizable.length) {
+    await pMap(localizable, 12, async (i) => {
+      const t = await getLocalizedTitle(i.type, i.tmdbId, req.query.titleLang);
+      if (t) i.title = t;
+    });
   }
 
   res.json({ items });

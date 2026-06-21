@@ -132,7 +132,7 @@ export const api = {
   updateProfile: (patch) => patch_("/api/auth/profile", patch),
 
   // Biblioteca pessoal
-  library: () => get("/api/library"),
+  library: () => get("/api/library", langParams()),
   libraryItem: (type, tmdb) => get("/api/library/item", { type, tmdb }),
   saveLibrary: (entry) => post("/api/library", entry),
   removeLibrary: (type, tmdb) => del("/api/library/item", { type, tmdb }),

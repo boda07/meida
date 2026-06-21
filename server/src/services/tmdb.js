@@ -340,6 +340,34 @@ export async function findMovieByTitle(title, year) {
   }
 }
 
+// Titulo de um filme/serie no idioma pedido (com fallback PT->EN), em cache por
+// (tipo, id, idioma) para nao repetir pedidos a cada abertura da lista.
+const titleCache = new Map();
+export async function getLocalizedTitle(type, id, titleLang) {
+  if (type !== "movie" && type !== "tv") return null;
+  const target =
+    LANG_MAP[titleLang] || (String(titleLang || "").includes("-") ? titleLang : "en-US");
+  const key = `${type}:${id}:${target}`;
+  if (titleCache.has(key)) return titleCache.get(key);
+  try {
+    let t;
+    if (target === "en-US") {
+      const en = await tmdbFetch(`/${type}/${id}`, {}, "en-US");
+      t = en.title || en.name || null;
+    } else {
+      const [loc, en] = await Promise.all([
+        tmdbFetch(`/${type}/${id}`, {}, target),
+        tmdbFetch(`/${type}/${id}`, {}, "en-US"),
+      ]);
+      t = bestTitle(loc, en.title || en.name || "") || null;
+    }
+    titleCache.set(key, t);
+    return t;
+  } catch {
+    return null;
+  }
+}
+
 // Media da comunidade + generos de um filme/serie, numa so chamada. Best-effort.
 export async function getMeta(type, id) {
   if (type !== "movie" && type !== "tv") return { rating: null, genres: [] };
@@ -368,6 +396,82 @@ export async function getGenres(type) {
   const list = (data.genres || []).map((g) => ({ id: g.id, name: g.name }));
   genreCache[type] = list;
   return list;
+}
+
+// Generos/temas de anime (MAL/Jikan) que o TMDB nao tem (ou nomeia diferente).
+// Traducao manual para PT; os generos normais sao traduzidos pelo TMDB.
+const ANIME_GENRES_PT = {
+  "Sci-Fi": "Ficção científica",
+  "Slice of Life": "Quotidiano",
+  Supernatural: "Sobrenatural",
+  Sports: "Desporto",
+  Suspense: "Suspense",
+  "Award Winning": "Premiado",
+  "Avant Garde": "Vanguarda",
+  Gourmet: "Gastronomia",
+  Ecchi: "Ecchi",
+  "Martial Arts": "Artes marciais",
+  Military: "Militar",
+  Mythology: "Mitologia",
+  Psychological: "Psicológico",
+  School: "Escolar",
+  Space: "Espaço",
+  "Super Power": "Superpoderes",
+  Survival: "Sobrevivência",
+  "Time Travel": "Viagem no tempo",
+  Vampire: "Vampiros",
+  Historical: "Histórico",
+  Harem: "Harém",
+  Mecha: "Mecha",
+  Isekai: "Isekai",
+  Parody: "Paródia",
+  Samurai: "Samurai",
+  Detective: "Detetive",
+  Gore: "Gore",
+  Reincarnation: "Reencarnação",
+  Music: "Música",
+};
+
+// Cache do mapa de traducao de generos (en -> idioma alvo), por idioma.
+const genreMapCache = {};
+
+/**
+ * Devolve Map(nomeEN -> nome localizado) juntando os generos de filme e serie do
+ * TMDB (+ traducao manual dos de anime). null se o idioma alvo for ingles.
+ */
+export async function getGenreMap(lang) {
+  const target = LANG_MAP[lang] || (String(lang || "").includes("-") ? lang : null);
+  if (!target || target === "en-US") return null;
+  if (genreMapCache[target]) return genreMapCache[target];
+  try {
+    const [me, mt, le, lt] = await Promise.all([
+      tmdbFetch("/genre/movie/list", {}, "en-US"),
+      tmdbFetch("/genre/tv/list", {}, "en-US"),
+      tmdbFetch("/genre/movie/list", {}, target),
+      tmdbFetch("/genre/tv/list", {}, target),
+    ]);
+    const map = new Map();
+    const pair = (enList, locList) => {
+      const loc = new Map((locList.genres || []).map((g) => [g.id, g.name]));
+      for (const g of enList.genres || []) {
+        const l = loc.get(g.id);
+        if (l) map.set(g.name, l);
+      }
+    };
+    pair(me, le);
+    pair(mt, lt);
+    if (target.startsWith("pt")) for (const [en, pt] of Object.entries(ANIME_GENRES_PT)) map.set(en, pt);
+    genreMapCache[target] = map;
+    return map;
+  } catch {
+    return null;
+  }
+}
+
+// Traduz uma lista de nomes de genero usando o mapa (mantem o original se faltar).
+export function translateGenres(names, map) {
+  if (!map || !Array.isArray(names)) return names || [];
+  return names.map((n) => map.get(n) || n);
 }
 
 // Escolhe um titulo aleatorio (discover) com generos a incluir/excluir.

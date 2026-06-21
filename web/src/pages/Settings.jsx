@@ -242,7 +242,7 @@ const ACCENT_PRESETS = [
   "#06b6d4", // ciano
 ];
 
-// Cores de fundo predefinidas (escuras, para o texto branco continuar legivel).
+// Cores de fundo predefinidas (escuras, para o texto branco continuar legível).
 const BG_PRESETS = [
   "#070708", // preto (default)
   "#0a1226", // navy (combina com o logo azul/dourado)
@@ -343,17 +343,17 @@ export default function Settings() {
             Inglês
           </Choice>
           <Choice value="pt" current={settings.titleLang} onPick={(v) => update({ titleLang: v })}>
-            Portugues
+            Português
           </Choice>
         </div>
       </section>
 
       <section className="set-section">
         <h3>Sinopses</h3>
-        <p className="muted">Idioma das descricoes/sinopses.</p>
+        <p className="muted">Idioma das descrições/sinopses e dos géneros.</p>
         <div className="set-row">
           <Choice value="pt" current={settings.overviewLang} onPick={(v) => update({ overviewLang: v })}>
-            Portugues
+            Português
           </Choice>
           <Choice value="en" current={settings.overviewLang} onPick={(v) => update({ overviewLang: v })}>
             Inglês
@@ -369,7 +369,7 @@ export default function Settings() {
         </p>
         <div className="set-row">
           <Choice value="pt" current={settings.subtitleLang} onPick={(v) => update({ subtitleLang: v })}>
-            Portugues
+            Português
           </Choice>
           <Choice value="en" current={settings.subtitleLang} onPick={(v) => update({ subtitleLang: v })}>
             Inglês
@@ -381,9 +381,9 @@ export default function Settings() {
       </section>
 
       <section className="set-section">
-        <h3>Anime: audio</h3>
+        <h3>Anime: áudio</h3>
         <p className="muted">
-          Legendado (sub) ou dobrado (dub). Aplica-se as fontes dedicadas de anime
+          Legendado (sub) ou dobrado (dub). Aplica-se às fontes dedicadas de anime
           (MegaPlay/VidLink/VidSrc.cc por MyAnimeList).
         </p>
         <div className="set-row">
@@ -432,7 +432,7 @@ export default function Settings() {
         <h3>Reprodução</h3>
         <p className="muted">
           Autoplay liga/desliga o arranque automático. Autoskip tenta saltar a
-          intro/genericos (funciona nos nossos players; nos providers externos
+          intro/genéricos (funciona nos nossos players; nos providers externos
           depende do site).
         </p>
         <div className="set-row">
@@ -457,7 +457,7 @@ export default function Settings() {
       <section className="set-section">
         <h3>Tamanho dos cartazes</h3>
         <p className="muted">
-          Ajusta a largura e a altura dos posters (útil em ecras pequenos).
+          Ajusta a largura e a altura dos posters (útil em ecrãs pequenos).
         </p>
         <div className="set-slider">
           <label>
@@ -499,7 +499,7 @@ export default function Settings() {
       <section className="set-section">
         <h3>Cor de destaque</h3>
         <p className="muted">
-          Cor dos botoes e realces. Predefinidas, as tuas últimas escolhas, ou o
+          Cor dos botões e realces. Predefinidas, as tuas últimas escolhas, ou o
           picker.
         </p>
         <ColorField
@@ -516,7 +516,7 @@ export default function Settings() {
       <section className="set-section">
         <h3>Cor de fundo</h3>
         <p className="muted">
-          Fundo da app. Predefinidas (escuras, texto legivel), as tuas últimas
+          Fundo da app. Predefinidas (escuras, texto legível), as tuas últimas
           escolhas, ou o picker.
         </p>
         <ColorField

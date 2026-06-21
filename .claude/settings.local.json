@@ -176,7 +176,9 @@
       "Bash(xargs wc -l)",
       "Bash(node /c/tmp/accent-fix.cjs \"c:/Users/Boda/Documents/Coding/web/src\")",
       "Bash(grep -viE \"^\\\\S+:\\\\s*//|video|audio\")",
-      "Bash(node --check server/src/services/tmdb.js)"
+      "Bash(node --check server/src/services/tmdb.js)",
+      "Bash(perl -i -pe ' *)",
+      "Bash(perl -i -pe 's/em ecras pequenos/em ecrãs pequenos/g;' web/src/pages/Settings.jsx)"
     ],
     "additionalDirectories": [
       "\\tmp"
