@@ -12,14 +12,28 @@ function sizeToBytes(s) {
   return parseFloat(m[1]) * mult;
 }
 
+// Audio do torrent a partir do titulo (anime): legendado vs dobrado.
+function matchAudio(title, mode) {
+  if (mode === "all") return true;
+  const t = title || "";
+  const dual = /\b(dual|multi)[\s._-]?audio\b/i.test(t);
+  const dub = /\bdub(bed)?\b|\beng(?:lish)?[\s._-]?dub\b/i.test(t);
+  if (mode === "dub") return dub || dual;
+  return !dub || dual; // "sub": esconde os que so tem dobragem
+}
+
 // Procura torrents (Torrentio) e reproduz o escolhido no nosso player.
-export default function Torrents({ type, imdb, season, episode }) {
+// `anime` ativa o filtro de audio (sub/dub); `defaultAudio` e a preferencia.
+export default function Torrents({ type, imdb, season, episode, anime, defaultAudio }) {
   const [list, setList] = useState(null);
   const [error, setError] = useState(null);
   const [selected, setSelected] = useState(null);
   const [subs, setSubs] = useState([]);
   const [quality, setQuality] = useState("all");
   const [sortBy, setSortBy] = useState("seeders");
+  const [audio, setAudio] = useState(
+    anime ? (defaultAudio === "dub" ? "dub" : "sub") : "all"
+  );
 
   useEffect(() => {
     setSelected(null);
@@ -57,16 +71,17 @@ export default function Torrents({ type, imdb, season, episode }) {
     return QUALITY_ORDER.filter((q) => set.has(q));
   }, [list]);
 
-  // Aplica filtro de qualidade + ordenação.
+  // Aplica filtro de qualidade + audio (anime) + ordenação.
   const shown = useMemo(() => {
     let arr = list || [];
     if (quality !== "all") arr = arr.filter((t) => t.quality === quality);
+    if (anime && audio !== "all") arr = arr.filter((t) => matchAudio(t.title, audio));
     const sorted = [...arr].sort((a, b) => {
       if (sortBy === "size") return sizeToBytes(b.size) - sizeToBytes(a.size);
       return (b.seeders ?? -1) - (a.seeders ?? -1); // seeders desc (default)
     });
     return sorted;
-  }, [list, quality, sortBy]);
+  }, [list, quality, sortBy, anime, audio]);
 
   if (!imdb)
     return <p className="muted">Este título não tem IMDB id — torrents indisponiveis.</p>;
@@ -107,6 +122,23 @@ export default function Torrents({ type, imdb, season, episode }) {
             </button>
           ))}
         </div>
+        {anime && (
+          <div className="tf-qualities">
+            {[
+              { id: "sub", label: "Legendado" },
+              { id: "dub", label: "Dobrado" },
+              { id: "all", label: "Todos" },
+            ].map((a) => (
+              <button
+                key={a.id}
+                className={`tf-chip ${audio === a.id ? "active" : ""}`}
+                onClick={() => setAudio(a.id)}
+              >
+                {a.label}
+              </button>
+            ))}
+          </div>
+        )}
         <label className="tf-sort">
           Ordenar:
           <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>

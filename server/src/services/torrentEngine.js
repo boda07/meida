@@ -47,10 +47,18 @@ function pickFile(torrent, fileIdx) {
   return pool.reduce((a, b) => (b.length > a.length ? b : a), pool[0]);
 }
 
-// Resolve o ficheiro de video a transmitir, priorizando-o no download.
+// Resolve o ficheiro de video a transmitir, descarregando SO esse ficheiro
+// (importante nos packs/batches de anime: nao puxa a serie inteira).
 export async function getTorrentFile(infoHash, fileIdx) {
   const torrent = await addTorrent(infoHash);
   const file = pickFile(torrent, fileIdx);
+  // Limpa a selecao global que o WebTorrent cria ao adicionar o torrent...
+  try {
+    torrent.deselect(0, torrent.pieces.length - 1, false);
+  } catch {
+    /* versoes antigas: ignora */
+  }
+  // ...e deixa selecionado apenas o ficheiro do episodio escolhido.
   for (const f of torrent.files) if (f !== file) f.deselect?.();
   file.select?.();
   return { torrent, file };

@@ -396,6 +396,8 @@ export default function Details() {
               imdb={details.imdbId}
               season={1}
               episode={details.isMovie ? 1 : episode}
+              anime
+              defaultAudio={settings.animeAudio}
             />
           ) : (
             <>

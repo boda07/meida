@@ -184,7 +184,8 @@
       "Bash(curl -s -A \"Mozilla/5.0 \\(Windows NT 10.0; Win64; x64\\) AppleWebKit/537.36 Chrome/124 Safari/537.36\" \"https://letterboxd.com/schaffrillas/films/diary/\")",
       "Bash(curl -s -A \"Mozilla/5.0 \\(Windows NT 10.0; Win64; x64\\) AppleWebKit/537.36 Chrome/124 Safari/537.36\" \"https://letterboxd.com/schaffrillas/films/diary/\" -o /tmp/diary.html)",
       "Bash(perl -i -pe 's/\"version\": \"0\\\\.4\\\\.1\"/\"version\": \"0.4.2\"/' package.json)",
-      "Read(//c/c/Users/Boda/Documents/Coding/**)"
+      "Read(//c/c/Users/Boda/Documents/Coding/**)",
+      "Bash(node --check server/src/services/torrentEngine.js)"
     ],
     "additionalDirectories": [
       "\\tmp"
