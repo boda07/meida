@@ -1,0 +1,75 @@
+{
+  "name": "streamapp",
+  "version": "0.1.1",
+  "private": true,
+  "description": "App pessoal tipo Stremio: catalogo TMDB + embed providers + torrents",
+  "main": "electron/main.cjs",
+  "scripts": {
+    "dev": "concurrently -n server,web -c blue,green \"npm:dev:server\" \"npm:dev:web\"",
+    "dev:server": "npm --prefix server run dev",
+    "dev:web": "npm --prefix web run dev",
+    "install:all": "npm install && npm --prefix server install && npm --prefix web install",
+    "build": "npm --prefix web run build",
+    "app:dev": "concurrently -k -n server,web,electron -c blue,green,magenta \"npm:dev:server\" \"npm:dev:web\" \"npm:app:electron\"",
+    "app:electron": "cross-env ELECTRON_DEV=1 electron .",
+    "app": "npm run build && electron .",
+    "app:pack": "npm run build && electron-builder",
+    "app:publish": "npm run build && electron-builder --publish always"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0",
+    "cross-env": "^7.0.3",
+    "electron": "^33.2.0",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "com.boda.meida",
+    "productName": "MEIDA",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "electron/**/*",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "server",
+        "to": "server",
+        "filter": [
+          "**/*",
+          ".env",
+          "!data",
+          "!data/**"
+        ]
+      },
+      {
+        "from": "web/dist",
+        "to": "web/dist",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "build/icon.ico"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": false
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "boda07",
+        "repo": "meida",
+        "releaseType": "release"
+      }
+    ]
+  },
+  "dependencies": {
+    "electron-updater": "^6.8.9"
+  }
+}

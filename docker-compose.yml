@@ -1,0 +1,16 @@
+# Extractor de streams "sem anuncios" (Consumet API).
+# O nosso backend usa-o quando EXTRACTOR_API_BASE aponta para ele.
+#
+#   Arrancar:   docker compose up -d consumet
+#   Parar:      docker compose down
+#   Ver logs:   docker compose logs -f consumet
+#
+# Depois mete no server/.env:  EXTRACTOR_API_BASE=http://localhost:3000
+# (O backend corre em :5175, por isso a porta 3000 fica livre para o Consumet.)
+services:
+  consumet:
+    image: riimuru/consumet-api:latest
+    container_name: consumet-api
+    ports:
+      - "3000:3000"
+    restart: unless-stopped

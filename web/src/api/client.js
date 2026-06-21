@@ -1,0 +1,128 @@
+// Helpers de fetch para a API do backend (proxy /api do Vite).
+
+// O token de login fica em localStorage e e enviado em todos os pedidos.
+const TOKEN_KEY = "streamapp_token";
+export const tokenStore = {
+  get: () => localStorage.getItem(TOKEN_KEY),
+  set: (t) => localStorage.setItem(TOKEN_KEY, t),
+  clear: () => localStorage.removeItem(TOKEN_KEY),
+};
+
+// Definicoes do utilizador (idiomas, etc.) guardadas em localStorage.
+const SETTINGS_KEY = "streamapp_settings";
+export const DEFAULT_SETTINGS = {
+  titleLang: "en", // idioma dos titulos: "en" | "pt"
+  overviewLang: "pt", // idioma das sinopses: "en" | "pt"
+  subtitleLang: "pt", // legenda preferida: "pt" | "en" | "off"
+  defaultTab: "providers", // separador inicial: providers | extract | torrents
+  animeAudio: "sub", // anime: "sub" (legendado) ou "dub" (dobrado)
+};
+export const settingsStore = {
+  get() {
+    try {
+      return { ...DEFAULT_SETTINGS, ...JSON.parse(localStorage.getItem(SETTINGS_KEY) || "{}") };
+    } catch {
+      return { ...DEFAULT_SETTINGS };
+    }
+  },
+  set(s) {
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(s));
+  },
+};
+
+// Parametros de idioma a juntar aos pedidos de catalogo.
+function langParams() {
+  const s = settingsStore.get();
+  return { titleLang: s.titleLang, overviewLang: s.overviewLang };
+}
+
+// Lista de idiomas (OpenSubtitles) a partir da preferencia de legendas.
+function subtitleLangs() {
+  const map = { pt: "pt,pt-br,en", en: "en,pt", off: "pt,pt-br,en" };
+  return map[settingsStore.get().subtitleLang] || "pt,pt-br,en";
+}
+
+function authHeaders() {
+  const t = tokenStore.get();
+  return t ? { Authorization: `Bearer ${t}` } : {};
+}
+
+async function handle(res) {
+  if (!res.ok) {
+    let msg = `Erro ${res.status}`;
+    try {
+      const body = await res.json();
+      if (body.error) msg = body.error;
+    } catch {}
+    throw new Error(msg);
+  }
+  return res.json();
+}
+
+async function get(path, params = {}) {
+  const url = new URL(path, window.location.origin);
+  for (const [k, v] of Object.entries(params)) {
+    if (v !== undefined && v !== null && v !== "") url.searchParams.set(k, v);
+  }
+  return handle(await fetch(url, { headers: authHeaders() }));
+}
+
+async function post(path, body) {
+  return handle(
+    await fetch(path, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...authHeaders() },
+      body: JSON.stringify(body),
+    })
+  );
+}
+
+async function patch_(path, body) {
+  return handle(
+    await fetch(path, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...authHeaders() },
+      body: JSON.stringify(body),
+    })
+  );
+}
+
+async function del(path, params = {}) {
+  const url = new URL(path, window.location.origin);
+  for (const [k, v] of Object.entries(params)) {
+    if (v !== undefined && v !== null && v !== "") url.searchParams.set(k, v);
+  }
+  return handle(await fetch(url, { method: "DELETE", headers: authHeaders() }));
+}
+
+export const api = {
+  health: () => get("/api/health"),
+  catalog: () => get("/api/catalog", langParams()),
+  category: (c) => get(`/api/catalog/${c}`, langParams()),
+  search: (q) => get("/api/search", { q, ...langParams() }),
+  details: (type, id) => get("/api/details", { type, id, ...langParams() }),
+  season: (id, season) => get("/api/season", { id, season, ...langParams() }),
+  sources: (opts) => get("/api/sources", opts),
+  torrents: (opts) => get("/api/torrents", opts),
+  extract: (opts) => get("/api/extract", opts),
+  subtitles: (opts) => get("/api/subtitles", { languages: subtitleLangs(), ...opts }),
+
+  // Auth
+  register: (username, password) => post("/api/auth/register", { username, password }),
+  login: (username, password) => post("/api/auth/login", { username, password }),
+  me: () => get("/api/auth/me"),
+  updateProfile: (patch) => patch_("/api/auth/profile", patch),
+
+  // Biblioteca pessoal
+  library: () => get("/api/library"),
+  libraryItem: (type, tmdb) => get("/api/library/item", { type, tmdb }),
+  saveLibrary: (entry) => post("/api/library", entry),
+  removeLibrary: (type, tmdb) => del("/api/library/item", { type, tmdb }),
+};
+
+export function imageUrl(path, size = "w342") {
+  if (!path) return null;
+  // Ja e um URL completo (ex.: posters do Jikan/MyAnimeList) -> usa tal e qual.
+  if (/^https?:\/\//i.test(path)) return path;
+  return `https://image.tmdb.org/t/p/${size}${path}`;
+}

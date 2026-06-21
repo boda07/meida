@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Archivo:wght@700;800;900&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:#070708;}
+.row-scroll{scrollbar-width:none;-ms-overflow-style:none;}
+.row-scroll::-webkit-scrollbar{height:0;width:0;display:none;}
+@keyframes meidaUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+@keyframes meidaFade{from{opacity:0}to{opacity:1}}
+</style>
+</helmet>
+<div style="font-family:Manrope,system-ui,sans-serif;color:#fff;min-height:100vh;width:100%;overflow-x:hidden;background:#070708;position:relative;">
+
+  <nav style="position:fixed;top:18px;left:50%;transform:translateX(-50%);z-index:60;display:flex;align-items:center;gap:6px;padding:7px;border-radius:999px;background:rgba(18,18,22,0.72);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.08);box-shadow:0 10px 34px rgba(0,0,0,0.5);">
+    <div style="display:flex;align-items:center;gap:8px;padding:0 12px 0 8px;font-family:Archivo,sans-serif;font-weight:800;font-size:18px;letter-spacing:-0.5px;color:#fff;">
+      <span style="width:9px;height:9px;border-radius:2px;background:{{ accent }};display:inline-block;"></span>{{ brandName }}
+    </div>
+    <button onClick="{{ tabHome }}" style="{{ navHome }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg>Home</button>
+    <button onClick="{{ tabMovies }}" style="{{ navMovies }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M3 15h18M8 4v16M16 4v16"/></svg>Movies</button>
+    <button onClick="{{ tabTv }}" style="{{ navTv }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="13" rx="2"/><path d="M8 21h8"/></svg>TV</button>
+    <button onClick="{{ tabAnime }}" style="{{ navAnime }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.5l2.5 6.2L21 9.5l-5 4.1L17.7 21 12 17.1 6.3 21 8 13.6 3 9.5l6.5-0.8z"/></svg>Anime</button>
+    <button onClick="{{ openSearch }}" aria-label="Search" style="display:flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:999px;border:none;background:transparent;color:rgba(255,255,255,0.85);cursor:pointer;" style-hover="background:rgba(255,255,255,0.12)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg></button>
+    <button onClick="{{ toggleMenu }}" aria-label="Profile" style="display:flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:999px;border:none;background:rgba(255,255,255,0.1);color:#fff;cursor:pointer;" style-hover="background:rgba(255,255,255,0.18)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c1.6-4.2 14.4-4.2 16 0"/></svg></button>
+    <sc-if value="{{ menuOpen }}" hint-placeholder-val="{{ false }}">
+      <div style="position:absolute;right:6px;top:calc(100% + 12px);width:220px;padding:8px;border-radius:14px;background:rgba(20,20,26,0.96);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.1);box-shadow:0 18px 50px rgba(0,0,0,0.6);animation:meidaUp .2s ease both;">
+        <div style="display:flex;align-items:center;gap:11px;padding:8px 10px 12px;border-bottom:1px solid rgba(255,255,255,0.08);margin-bottom:6px;">
+          <div style="width:38px;height:38px;border-radius:50%;background:{{ accent }};display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;">M</div>
+          <div><div style="font-weight:700;font-size:14px;">Membro MEIDA</div><div style="font-size:12px;color:rgba(255,255,255,0.5);">Plano Premium 4K</div></div>
+        </div>
+        <div style="padding:9px 10px;border-radius:9px;font-size:14px;font-weight:600;color:rgba(255,255,255,0.85);cursor:pointer;" style-hover="background:rgba(255,255,255,0.08)">A minha lista</div>
+        <div style="padding:9px 10px;border-radius:9px;font-size:14px;font-weight:600;color:rgba(255,255,255,0.85);cursor:pointer;" style-hover="background:rgba(255,255,255,0.08)">Definições</div>
+        <div style="padding:9px 10px;border-radius:9px;font-size:14px;font-weight:600;color:rgba(255,255,255,0.85);cursor:pointer;" style-hover="background:rgba(255,255,255,0.08)">Terminar sessão</div>
+      </div>
+    </sc-if>
+  </nav>
+
+  <section style="position:relative;width:100%;min-height:90vh;overflow:hidden;display:flex;align-items:center;">
+    <div style="position:absolute;inset:0;background:{{ featured.heroBg }};animation:meidaFade .6s ease both;"></div>
+    <div style="position:absolute;inset:0;background:linear-gradient(90deg,rgba(7,7,8,0.94) 0%,rgba(7,7,8,0.6) 42%,rgba(7,7,8,0.1) 72%),linear-gradient(0deg,#070708 1%,rgba(7,7,8,0) 42%);"></div>
+    <div style="position:absolute;right:2%;top:48%;transform:translateY(-50%);font-family:Archivo,sans-serif;font-weight:900;font-size:clamp(70px,15vw,250px);letter-spacing:-6px;color:rgba(255,255,255,0.045);line-height:0.8;user-select:none;pointer-events:none;white-space:nowrap;">{{ featured.word }}</div>
+    <div style="position:relative;z-index:5;max-width:640px;padding:0 clamp(28px,6vw,90px);">
+      <div style="display:flex;align-items:center;gap:9px;font-size:12px;font-weight:700;letter-spacing:2.5px;color:rgba(255,255,255,0.72);margin-bottom:16px;"><span style="width:7px;height:7px;border-radius:50%;background:{{ accent }};"></span>{{ featured.brand }}</div>
+      <h1 style="font-family:Archivo,sans-serif;font-weight:900;font-size:clamp(46px,7vw,92px);line-height:0.94;letter-spacing:-2px;color:#fff;margin-bottom:18px;">{{ featured.title }}</h1>
+      <div style="font-size:13px;font-weight:600;color:rgba(255,255,255,0.6);letter-spacing:0.4px;margin-bottom:16px;">{{ featured.meta }}</div>
+      <p style="font-size:16px;line-height:1.55;color:rgba(255,255,255,0.82);max-width:480px;margin-bottom:30px;text-wrap:pretty;">{{ featured.desc }}</p>
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+        <button onClick="{{ onPlay }}" style="display:flex;align-items:center;gap:9px;padding:14px 32px;border-radius:999px;border:none;background:#fff;color:#0a0a0b;font-family:inherit;font-weight:700;font-size:16px;cursor:pointer;" style-hover="background:rgba(255,255,255,0.84)"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M7 4v16l13-8z"/></svg>Play</button>
+        <button onClick="{{ onPlay }}" style="display:flex;align-items:center;gap:9px;padding:14px 26px;border-radius:999px;border:none;background:rgba(255,255,255,0.16);color:#fff;font-family:inherit;font-weight:700;font-size:16px;cursor:pointer;backdrop-filter:blur(8px);" style-hover="background:rgba(255,255,255,0.26)"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5.5M12 7.6v.1"/></svg>Mais info</button>
+        <button onClick="{{ toggleMute }}" aria-label="Mute" style="display:flex;align-items:center;justify-content:center;width:50px;height:50px;border-radius:999px;border:1px solid rgba(255,255,255,0.35);background:rgba(255,255,255,0.06);color:#fff;cursor:pointer;" style-hover="background:rgba(255,255,255,0.16)">
+          <sc-if value="{{ muted }}" hint-placeholder-val="{{ true }}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M17 9.5l5 5M22 9.5l-5 5"/></svg></sc-if>
+          <sc-if value="{{ notMuted }}" hint-placeholder-val="{{ false }}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19.5 5.5a9 9 0 0 1 0 13"/></svg></sc-if>
+        </button>
+      </div>
+    </div>
+    <button onClick="{{ scrollDown }}" aria-label="Scroll down" style="position:absolute;left:50%;bottom:26px;transform:translateX(-50%);z-index:5;width:44px;height:44px;border-radius:999px;border:1px solid rgba(255,255,255,0.25);background:rgba(0,0,0,0.35);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(8px);" style-hover="background:rgba(255,255,255,0.16)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></button>
+  </section>
+
+  <div id="meida-rows" style="position:relative;z-index:5;margin-top:-48px;padding:0 clamp(20px,4vw,60px) 110px;display:flex;flex-direction:column;gap:36px;">
+    <sc-for list="{{ rows }}" as="row" hint-placeholder-count="4">
+      <div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:13px;padding-right:2px;">
+          <h2 style="font-size:21px;font-weight:800;color:#fff;letter-spacing:-0.3px;">{{ row.title }}</h2>
+          <div style="display:flex;gap:8px;">
+            <button onClick="{{ row.scrollL }}" aria-label="Scroll left" style="width:34px;height:34px;border-radius:999px;border:none;background:rgba(255,255,255,0.08);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;" style-hover="background:rgba(255,255,255,0.2)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 6-6 6 6 6"/></svg></button>
+            <button onClick="{{ row.scrollR }}" aria-label="Scroll right" style="width:34px;height:34px;border-radius:999px;border:none;background:rgba(255,255,255,0.08);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;" style-hover="background:rgba(255,255,255,0.2)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg></button>
+          </div>
+        </div>
+        <div id="{{ row.id }}" class="row-scroll" style="display:flex;gap:12px;overflow-x:auto;scroll-behavior:smooth;padding:4px 2px;">
+          <sc-for list="{{ row.items }}" as="item" hint-placeholder-count="6">
+            <div onClick="{{ item.onClick }}" style="position:relative;flex:0 0 auto;width:{{ row.cardW }}px;height:{{ row.cardH }}px;border-radius:11px;overflow:hidden;cursor:pointer;background:#15151b;transition:transform .25s ease,box-shadow .25s ease;" style-hover="transform:translateY(-5px) scale(1.035);box-shadow:0 18px 44px rgba(0,0,0,0.6)">
+              <div style="position:absolute;inset:0;background:{{ item.bg }};"></div>
+              <div style="position:absolute;inset:0;background:linear-gradient(0deg,rgba(0,0,0,0.82) 2%,rgba(0,0,0,0) 56%);"></div>
+              <sc-if value="{{ item.tag }}" hint-placeholder-val="">
+                <div style="position:absolute;top:9px;left:9px;padding:4px 8px;border-radius:5px;font-size:10px;font-weight:800;letter-spacing:0.8px;background:{{ accent }};color:#fff;">{{ item.tag }}</div>
+              </sc-if>
+              <div style="position:absolute;left:12px;right:12px;bottom:11px;">
+                <div style="font-size:15px;font-weight:800;color:#fff;letter-spacing:-0.2px;line-height:1.12;">{{ item.title }}</div>
+                <div style="font-size:11px;font-weight:600;color:rgba(255,255,255,0.6);margin-top:3px;">{{ item.sub }}</div>
+                <sc-if value="{{ item.progress }}" hint-placeholder-val="{{ false }}">
+                  <div style="margin-top:9px;height:3px;border-radius:3px;background:rgba(255,255,255,0.25);overflow:hidden;"><div style="height:100%;width:{{ item.progress }}%;background:{{ accent }};"></div></div>
+                </sc-if>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </sc-for>
+  </div>
+
+  <button aria-label="MEIDA Assistant" style="position:fixed;right:24px;bottom:24px;z-index:60;width:54px;height:54px;border-radius:999px;border:none;background:{{ accent }};color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 12px 30px rgba(0,0,0,0.5);" style-hover="filter:brightness(1.1)"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.5l1.9 4.8L19 9l-5.1 1.8L12 16l-1.9-5.2L5 9l5.1-1.7z"/></svg></button>
+
+  <sc-if value="{{ modal }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeModal }}" style="position:fixed;inset:0;z-index:90;background:rgba(0,0,0,0.72);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:24px;animation:meidaFade .22s ease both;">
+      <div onClick="{{ stop }}" style="width:min(560px,94vw);border-radius:18px;overflow:hidden;background:#101015;border:1px solid rgba(255,255,255,0.09);box-shadow:0 34px 90px rgba(0,0,0,0.65);animation:meidaUp .26s ease both;">
+        <div style="position:relative;height:240px;background:{{ modal.bg }};">
+          <div style="position:absolute;inset:0;background:linear-gradient(0deg,#101015 2%,rgba(16,16,21,0) 62%);"></div>
+          <button onClick="{{ closeModal }}" aria-label="Close" style="position:absolute;top:14px;right:14px;width:34px;height:34px;border-radius:50%;border:none;background:rgba(0,0,0,0.5);color:#fff;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;" style-hover="background:rgba(0,0,0,0.75)">✕</button>
+          <div style="position:absolute;left:24px;bottom:18px;font-family:Archivo,sans-serif;font-weight:900;font-size:clamp(30px,5vw,42px);line-height:0.95;letter-spacing:-1px;color:#fff;">{{ modal.title }}</div>
+        </div>
+        <div style="padding:20px 24px 26px;">
+          <div style="font-size:12px;font-weight:600;color:rgba(255,255,255,0.55);margin-bottom:12px;">{{ modal.meta }}</div>
+          <p style="font-size:14px;line-height:1.6;color:rgba(255,255,255,0.8);margin-bottom:22px;text-wrap:pretty;">{{ modal.desc }}</p>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            <button style="display:flex;align-items:center;gap:8px;padding:12px 26px;border-radius:999px;border:none;background:#fff;color:#0a0a0b;font-family:inherit;font-weight:700;font-size:15px;cursor:pointer;" style-hover="background:rgba(255,255,255,0.84)"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M7 4v16l13-8z"/></svg>Play</button>
+            <button style="display:flex;align-items:center;gap:8px;padding:12px 22px;border-radius:999px;border:1px solid rgba(255,255,255,0.25);background:transparent;color:#fff;font-family:inherit;font-weight:700;font-size:15px;cursor:pointer;" style-hover="background:rgba(255,255,255,0.1)">+ A minha lista</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ searchOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed;inset:0;z-index:95;background:rgba(7,7,8,0.97);backdrop-filter:blur(10px);padding:88px clamp(20px,6vw,80px) 60px;overflow-y:auto;animation:meidaFade .22s ease both;">
+      <button onClick="{{ closeSearch }}" aria-label="Close search" style="position:absolute;top:26px;right:30px;width:42px;height:42px;border-radius:999px;border:none;background:rgba(255,255,255,0.1);color:#fff;font-size:18px;cursor:pointer;" style-hover="background:rgba(255,255,255,0.2)">✕</button>
+      <div style="max-width:760px;margin:0 auto 34px;display:flex;align-items:center;gap:16px;border-bottom:2px solid rgba(255,255,255,0.16);padding-bottom:14px;">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+        <input value="{{ q }}" onChange="{{ setQ }}" placeholder="Pesquisar títulos…" style="flex:1;background:transparent;border:none;outline:none;color:#fff;font-family:inherit;font-size:clamp(22px,4vw,30px);font-weight:700;" />
+      </div>
+      <div style="max-width:1100px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px;">
+        <sc-for list="{{ results }}" as="item" hint-placeholder-count="0">
+          <div onClick="{{ item.onClick }}" style="position:relative;height:230px;border-radius:11px;overflow:hidden;cursor:pointer;background:#15151b;transition:transform .2s ease;" style-hover="transform:scale(1.04)">
+            <div style="position:absolute;inset:0;background:{{ item.bg }};"></div>
+            <div style="position:absolute;inset:0;background:linear-gradient(0deg,rgba(0,0,0,0.82) 2%,rgba(0,0,0,0) 56%);"></div>
+            <div style="position:absolute;left:11px;right:11px;bottom:10px;"><div style="font-size:14px;font-weight:800;color:#fff;line-height:1.12;">{{ item.title }}</div><div style="font-size:11px;font-weight:600;color:rgba(255,255,255,0.6);margin-top:3px;">{{ item.sub }}</div></div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </sc-if>
+
+  <template id="__bundler_thumbnail"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" fill="#0a0a0f"/><rect x="28" y="32" width="44" height="14" rx="7" fill="#c90303"/><rect x="22" y="56" width="24" height="16" rx="3" fill="#2b2f52"/><rect x="50" y="56" width="24" height="16" rx="3" fill="#4a1d1d"/></svg></template>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:&quot;100%&quot;,&quot;height&quot;:&quot;100%&quot;},&quot;brandName&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;MEIDA&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;accent&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#c90303&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;startTab&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;home&quot;,&quot;options&quot;:[&quot;home&quot;,&quot;movies&quot;,&quot;tv&quot;,&quot;anime&quot;],&quot;tsType&quot;:&quot;string&quot;}}">
+class Component extends DCLogic {
+  state = { tab: null, muted: true, modal: null, searchOpen: false, q: "", menuOpen: false };
+
+  G = [
+    "linear-gradient(150deg,#243a5e,#0a121f)",
+    "linear-gradient(150deg,#4a2238,#160a12)",
+    "linear-gradient(150deg,#1c4038,#08150f)",
+    "linear-gradient(150deg,#4a3418,#160e05)",
+    "linear-gradient(150deg,#33205a,#0e0820)",
+    "linear-gradient(150deg,#16404f,#06141a)",
+    "linear-gradient(150deg,#4a1d1d,#160707)",
+    "linear-gradient(150deg,#2b2f52,#0b0d1c)"
+  ];
+
+  data() {
+    const G = this.G;
+    const mk = (arr, type, off) => arr.map((t, i) => ({ id: type + "-" + i, title: t[0], sub: t[1], tag: t[2], type, bg: G[(i + off) % G.length] }));
+    const anime = mk([
+      ["Frieren", "Fantasy · 2024", "NOVO EP"],
+      ["Solo Leveling", "Ação · 2024", "TOP 10"],
+      ["Jujutsu Kaisen", "Ação · 2023", ""],
+      ["Chainsaw Man", "Ação · 2023", ""],
+      ["Dandadan", "Sci-Fi · 2024", "NOVO"],
+      ["Spy x Family", "Comédia · 2024", ""],
+      ["Demon Slayer", "Ação · 2024", ""],
+      ["Apothecary Diaries", "Drama · 2024", "TOP 10"]
+    ], "anime", 0);
+    const movie = mk([
+      ["Afterlight", "Drama · 2025", ""],
+      ["Paper Cities", "Thriller · 2024", "NOVO"],
+      ["The Quiet North", "Drama · 2024", ""],
+      ["Velvet Road", "Crime · 2023", ""],
+      ["Glasshouse", "Sci-Fi · 2025", "TOP 10"],
+      ["Tidewater", "Aventura · 2024", ""],
+      ["Ironbound", "Ação · 2023", ""],
+      ["Lantern", "Mistério · 2025", "NOVO"]
+    ], "movie", 2);
+    const tv = mk([
+      ["Saltline", "Drama · 2024", ""],
+      ["The Foundry", "Thriller · 2025", "NOVO"],
+      ["Northwind", "Drama · 2023", ""],
+      ["Lowtown", "Crime · 2024", "TOP 10"],
+      ["Greyhour", "Mistério · 2024", ""],
+      ["Hollowpoint", "Ação · 2023", ""],
+      ["Brackish", "Sci-Fi · 2025", ""],
+      ["Cinderfall", "Fantasy · 2024", "NOVO"]
+    ], "tv", 4);
+    return { anime, movie, tv };
+  }
+
+  featuredFor(tab) {
+    if (tab === "movies") return { brand: "MEIDA FILME", title: "Afterlight", word: "AFTERLIGHT", desc: "Um cartógrafo em luto descobre uma cidade que só aparece ao anoitecer — e as pessoas que nunca a deixaram.", meta: "2025 · 2h 08m · M/15 · Drama", heroBg: "radial-gradient(120% 130% at 72% 28%, #4a2238 0%, #160a12 55%, #08060a 100%)", bg: "radial-gradient(120% 130% at 72% 28%, #4a2238 0%, #160a12 55%, #08060a 100%)" };
+    if (tab === "tv") return { brand: "MEIDA ORIGINAL", title: "Saltline", word: "SALTLINE", desc: "Numa costa piscatória coberta de nevoeiro, uma detetive regressa a casa para um caso que toda a vila concordou esquecer.", meta: "2024 · 2 Temporadas · M/15 · Drama", heroBg: "radial-gradient(120% 130% at 72% 28%, #1c4038 0%, #08150f 55%, #04080a 100%)", bg: "radial-gradient(120% 130% at 72% 28%, #1c4038 0%, #08150f 55%, #04080a 100%)" };
+    return { brand: "MEIDA ANIME", title: "Frieren", word: "FRIEREN", desc: "Depois de o rei demónio cair, a maga elfa Frieren parte numa viagem tranquila para compreender os humanos que sobreviveu.", meta: "2024 · 28 Episódios · M/14 · Fantasia", heroBg: "radial-gradient(120% 130% at 72% 28%, #243a5e 0%, #0a121f 55%, #05080f 100%)", bg: "radial-gradient(120% 130% at 72% 28%, #243a5e 0%, #0a121f 55%, #05080f 100%)" };
+  }
+
+  rowsFor(tab) {
+    const d = this.data();
+    const cw = (items) => items.map((x) => ({ ...x }));
+    if (tab === "movies") return [
+      { id: "rm1", title: "Filmes em Destaque", cardW: 300, cardH: 170, items: cw(d.movie) },
+      { id: "rm2", title: "Estreias", cardW: 184, cardH: 272, items: cw([...d.movie].reverse()) },
+      { id: "rm3", title: "Aclamados pela Crítica", cardW: 184, cardH: 272, items: cw(d.movie.slice(3).concat(d.movie.slice(0, 3))) }
+    ];
+    if (tab === "tv") return [
+      { id: "rt1", title: "Séries em Destaque", cardW: 300, cardH: 170, items: cw(d.tv) },
+      { id: "rt2", title: "Novas Temporadas", cardW: 184, cardH: 272, items: cw([...d.tv].reverse()) },
+      { id: "rt3", title: "Para Maratonar", cardW: 184, cardH: 272, items: cw(d.tv.slice(2).concat(d.tv.slice(0, 2))) }
+    ];
+    if (tab === "anime") return [
+      { id: "ra1", title: "Anime em Destaque", cardW: 300, cardH: 170, items: cw(d.anime) },
+      { id: "ra2", title: "Simulcasts desta Temporada", cardW: 184, cardH: 272, items: cw(d.anime) },
+      { id: "ra3", title: "Êxitos Shonen", cardW: 184, cardH: 272, items: cw(d.anime.slice(1).concat(d.anime.slice(0, 1))) },
+      { id: "ra4", title: "Slice of Life", cardW: 184, cardH: 272, items: cw([...d.anime].reverse()) }
+    ];
+    const cont = cw([d.anime[0], d.movie[1], d.tv[3], d.anime[3], d.movie[4]]).map((x, i) => ({ ...x, progress: [68, 32, 80, 15, 50][i] }));
+    return [
+      { id: "rh1", title: "Em Tendência", cardW: 300, cardH: 170, items: cw([d.anime[1], d.movie[4], d.anime[0], d.tv[1], d.movie[1], d.anime[4], d.tv[3]]) },
+      { id: "rh2", title: "Continuar a Ver", cardW: 300, cardH: 170, items: cont },
+      { id: "rh3", title: "Anime Popular", cardW: 184, cardH: 272, items: cw(d.anime) },
+      { id: "rh4", title: "Novos Filmes", cardW: 184, cardH: 272, items: cw(d.movie) },
+      { id: "rh5", title: "Séries para Ti", cardW: 184, cardH: 272, items: cw(d.tv) }
+    ];
+  }
+
+  renderVals() {
+    const accent = this.props.accent ?? "#7c5cff";
+    const brandName = this.props.brandName ?? "MEIDA";
+    const tab = this.state.tab ?? this.props.startTab ?? "home";
+    const navStyle = (key) => {
+      const a = tab === key;
+      return "display:flex;align-items:center;gap:7px;padding:9px 15px;border-radius:999px;border:none;font-family:inherit;font-weight:600;font-size:14px;cursor:pointer;transition:background .2s,color .2s;" + (a ? "background:#fff;color:#0a0a0b;" : "background:transparent;color:rgba(255,255,255,0.82);");
+    };
+    const rows = this.rowsFor(tab);
+    const scroll = (id, dir) => { const el = document.getElementById(id); if (el) el.scrollBy({ left: dir * el.clientWidth * 0.85, behavior: "smooth" }); };
+    const open = (it) => () => this.setState({ modal: { ...it, meta: it.meta || it.sub, desc: it.desc || ("Vê agora em 4K Ultra HD — só na " + brandName + ".") } });
+    rows.forEach((r) => {
+      r.scrollL = () => scroll(r.id, -1);
+      r.scrollR = () => scroll(r.id, 1);
+      r.items.forEach((it) => { it.onClick = open(it); });
+    });
+    const featured = this.featuredFor(tab);
+    const q = this.state.q.trim().toLowerCase();
+    let results = [];
+    if (q) { const d = this.data(); results = [...d.anime, ...d.movie, ...d.tv].filter((x) => x.title.toLowerCase().includes(q)).map((x) => ({ ...x, onClick: open(x) })); }
+    return {
+      accent, brandName,
+      navHome: navStyle("home"), navMovies: navStyle("movies"), navTv: navStyle("tv"), navAnime: navStyle("anime"),
+      tabHome: () => this.setState({ tab: "home", menuOpen: false }),
+      tabMovies: () => this.setState({ tab: "movies", menuOpen: false }),
+      tabTv: () => this.setState({ tab: "tv", menuOpen: false }),
+      tabAnime: () => this.setState({ tab: "anime", menuOpen: false }),
+      featured, rows,
+      muted: this.state.muted, notMuted: !this.state.muted,
+      toggleMute: () => this.setState((s) => ({ muted: !s.muted })),
+      onPlay: () => this.setState({ modal: { ...featured } }),
+      modal: this.state.modal, closeModal: () => this.setState({ modal: null }),
+      stop: (e) => e.stopPropagation(),
+      searchOpen: this.state.searchOpen,
+      openSearch: () => this.setState({ searchOpen: true, menuOpen: false }),
+      closeSearch: () => this.setState({ searchOpen: false, q: "" }),
+      q: this.state.q, setQ: (e) => this.setState({ q: e.target.value }), results,
+      menuOpen: this.state.menuOpen, toggleMenu: () => this.setState((s) => ({ menuOpen: !s.menuOpen })),
+      scrollDown: () => window.scrollBy({ top: window.innerHeight * 0.8, behavior: "smooth" })
+    };
+  }
+}
+</script>
+</body>
+</html>

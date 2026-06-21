@@ -1,0 +1,10 @@
+node_modules/
+dist/
+release/
+.env
+server/.env
+*.log
+.DS_Store
+.cache/
+torrent-data/
+server/data/

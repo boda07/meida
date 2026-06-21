@@ -1,0 +1,9 @@
+public_users = 1
+private_users = 12
+total = public_users + private_users
+print("total usuarios:") 
+print(total)
+
+idade_do_henrique = 5 * 2
+print("idade_do_henrique:")
+print(idade_do_henrique)
