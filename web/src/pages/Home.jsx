@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { api } from "../api/client.js";
 import { useSettings } from "../settings/SettingsContext.jsx";
 import MediaRow from "../components/MediaRow.jsx";
+import ContinueWatching from "../components/ContinueWatching.jsx";
 import Hero from "../components/Hero.jsx";
 
 function pickHero(rows) {
@@ -43,6 +44,7 @@ export default function Home() {
     <div className="catalog-page">
       <Hero item={hero} />
       <div className="rows">
+        <ContinueWatching />
         {rows.map((row) => (
           <MediaRow key={row.id} title={row.title} items={row.items} />
         ))}

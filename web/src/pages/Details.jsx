@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
 import { api, imageUrl } from "../api/client.js";
 import { useSettings } from "../settings/SettingsContext.jsx";
+import { useAuth } from "../auth/AuthContext.jsx";
 import { useWatchParty } from "../watchparty/WatchPartyContext.jsx";
 import Player from "../components/Player.jsx";
 import SourceSelector from "../components/SourceSelector.jsx";
@@ -12,10 +13,28 @@ import AnimeExtract from "../components/AnimeExtract.jsx";
 
 export default function Details() {
   const { type, id } = useParams();
+  const [searchParams] = useSearchParams();
   const { settings } = useSettings();
+  const { user } = useAuth();
   const party = useWatchParty();
   const [details, setDetails] = useState(null);
   const [error, setError] = useState(null);
+
+  // Retomar no episodio vindo do "Continua a ver" (?s=temporada&e=episodio).
+  const resumeRef = useRef({
+    season: Number(searchParams.get("s")) || null,
+    episode: Number(searchParams.get("e")) || null,
+    pending: true,
+  });
+  // Devolve o episodio inicial: o de retoma (uma vez) ou 1.
+  function takeResumeEpisode() {
+    const r = resumeRef.current;
+    if (r.pending && r.episode) {
+      r.pending = false;
+      return r.episode;
+    }
+    return 1;
+  }
 
   // Estado de series
   const [season, setSeason] = useState(1);
@@ -45,7 +64,12 @@ export default function Details() {
       .then((d) => {
         setDetails(d);
         if (d.type === "tv" && d.seasons?.length) {
-          setSeason(d.seasons[0].seasonNumber);
+          const r = resumeRef.current;
+          const wanted =
+            r.pending && r.season && d.seasons.some((s) => s.seasonNumber === r.season)
+              ? r.season
+              : d.seasons[0].seasonNumber;
+          setSeason(wanted);
         }
       })
       .catch((e) => setError(e.message));
@@ -62,7 +86,7 @@ export default function Details() {
           name: `Episodio ${i + 1}`,
         }))
       );
-      setEpisode(1);
+      setEpisode(takeResumeEpisode());
       return;
     }
     if (details?.type !== "tv") return;
@@ -70,7 +94,7 @@ export default function Details() {
       .season(details.id, season)
       .then((d) => {
         setEpisodes(d.episodes);
-        setEpisode(1);
+        setEpisode(takeResumeEpisode());
       })
       .catch((e) => setError(e.message));
   }, [details, season, settings.overviewLang]);
@@ -111,28 +135,95 @@ export default function Details() {
       .catch((e) => setError(e.message));
   }, [details, season, episode, settings.animeAudio]);
 
-  // Scrobble MAL: marca o episodio de anime como visto SO quando o utilizador
-  // carrega no botao (antes era automatico apos 15s mesmo sem acabar).
-  const [scrobbled, setScrobbled] = useState(() => new Set());
-  const [scrobbling, setScrobbling] = useState(false);
-  const [scrobbleErr, setScrobbleErr] = useState(false);
-  const scrobbleKey = details?.malId
-    ? `${details.malId}:${details.isMovie ? 1 : episode}`
-    : null;
-  const markEpisodeWatched = async () => {
-    if (!details?.isAnime || !details.malId || scrobbling) return;
-    const ep = details.isMovie ? 1 : episode;
-    setScrobbling(true);
-    setScrobbleErr(false);
-    try {
-      await api.malScrobble(details.malId, ep);
-      setScrobbled((s) => new Set(s).add(`${details.malId}:${ep}`));
-    } catch {
-      setScrobbleErr(true);
-    } finally {
-      setScrobbling(false);
+  // Diario: regista o ARRANQUE ~8s depois de uma fonte ficar ativa (so 1x por
+  // episodio/sessao). Guarda a posicao para o "Continua a ver".
+  const startedRef = useRef(new Set());
+  useEffect(() => {
+    if (!user || !details || !active) return;
+    const ep = details.isMovie ? null : episode;
+    const s = details.type === "tv" ? season : null;
+    const key = `${details.type}:${details.id}:${s}:${ep}`;
+    if (startedRef.current.has(key)) return;
+    const t = setTimeout(() => {
+      startedRef.current.add(key);
+      api
+        .progressStart({
+          type: details.type,
+          tmdbId: details.id,
+          title: details.title,
+          poster: details.poster,
+          season: s,
+          episode: ep,
+        })
+        .catch(() => {});
+    }, 8000);
+    return () => clearTimeout(t);
+  }, [user, details, active, season, episode]);
+
+  // Proxima posicao (para avancar o "continua a ver" ao concluir um episodio).
+  function nextEpisodePos() {
+    if (details.type === "anime") {
+      return episode < episodes.length ? { season: null, episode: episode + 1 } : null;
     }
-  };
+    if (details.type === "tv") {
+      if (episode < episodes.length) return { season, episode: episode + 1 };
+      const idx = details.seasons?.findIndex((s) => s.seasonNumber === season) ?? -1;
+      const nextS = idx >= 0 ? details.seasons[idx + 1] : null;
+      return nextS ? { season: nextS.seasonNumber, episode: 1 } : null;
+    }
+    return null;
+  }
+
+  // Marca como acabado (filme) / conclui o episodio atual (serie/anime).
+  const [finishing, setFinishing] = useState(false);
+  const [finishMsg, setFinishMsg] = useState(null);
+  const isMovieLike = details?.isMovie || details?.type === "movie";
+  async function markFinished() {
+    if (!details || finishing) return;
+    setFinishing(true);
+    setFinishMsg(null);
+    try {
+      if (isMovieLike) {
+        await api.progressFinish({
+          type: details.type,
+          tmdbId: details.id,
+          title: details.title,
+          poster: details.poster,
+        });
+        await api
+          .saveLibrary({
+            tmdbId: details.id,
+            type: details.type,
+            title: details.title,
+            poster: details.poster,
+            genres: details.genres || [],
+            rating: details.rating ?? null,
+            watched: true,
+          })
+          .catch(() => {});
+      } else {
+        const next = nextEpisodePos();
+        await api.progressFinish({
+          type: details.type,
+          tmdbId: details.id,
+          title: details.title,
+          poster: details.poster,
+          season: details.type === "tv" ? season : null,
+          episode,
+          nextSeason: next?.season ?? null,
+          nextEpisode: next?.episode ?? null,
+        });
+        if (details.isAnime && details.malId) {
+          api.malScrobble(details.malId, episode).catch(() => {});
+        }
+      }
+      setFinishMsg("Guardado no diario.");
+    } catch {
+      setFinishMsg("Nao foi possivel guardar.");
+    } finally {
+      setFinishing(false);
+    }
+  }
 
   // Watch Party: sincroniza temporada/episodio/separador entre a sala.
   const applyingUntil = useRef(0);
@@ -265,30 +356,31 @@ export default function Details() {
         </div>
       )}
 
+      {user && (
+        <div className="scrobble-bar">
+          <button className="btn scrobble-btn" onClick={markFinished} disabled={finishing}>
+            {finishing
+              ? "A guardar..."
+              : isMovieLike
+              ? "✓ Marcar como visto"
+              : `✓ Terminei o episodio ${episode}`}
+          </button>
+          {!isMovieLike && (
+            <span className="muted" style={{ fontSize: 12 }}>
+              Guarda no diario e avanca o "Continua a ver" para o proximo episodio
+              {details.isAnime ? " (e marca no MAL)" : ""}.
+            </span>
+          )}
+          {finishMsg && (
+            <span className="muted" style={{ fontSize: 12 }}>
+              {finishMsg}
+            </span>
+          )}
+        </div>
+      )}
+
       {details.isAnime ? (
         <div className="watch">
-          <div className="scrobble-bar">
-            <button
-              className="btn scrobble-btn"
-              onClick={markEpisodeWatched}
-              disabled={scrobbling || scrobbled.has(scrobbleKey)}
-            >
-              {scrobbled.has(scrobbleKey)
-                ? details.isMovie
-                  ? "✓ Marcado como visto no MAL"
-                  : `✓ Episodio ${episode} marcado no MAL`
-                : scrobbling
-                ? "A marcar..."
-                : details.isMovie
-                ? "Marcar como visto no MAL"
-                : `Marcar episodio ${episode} como visto no MAL`}
-            </button>
-            {scrobbleErr && (
-              <span className="muted" style={{ fontSize: 12 }}>
-                Nao foi possivel marcar (liga a tua conta MAL nas Definicoes).
-              </span>
-            )}
-          </div>
           {animeExtractorOn && (
             <div className="mode-tabs">
               <button

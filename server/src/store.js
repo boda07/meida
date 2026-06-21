@@ -12,10 +12,10 @@ const dataDir = process.env.DB_DIR
 mkdirSync(dataDir, { recursive: true });
 const FILE = resolve(dataDir, "data.json");
 
-let data = { users: [], library: [], seq: { users: 0 } };
+let data = { users: [], library: [], progress: [], seq: { users: 0 } };
 if (existsSync(FILE)) {
   try {
-    data = { users: [], library: [], seq: { users: 0 }, ...JSON.parse(readFileSync(FILE, "utf8")) };
+    data = { users: [], library: [], progress: [], seq: { users: 0 }, ...JSON.parse(readFileSync(FILE, "utf8")) };
   } catch {
     // ficheiro corrompido -> comeca limpo
   }
@@ -154,6 +154,95 @@ export function setLibraryRating(userId, tmdbId, type, rating) {
 export function deleteLibrary(userId, tmdbId, type) {
   data.library = data.library.filter(
     (x) => !(x.user_id === userId && x.tmdb_id === tmdbId && x.media_type === type)
+  );
+  save();
+}
+
+/* ===== Progresso / Diario =====
+   Uma linha por titulo (movie/tv/anime). Guarda quando comecou e quando acabou
+   de ver, e a posicao atual (temporada/episodio) para o "Continua a ver". */
+function toApiProgress(r) {
+  return {
+    type: r.type,
+    tmdbId: r.tmdb_id,
+    title: r.title ?? null,
+    poster: r.poster ?? null,
+    season: r.season ?? null,
+    episode: r.episode ?? null,
+    startedAt: r.started_at ?? null,
+    finishedAt: r.finished_at ?? null,
+    status: r.status ?? "watching",
+    updatedAt: r.updated_at,
+  };
+}
+
+export function listProgress(userId) {
+  return data.progress
+    .filter((r) => r.user_id === userId)
+    .sort((a, b) => (a.updated_at < b.updated_at ? 1 : -1))
+    .map(toApiProgress);
+}
+
+export function getProgress(userId, type, tmdbId) {
+  const r = data.progress.find(
+    (x) => x.user_id === userId && x.type === type && x.tmdb_id === tmdbId
+  );
+  return r ? toApiProgress(r) : null;
+}
+
+function findOrCreateProgress(userId, type, tmdbId) {
+  let r = data.progress.find(
+    (x) => x.user_id === userId && x.type === type && x.tmdb_id === tmdbId
+  );
+  if (!r) {
+    r = { user_id: userId, type, tmdb_id: tmdbId };
+    data.progress.push(r);
+  }
+  return r;
+}
+
+// Inicio: regista o arranque (so a 1a vez ou num recomeco) e a posicao atual.
+export function startProgress(e) {
+  const r = findOrCreateProgress(e.userId, e.type, e.tmdbId);
+  if (e.title != null) r.title = e.title;
+  if (e.poster != null) r.poster = e.poster;
+  if (e.season != null) r.season = e.season;
+  if (e.episode != null) r.episode = e.episode;
+  if (!r.started_at || r.status === "finished") {
+    r.started_at = new Date().toISOString();
+    r.finished_at = null;
+  }
+  r.status = "watching";
+  r.updated_at = new Date().toISOString();
+  save();
+  return toApiProgress(r);
+}
+
+// Fim: marca acabado. Para episodicos com proximo episodio, avanca a posicao e
+// mantem "a ver" (para continuar no episodio seguinte).
+export function finishProgress(e) {
+  const r = findOrCreateProgress(e.userId, e.type, e.tmdbId);
+  if (e.title != null) r.title = e.title;
+  if (e.poster != null) r.poster = e.poster;
+  if (!r.started_at) r.started_at = new Date().toISOString();
+  r.finished_at = new Date().toISOString();
+  if (e.nextSeason != null && e.nextEpisode != null) {
+    r.season = e.nextSeason;
+    r.episode = e.nextEpisode;
+    r.status = "watching";
+  } else {
+    if (e.season != null) r.season = e.season;
+    if (e.episode != null) r.episode = e.episode;
+    r.status = "finished";
+  }
+  r.updated_at = new Date().toISOString();
+  save();
+  return toApiProgress(r);
+}
+
+export function deleteProgress(userId, type, tmdbId) {
+  data.progress = data.progress.filter(
+    (x) => !(x.user_id === userId && x.type === type && x.tmdb_id === tmdbId)
   );
   save();
 }

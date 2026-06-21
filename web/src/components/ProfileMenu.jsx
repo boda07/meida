@@ -41,6 +41,9 @@ export default function ProfileMenu() {
           <Link to="/library" onClick={() => setOpen(false)}>
             A minha lista
           </Link>
+          <Link to="/diary" onClick={() => setOpen(false)}>
+            Diario
+          </Link>
           <Link to="/settings" onClick={() => setOpen(false)}>
             Definições
           </Link>

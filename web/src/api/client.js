@@ -145,6 +145,13 @@ export const api = {
   malUnlink: () => post("/api/mal/unlink", {}),
   malScrobble: (malId, episode) => post("/api/mal/scrobble", { malId, episode }),
 
+  // Diario / continua a ver
+  progress: () => get("/api/progress"),
+  progressItem: (type, tmdb) => get("/api/progress/item", { type, tmdb }),
+  progressStart: (entry) => post("/api/progress/start", entry),
+  progressFinish: (entry) => post("/api/progress/finish", entry),
+  progressRemove: (type, tmdb) => del("/api/progress/item", { type, tmdb }),
+
   // Letterboxd (filmes)
   letterboxdStatus: () => get("/api/letterboxd/status"),
   letterboxdLink: (username) => post("/api/letterboxd/link", { username }),
