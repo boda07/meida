@@ -129,7 +129,10 @@
       "PowerShell($env:Path += \";C:\\\\Program Files\\\\GitHub CLI\"; gh release list --repo boda07/meida --limit 2)",
       "PowerShell($p = Start-Process node -ArgumentList \"server/src/index.js\" -PassThru -WindowStyle Hidden; Start-Sleep -Seconds 3; try { Write-Output \"Nisemonogatari \\(11597\\):\"; \\(Invoke-RestMethod \"http://localhost:5175/api/details?type=anime&id=11597\"\\) | Select-Object id,type,isAnime,isMovie,episodeCount,title | Format-List } finally { Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue })",
       "PowerShell(git stash pop 2>&1 | Select-Object -Last 3; git push origin main; if \\($?\\) { $env:Path += \";C:\\\\Program Files\\\\GitHub CLI\"; $env:GH_TOKEN = \\(gh auth token\\); $env:CSC_IDENTITY_AUTO_DISCOVERY = \"false\"; npm run app:publish 2>&1 | Select-Object -Last 8 })",
-      "PowerShell(npm --prefix web install @supabase/supabase-js 2>&1)"
+      "PowerShell(npm --prefix web install @supabase/supabase-js 2>&1)",
+      "WebFetch(domain:autoembed.cc)",
+      "PowerShell($p = Start-Process node -ArgumentList \"server/src/index.js\" -PassThru -WindowStyle Hidden; Start-Sleep -Seconds 3; try { Write-Output \"Fate/Zero details \\(anilistId\\):\"; \\(Invoke-RestMethod \"http://localhost:5175/api/details?type=anime&id=10087\"\\) | Select-Object malId,anilistId,episodeCount | Format-List; Write-Output \"Sources \\(mal=10087 anilist=10087 ep=8\\):\"; \\(Invoke-RestMethod \"http://localhost:5175/api/sources?mal=10087&anilist=10087&episode=8&audio=sub\"\\).embeds | Format-Table provider,embedUrl -AutoSize } finally { Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue })",
+      "PowerShell($p = Start-Process node -ArgumentList \"server/src/index.js\" -PassThru -WindowStyle Hidden; Start-Sleep -Seconds 3; try { Write-Output \"Demon Slayer \\(MAL 38000\\):\"; \\(Invoke-RestMethod \"http://localhost:5175/api/details?type=anime&id=38000\"\\) | Select-Object malId,anilistId | Format-List } finally { Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue })"
     ],
     "additionalDirectories": [
       "\\tmp"

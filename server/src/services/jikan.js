@@ -86,6 +86,30 @@ export async function getAnimeCatalog() {
   return rows;
 }
 
+// Converte um id do MyAnimeList no id do AniList (alguns providers de anime
+// usam AniList). Cache em memoria; falha em silencio (devolve null).
+const anilistCache = new Map();
+export async function malToAnilist(malId) {
+  const key = Number(malId);
+  if (anilistCache.has(key)) return anilistCache.get(key);
+  try {
+    const res = await fetch("https://graphql.anilist.co", {
+      method: "POST",
+      headers: { "content-type": "application/json", accept: "application/json" },
+      body: JSON.stringify({
+        query: "query($m:Int){Media(idMal:$m,type:ANIME){id}}",
+        variables: { m: key },
+      }),
+    });
+    const j = await res.json();
+    const id = j?.data?.Media?.id || null;
+    anilistCache.set(key, id);
+    return id;
+  } catch {
+    return null;
+  }
+}
+
 // Detalhes de um anime: 100% MyAnimeList (poster, titulo, sinopse, episodios).
 // A reproducao usa os providers de anime por id do MAL (ver providers.js).
 export async function getAnimeDetails(malId) {
@@ -110,10 +134,13 @@ export async function getAnimeDetails(malId) {
   if (isMovie) episodeCount = 1;
   if (!episodeCount) episodeCount = 24; // fallback razoavel
 
+  const anilistId = await malToAnilist(malId);
+
   return {
     id: Number(malId),
     type: "anime",
     malId: Number(malId),
+    anilistId,
     isAnime: true,
     isMovie,
     title: base.title,

@@ -120,6 +120,16 @@ const ACCENT_PRESETS = [
   "#06b6d4", // ciano
 ];
 
+// Cores de fundo predefinidas (escuras, para o texto branco continuar legivel).
+const BG_PRESETS = [
+  "#070708", // preto (default)
+  "#0d1117", // github
+  "#0a0e14", // azul-noite
+  "#12101a", // roxo escuro
+  "#0a0f0d", // verde escuro
+  "#15100f", // castanho escuro
+];
+
 // Botoes de escolha unica (estilo pilula).
 function Choice({ value, current, onPick, children }) {
   return (
@@ -273,6 +283,34 @@ export default function Settings() {
               type="color"
               value={settings.accent || "#c90303"}
               onChange={(e) => update({ accent: e.target.value })}
+            />
+            <span>+</span>
+          </label>
+        </div>
+      </section>
+
+      {/* ===== Cor de fundo ===== */}
+      <section className="set-section">
+        <h3>Cor de fundo</h3>
+        <p className="muted">
+          Fundo da app. As predefinidas sao escuras (texto branco legivel); o
+          picker permite qualquer cor.
+        </p>
+        <div className="set-row color-row">
+          {BG_PRESETS.map((c) => (
+            <button
+              key={c}
+              className={`color-swatch ${settings.bgColor === c ? "active" : ""}`}
+              style={{ background: c }}
+              onClick={() => update({ bgColor: c })}
+              aria-label={c}
+            />
+          ))}
+          <label className="color-custom" style={{ background: settings.bgColor }}>
+            <input
+              type="color"
+              value={settings.bgColor || "#070708"}
+              onChange={(e) => update({ bgColor: e.target.value })}
             />
             <span>+</span>
           </label>

@@ -28,6 +28,15 @@ export function SettingsProvider({ children }) {
     root.style.setProperty("--accent-hover", shade(accent, 0.18));
   }, [settings.accent]);
 
+  // Aplica a cor de fundo (e deriva as superficies um pouco mais claras).
+  useEffect(() => {
+    const root = document.documentElement;
+    const bg = settings.bgColor || "#070708";
+    root.style.setProperty("--bg-dark", bg);
+    root.style.setProperty("--bg-surface", shade(bg, 0.08));
+    root.style.setProperty("--bg-surface2", shade(bg, 0.13));
+  }, [settings.bgColor]);
+
   // Aplica o tamanho dos cartazes (largura nas rows + minimo nas grelhas).
   useEffect(() => {
     const root = document.documentElement;

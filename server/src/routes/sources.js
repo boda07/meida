@@ -16,18 +16,20 @@ sourcesRouter.get("/providers", (req, res) => {
 // /api/sources?type=movie&tmdb=123
 // /api/sources?type=tv&tmdb=123&season=1&episode=2
 sourcesRouter.get("/sources", (req, res) => {
-  const { type, tmdb, imdb, season, episode, mal, audio } = req.query;
+  const { type, tmdb, imdb, season, episode, mal, anilist, audio } = req.query;
 
-  // Anime: fontes dedicadas (sub/dub) por id do MAL. Nao precisa de TMDB.
-  const animeSources = mal
-    ? buildAnimeEmbedSources({
-        mal,
-        episode: episode != null ? Number(episode) : 1,
-        audio,
-      })
-    : [];
+  // Anime: fontes dedicadas (sub/dub) por id do MAL/AniList. Nao precisa de TMDB.
+  const animeSources =
+    mal || anilist
+      ? buildAnimeEmbedSources({
+          mal,
+          anilist,
+          episode: episode != null ? Number(episode) : 1,
+          audio,
+        })
+      : [];
 
-  // Sem TMDB so faz sentido para anime (so MAL). Devolve essas fontes.
+  // Sem TMDB so faz sentido para anime. Devolve essas fontes.
   if (!tmdb) {
     if (animeSources.length) return res.json({ embeds: animeSources });
     return res.status(400).json({ error: "falta o parametro tmdb" });

@@ -80,19 +80,35 @@ export const PROVIDERS = [
 export const ANIME_PROVIDERS = [
   {
     // MegaPlay (o mesmo backend do anisuge.tv) aceita o id do MAL diretamente.
-    // E o mais fiavel para anime sub/dub neste momento.
     id: "megaplay-anime",
     name: "MegaPlay (anime)",
+    idType: "mal",
     url: "https://megaplay.buzz/stream/mal/{mal}/{ep}/{audio}",
+  },
+  {
+    // VidPlus usa AniList id — cobertura diferente, bom quando o MegaPlay falha.
+    id: "vidplus-anime",
+    name: "VidPlus (anime)",
+    idType: "anilist",
+    url: "https://player.vidplus.to/embed/anime/{anilist}/{ep}?dub={dubBool}&autoplay=true",
+  },
+  {
+    // VidNest tambem usa AniList id.
+    id: "vidnest-anime",
+    name: "VidNest (anime)",
+    idType: "anilist",
+    url: "https://vidnest.fun/anime/{anilist}/{ep}/{audio}",
   },
   {
     id: "vidlink-anime",
     name: "VidLink (anime)",
+    idType: "mal",
     url: "https://vidlink.pro/anime/{mal}/{ep}/{audio}",
   },
   {
     id: "vidsrccc-anime",
     name: "VidSrc.cc (anime)",
+    idType: "mal",
     url: "https://vidsrc.cc/v2/embed/anime/{mal}/{ep}/{audio}",
   },
 ];
@@ -106,14 +122,24 @@ function fill(template, vars) {
 /**
  * Fontes de anime (sub/dub) por id do MAL. `episode` default 1 (filmes de anime).
  */
-export function buildAnimeEmbedSources({ mal, episode, audio }) {
-  if (!mal) return [];
-  const vars = { mal, ep: episode || 1, audio: audio === "dub" ? "dub" : "sub" };
-  return ANIME_PROVIDERS.map((p) => ({
-    provider: p.id,
-    name: p.name,
-    embedUrl: fill(p.url, vars),
-  }));
+export function buildAnimeEmbedSources({ mal, anilist, episode, audio }) {
+  if (!mal && !anilist) return [];
+  const dub = audio === "dub";
+  const vars = {
+    mal,
+    anilist,
+    ep: episode || 1,
+    audio: dub ? "dub" : "sub",
+    dubBool: dub ? "true" : "false",
+  };
+  return ANIME_PROVIDERS
+    // So inclui um provider se tivermos o id que ele precisa.
+    .filter((p) => (p.idType === "anilist" ? anilist : mal))
+    .map((p) => ({
+      provider: p.id,
+      name: p.name,
+      embedUrl: fill(p.url, vars),
+    }));
 }
 
 /**

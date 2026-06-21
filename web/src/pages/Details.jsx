@@ -77,6 +77,7 @@ export default function Details() {
       api
         .sources({
           mal: details.malId,
+          anilist: details.anilistId,
           episode: details.isMovie ? 1 : episode,
           audio: settings.animeAudio,
         })

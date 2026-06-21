@@ -17,6 +17,7 @@ export const DEFAULT_SETTINGS = {
   defaultTab: "providers", // separador inicial: providers | extract | torrents
   animeAudio: "sub", // anime: "sub" (legendado) ou "dub" (dobrado)
   accent: "#c90303", // cor de destaque da UI (botoes, realces)
+  bgColor: "#070708", // cor de fundo da app
   cardSize: "medium", // tamanho dos cartazes: "small" | "medium" | "large"
 };
 export const settingsStore = {
