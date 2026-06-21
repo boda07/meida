@@ -1015,6 +1015,31 @@ h2 {
   box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.4);
 }
 
+/* Cores recentes: pequeno ponto para distinguir das predefinidas */
+.color-swatch.recent::after {
+  content: "";
+  position: absolute;
+  bottom: 3px;
+  right: 3px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.8);
+}
+
+.color-swatch {
+  position: relative;
+}
+
+.set-clear.danger {
+  color: #ff6b6b;
+  border-color: rgba(255, 107, 107, 0.4);
+}
+
+.set-clear.danger:hover {
+  background: rgba(255, 107, 107, 0.12);
+}
+
 .color-custom {
   position: relative;
   display: inline-flex;

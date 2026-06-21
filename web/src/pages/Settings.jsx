@@ -123,12 +123,59 @@ const ACCENT_PRESETS = [
 // Cores de fundo predefinidas (escuras, para o texto branco continuar legivel).
 const BG_PRESETS = [
   "#070708", // preto (default)
+  "#0a1226", // navy (combina com o logo azul/dourado)
   "#0d1117", // github
   "#0a0e14", // azul-noite
   "#12101a", // roxo escuro
   "#0a0f0d", // verde escuro
   "#15100f", // castanho escuro
 ];
+
+// Junta uma cor ao topo da lista de recentes (sem duplicar, max 6).
+function addRecent(list, color) {
+  const c = (color || "").toLowerCase();
+  if (!c) return list || [];
+  return [c, ...(list || []).filter((x) => x.toLowerCase() !== c)].slice(0, 6);
+}
+
+// Seletor de cor: presets + ultimas escolhidas (recentes) + picker livre.
+function ColorField({ presets, value, recent, onPick, onCommit, fallback }) {
+  const norm = (value || "").toLowerCase();
+  const presetSet = new Set(presets.map((c) => c.toLowerCase()));
+  const recentExtra = (recent || []).filter((c) => !presetSet.has(c.toLowerCase()));
+  return (
+    <div className="set-row color-row">
+      {presets.map((c) => (
+        <button
+          key={c}
+          className={`color-swatch ${norm === c.toLowerCase() ? "active" : ""}`}
+          style={{ background: c }}
+          onClick={() => onPick(c)}
+          aria-label={c}
+        />
+      ))}
+      {recentExtra.map((c) => (
+        <button
+          key={c}
+          className={`color-swatch recent ${norm === c.toLowerCase() ? "active" : ""}`}
+          style={{ background: c }}
+          onClick={() => onPick(c)}
+          title={`Recente: ${c}`}
+          aria-label={`Recente ${c}`}
+        />
+      ))}
+      <label className="color-custom" style={{ background: value }}>
+        <input
+          type="color"
+          value={value || fallback}
+          onChange={(e) => onPick(e.target.value)}
+          onBlur={(e) => onCommit(e.target.value)}
+        />
+        <span>+</span>
+      </label>
+    </div>
+  );
+}
 
 // Botoes de escolha unica (estilo pilula).
 function Choice({ value, current, onPick, children }) {
@@ -315,55 +362,34 @@ export default function Settings() {
       <section className="set-section">
         <h3>Cor de destaque</h3>
         <p className="muted">
-          Cor dos botoes e realces. Escolhe uma predefinida ou a tua propria.
+          Cor dos botoes e realces. Predefinidas, as tuas ultimas escolhas, ou o
+          picker.
         </p>
-        <div className="set-row color-row">
-          {ACCENT_PRESETS.map((c) => (
-            <button
-              key={c}
-              className={`color-swatch ${settings.accent === c ? "active" : ""}`}
-              style={{ background: c }}
-              onClick={() => update({ accent: c })}
-              aria-label={c}
-            />
-          ))}
-          <label className="color-custom" style={{ background: settings.accent }}>
-            <input
-              type="color"
-              value={settings.accent || "#c90303"}
-              onChange={(e) => update({ accent: e.target.value })}
-            />
-            <span>+</span>
-          </label>
-        </div>
+        <ColorField
+          presets={ACCENT_PRESETS}
+          value={settings.accent}
+          recent={settings.recentAccent}
+          fallback="#c90303"
+          onPick={(v) => update({ accent: v })}
+          onCommit={(v) => update({ recentAccent: addRecent(settings.recentAccent, v) })}
+        />
       </section>
 
       {/* ===== Cor de fundo ===== */}
       <section className="set-section">
         <h3>Cor de fundo</h3>
         <p className="muted">
-          Fundo da app. As predefinidas sao escuras (texto branco legivel); o
-          picker permite qualquer cor.
+          Fundo da app. Predefinidas (escuras, texto legivel), as tuas ultimas
+          escolhas, ou o picker.
         </p>
-        <div className="set-row color-row">
-          {BG_PRESETS.map((c) => (
-            <button
-              key={c}
-              className={`color-swatch ${settings.bgColor === c ? "active" : ""}`}
-              style={{ background: c }}
-              onClick={() => update({ bgColor: c })}
-              aria-label={c}
-            />
-          ))}
-          <label className="color-custom" style={{ background: settings.bgColor }}>
-            <input
-              type="color"
-              value={settings.bgColor || "#070708"}
-              onChange={(e) => update({ bgColor: e.target.value })}
-            />
-            <span>+</span>
-          </label>
-        </div>
+        <ColorField
+          presets={BG_PRESETS}
+          value={settings.bgColor}
+          recent={settings.recentBg}
+          fallback="#070708"
+          onPick={(v) => update({ bgColor: v })}
+          onCommit={(v) => update({ recentBg: addRecent(settings.recentBg, v) })}
+        />
       </section>
 
       {/* ===== MyAnimeList ===== */}
@@ -431,6 +457,22 @@ export default function Settings() {
           </>
         )}
       </section>
+
+      {/* ===== App (so na app instalada) ===== */}
+      {typeof window !== "undefined" && window.electronAPI?.uninstall && (
+        <section className="set-section">
+          <h3>App</h3>
+          <p className="muted">
+            Remove a MEIDA do computador. A app fecha e o desinstalador abre.
+          </p>
+          <button
+            className="set-clear danger"
+            onClick={() => window.electronAPI.uninstall()}
+          >
+            Desinstalar MEIDA
+          </button>
+        </section>
+      )}
     </div>
   );
 }

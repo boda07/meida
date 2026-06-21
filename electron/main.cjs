@@ -12,6 +12,31 @@ ipcMain.handle("open-external", (_e, url) => {
   if (/^https?:\/\//i.test(url)) shell.openExternal(url);
 });
 
+// Desinstalar a app: pede confirmacao e corre o desinstalador do NSIS.
+ipcMain.handle("uninstall-app", async () => {
+  if (!app.isPackaged) return { ok: false, error: "So funciona na app instalada." };
+  const { response } = await dialog.showMessageBox(win, {
+    type: "warning",
+    buttons: ["Desinstalar", "Cancelar"],
+    defaultId: 1,
+    cancelId: 1,
+    title: "Desinstalar MEIDA",
+    message: "Queres mesmo desinstalar a MEIDA?",
+    detail: "A app fecha e o desinstalador abre.",
+  });
+  if (response !== 0) return { ok: false };
+  // O desinstalador do NSIS fica na pasta de instalacao, ao lado do .exe.
+  const uninstaller = path.join(path.dirname(process.execPath), "Uninstall MEIDA.exe");
+  try {
+    spawn(uninstaller, [], { detached: true, stdio: "ignore" }).unref();
+  } catch (e) {
+    return { ok: false, error: e.message };
+  }
+  stopServer();
+  setTimeout(() => app.quit(), 400);
+  return { ok: true };
+});
+
 const isDev = process.env.ELECTRON_DEV === "1";
 const DEV_URL = "http://localhost:5173";
 const PROD_URL = "http://localhost:5175";

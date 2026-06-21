@@ -18,6 +18,8 @@ export const DEFAULT_SETTINGS = {
   animeAudio: "sub", // anime: "sub" (legendado) ou "dub" (dobrado)
   accent: "#c90303", // cor de destaque da UI (botoes, realces)
   bgColor: "#070708", // cor de fundo da app
+  recentAccent: [], // ultimas cores de destaque escolhidas no picker
+  recentBg: [], // ultimas cores de fundo escolhidas no picker
   cardW: 184, // largura dos cartazes (px)
   cardH: 272, // altura dos cartazes (px)
   autoplay: true, // reproduzir automaticamente ao abrir uma fonte

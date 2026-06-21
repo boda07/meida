@@ -4,4 +4,5 @@ const { contextBridge, ipcRenderer } = require("electron");
 // (necessario para o login OAuth do MyAnimeList).
 contextBridge.exposeInMainWorld("electronAPI", {
   openExternal: (url) => ipcRenderer.invoke("open-external", url),
+  uninstall: () => ipcRenderer.invoke("uninstall-app"),
 });
