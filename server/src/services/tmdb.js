@@ -432,6 +432,68 @@ const ANIME_GENRES_PT = {
   Music: "Música",
 };
 
+// Lista completa de generos/temas/demografias do MyAnimeList (em ingles). Usada
+// para validar os generos guardados (so estes + os do TMDB sao mostrados).
+const MAL_GENRES = [
+  "Action", "Adventure", "Avant Garde", "Award Winning", "Boys Love", "Comedy",
+  "Drama", "Fantasy", "Girls Love", "Gourmet", "Horror", "Mystery", "Romance",
+  "Sci-Fi", "Slice of Life", "Sports", "Supernatural", "Suspense", "Ecchi",
+  "Erotica", "Hentai", "Adult Cast", "Anthropomorphic", "CGDCT", "Childcare",
+  "Combat Sports", "Crossdressing", "Delinquents", "Detective", "Educational",
+  "Gag Humor", "Gore", "Harem", "High Stakes Game", "Historical", "Idols (Female)",
+  "Idols (Male)", "Isekai", "Iyashikei", "Love Polygon", "Love Status Quo",
+  "Magical Sex Shift", "Mahou Shoujo", "Martial Arts", "Mecha", "Medical",
+  "Military", "Music", "Mythology", "Organized Crime", "Otaku Culture", "Parody",
+  "Performing Arts", "Pets", "Psychological", "Racing", "Reincarnation",
+  "Reverse Harem", "Romantic Subtext", "Samurai", "School", "Showbiz", "Space",
+  "Strategy Game", "Super Power", "Survival", "Team Sports", "Time Travel",
+  "Vampire", "Video Game", "Visual Arts", "Workplace", "Josei", "Kids", "Seinen",
+  "Shoujo", "Shounen",
+];
+
+// Cache do vocabulario de generos (lower(nome) -> nome canonico no idioma), por idioma.
+const genreVocabCache = {};
+
+/**
+ * Vocabulario de generos validos no idioma pedido: Map(nome em minusculas ->
+ * nome canonico para mostrar). Junta os generos do TMDB (filme+serie, EN+alvo)
+ * com a lista do MAL. Serve para validar (descartar lixo guardado, ex.: titulos),
+ * corrigir maiusculas e traduzir, tudo de uma vez.
+ */
+export async function getGenreVocab(lang) {
+  const target = LANG_MAP[lang] || (String(lang || "").includes("-") ? lang : "en-US");
+  if (genreVocabCache[target]) return genreVocabCache[target];
+  try {
+    const reqs = [
+      tmdbFetch("/genre/movie/list", {}, "en-US"),
+      tmdbFetch("/genre/tv/list", {}, "en-US"),
+    ];
+    if (target !== "en-US") {
+      reqs.push(tmdbFetch("/genre/movie/list", {}, target), tmdbFetch("/genre/tv/list", {}, target));
+    }
+    const [me, mt, le, lt] = await Promise.all(reqs);
+    const vocab = new Map();
+    const add = (display, ...aliases) => {
+      for (const a of [display, ...aliases]) if (a) vocab.set(a.toLowerCase(), display);
+    };
+    const pair = (enList, locList) => {
+      const loc = locList ? new Map((locList.genres || []).map((g) => [g.id, g.name])) : null;
+      for (const g of enList.genres || []) {
+        const display = (loc && loc.get(g.id)) || g.name;
+        add(display, g.name);
+      }
+    };
+    pair(me, le);
+    pair(mt, lt);
+    const pt = target.startsWith("pt");
+    for (const g of MAL_GENRES) add(pt && ANIME_GENRES_PT[g] ? ANIME_GENRES_PT[g] : g, g);
+    genreVocabCache[target] = vocab;
+    return vocab;
+  } catch {
+    return null;
+  }
+}
+
 // Cache do mapa de traducao de generos (en -> idioma alvo), por idioma.
 const genreMapCache = {};
 

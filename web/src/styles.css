@@ -484,7 +484,7 @@ h2 {
 .cw-badge {
   position: absolute;
   left: 8px;
-  bottom: 44px;
+  bottom: 54px;
   z-index: 2;
   padding: 3px 9px;
   border-radius: var(--radius-pill);
@@ -677,8 +677,20 @@ h2 {
 }
 
 .hero::after {
-  background: linear-gradient(0deg, #070708 1%, rgba(7, 7, 8, 0) 42%);
+  inset: auto 0 0;
+  height: 30%;
   z-index: 1;
+  background: linear-gradient(
+    0deg,
+    #070708 0%,
+    rgba(7, 7, 8, 0.92) 18%,
+    rgba(7, 7, 8, 0.56) 56%,
+    rgba(7, 7, 8, 0) 100%
+  );
+  backdrop-filter: blur(7px);
+  -webkit-backdrop-filter: blur(7px);
+  mask-image: linear-gradient(0deg, #000 0%, #000 52%, transparent 100%);
+  -webkit-mask-image: linear-gradient(0deg, #000 0%, #000 52%, transparent 100%);
 }
 
 .hero {
@@ -804,7 +816,7 @@ h2 {
 
 /* ===== Rows ===== */
 .rows {
-  margin-top: -48px;
+  margin-top: 18px;
   position: relative;
   z-index: 5;
   padding: 0 clamp(20px, 4vw, 60px) 110px;
@@ -1718,8 +1730,8 @@ h2 {
   margin: 14px 0 4px;
 }
 
-/* As rows do Home tem margin-top negativo (encaixe sob o Hero); na pesquisa
-   nao ha Hero, por isso anulamos e damos espaco. O gap entre filas tambem nao
+/* As rows principais ja aparecem depois do Hero; na pesquisa nao ha Hero,
+   por isso damos espaco proprio. O gap entre filas tambem nao
    precisa de ser tao grande como na Home (o row-scroll ja tem folga vertical). */
 .sub-page .rows {
   margin-top: 8px;

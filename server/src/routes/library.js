@@ -9,7 +9,7 @@ import {
   deleteLibrary,
 } from "../store.js";
 import { requireAuth } from "../services/auth.js";
-import { getMeta, getGenreMap, translateGenres, getLocalizedTitle } from "../services/tmdb.js";
+import { getMeta, getGenreVocab, getLocalizedTitle } from "../services/tmdb.js";
 import { getAnimeRatingsBatch } from "../services/jikan.js";
 import { status as malStatus, getMeanScores } from "../services/mal.js";
 import { getRatings as getLetterboxdRatings } from "../services/letterboxd.js";
@@ -94,10 +94,24 @@ libraryRouter.get("/library", async (req, res) => {
     );
   }
 
-  // Traduz os generos para o idioma escolhido (so na resposta; o que esta guardado
-  // continua em ingles, por isso mudar de idioma volta a traduzir na hora).
-  const map = await getGenreMap(req.query.overviewLang);
-  if (map) for (const i of items) i.genres = translateGenres(i.genres, map);
+  // Valida + traduz os generos: so mostra generos conhecidos (TMDB + MAL), corrige
+  // maiusculas, traduz para o idioma escolhido e remove duplicados. Assim some o
+  // lixo que ficou guardado em listas antigas (ex.: titulos parados nos generos).
+  const vocab = await getGenreVocab(req.query.overviewLang);
+  if (vocab) {
+    for (const i of items) {
+      const seen = new Set();
+      const out = [];
+      for (const g of i.genres || []) {
+        const canon = vocab.get(String(g).toLowerCase());
+        if (canon && !seen.has(canon)) {
+          seen.add(canon);
+          out.push(canon);
+        }
+      }
+      i.genres = out;
+    }
+  }
 
   // Titulos de filmes/series no idioma escolhido (ex.: watchlist importada do
   // Letterboxd vinha em ingles). Em cache, por isso so a 1a vez e mais lento.

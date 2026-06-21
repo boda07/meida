@@ -178,7 +178,9 @@
       "Bash(grep -viE \"^\\\\S+:\\\\s*//|video|audio\")",
       "Bash(node --check server/src/services/tmdb.js)",
       "Bash(perl -i -pe ' *)",
-      "Bash(perl -i -pe 's/em ecras pequenos/em ecrãs pequenos/g;' web/src/pages/Settings.jsx)"
+      "Bash(perl -i -pe 's/em ecras pequenos/em ecrãs pequenos/g;' web/src/pages/Settings.jsx)",
+      "Bash(node -e ' *)",
+      "Bash(git log *)"
     ],
     "additionalDirectories": [
       "\\tmp"
