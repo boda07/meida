@@ -135,11 +135,13 @@ export default function Details() {
       .catch((e) => setError(e.message));
   }, [details, season, episode, settings.animeAudio]);
 
-  // Diário: regista o ARRANQUE ~8s depois de uma fonte ficar ativa (só 1x por
-  // episódio/sessao). Guarda a posição para o "Continua a ver".
+  // Diário: só considera que estás a ver depois de 5 MINUTOS com uma fonte aberta
+  // (assim abrir e fechar logo nao conta). 1x por episodio/sessao. O contador nao
+  // reinicia ao trocar de fonte (depende so de haver fonte ativa, nao de qual).
   const startedRef = useRef(new Set());
+  const hasSource = Boolean(active);
   useEffect(() => {
-    if (!user || !details || !active) return;
+    if (!user || !details || !hasSource) return;
     const ep = details.isMovie ? null : episode;
     const s = details.type === "tv" ? season : null;
     const key = `${details.type}:${details.id}:${s}:${ep}`;
@@ -156,9 +158,9 @@ export default function Details() {
           episode: ep,
         })
         .catch(() => {});
-    }, 8000);
+    }, 5 * 60 * 1000);
     return () => clearTimeout(t);
-  }, [user, details, active, season, episode]);
+  }, [user, details, hasSource, season, episode]);
 
   // Próxima posição (para avançar o "continua a ver" ao concluir um episódio).
   function nextEpisodePos() {

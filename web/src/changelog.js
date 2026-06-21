@@ -2,6 +2,12 @@
 // "o que mudou" depois de o utilizador atualizar a app. Mais recente em cima.
 export const CHANGELOG = [
   {
+    version: "0.5.0",
+    items: [
+      "Só conta como \"a ver\" depois de 5 minutos com algo aberto — abrir e fechar logo já não vai para o \"Continua a ver\".",
+    ],
+  },
+  {
     version: "0.4.9",
     items: [
       "No início, a recomendação ocupa o ecrã todo; ao fazer scroll, o \"Continua a ver\" e o resto aparecem com uma transição suave.",
