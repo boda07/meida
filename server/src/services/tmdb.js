@@ -57,13 +57,20 @@ function bestTitle(localized, enTitle) {
 }
 
 /**
- * Devolve Map(id -> melhor titulo) para uma lista, no idioma `titleLang`, com
- * fallback PT->EN. `localizedResp` evita refazer o pedido quando ja o temos.
+ * Devolve Map(id -> { title, poster }) para uma lista, no idioma `titleLang`,
+ * com fallback de titulo PT->EN. O cartaz vem do pedido nesse idioma (o TMDB
+ * devolve o cartaz localizado), para o cartaz seguir o idioma dos titulos.
+ * `localizedResp` evita refazer o pedido quando ja o temos.
  */
-async function resolveTitleMap(path, params, titleLang, localizedResp) {
+async function resolveTitleMeta(path, params, titleLang, localizedResp) {
   if (titleLang === "en-US") {
     const en = localizedResp || (await tmdbFetch(path, params, "en-US"));
-    return new Map((en.results || []).map((it) => [it.id, it.title || it.name || ""]));
+    return new Map(
+      (en.results || []).map((it) => [
+        it.id,
+        { title: it.title || it.name || "", poster: it.poster_path || null },
+      ])
+    );
   }
   const [loc, en] = await Promise.all([
     localizedResp ? Promise.resolve(localizedResp) : tmdbFetch(path, params, titleLang),
@@ -71,20 +78,30 @@ async function resolveTitleMap(path, params, titleLang, localizedResp) {
   ]);
   const enMap = new Map((en.results || []).map((it) => [it.id, it.title || it.name || ""]));
   const map = new Map();
-  for (const it of loc.results || []) map.set(it.id, bestTitle(it, enMap.get(it.id)));
+  for (const it of loc.results || [])
+    map.set(it.id, { title: bestTitle(it, enMap.get(it.id)), poster: it.poster_path || null });
   return map;
 }
 
+// Aplica o titulo/cartaz localizados a uma lista de itens ja normalizados.
+function applyMeta(items, meta) {
+  return items.map((m) => {
+    const mt = meta.get(m.id);
+    if (!mt) return m;
+    return { ...m, title: mt.title || m.title, poster: mt.poster || m.poster };
+  });
+}
+
 /**
- * Busca uma lista no idioma da sinopse e resolve os titulos no idioma escolhido,
- * com fallback para ingles quando nao ha traducao.
+ * Busca uma lista no idioma da sinopse e resolve titulos + cartazes no idioma
+ * dos titulos (com fallback de titulo para ingles quando nao ha traducao).
  */
 async function tmdbList(path, params = {}, opts = {}) {
   const { overview, title } = langsFrom(opts);
   const base = await tmdbFetch(path, params, overview);
   const items = (base.results || []).map(normalizeMedia).filter(Boolean);
-  const titles = await resolveTitleMap(path, params, title, overview === title ? base : null);
-  return items.map((m) => (titles.has(m.id) ? { ...m, title: titles.get(m.id) } : m));
+  const meta = await resolveTitleMeta(path, params, title, overview === title ? base : null);
+  return applyMeta(items, meta);
 }
 
 /** Normaliza um item de filme/serie para o formato que o frontend usa. */
@@ -183,17 +200,17 @@ export async function search(query, opts = {}) {
 
   const params = { query, include_adult: "false" };
   const base = await tmdbFetch("/search/multi", params, overview);
-  const titles = await resolveTitleMap(
+  const meta = await resolveTitleMeta(
     "/search/multi",
     params,
     title,
     overview === title ? base : null
   );
-  return (base.results || [])
+  const items = (base.results || [])
     .filter((it) => !isAnimeResult(it))
     .map(normalizeMedia)
-    .filter(Boolean)
-    .map((m) => (titles.has(m.id) ? { ...m, title: titles.get(m.id) } : m));
+    .filter(Boolean);
+  return applyMeta(items, meta);
 }
 
 export async function getDetails(type, id, opts = {}) {
@@ -318,13 +335,13 @@ export async function discover(
   let items = (base.results || [])
     .map((r) => normalizeMedia({ ...r, media_type: kind }))
     .filter(Boolean);
-  const titles = await resolveTitleMap(
+  const meta = await resolveTitleMeta(
     `/discover/${kind}`,
     params,
     title,
     overview === title ? base : null
   );
-  items = items.map((m) => (titles.has(m.id) ? { ...m, title: titles.get(m.id) } : m));
+  items = applyMeta(items, meta);
   return {
     items,
     page: base.page || 1,
