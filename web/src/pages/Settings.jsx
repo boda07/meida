@@ -243,6 +243,32 @@ export default function Settings() {
         </div>
       </section>
 
+      {/* ===== Reproducao ===== */}
+      <section className="set-section">
+        <h3>Reproducao</h3>
+        <p className="muted">
+          Autoplay liga/desliga o arranque automatico. Autoskip tenta saltar a
+          intro/genericos (funciona nos nossos players; nos providers externos
+          depende do site).
+        </p>
+        <div className="set-row">
+          <Choice value={true} current={settings.autoplay} onPick={(v) => update({ autoplay: v })}>
+            Autoplay ligado
+          </Choice>
+          <Choice value={false} current={settings.autoplay} onPick={(v) => update({ autoplay: v })}>
+            Autoplay desligado
+          </Choice>
+        </div>
+        <div className="set-row" style={{ marginTop: 8 }}>
+          <Choice value={true} current={settings.autoskip} onPick={(v) => update({ autoskip: v })}>
+            Autoskip ligado
+          </Choice>
+          <Choice value={false} current={settings.autoskip} onPick={(v) => update({ autoskip: v })}>
+            Autoskip desligado
+          </Choice>
+        </div>
+      </section>
+
       {/* ===== Tamanho dos cartazes ===== */}
       <section className="set-section">
         <h3>Tamanho dos cartazes</h3>

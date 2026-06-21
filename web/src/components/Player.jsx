@@ -1,20 +1,35 @@
 import { useRef, useState } from "react";
 import FullscreenButton from "./FullscreenButton.jsx";
+import { useSettings } from "../settings/SettingsContext.jsx";
+
+// Ajusta o URL do embed conforme as definicoes de autoplay/autoskip.
+// (Nos iframes externos so podemos influenciar via parametros do URL.)
+function applyPlaybackPrefs(src, { autoplay, autoskip }) {
+  let url = src;
+  const val = autoplay ? "true" : "false";
+  url = url.replace(/(autoplay|autoPlay)=(true|false)/gi, `$1=${val}`);
+  if (autoskip && !/autoSkipIntro=/i.test(url)) {
+    url += (url.includes("?") ? "&" : "?") + "autoSkipIntro=true&autoSkip=true";
+  }
+  return url;
+}
 
 // Player por iframe (providers externos). Inclui um botao de recarregar porque
 // alguns providers (ex.: MegaPlay) devolvem erros transitorios (520) e basta
 // voltar a carregar a fonte.
 export default function Player({ src, title }) {
   const ref = useRef(null);
+  const { settings } = useSettings();
   const [reloadKey, setReloadKey] = useState(0);
   if (!src) return null;
+  const finalSrc = applyPlaybackPrefs(src, settings);
   return (
     <div className="player" ref={ref}>
       {/* Sem sandbox: estes providers detetam e recusam iframes em sandbox.
           O custo sao popups/anuncios, inerentes a este tipo de fonte. */}
       <iframe
         key={reloadKey}
-        src={src}
+        src={finalSrc}
         title={title || "player"}
         allowFullScreen
         referrerPolicy="origin"

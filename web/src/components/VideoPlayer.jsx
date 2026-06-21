@@ -2,11 +2,13 @@ import { useEffect, useRef, useState } from "react";
 import { SubtitleTracks, SubtitleMenu } from "./subtitles.jsx";
 import FullscreenButton from "./FullscreenButton.jsx";
 import { useVideoSync } from "../watchparty/useVideoSync.js";
+import { useSettings } from "../settings/SettingsContext.jsx";
 
 // Player HTML5 proprio para streams de torrent (sem anuncios).
 export default function VideoPlayer({ src, infoHash, subtitles = [] }) {
   const videoRef = useRef(null);
   const containerRef = useRef(null);
+  const { settings } = useSettings();
   const [status, setStatus] = useState(null);
   const [err, setErr] = useState(false);
   useVideoSync(videoRef); // Watch Party: sincroniza play/pause/seek
@@ -33,7 +35,7 @@ export default function VideoPlayer({ src, infoHash, subtitles = [] }) {
           ref={videoRef}
           src={src}
           controls
-          autoPlay
+          autoPlay={settings.autoplay}
           crossOrigin="anonymous"
           onError={() => setErr(true)}
         >

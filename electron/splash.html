@@ -1,0 +1,84 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        overflow: hidden;
+        background: #0a1226; /* navy do logo azul/dourado */
+        font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+        color: #cfd8ec;
+      }
+      .wrap {
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 26px;
+      }
+      .logo {
+        max-width: 78%;
+        max-height: 56%;
+        object-fit: contain;
+        animation: pulse 1.8s ease-in-out infinite;
+        filter: drop-shadow(0 8px 30px rgba(0, 0, 0, 0.5));
+      }
+      @keyframes pulse {
+        0%,
+        100% {
+          transform: scale(1);
+          opacity: 0.92;
+        }
+        50% {
+          transform: scale(1.04);
+          opacity: 1;
+        }
+      }
+      /* Barra de progresso indeterminada (dourada) */
+      .bar {
+        width: 220px;
+        height: 4px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.1);
+        overflow: hidden;
+        position: relative;
+      }
+      .bar::before {
+        content: "";
+        position: absolute;
+        left: -40%;
+        top: 0;
+        height: 100%;
+        width: 40%;
+        border-radius: 999px;
+        background: linear-gradient(90deg, #b8860b, #ffd76a, #b8860b);
+        animation: slide 1.2s ease-in-out infinite;
+      }
+      @keyframes slide {
+        0% {
+          left: -40%;
+        }
+        100% {
+          left: 100%;
+        }
+      }
+      .txt {
+        font-size: 13px;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        opacity: 0.7;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <img class="logo" src="./splash-logo.png" alt="MEIDA" />
+      <div class="bar"></div>
+      <div class="txt">A carregar...</div>
+    </div>
+  </body>
+</html>

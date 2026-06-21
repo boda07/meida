@@ -20,6 +20,8 @@ export const DEFAULT_SETTINGS = {
   bgColor: "#070708", // cor de fundo da app
   cardW: 184, // largura dos cartazes (px)
   cardH: 272, // altura dos cartazes (px)
+  autoplay: true, // reproduzir automaticamente ao abrir uma fonte
+  autoskip: false, // tentar saltar intro/genericos automaticamente
 };
 export const settingsStore = {
   get() {

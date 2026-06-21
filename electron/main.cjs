@@ -18,6 +18,29 @@ const PROD_URL = "http://localhost:5175";
 
 let serverProc = null;
 let win = null;
+let splash = null;
+
+// Tela de carregamento (cobre o ecra preto enquanto o backend e o web arrancam).
+function createSplash() {
+  splash = new BrowserWindow({
+    width: 480,
+    height: 320,
+    frame: false,
+    resizable: false,
+    movable: false,
+    center: true,
+    alwaysOnTop: true,
+    skipTaskbar: true,
+    backgroundColor: "#0a1226",
+    webPreferences: { contextIsolation: true },
+  });
+  splash.loadFile(path.join(__dirname, "splash.html"));
+}
+
+function closeSplash() {
+  if (splash && !splash.isDestroyed()) splash.close();
+  splash = null;
+}
 
 // Em producao corre o backend usando o Node embutido no Electron.
 // Quando empacotado, o server e o web/dist ficam em "resources" (fora do asar).
@@ -59,6 +82,7 @@ function createWindow() {
     title: "MEIDA",
     backgroundColor: "#070708",
     autoHideMenuBar: true,
+    show: false, // so mostra quando estiver pronta (a splash cobre o arranque)
     icon: app.isPackaged
       ? undefined // empacotado: usa o icone embutido no .exe
       : path.join(__dirname, "..", "build", "icon.png"),
@@ -70,6 +94,14 @@ function createWindow() {
 
   // Bloqueia popups (ex.: anuncios dos providers) em vez de abrir novas janelas.
   win.webContents.setWindowOpenHandler(() => ({ action: "deny" }));
+
+  // Quando a app estiver carregada, mostra a janela e fecha a splash.
+  const reveal = () => {
+    if (win && !win.isVisible()) win.show();
+    closeSplash();
+  };
+  win.once("ready-to-show", reveal);
+  win.webContents.on("did-finish-load", reveal);
 
   loadWithRetry(isDev ? DEV_URL : PROD_URL);
 
@@ -102,6 +134,7 @@ function setupAutoUpdate() {
 }
 
 app.whenReady().then(() => {
+  createSplash();
   if (!isDev) startServer();
   createWindow();
   setupAutoUpdate();
