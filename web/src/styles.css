@@ -1682,10 +1682,12 @@ h2 {
 }
 
 /* As rows do Home tem margin-top negativo (encaixe sob o Hero); na pesquisa
-   nao ha Hero, por isso anulamos e damos espaco. */
+   nao ha Hero, por isso anulamos e damos espaco. O gap entre filas tambem nao
+   precisa de ser tao grande como na Home (o row-scroll ja tem folga vertical). */
 .sub-page .rows {
-  margin-top: 18px;
+  margin-top: 8px;
   padding: 0 0 40px;
+  gap: 4px;
 }
 
 .tf-chip {
