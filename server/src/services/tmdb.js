@@ -45,30 +45,46 @@ async function tmdbFetch(path, params = {}, lang = language) {
   return res.json();
 }
 
+// Titulo de um resultado TMDB no idioma pedido, com fallback para ingles quando
+// nao existe traducao nesse idioma. O TMDB devolve o titulo ORIGINAL (na lingua
+// do filme) quando nao ha traducao; detetamos isso comparando com original_title.
+function bestTitle(localized, enTitle) {
+  if (!localized) return enTitle || "";
+  const loc = localized.title || localized.name || "";
+  const original = localized.original_title || localized.original_name || "";
+  if (loc && loc !== original) return loc; // ha traducao real -> usa-a
+  return enTitle || loc; // sem traducao -> ingles
+}
+
 /**
- * Busca uma lista usando o idioma da sinopse e, se o idioma dos titulos for
- * diferente, busca a mesma lista nesse idioma so para os titulos (merge por id).
+ * Devolve Map(id -> melhor titulo) para uma lista, no idioma `titleLang`, com
+ * fallback PT->EN. `localizedResp` evita refazer o pedido quando ja o temos.
+ */
+async function resolveTitleMap(path, params, titleLang, localizedResp) {
+  if (titleLang === "en-US") {
+    const en = localizedResp || (await tmdbFetch(path, params, "en-US"));
+    return new Map((en.results || []).map((it) => [it.id, it.title || it.name || ""]));
+  }
+  const [loc, en] = await Promise.all([
+    localizedResp ? Promise.resolve(localizedResp) : tmdbFetch(path, params, titleLang),
+    tmdbFetch(path, params, "en-US"),
+  ]);
+  const enMap = new Map((en.results || []).map((it) => [it.id, it.title || it.name || ""]));
+  const map = new Map();
+  for (const it of loc.results || []) map.set(it.id, bestTitle(it, enMap.get(it.id)));
+  return map;
+}
+
+/**
+ * Busca uma lista no idioma da sinopse e resolve os titulos no idioma escolhido,
+ * com fallback para ingles quando nao ha traducao.
  */
 async function tmdbList(path, params = {}, opts = {}) {
   const { overview, title } = langsFrom(opts);
-
-  if (title === overview) {
-    const base = await tmdbFetch(path, params, overview);
-    return (base.results || []).map(normalizeMedia).filter(Boolean);
-  }
-
-  const [base, titled] = await Promise.all([
-    tmdbFetch(path, params, overview),
-    tmdbFetch(path, params, title),
-  ]);
-  const titles = new Map();
-  for (const it of titled.results || []) {
-    titles.set(it.id, it.title || it.name || "");
-  }
-  return (base.results || [])
-    .map(normalizeMedia)
-    .filter(Boolean)
-    .map((m) => ({ ...m, title: titles.get(m.id) || m.title }));
+  const base = await tmdbFetch(path, params, overview);
+  const items = (base.results || []).map(normalizeMedia).filter(Boolean);
+  const titles = await resolveTitleMap(path, params, title, overview === title ? base : null);
+  return items.map((m) => (titles.has(m.id) ? { ...m, title: titles.get(m.id) } : m));
 }
 
 /** Normaliza um item de filme/serie para o formato que o frontend usa. */
@@ -165,17 +181,19 @@ export async function search(query, opts = {}) {
   if (!query) return [];
   const { overview, title } = langsFrom(opts);
 
-  const base = await tmdbFetch("/search/multi", { query, include_adult: "false" }, overview);
-  let titles = null;
-  if (title !== overview) {
-    const t = await tmdbFetch("/search/multi", { query, include_adult: "false" }, title);
-    titles = new Map((t.results || []).map((it) => [it.id, it.title || it.name || ""]));
-  }
+  const params = { query, include_adult: "false" };
+  const base = await tmdbFetch("/search/multi", params, overview);
+  const titles = await resolveTitleMap(
+    "/search/multi",
+    params,
+    title,
+    overview === title ? base : null
+  );
   return (base.results || [])
     .filter((it) => !isAnimeResult(it))
     .map(normalizeMedia)
     .filter(Boolean)
-    .map((m) => (titles ? { ...m, title: titles.get(m.id) || m.title } : m));
+    .map((m) => (titles.has(m.id) ? { ...m, title: titles.get(m.id) } : m));
 }
 
 export async function getDetails(type, id, opts = {}) {
@@ -183,18 +201,28 @@ export async function getDetails(type, id, opts = {}) {
     throw new Error("type tem de ser 'movie' ou 'tv'");
   }
   const { overview, title } = langsFrom(opts);
-  const requests = [
+  // Em paralelo: sinopse (overview), titulo localizado e ingles (fallback).
+  const [data, locData, enData] = await Promise.all([
     tmdbFetch(`/${type}/${id}`, { append_to_response: "external_ids,credits" }, overview),
-  ];
-  // So precisamos de uma 2a chamada se o idioma dos titulos for diferente.
-  if (title !== overview) {
-    requests.push(tmdbFetch(`/${type}/${id}`, {}, title));
-  }
-  const [data, titled] = await Promise.all(requests);
+    title === overview ? Promise.resolve(null) : tmdbFetch(`/${type}/${id}`, {}, title),
+    title !== "en-US" && overview !== "en-US"
+      ? tmdbFetch(`/${type}/${id}`, {}, "en-US")
+      : Promise.resolve(null),
+  ]);
 
   const base = normalizeMedia({ ...data, media_type: type });
-  // Titulo no idioma escolhido, mantendo a sinopse no seu idioma.
-  if (titled) base.title = titled.title || titled.name || base.title;
+  // Titulo no idioma escolhido, com fallback para ingles quando nao ha traducao.
+  const localized = locData || data;
+  if (title === "en-US") {
+    base.title = localized.title || localized.name || base.title;
+  } else {
+    const enTitle = enData
+      ? enData.title || enData.name || ""
+      : overview === "en-US"
+      ? data.title || data.name || ""
+      : "";
+    base.title = bestTitle(localized, enTitle) || base.title;
+  }
   const imdbId = data.external_ids?.imdb_id || null;
   const genres = (data.genres || []).map((g) => g.name);
   const cast = (data.credits?.cast || []).slice(0, 10).map((c) => ({
@@ -276,11 +304,13 @@ export async function discover(
   let items = (base.results || [])
     .map((r) => normalizeMedia({ ...r, media_type: kind }))
     .filter(Boolean);
-  if (title !== overview) {
-    const t = await tmdbFetch(`/discover/${kind}`, params, title);
-    const titles = new Map((t.results || []).map((it) => [it.id, it.title || it.name || ""]));
-    items = items.map((m) => ({ ...m, title: titles.get(m.id) || m.title }));
-  }
+  const titles = await resolveTitleMap(
+    `/discover/${kind}`,
+    params,
+    title,
+    overview === title ? base : null
+  );
+  items = items.map((m) => (titles.has(m.id) ? { ...m, title: titles.get(m.id) } : m));
   return {
     items,
     page: base.page || 1,
