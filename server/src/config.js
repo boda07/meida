@@ -12,6 +12,9 @@ export const config = {
   jwtSecret: process.env.JWT_SECRET?.trim() || "dev-secret-muda-me-em-producao",
   // Se definido, usa um extractor externo compativel com Consumet (ex.: http://localhost:3000).
   extractorApiBase: process.env.EXTRACTOR_API_BASE?.trim().replace(/\/$/, "") || "",
+  // Extrator de anime (aniwatch-api alojado): da player proprio ao anime
+  // (sub/dub + legendas soft + sync no watch party). Ex.: https://...onrender.com
+  animeExtractorBase: process.env.ANIME_EXTRACTOR_BASE?.trim().replace(/\/$/, "") || "",
   openSubtitlesKey: process.env.OPENSUBTITLES_API_KEY?.trim() || "",
   // MyAnimeList (API v2). Client ID obtido em https://myanimelist.net/apiconfig
   mal: {

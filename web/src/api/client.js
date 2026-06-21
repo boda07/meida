@@ -120,6 +120,8 @@ export const api = {
   sources: (opts) => get("/api/sources", opts),
   torrents: (opts) => get("/api/torrents", opts),
   extract: (opts) => get("/api/extract", opts),
+  animeEnabled: () => get("/api/anime/enabled"),
+  animeExtract: (opts) => get("/api/anime/extract", opts),
   subtitles: (opts) => get("/api/subtitles", { languages: subtitleLangs(), ...opts }),
 
   // Auth

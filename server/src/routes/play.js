@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { extractStream } from "../services/extractor/index.js";
+import { extractAnime, animeExtractorEnabled } from "../services/animeStream.js";
 import { handleProxy, buildProxyUrl } from "../services/proxy.js";
 import {
   searchSubtitles,
@@ -12,6 +13,43 @@ export const playRouter = Router();
 
 // Proxy HLS/CORS (m3u8 + segmentos).
 playRouter.get("/proxy", handleProxy);
+
+// O extrator de anime (player proprio) esta configurado?
+playRouter.get("/anime/enabled", (req, res) => {
+  res.json({ enabled: animeExtractorEnabled() });
+});
+
+// Extrai stream + legendas de um episodio de anime (player proprio).
+playRouter.get("/anime/extract", async (req, res) => {
+  try {
+    const { title, episode, audio } = req.query;
+    if (!animeExtractorEnabled()) {
+      return res.status(400).json({ error: "Extrator de anime nao configurado." });
+    }
+    if (!title) return res.status(400).json({ error: "falta title" });
+
+    const r = await extractAnime({
+      title: String(title),
+      episode: Number(episode) || 1,
+      audio,
+    });
+    const ref = r.referer || "";
+    const sources = r.sources.map((s) => ({
+      isM3U8: s.isM3U8,
+      url: s.isM3U8 ? buildProxyUrl(s.url, ref) : s.url,
+    }));
+    const subtitles = (r.subtitles || []).map((sub) => ({
+      lang: sub.lang,
+      label: sub.label || sub.lang,
+      default: sub.default,
+      url: `/api/subtitles/vtt?url=${encodeURIComponent(sub.url)}`,
+      source: "hianime",
+    }));
+    res.json({ provider: r.provider, sources, subtitles, intro: r.intro, outro: r.outro });
+  } catch (err) {
+    res.status(err.status || 500).json({ error: err.message });
+  }
+});
 
 // Extrai stream sem anuncios e devolve URLs ja encaminhadas pelo proxy.
 playRouter.get("/extract", async (req, res, next) => {

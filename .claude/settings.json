@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell($env:Path += \";C:\\\\Program Files\\\\GitHub CLI\"; gh api repos/ghoshRitesh12/aniwatch-api/readme --jq \".content\" 2>&1 | Select-Object -First 1 | ForEach-Object { try { [System.Text.Encoding]::UTF8.GetString\\([System.Convert]::FromBase64String\\($_\\)\\) } catch { $_ } } | Select-String -Pattern \"api/v2|hianime|episode|category|server|sources|tracks|Deploy|render\" -Context 0,1 | Select-Object -First 60)",
+      "PowerShell($env:Path += \";C:\\\\Program Files\\\\GitHub CLI\"; $c = gh api repos/ghoshRitesh12/aniwatch-api/readme --jq \".content\"; $txt = [System.Text.Encoding]::UTF8.GetString\\([System.Convert]::FromBase64String\\(\\($c -join \"\"\\)\\)\\); $txt | Out-File -FilePath C:\\\\tmp\\\\aniwatch-readme.md -Encoding utf8; \\(Get-Content C:\\\\tmp\\\\aniwatch-readme.md | Select-String -Pattern \"api/v2|hianime|/episode|category|server=|sources|tracks|deploy|render|onrender\" | Select-Object -First 50\\))",
+      "Bash(curl -s --max-time 40 https://api-aniwatch.onrender.com/api/v2/hianime/search?q=fate%20zero)"
+    ]
+  }
+}

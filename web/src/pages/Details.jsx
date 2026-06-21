@@ -8,6 +8,7 @@ import SourceSelector from "../components/SourceSelector.jsx";
 import LibraryControls from "../components/LibraryControls.jsx";
 import Torrents from "../components/Torrents.jsx";
 import Extract from "../components/Extract.jsx";
+import AnimeExtract from "../components/AnimeExtract.jsx";
 
 export default function Details() {
   const { type, id } = useParams();
@@ -28,6 +29,11 @@ export default function Details() {
 
   // Separador inicial vindo das definicoes (providers/extract/torrents)
   const [mode, setMode] = useState(settings.defaultTab || "providers");
+  // O extrator de anime (player proprio) esta configurado no servidor?
+  const [animeExtractorOn, setAnimeExtractorOn] = useState(false);
+  useEffect(() => {
+    api.animeEnabled().then((d) => setAnimeExtractorOn(d.enabled)).catch(() => {});
+  }, []);
 
   // Carregar detalhes
   useEffect(() => {
@@ -252,20 +258,46 @@ export default function Details() {
 
       {details.isAnime ? (
         <div className="watch">
-          <SourceSelector
-            embeds={embeds}
-            activeId={active?.provider}
-            onSelect={setActive}
-          />
-          {active ? (
-            <Player src={active.embedUrl} title={details.title} />
-          ) : (
-            <p className="muted">A carregar fontes...</p>
+          {animeExtractorOn && (
+            <div className="mode-tabs">
+              <button
+                className={mode !== "extract" ? "active" : ""}
+                onClick={() => setMode("providers")}
+              >
+                Fontes
+              </button>
+              <button
+                className={mode === "extract" ? "active" : ""}
+                onClick={() => setMode("extract")}
+              >
+                Sem anuncios
+              </button>
+            </div>
           )}
-          <p className="muted" style={{ fontSize: 12, marginTop: 8 }}>
-            Fontes dedicadas de anime (sub/dub via MyAnimeList). Muda entre
-            legendado e dobrado nas Definicoes.
-          </p>
+
+          {animeExtractorOn && mode === "extract" ? (
+            <AnimeExtract
+              details={details}
+              episode={details.isMovie ? 1 : episode}
+            />
+          ) : (
+            <>
+              <SourceSelector
+                embeds={embeds}
+                activeId={active?.provider}
+                onSelect={setActive}
+              />
+              {active ? (
+                <Player src={active.embedUrl} title={details.title} />
+              ) : (
+                <p className="muted">A carregar fontes...</p>
+              )}
+              <p className="muted" style={{ fontSize: 12, marginTop: 8 }}>
+                Fontes dedicadas de anime (sub/dub via MyAnimeList). Muda entre
+                legendado e dobrado nas Definicoes.
+              </p>
+            </>
+          )}
         </div>
       ) : (
       <div className="watch">
