@@ -17,17 +17,8 @@ sourcesRouter.get("/providers", (req, res) => {
 // /api/sources?type=tv&tmdb=123&season=1&episode=2
 sourcesRouter.get("/sources", (req, res) => {
   const { type, tmdb, imdb, season, episode, mal, audio } = req.query;
-  if (type !== "movie" && type !== "tv") {
-    return res.status(400).json({ error: "type tem de ser 'movie' ou 'tv'" });
-  }
-  if (!tmdb) {
-    return res.status(400).json({ error: "falta o parametro tmdb" });
-  }
-  if (type === "tv" && (season == null || episode == null)) {
-    return res.status(400).json({ error: "series precisam de season e episode" });
-  }
 
-  // Anime: fontes dedicadas (sub/dub) por id do MAL, em PRIMEIRO lugar.
+  // Anime: fontes dedicadas (sub/dub) por id do MAL. Nao precisa de TMDB.
   const animeSources = mal
     ? buildAnimeEmbedSources({
         mal,
@@ -35,6 +26,19 @@ sourcesRouter.get("/sources", (req, res) => {
         audio,
       })
     : [];
+
+  // Sem TMDB so faz sentido para anime (so MAL). Devolve essas fontes.
+  if (!tmdb) {
+    if (animeSources.length) return res.json({ embeds: animeSources });
+    return res.status(400).json({ error: "falta o parametro tmdb" });
+  }
+
+  if (type !== "movie" && type !== "tv") {
+    return res.status(400).json({ error: "type tem de ser 'movie' ou 'tv'" });
+  }
+  if (type === "tv" && (season == null || episode == null)) {
+    return res.status(400).json({ error: "series precisam de season e episode" });
+  }
 
   const sources = buildEmbedSources({
     type,

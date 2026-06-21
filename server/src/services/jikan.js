@@ -1,8 +1,7 @@
-// Catalogo e detalhes de anime via Jikan (API publica do MyAnimeList, sem chave).
-// O TMDB tem listas de anime fracas; o Jikan e muito melhor para isto.
-// Para a REPRODUCAO fazemos match para o TMDB (que e o que os providers/torrents
-// usam), via findTmdbMatch + getDetails.
-import { findTmdbMatch, getDetails } from "./tmdb.js";
+// Catalogo, pesquisa e detalhes de anime via Jikan (API publica do MyAnimeList,
+// sem chave). O anime e SEMPRE focado no MAL: catalogo, poster, sinopse, titulo
+// e episodios vem todos do MAL. A reproducao usa os providers de anime por id do
+// MAL (MegaPlay/VidLink/VidSrc.cc). O TMDB so serve para filmes e series.
 
 const JIKAN = "https://api.jikan.moe/v4";
 
@@ -87,47 +86,67 @@ export async function getAnimeCatalog() {
   return rows;
 }
 
-// Detalhes de um anime: metadados ricos do Jikan + match no TMDB para fontes.
-export async function getAnimeDetails(malId, langOpts = {}) {
+// Detalhes de um anime: 100% MyAnimeList (poster, titulo, sinopse, episodios).
+// A reproducao usa os providers de anime por id do MAL (ver providers.js).
+export async function getAnimeDetails(malId) {
   const full = (await jikanFetch(`/anime/${malId}/full`)).data;
   const base = normalizeAnime(full);
-  const isMovie = /movie/i.test(full?.type || "");
+  const isMovie = /movie|music/i.test(full?.type || "");
 
-  let match = null;
-  try {
-    match = await findTmdbMatch(base.title, base.year, isMovie);
-  } catch {
-    match = null;
+  let episodeCount = full?.episodes || 0;
+  // Anime a passar/com numero desconhecido: tenta obter o total real do
+  // endpoint de episodios (paginado, 100 por pagina).
+  if (!isMovie && !episodeCount) {
+    await sleep(400); // evita o rate limit logo a seguir ao /full
+    try {
+      const pag = (await jikanFetch(`/anime/${malId}/episodes`))?.pagination;
+      episodeCount =
+        pag?.items?.total ||
+        (pag?.last_visible_page ? pag.last_visible_page * 100 : 0);
+    } catch {
+      /* ignora */
+    }
   }
+  if (isMovie) episodeCount = 1;
+  if (!episodeCount) episodeCount = 24; // fallback razoavel
 
-  if (match) {
-    // Usa os detalhes do TMDB (id/imdb/temporadas) para a reproducao funcionar,
-    // mas a SINOPSE vem do MAL (melhor para anime). So cai no TMDB se o MAL nao
-    // tiver sinopse.
-    const details = await getDetails(match.mediaType, match.tmdbId, langOpts);
-    if (base.overview) details.overview = base.overview;
-    details.malId = malId;
-    details.isAnime = true;
-    details.matched = true;
-    return details;
-  }
-
-  // Sem correspondencia no TMDB: mostra os metadados do Jikan, sem fontes.
   return {
-    id: malId,
-    type: isMovie ? "movie" : "tv",
+    id: Number(malId),
+    type: "anime",
+    malId: Number(malId),
+    isAnime: true,
+    isMovie,
     title: base.title,
     overview: base.overview,
     poster: base.poster,
-    backdrop: null,
+    backdrop: full?.images?.jpg?.large_image_url || null,
     year: base.year,
     rating: base.rating,
     genres: (full?.genres || []).map((g) => g.name),
     cast: [],
-    runtime: null,
-    seasons: null,
-    imdbId: null,
-    isAnime: true,
-    matched: false,
+    runtime: full?.duration || null,
+    episodeCount,
   };
+}
+
+// Pesquisa de anime no MAL (Jikan). Cache curta para nao martelar o rate limit
+// durante a pesquisa instantanea.
+const searchCache = new Map(); // q -> { at, items }
+const SEARCH_TTL = 5 * 60 * 1000;
+
+export async function searchAnime(query) {
+  const q = String(query || "").trim().toLowerCase();
+  if (!q) return [];
+  const cached = searchCache.get(q);
+  if (cached && Date.now() - cached.at < SEARCH_TTL) return cached.items;
+  try {
+    const d = await jikanFetch(
+      `/anime?q=${encodeURIComponent(q)}&limit=10&sfw=true&order_by=members&sort=desc`
+    );
+    const items = dedupe(clean(d));
+    searchCache.set(q, { at: Date.now(), items });
+    return items;
+  } catch {
+    return [];
+  }
 }

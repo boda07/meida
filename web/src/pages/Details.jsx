@@ -44,6 +44,18 @@ export default function Details() {
 
   // Carregar episodios quando a temporada muda
   useEffect(() => {
+    // Anime (serie): lista de episodios gerada a partir do total do MAL.
+    if (details?.isAnime && !details.isMovie) {
+      const n = details.episodeCount || 12;
+      setEpisodes(
+        Array.from({ length: n }, (_, i) => ({
+          episodeNumber: i + 1,
+          name: `Episodio ${i + 1}`,
+        }))
+      );
+      setEpisode(1);
+      return;
+    }
     if (details?.type !== "tv") return;
     api
       .season(details.id, season)
@@ -56,17 +68,28 @@ export default function Details() {
 
   // Carregar fontes quando temos contexto suficiente
   useEffect(() => {
-    if (!details || details.matched === false) return;
+    if (!details) return;
+    // Anime: fontes por id do MyAnimeList (MegaPlay/VidLink/VidSrc.cc), sem TMDB.
+    if (details.isAnime) {
+      setActive(null);
+      api
+        .sources({
+          mal: details.malId,
+          episode: details.isMovie ? 1 : episode,
+          audio: settings.animeAudio,
+        })
+        .then((d) => {
+          setEmbeds(d.embeds);
+          setActive(d.embeds[0] || null);
+        })
+        .catch((e) => setError(e.message));
+      return;
+    }
+
     const opts = { type: details.type, tmdb: details.id, imdb: details.imdbId };
     if (details.type === "tv") {
       opts.season = season;
       opts.episode = episode;
-    }
-    // Anime: junta fontes dedicadas (sub/dub) por id do MyAnimeList.
-    if (details.isAnime && details.malId) {
-      opts.mal = details.malId;
-      opts.audio = settings.animeAudio;
-      if (opts.episode == null) opts.episode = episode || 1;
     }
     setActive(null);
     api
@@ -82,7 +105,7 @@ export default function Details() {
   const scrobbledRef = useRef(new Set());
   useEffect(() => {
     if (!details?.isAnime || !details.malId || !active) return;
-    const ep = details.type === "tv" ? episode : 1;
+    const ep = details.isMovie ? 1 : episode;
     const key = `${details.malId}:${ep}`;
     if (scrobbledRef.current.has(key)) return;
     const t = setTimeout(() => {
@@ -133,21 +156,23 @@ export default function Details() {
         </div>
       </div>
 
-      {details.type === "tv" && (
+      {(details.type === "tv" || (details.isAnime && !details.isMovie)) && (
         <div className="episodes">
-          <div className="season-picker">
-            <label>Temporada:</label>
-            <select
-              value={season}
-              onChange={(e) => setSeason(Number(e.target.value))}
-            >
-              {details.seasons?.map((s) => (
-                <option key={s.seasonNumber} value={s.seasonNumber}>
-                  {s.name} ({s.episodeCount} eps)
-                </option>
-              ))}
-            </select>
-          </div>
+          {details.type === "tv" && (
+            <div className="season-picker">
+              <label>Temporada:</label>
+              <select
+                value={season}
+                onChange={(e) => setSeason(Number(e.target.value))}
+              >
+                {details.seasons?.map((s) => (
+                  <option key={s.seasonNumber} value={s.seasonNumber}>
+                    {s.name} ({s.episodeCount} eps)
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
           <div className="episode-list">
             {episodes.map((ep) => (
               <button
@@ -165,11 +190,21 @@ export default function Details() {
         </div>
       )}
 
-      {details.matched === false ? (
+      {details.isAnime ? (
         <div className="watch">
-          <p className="muted">
-            Sem correspondencia no TMDB para este anime — fontes indisponiveis.
-            (catalogo via MyAnimeList)
+          <SourceSelector
+            embeds={embeds}
+            activeId={active?.provider}
+            onSelect={setActive}
+          />
+          {active ? (
+            <Player src={active.embedUrl} title={details.title} />
+          ) : (
+            <p className="muted">A carregar fontes...</p>
+          )}
+          <p className="muted" style={{ fontSize: 12, marginTop: 8 }}>
+            Fontes dedicadas de anime (sub/dub via MyAnimeList). Muda entre
+            legendado e dobrado nas Definicoes.
           </p>
         </div>
       ) : (

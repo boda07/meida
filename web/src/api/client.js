@@ -16,6 +16,7 @@ export const DEFAULT_SETTINGS = {
   subtitleLang: "pt", // legenda preferida: "pt" | "en" | "off"
   defaultTab: "providers", // separador inicial: providers | extract | torrents
   animeAudio: "sub", // anime: "sub" (legendado) ou "dub" (dobrado)
+  accent: "#c90303", // cor de destaque da UI (botoes, realces)
 };
 export const settingsStore = {
   get() {

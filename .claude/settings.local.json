@@ -114,7 +114,17 @@
       "WebFetch(domain:anisuge.tv)",
       "WebFetch(domain:megaplay.buzz)",
       "WebFetch(domain:vidnest.fun)",
-      "PowerShell(git add -A)"
+      "PowerShell(git add -A)",
+      "PowerShell(git push origin main; if \\($?\\) { $env:Path += \";C:\\\\Program Files\\\\GitHub CLI\"; $env:GH_TOKEN = \\(gh auth token\\); $env:CSC_IDENTITY_AUTO_DISCOVERY = \"false\"; npm run app:publish })",
+      "PowerShell($env:Path += \";C:\\\\Program Files\\\\GitHub CLI\"; gh release list --repo boda07/meida --limit 3)",
+      "PowerShell(npm run build 2>&1)",
+      "PowerShell(node --check server/src/services/jikan.js)",
+      "PowerShell(node --check server/src/services/tmdb.js)",
+      "PowerShell(node --check server/src/routes/catalog.js)",
+      "PowerShell(node --check server/src/routes/sources.js)",
+      "PowerShell(if \\($?\\) { \"SERVER SYNTAX OK\" })",
+      "PowerShell($p = Start-Process node -ArgumentList \"server/src/index.js\" -PassThru -WindowStyle Hidden; Start-Sleep -Seconds 3; try { Write-Output \"=== DETAILS \\(One Piece, mal=21\\) ===\"; \\(Invoke-RestMethod \"http://localhost:5175/api/details?type=anime&id=21\"\\) | Select-Object id,type,isAnime,isMovie,episodeCount,title,poster | Format-List; Write-Output \"=== SOURCES \\(mal=21 ep=8 sub\\) ===\"; \\(Invoke-RestMethod \"http://localhost:5175/api/sources?mal=21&episode=8&audio=sub\"\\).embeds | Format-Table provider,embedUrl -AutoSize; Write-Output \"=== SEARCH naruto ===\"; \\(Invoke-RestMethod \"http://localhost:5175/api/search?q=naruto\"\\).results | Select-Object -First 8 | Format-Table type,title -AutoSize } finally { Stop-Process -Id $p.Id -Force })",
+      "PowerShell($p = Start-Process node -ArgumentList \"server/src/index.js\" -PassThru -WindowStyle Hidden; Start-Sleep -Seconds 3; try { Write-Output \"One Piece \\(21\\):\"; \\(Invoke-RestMethod \"http://localhost:5175/api/details?type=anime&id=21\"\\).episodeCount; Write-Output \"Fate/Zero \\(10087\\):\"; \\(Invoke-RestMethod \"http://localhost:5175/api/details?type=anime&id=10087\"\\).episodeCount; Write-Output \"Movie \\(Your Name 32281\\):\"; \\(Invoke-RestMethod \"http://localhost:5175/api/details?type=anime&id=32281\"\\) | Select-Object isMovie,episodeCount | Format-List } finally { Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue })"
     ],
     "additionalDirectories": [
       "\\tmp"

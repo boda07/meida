@@ -154,9 +154,28 @@ export async function getCategory(category, opts = {}) {
   throw new Error("categoria invalida (usa movies, tv ou anime)");
 }
 
+// Um resultado e "anime" se for animacao (genero 16) em japones — esses vem do
+// MAL (separador Anime / pesquisa do Jikan), por isso filtramos do TMDB para nao
+// duplicarem.
+function isAnimeResult(it) {
+  return (it.genre_ids || []).includes(16) && it.original_language === "ja";
+}
+
 export async function search(query, opts = {}) {
   if (!query) return [];
-  return tmdbList("/search/multi", { query, include_adult: "false" }, opts);
+  const { overview, title } = langsFrom(opts);
+
+  const base = await tmdbFetch("/search/multi", { query, include_adult: "false" }, overview);
+  let titles = null;
+  if (title !== overview) {
+    const t = await tmdbFetch("/search/multi", { query, include_adult: "false" }, title);
+    titles = new Map((t.results || []).map((it) => [it.id, it.title || it.name || ""]));
+  }
+  return (base.results || [])
+    .filter((it) => !isAnimeResult(it))
+    .map(normalizeMedia)
+    .filter(Boolean)
+    .map((m) => (titles ? { ...m, title: titles.get(m.id) || m.title } : m));
 }
 
 export async function getDetails(type, id, opts = {}) {

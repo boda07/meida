@@ -108,6 +108,18 @@ function MalSection({ user }) {
   );
 }
 
+// Cores de destaque predefinidas.
+const ACCENT_PRESETS = [
+  "#c90303", // vermelho (default)
+  "#e50914", // netflix
+  "#1db954", // verde
+  "#2563eb", // azul
+  "#8b5cf6", // roxo
+  "#ec4899", // rosa
+  "#f59e0b", // laranja
+  "#06b6d4", // ciano
+];
+
 // Botoes de escolha unica (estilo pilula).
 function Choice({ value, current, onPick, children }) {
   return (
@@ -193,7 +205,7 @@ export default function Settings() {
         <h3>Anime: audio</h3>
         <p className="muted">
           Legendado (sub) ou dobrado (dub). Aplica-se as fontes dedicadas de anime
-          (VidLink/VidSrc.cc por MyAnimeList).
+          (MegaPlay/VidLink/VidSrc.cc por MyAnimeList).
         </p>
         <div className="set-row">
           <Choice value="sub" current={settings.animeAudio} onPick={(v) => update({ animeAudio: v })}>
@@ -218,6 +230,33 @@ export default function Settings() {
           <Choice value="torrents" current={settings.defaultTab} onPick={(v) => update({ defaultTab: v })}>
             Torrents
           </Choice>
+        </div>
+      </section>
+
+      {/* ===== Cor da UI ===== */}
+      <section className="set-section">
+        <h3>Cor de destaque</h3>
+        <p className="muted">
+          Cor dos botoes e realces. Escolhe uma predefinida ou a tua propria.
+        </p>
+        <div className="set-row color-row">
+          {ACCENT_PRESETS.map((c) => (
+            <button
+              key={c}
+              className={`color-swatch ${settings.accent === c ? "active" : ""}`}
+              style={{ background: c }}
+              onClick={() => update({ accent: c })}
+              aria-label={c}
+            />
+          ))}
+          <label className="color-custom" style={{ background: settings.accent }}>
+            <input
+              type="color"
+              value={settings.accent || "#c90303"}
+              onChange={(e) => update({ accent: e.target.value })}
+            />
+            <span>+</span>
+          </label>
         </div>
       </section>
 
