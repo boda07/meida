@@ -19,6 +19,8 @@ export const DEFAULT_SETTINGS = {
   animeAudio: "sub", // anime: "sub" (legendado) ou "dub" (dobrado)
   accent: "#c90303", // cor de destaque da UI (botoes, realces)
   bgColor: "#070708", // cor de fundo da app
+  bgStyle: "none", // estilo de fundo: none|glow|aurora|mesh|dots|grid|image
+  bgImage: "", // URL da imagem de fundo (quando bgStyle === "image")
   recentAccent: [], // últimas cores de destaque escolhidas no picker
   recentBg: [], // últimas cores de fundo escolhidas no picker
   cardW: 184, // largura dos cartazes (px)

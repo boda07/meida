@@ -37,6 +37,19 @@ export function SettingsProvider({ children }) {
     root.style.setProperty("--bg-surface2", shade(bg, 0.13));
   }, [settings.bgColor]);
 
+  // Aplica o estilo de fundo (padrao/imagem/simples). O padrao escolhido e feito
+  // em CSS via [data-bg]; a imagem personalizada vai numa variavel.
+  useEffect(() => {
+    const root = document.documentElement;
+    const style = settings.bgStyle || "none";
+    root.dataset.bg = style;
+    if (style === "image" && settings.bgImage) {
+      root.style.setProperty("--app-bg-image", `url("${settings.bgImage}")`);
+    } else {
+      root.style.removeProperty("--app-bg-image");
+    }
+  }, [settings.bgStyle, settings.bgImage]);
+
   // Aplica o tamanho dos cartazes: largura, e a proporcao (largura/altura) que
   // mantem a forma sem esticar (object-fit: cover no poster).
   useEffect(() => {

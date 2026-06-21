@@ -529,6 +529,45 @@ export default function Settings() {
         />
       </section>
 
+      {/* ===== Estilo de fundo ===== */}
+      <section className="set-section">
+        <h3>Estilo de fundo</h3>
+        <p className="muted">
+          Simples (só a cor), um padrão por cima, ou uma imagem tua (como o fundo
+          do WhatsApp). O padrão usa a tua cor de destaque.
+        </p>
+        <div className="set-row">
+          {[
+            { id: "none", label: "Simples" },
+            { id: "glow", label: "Brilho" },
+            { id: "aurora", label: "Aurora" },
+            { id: "mesh", label: "Malha" },
+            { id: "dots", label: "Pontos" },
+            { id: "grid", label: "Grelha" },
+            { id: "image", label: "Imagem" },
+          ].map((o) => (
+            <Choice
+              key={o.id}
+              value={o.id}
+              current={settings.bgStyle || "none"}
+              onPick={(v) => update({ bgStyle: v })}
+            >
+              {o.label}
+            </Choice>
+          ))}
+        </div>
+        {settings.bgStyle === "image" && (
+          <input
+            className="set-input"
+            type="text"
+            placeholder="Cola aqui o URL de uma imagem (https://...)"
+            value={settings.bgImage || ""}
+            onChange={(e) => update({ bgImage: e.target.value.trim() })}
+            style={{ marginTop: 12 }}
+          />
+        )}
+      </section>
+
       {/* ===== MyAnimeList ===== */}
       <section className="set-section">
         <h3>MyAnimeList</h3>

@@ -25,10 +25,58 @@
 html,
 body {
   margin: 0;
-  background: var(--bg-dark);
+  background-color: var(--bg-dark);
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: cover;
+  background-attachment: fixed;
   color: var(--text);
   font-family: "Manrope", system-ui, sans-serif;
   line-height: 1.5;
+}
+
+/* ===== Estilos de fundo da app (escolhidos nas Definicoes) =====
+   "none" (default) = so a cor. Os restantes poem um padrao/imagem por cima. */
+html[data-bg="glow"] body {
+  background-image: radial-gradient(
+    90% 55% at 50% -12%,
+    color-mix(in srgb, var(--accent) 30%, transparent),
+    transparent 72%
+  );
+}
+
+html[data-bg="aurora"] body {
+  background-image:
+    radial-gradient(42% 50% at 12% 8%, color-mix(in srgb, var(--accent) 32%, transparent), transparent 70%),
+    radial-gradient(46% 55% at 88% 18%, color-mix(in srgb, var(--accent) 22%, transparent), transparent 70%),
+    radial-gradient(55% 60% at 50% 108%, color-mix(in srgb, var(--accent) 18%, transparent), transparent 70%);
+}
+
+html[data-bg="mesh"] body {
+  background-image:
+    radial-gradient(32% 42% at 18% 22%, rgba(120, 100, 255, 0.20), transparent 70%),
+    radial-gradient(36% 46% at 82% 28%, rgba(255, 90, 150, 0.16), transparent 70%),
+    radial-gradient(42% 52% at 60% 92%, rgba(60, 190, 255, 0.16), transparent 70%);
+}
+
+html[data-bg="dots"] body {
+  background-image: radial-gradient(rgba(255, 255, 255, 0.07) 1.3px, transparent 1.3px);
+  background-size: 22px 22px;
+  background-repeat: repeat;
+}
+
+html[data-bg="grid"] body {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.045) 1px, transparent 1px);
+  background-size: 30px 30px;
+  background-repeat: repeat;
+}
+
+/* Imagem personalizada (URL): escurecida para o texto continuar legivel. */
+html[data-bg="image"] body {
+  background-image: linear-gradient(rgba(7, 7, 8, 0.55), rgba(7, 7, 8, 0.78)),
+    var(--app-bg-image, none);
 }
 
 /* ===== Scrollbar (estilo "glass" como o menu) ===== */
@@ -2391,6 +2439,23 @@ h2 {
   background: #fff;
   border-color: #fff;
   color: #0a0a0b;
+}
+
+.set-input {
+  width: 100%;
+  max-width: 520px;
+  padding: 10px 14px;
+  border-radius: var(--radius-pill);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 14px;
+  outline: none;
+}
+
+.set-input:focus {
+  border-color: var(--accent);
 }
 
 /* Avatar picker */
