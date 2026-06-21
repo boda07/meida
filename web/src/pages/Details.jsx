@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { api, imageUrl } from "../api/client.js";
 import { useSettings } from "../settings/SettingsContext.jsx";
+import { useWatchParty } from "../watchparty/WatchPartyContext.jsx";
 import Player from "../components/Player.jsx";
 import SourceSelector from "../components/SourceSelector.jsx";
 import LibraryControls from "../components/LibraryControls.jsx";
@@ -11,6 +12,7 @@ import Extract from "../components/Extract.jsx";
 export default function Details() {
   const { type, id } = useParams();
   const { settings } = useSettings();
+  const party = useWatchParty();
   const [details, setDetails] = useState(null);
   const [error, setError] = useState(null);
 
@@ -114,6 +116,30 @@ export default function Details() {
     }, 15000);
     return () => clearTimeout(t);
   }, [details, active, episode]);
+
+  // Watch Party: sincroniza temporada/episodio/separador entre a sala.
+  const applyingUntil = useRef(0);
+  useEffect(() => {
+    if (!party?.active) return;
+    return party.subscribe((p) => {
+      if (p.kind === "hello") {
+        party.send("session", { season, episode, mode });
+        return;
+      }
+      if (p.kind !== "session") return;
+      applyingUntil.current = Date.now() + 300;
+      const d = p.data || {};
+      if (d.season != null) setSeason(d.season);
+      if (d.episode != null) setEpisode(d.episode);
+      if (d.mode) setMode(d.mode);
+    });
+  }, [party, season, episode, mode]);
+
+  useEffect(() => {
+    if (!party?.active) return;
+    if (Date.now() < applyingUntil.current) return;
+    party.send("session", { season, episode, mode });
+  }, [party, season, episode, mode]);
 
   if (error) return <p className="status error">{error}</p>;
   if (!details) return <p className="status">A carregar...</p>;

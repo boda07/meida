@@ -2,12 +2,14 @@ import { useEffect, useRef } from "react";
 import Hls from "hls.js";
 import { SubtitleTracks, SubtitleMenu } from "./subtitles.jsx";
 import FullscreenButton from "./FullscreenButton.jsx";
+import { useVideoSync } from "../watchparty/useVideoSync.js";
 
 // Player HLS proprio (sem anuncios) com legendas.
 export default function HlsPlayer({ sources = [], subtitles = [] }) {
   const videoRef = useRef(null);
   const containerRef = useRef(null);
   const src = sources[0]?.url;
+  useVideoSync(videoRef); // Watch Party: sincroniza play/pause/seek
 
   useEffect(() => {
     const video = videoRef.current;

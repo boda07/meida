@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import ProfileMenu from "./ProfileMenu.jsx";
+import WatchParty from "./WatchParty.jsx";
 
 function HomeIcon() {
   return (
@@ -137,6 +138,7 @@ export default function Header() {
             onBlur={() => { if (!query.trim() && !onSearchPage) setSearchOpen(false); }}
           />
         </form>
+        <WatchParty />
         <ProfileMenu />
       </div>
     </header>

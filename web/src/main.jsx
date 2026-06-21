@@ -4,6 +4,7 @@ import { BrowserRouter } from "react-router-dom";
 import App from "./App.jsx";
 import { AuthProvider } from "./auth/AuthContext.jsx";
 import { SettingsProvider } from "./settings/SettingsContext.jsx";
+import { WatchPartyProvider } from "./watchparty/WatchPartyContext.jsx";
 import "./styles.css";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
@@ -11,7 +12,9 @@ ReactDOM.createRoot(document.getElementById("root")).render(
     <BrowserRouter>
       <SettingsProvider>
         <AuthProvider>
-          <App />
+          <WatchPartyProvider>
+            <App />
+          </WatchPartyProvider>
         </AuthProvider>
       </SettingsProvider>
     </BrowserRouter>

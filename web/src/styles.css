@@ -775,6 +775,124 @@ h2 {
   flex: 0 0 auto;
 }
 
+/* ===== Watch Party ===== */
+.wp {
+  position: relative;
+}
+
+.icon-btn.wp-on {
+  color: var(--accent);
+}
+
+.wp-badge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.wp-panel {
+  position: absolute;
+  right: 0;
+  top: 50px;
+  width: 270px;
+  background: rgba(20, 20, 26, 0.96);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-modal);
+  padding: 16px;
+  z-index: 50;
+}
+
+.wp-panel h4 {
+  margin: 0 0 8px;
+  font-size: 15px;
+}
+
+.wp-panel .muted {
+  font-size: 12px;
+  margin: 0 0 12px;
+}
+
+.wp-input {
+  width: 100%;
+  padding: 9px 12px;
+  border-radius: var(--radius-pill);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text);
+  margin-bottom: 8px;
+  outline: none;
+}
+
+.wp-input:focus {
+  border-color: var(--accent);
+}
+
+.wp-block {
+  width: 100%;
+  justify-content: center;
+}
+
+.wp-or {
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 12px;
+  margin: 10px 0;
+}
+
+.wp-join {
+  display: flex;
+  gap: 8px;
+}
+
+.wp-join .wp-input {
+  margin-bottom: 0;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  font-weight: 700;
+}
+
+.wp-code {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.wp-code span {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: 3px;
+  color: var(--accent);
+}
+
+.wp-members {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.wp-member {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  font-size: 12px;
+  font-weight: 600;
+}
+
 /* ===== Seletor de cor (Definicoes) ===== */
 .color-row {
   flex-wrap: wrap;
