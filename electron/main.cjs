@@ -2,10 +2,15 @@
 // - Em dev (ELECTRON_DEV=1): carrega o Vite (http://localhost:5173), assumindo
 //   que `npm run dev` ja arrancou o server (5175) + web (5173).
 // - Em producao: arranca o backend (que tambem serve o web/dist) e carrega-o.
-const { app, BrowserWindow, shell, dialog } = require("electron");
+const { app, BrowserWindow, shell, dialog, ipcMain } = require("electron");
 const path = require("path");
 const { spawn } = require("child_process");
 const { autoUpdater } = require("electron-updater");
+
+// Abrir URLs externos (ex.: login do MyAnimeList) no browser do sistema.
+ipcMain.handle("open-external", (_e, url) => {
+  if (/^https?:\/\//i.test(url)) shell.openExternal(url);
+});
 
 const isDev = process.env.ELECTRON_DEV === "1";
 const DEV_URL = "http://localhost:5173";
@@ -57,7 +62,10 @@ function createWindow() {
     icon: app.isPackaged
       ? undefined // empacotado: usa o icone embutido no .exe
       : path.join(__dirname, "..", "build", "icon.png"),
-    webPreferences: { contextIsolation: true },
+    webPreferences: {
+      contextIsolation: true,
+      preload: path.join(__dirname, "preload.cjs"),
+    },
   });
 
   // Bloqueia popups (ex.: anuncios dos providers) em vez de abrir novas janelas.

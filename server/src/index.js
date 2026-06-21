@@ -9,6 +9,7 @@ import { authRouter } from "./routes/auth.js";
 import { libraryRouter } from "./routes/library.js";
 import { streamRouter } from "./routes/stream.js";
 import { playRouter } from "./routes/play.js";
+import { malRouter } from "./routes/mal.js";
 
 const app = express();
 app.use(cors());
@@ -27,6 +28,9 @@ app.use("/api", sourcesRouter);
 app.use("/api", authRouter);
 app.use("/api", streamRouter);
 app.use("/api", playRouter);
+// malRouter ANTES do libraryRouter: o library aplica requireAuth a tudo o que
+// passa por ele, e as rotas publicas do MAL (callback OAuth) nao podem ser bloqueadas.
+app.use("/api", malRouter);
 app.use("/api", libraryRouter);
 
 // Em producao (app desktop), serve o frontend ja compilado (web/dist).

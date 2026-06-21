@@ -134,6 +134,26 @@ mesmo abrir no browser em vez da app:
   Isso implica um endereco acessivel pela net (semi-publico). Por isso, para uso
   pessoal e privado, a **app desktop com auto-update** e a melhor opcao.
 
+## Ligar conta MyAnimeList (scrobble + importar lista)
+
+Permite ligar a conta MAL, **importar a lista** para a watchlist da app e **marcar
+episodios de anime como vistos** automaticamente (scrobble) enquanto ves.
+
+Setup (uma vez):
+1. Cria uma app em https://myanimelist.net/apiconfig/create
+   - **App Type:** `web` (ou `other`)
+   - **App Redirect URL:** `http://localhost:5175/api/mal/callback`
+2. Copia o **Client ID** (e o **Client Secret**, se for gerado) para o `server/.env`:
+   ```
+   MAL_CLIENT_ID=o_teu_client_id
+   MAL_CLIENT_SECRET=o_teu_secret
+   ```
+3. Reinicia (`npm run dev`) ou republica a app (`npm run app:publish`).
+
+Usar: Definicoes → **MyAnimeList** → "Ligar MyAnimeList" (abre o browser para
+autorizar) → depois "Importar lista do MAL". A partir dai, ao veres um episodio de
+anime ~15s, o progresso e marcado no teu MAL.
+
 ## Anime (MyAnimeList via Jikan)
 A aba **Anime** usa a API publica do MyAnimeList (Jikan, sem chave) — listas
 muito melhores que o TMDB. Ao abrir um anime, fazemos *match* para o TMDB

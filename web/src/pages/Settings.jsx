@@ -1,8 +1,112 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useSettings } from "../settings/SettingsContext.jsx";
 import { useAuth } from "../auth/AuthContext.jsx";
+import { api, openExternal } from "../api/client.js";
 import Avatar, { AVATAR_EMOJIS } from "../components/Avatar.jsx";
+
+// Seccao de ligacao ao MyAnimeList.
+function MalSection({ user }) {
+  const [enabled, setEnabled] = useState(false);
+  const [linked, setLinked] = useState(false);
+  const [username, setUsername] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState(null);
+
+  function refresh() {
+    api.malStatus().then((d) => {
+      setLinked(d.linked);
+      setUsername(d.username);
+    }).catch(() => {});
+  }
+
+  useEffect(() => {
+    if (!user) return;
+    api.malEnabled().then((d) => setEnabled(d.enabled)).catch(() => {});
+    refresh();
+  }, [user]);
+
+  // Ao voltar a janela (depois do OAuth no browser), reverifica a ligacao.
+  useEffect(() => {
+    const onFocus = () => refresh();
+    window.addEventListener("focus", onFocus);
+    return () => window.removeEventListener("focus", onFocus);
+  }, []);
+
+  async function link() {
+    setMsg(null);
+    try {
+      const { authUrl } = await api.malLogin();
+      openExternal(authUrl);
+      setMsg("Autoriza no browser e volta a esta janela.");
+    } catch (e) {
+      setMsg(e.message);
+    }
+  }
+
+  async function importList() {
+    setBusy(true);
+    setMsg(null);
+    try {
+      const d = await api.malImport();
+      setMsg(`Importados ${d.imported} animes para a tua lista.`);
+    } catch (e) {
+      setMsg(e.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function unlink() {
+    await api.malUnlink().catch(() => {});
+    refresh();
+    setMsg(null);
+  }
+
+  if (!user) {
+    return (
+      <p className="muted">
+        <Link to="/login">Entra</Link> para ligares o MyAnimeList.
+      </p>
+    );
+  }
+  if (!enabled) {
+    return (
+      <p className="muted">
+        O servidor nao tem o MyAnimeList configurado (falta MAL_CLIENT_ID).
+      </p>
+    );
+  }
+
+  return (
+    <div>
+      {linked ? (
+        <>
+          <p className="muted">
+            Ligado como <b>{username || "?"}</b>. Os episodios de anime que vires
+            sao marcados no teu MAL automaticamente.
+          </p>
+          <div className="set-row">
+            <button className="set-choice active" onClick={importList} disabled={busy}>
+              {busy ? "A importar..." : "Importar lista do MAL"}
+            </button>
+            <button className="set-clear" onClick={unlink}>Desligar conta</button>
+          </div>
+        </>
+      ) : (
+        <>
+          <p className="muted">
+            Liga a tua conta para importar a tua lista e marcar episodios vistos.
+          </p>
+          <button className="set-choice active" onClick={link}>
+            Ligar MyAnimeList
+          </button>
+        </>
+      )}
+      {msg && <p className="muted" style={{ marginTop: 10 }}>{msg}</p>}
+    </div>
+  );
+}
 
 // Botoes de escolha unica (estilo pilula).
 function Choice({ value, current, onPick, children }) {
@@ -115,6 +219,12 @@ export default function Settings() {
             Torrents
           </Choice>
         </div>
+      </section>
+
+      {/* ===== MyAnimeList ===== */}
+      <section className="set-section">
+        <h3>MyAnimeList</h3>
+        <MalSection user={user} />
       </section>
 
       {/* ===== Avatar ===== */}

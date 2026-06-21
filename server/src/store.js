@@ -57,6 +57,20 @@ export function setUserAvatar(id, avatar) {
   return getUserById(id);
 }
 
+/* ===== Tokens do MyAnimeList (por utilizador) ===== */
+export function setMalTokens(id, tokens) {
+  const u = data.users.find((x) => x.id === id);
+  if (u) {
+    u.mal = tokens; // { accessToken, refreshToken, expiresAt, username } ou null
+    save();
+  }
+}
+
+export function getMalTokens(id) {
+  const u = data.users.find((x) => x.id === id);
+  return u?.mal || null;
+}
+
 /* ===== Biblioteca ===== */
 function toApi(r) {
   return {

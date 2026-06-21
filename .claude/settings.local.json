@@ -103,7 +103,12 @@
       "Bash(git push *)",
       "PowerShell($env:Path += \";C:\\\\Program Files\\\\GitHub CLI\"; Remove-Item Env:ELECTRON_RUN_AS_NODE -ErrorAction SilentlyContinue; $env:GH_TOKEN = \\(gh auth token\\); $env:CSC_IDENTITY_AUTO_DISCOVERY = \"false\"; npm run app:publish 2>&1 | Select-Object -Last 12)",
       "PowerShell($env:Path += \";C:\\\\Program Files\\\\GitHub CLI\"; gh release list --repo boda07/meida; \"=== assets v0.1.2 ===\"; gh release view v0.1.2 --repo boda07/meida --json isDraft,assets --jq '\"draft=\"+\\(.isDraft|tostring\\), \\(.assets[].name\\)')",
-      "PowerShell($env:Path += \";C:\\\\Program Files\\\\GitHub CLI\"; gh release view v0.1.2 --repo boda07/meida --json assets --jq '.assets[].name')"
+      "PowerShell($env:Path += \";C:\\\\Program Files\\\\GitHub CLI\"; gh release view v0.1.2 --repo boda07/meida --json assets --jq '.assets[].name')",
+      "PowerShell($env:Path += \";C:\\\\Program Files\\\\GitHub CLI\"; Remove-Item Env:ELECTRON_RUN_AS_NODE -ErrorAction SilentlyContinue; $env:GH_TOKEN = \\(gh auth token\\); $env:CSC_IDENTITY_AUTO_DISCOVERY = \"false\"; npm run app:publish 2>&1 | Select-Object -Last 8)",
+      "PowerShell($env:Path += \";C:\\\\Program Files\\\\GitHub CLI\"; gh release list --repo boda07/meida | Select-Object -First 3)",
+      "Bash(node --check server/src/services/mal.js)",
+      "Bash(node --check server/src/routes/mal.js)",
+      "Bash(node --check electron/preload.cjs)"
     ],
     "additionalDirectories": [
       "\\tmp"

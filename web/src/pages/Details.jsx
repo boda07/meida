@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { api, imageUrl } from "../api/client.js";
 import { useSettings } from "../settings/SettingsContext.jsx";
@@ -77,6 +77,20 @@ export default function Details() {
       })
       .catch((e) => setError(e.message));
   }, [details, season, episode, settings.animeAudio]);
+
+  // Scrobble MAL: marca o episodio de anime como visto apos ~15s com fonte ativa.
+  const scrobbledRef = useRef(new Set());
+  useEffect(() => {
+    if (!details?.isAnime || !details.malId || !active) return;
+    const ep = details.type === "tv" ? episode : 1;
+    const key = `${details.malId}:${ep}`;
+    if (scrobbledRef.current.has(key)) return;
+    const t = setTimeout(() => {
+      scrobbledRef.current.add(key);
+      api.malScrobble(details.malId, ep).catch(() => {});
+    }, 15000);
+    return () => clearTimeout(t);
+  }, [details, active, episode]);
 
   if (error) return <p className="status error">{error}</p>;
   if (!details) return <p className="status">A carregar...</p>;

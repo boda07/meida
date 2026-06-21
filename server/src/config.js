@@ -13,6 +13,14 @@ export const config = {
   // Se definido, usa um extractor externo compativel com Consumet (ex.: http://localhost:3000).
   extractorApiBase: process.env.EXTRACTOR_API_BASE?.trim().replace(/\/$/, "") || "",
   openSubtitlesKey: process.env.OPENSUBTITLES_API_KEY?.trim() || "",
+  // MyAnimeList (API v2). Client ID obtido em https://myanimelist.net/apiconfig
+  mal: {
+    clientId: process.env.MAL_CLIENT_ID?.trim() || "",
+    clientSecret: process.env.MAL_CLIENT_SECRET?.trim() || "",
+    redirectUri:
+      process.env.MAL_REDIRECT_URI?.trim() ||
+      "http://localhost:5175/api/mal/callback",
+  },
   tmdb: {
     apiKey: process.env.TMDB_API_KEY?.trim() || "",
     accessToken: process.env.TMDB_ACCESS_TOKEN?.trim() || "",

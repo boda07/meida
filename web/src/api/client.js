@@ -118,7 +118,24 @@ export const api = {
   libraryItem: (type, tmdb) => get("/api/library/item", { type, tmdb }),
   saveLibrary: (entry) => post("/api/library", entry),
   removeLibrary: (type, tmdb) => del("/api/library/item", { type, tmdb }),
+
+  // MyAnimeList
+  malEnabled: () => get("/api/mal/enabled"),
+  malStatus: () => get("/api/mal/status"),
+  malLogin: () => get("/api/mal/login"),
+  malImport: () => post("/api/mal/import", {}),
+  malUnlink: () => post("/api/mal/unlink", {}),
+  malScrobble: (malId, episode) => post("/api/mal/scrobble", { malId, episode }),
 };
+
+// Abre um URL no browser do sistema (Electron) ou numa nova aba (web).
+export function openExternal(url) {
+  if (typeof window !== "undefined" && window.electronAPI?.openExternal) {
+    window.electronAPI.openExternal(url);
+  } else {
+    window.open(url, "_blank", "noopener");
+  }
+}
 
 export function imageUrl(path, size = "w342") {
   if (!path) return null;
