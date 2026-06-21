@@ -111,19 +111,28 @@ export default function Details() {
       .catch((e) => setError(e.message));
   }, [details, season, episode, settings.animeAudio]);
 
-  // Scrobble MAL: marca o episodio de anime como visto apos ~15s com fonte ativa.
-  const scrobbledRef = useRef(new Set());
-  useEffect(() => {
-    if (!details?.isAnime || !details.malId || !active) return;
+  // Scrobble MAL: marca o episodio de anime como visto SO quando o utilizador
+  // carrega no botao (antes era automatico apos 15s mesmo sem acabar).
+  const [scrobbled, setScrobbled] = useState(() => new Set());
+  const [scrobbling, setScrobbling] = useState(false);
+  const [scrobbleErr, setScrobbleErr] = useState(false);
+  const scrobbleKey = details?.malId
+    ? `${details.malId}:${details.isMovie ? 1 : episode}`
+    : null;
+  const markEpisodeWatched = async () => {
+    if (!details?.isAnime || !details.malId || scrobbling) return;
     const ep = details.isMovie ? 1 : episode;
-    const key = `${details.malId}:${ep}`;
-    if (scrobbledRef.current.has(key)) return;
-    const t = setTimeout(() => {
-      scrobbledRef.current.add(key);
-      api.malScrobble(details.malId, ep).catch(() => {});
-    }, 15000);
-    return () => clearTimeout(t);
-  }, [details, active, episode]);
+    setScrobbling(true);
+    setScrobbleErr(false);
+    try {
+      await api.malScrobble(details.malId, ep);
+      setScrobbled((s) => new Set(s).add(`${details.malId}:${ep}`));
+    } catch {
+      setScrobbleErr(true);
+    } finally {
+      setScrobbling(false);
+    }
+  };
 
   // Watch Party: sincroniza temporada/episodio/separador entre a sala.
   const applyingUntil = useRef(0);
@@ -258,6 +267,28 @@ export default function Details() {
 
       {details.isAnime ? (
         <div className="watch">
+          <div className="scrobble-bar">
+            <button
+              className="btn scrobble-btn"
+              onClick={markEpisodeWatched}
+              disabled={scrobbling || scrobbled.has(scrobbleKey)}
+            >
+              {scrobbled.has(scrobbleKey)
+                ? details.isMovie
+                  ? "✓ Marcado como visto no MAL"
+                  : `✓ Episodio ${episode} marcado no MAL`
+                : scrobbling
+                ? "A marcar..."
+                : details.isMovie
+                ? "Marcar como visto no MAL"
+                : `Marcar episodio ${episode} como visto no MAL`}
+            </button>
+            {scrobbleErr && (
+              <span className="muted" style={{ fontSize: 12 }}>
+                Nao foi possivel marcar (liga a tua conta MAL nas Definicoes).
+              </span>
+            )}
+          </div>
           {animeExtractorOn && (
             <div className="mode-tabs">
               <button
