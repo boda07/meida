@@ -41,7 +41,7 @@ export default function Home() {
     );
 
   return (
-    <div className="catalog-page">
+    <div className="catalog-page home">
       <Hero item={hero} />
       <div className="rows">
         <ContinueWatching />

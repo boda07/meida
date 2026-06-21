@@ -706,6 +706,11 @@ h2 {
   overflow: hidden;
 }
 
+/* Home: a recomendacao ocupa o ecra todo (so ela aparece ao abrir). */
+.catalog-page.home .hero {
+  min-height: 100vh;
+}
+
 .hero::before,
 .hero::after {
   content: "";
@@ -871,6 +876,31 @@ h2 {
   display: flex;
   flex-direction: column;
   gap: 48px;
+}
+
+/* Home: as filas (continua a ver + restantes) revelam-se suavemente a medida que
+   entram no ecra ao fazer scroll, para uma transicao smooth a partir do hero. */
+.catalog-page.home .rows > * {
+  animation: row-reveal 0.6s ease both;
+  animation-timeline: view();
+  animation-range: entry 0% cover 22%;
+}
+
+@keyframes row-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .catalog-page.home .rows > * {
+    animation: none;
+  }
 }
 
 .row {

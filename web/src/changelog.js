@@ -2,6 +2,12 @@
 // "o que mudou" depois de o utilizador atualizar a app. Mais recente em cima.
 export const CHANGELOG = [
   {
+    version: "0.4.9",
+    items: [
+      "No início, a recomendação ocupa o ecrã todo; ao fazer scroll, o \"Continua a ver\" e o resto aparecem com uma transição suave.",
+    ],
+  },
+  {
     version: "0.4.8",
     items: [
       "Sempre que atualizares a app, passas a ver um resumo das novidades (como este).",
