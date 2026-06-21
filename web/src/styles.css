@@ -921,6 +921,33 @@ h2 {
   font-weight: 600;
 }
 
+/* ===== Pesquisa por categorias ===== */
+.search-group {
+  margin-top: 28px;
+}
+
+.search-group-title {
+  font-size: 18px;
+  font-weight: 800;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.search-count {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.08);
+  padding: 2px 9px;
+  border-radius: 999px;
+}
+
+.search-group .grid {
+  margin-top: 16px;
+}
+
 /* ===== Slider (Definicoes) ===== */
 .set-slider {
   max-width: 360px;
