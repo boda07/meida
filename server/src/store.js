@@ -151,6 +151,18 @@ export function setLibraryRating(userId, tmdbId, type, rating) {
   }
 }
 
+// Atualiza so os generos, sem mexer no updated_at. Usado no backfill de itens
+// antigos (ex.: filmes importados do Letterboxd que vieram sem generos).
+export function setLibraryGenres(userId, tmdbId, type, genres) {
+  const r = data.library.find(
+    (x) => x.user_id === userId && x.tmdb_id === tmdbId && x.media_type === type
+  );
+  if (r && Array.isArray(genres) && genres.length) {
+    r.genres = genres;
+    save();
+  }
+}
+
 export function deleteLibrary(userId, tmdbId, type) {
   data.library = data.library.filter(
     (x) => !(x.user_id === userId && x.tmdb_id === tmdbId && x.media_type === type)

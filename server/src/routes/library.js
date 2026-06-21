@@ -4,11 +4,12 @@ import {
   getLibraryItem,
   upsertLibrary,
   setLibraryRating,
+  setLibraryGenres,
   clearWatchlist,
   deleteLibrary,
 } from "../store.js";
 import { requireAuth } from "../services/auth.js";
-import { getRating } from "../services/tmdb.js";
+import { getMeta } from "../services/tmdb.js";
 import { getAnimeRatingsBatch } from "../services/jikan.js";
 import { status as malStatus, getMeanScores } from "../services/mal.js";
 import { getRatings as getLetterboxdRatings } from "../services/letterboxd.js";
@@ -28,49 +29,68 @@ function applyRating(userId, item, rating) {
   item.rating = rating;
 }
 
+// Guarda nota e/ou generos vindos do TMDB (so o que estiver em falta no item).
+function applyMeta(userId, item, meta) {
+  if (!meta) return;
+  if (item.rating == null) applyRating(userId, item, meta.rating);
+  if ((!item.genres || !item.genres.length) && meta.genres?.length) {
+    setLibraryGenres(userId, item.tmdbId, item.type, meta.genres);
+    item.genres = meta.genres;
+  }
+}
+
+// Corre `fn` sobre `arr` com concorrencia limitada (para listas grandes).
+async function pMap(arr, concurrency, fn) {
+  let idx = 0;
+  const workers = Array.from({ length: Math.min(concurrency, arr.length) }, async () => {
+    while (idx < arr.length) {
+      const cur = idx++;
+      await fn(arr[cur]);
+    }
+  });
+  await Promise.all(workers);
+}
+
 // Lista completa da biblioteca do utilizador. Faz backfill (uma vez) da media da
-// comunidade dos itens antigos que ainda nao a tenham guardada. Em lote, para
-// aguentar listas grandes (centenas de animes) em poucos segundos.
+// comunidade E dos generos dos itens antigos que ainda nao os tenham (ex.: filmes
+// importados do Letterboxd vieram sem generos). Em lote, para aguentar listas
+// grandes (centenas de titulos) em poucos segundos.
 libraryRouter.get("/library", async (req, res) => {
   const items = listLibrary(req.user.id).map(normalizeRow);
-  const missing = items.filter((i) => i.rating == null);
 
-  if (missing.length) {
-    const animeMissing = missing.filter((i) => i.type === "anime");
-    const movieMissing = missing.filter((i) => i.type === "movie");
-    const tvMissing = missing.filter((i) => i.type === "tv");
-
-    // Anime: 1) media EXATA do MAL (1 pedido pagina a lista do utilizador)...
-    if (animeMissing.length && malStatus(req.user.id).linked) {
-      try {
-        const means = await getMeanScores(req.user.id);
-        for (const i of animeMissing) applyRating(req.user.id, i, means.get(Number(i.tmdbId)));
-      } catch {
-        /* sem conta MAL valida -> cai no AniList */
-      }
+  // Anime: media EXATA do MAL (1 pedido) e o resto via AniList em lote.
+  const animeMissing = items.filter((i) => i.type === "anime" && i.rating == null);
+  if (animeMissing.length && malStatus(req.user.id).linked) {
+    try {
+      const means = await getMeanScores(req.user.id);
+      for (const i of animeMissing) applyRating(req.user.id, i, means.get(Number(i.tmdbId)));
+    } catch {
+      /* sem conta MAL valida -> cai no AniList */
     }
-    // ...2) resto via AniList em lote (50 por pedido).
-    const stillAnime = animeMissing.filter((i) => i.rating == null);
-    if (stillAnime.length) {
-      const map = await getAnimeRatingsBatch(stillAnime.map((i) => i.tmdbId));
-      for (const i of stillAnime) applyRating(req.user.id, i, map.get(Number(i.tmdbId)));
-    }
+  }
+  const stillAnime = animeMissing.filter((i) => i.rating == null);
+  if (stillAnime.length) {
+    const map = await getAnimeRatingsBatch(stillAnime.map((i) => i.tmdbId));
+    for (const i of stillAnime) applyRating(req.user.id, i, map.get(Number(i.tmdbId)));
+  }
 
-    // Filmes: media da comunidade do Letterboxd (scraping, concorrencia limitada);
-    // o que falhar cai no TMDB.
-    if (movieMissing.length) {
-      const lb = await getLetterboxdRatings(movieMissing.map((i) => i.tmdbId));
-      for (const i of movieMissing) applyRating(req.user.id, i, lb.get(Number(i.tmdbId)));
-      await Promise.all(
-        movieMissing
-          .filter((i) => i.rating == null)
-          .map(async (i) => applyRating(req.user.id, i, await getRating("movie", i.tmdbId)))
-      );
-    }
+  // Filmes: nota da comunidade do Letterboxd (so para os que faltam).
+  const movieRatingMissing = items.filter((i) => i.type === "movie" && i.rating == null);
+  if (movieRatingMissing.length) {
+    const lb = await getLetterboxdRatings(movieRatingMissing.map((i) => i.tmdbId));
+    for (const i of movieRatingMissing) applyRating(req.user.id, i, lb.get(Number(i.tmdbId)));
+  }
 
-    // Series: media do TMDB (em paralelo).
-    await Promise.all(
-      tvMissing.map(async (i) => applyRating(req.user.id, i, await getRating("tv", i.tmdbId)))
+  // Filmes/series: TMDB preenche nota em falta E/OU generos em falta, numa so
+  // chamada por item (concorrencia limitada).
+  const needMeta = items.filter(
+    (i) =>
+      (i.type === "movie" || i.type === "tv") &&
+      (i.rating == null || !i.genres || !i.genres.length)
+  );
+  if (needMeta.length) {
+    await pMap(needMeta, 12, async (i) =>
+      applyMeta(req.user.id, i, await getMeta(i.type, i.tmdbId))
     );
   }
 

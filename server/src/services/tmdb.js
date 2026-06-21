@@ -340,15 +340,23 @@ export async function findMovieByTitle(title, year) {
   }
 }
 
-// Media da comunidade (vote_average) de um filme/serie. Best-effort: null se falhar.
-export async function getRating(type, id) {
-  if (type !== "movie" && type !== "tv") return null;
+// Media da comunidade + generos de um filme/serie, numa so chamada. Best-effort.
+export async function getMeta(type, id) {
+  if (type !== "movie" && type !== "tv") return { rating: null, genres: [] };
   try {
     const d = await tmdbFetch(`/${type}/${id}`, {}, "en-US");
-    return d?.vote_average ? Math.round(d.vote_average * 10) / 10 : null;
+    return {
+      rating: d?.vote_average ? Math.round(d.vote_average * 10) / 10 : null,
+      genres: (d?.genres || []).map((g) => g.name),
+    };
   } catch {
-    return null;
+    return { rating: null, genres: [] };
   }
+}
+
+// Media da comunidade (vote_average) de um filme/serie. Best-effort: null se falhar.
+export async function getRating(type, id) {
+  return (await getMeta(type, id)).rating;
 }
 
 // Lista de generos (TMDB) por tipo, para o "Escolhe algo para mim".
