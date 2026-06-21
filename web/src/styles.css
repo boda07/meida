@@ -1134,9 +1134,16 @@ h2 {
   background: rgba(255, 255, 255, 0.14);
 }
 
-/* Na pesquisa, espaco antes dos grupos de resultados. */
+/* Na pesquisa, espaco entre titulo, filtros e as rows de resultados. */
 .sub-page > .lib-filters {
-  margin-bottom: 4px;
+  margin: 14px 0 4px;
+}
+
+/* As rows do Home tem margin-top negativo (encaixe sob o Hero); na pesquisa
+   nao ha Hero, por isso anulamos e damos espaco. */
+.sub-page .rows {
+  margin-top: 18px;
+  padding: 0 0 40px;
 }
 
 .tf-chip {
