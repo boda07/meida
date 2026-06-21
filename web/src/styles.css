@@ -123,11 +123,11 @@ h2 {
   overflow: hidden;
 }
 
-/* ===== Botao de ecra inteiro da APP (topo esquerdo) ===== */
-.app-fs-btn {
+/* ===== Botoes fixos da APP: voltar (esquerda) + ecra inteiro (direita) ===== */
+.app-fs-btn,
+.app-back-btn {
   position: fixed;
   top: 18px;
-  left: 18px;
   z-index: 70;
   width: 40px;
   height: 40px;
@@ -144,7 +144,16 @@ h2 {
   transition: background 0.2s;
 }
 
-.app-fs-btn:hover {
+.app-fs-btn {
+  right: 18px;
+}
+
+.app-back-btn {
+  left: 18px;
+}
+
+.app-fs-btn:hover,
+.app-back-btn:hover {
   background: rgba(40, 40, 48, 0.85);
 }
 

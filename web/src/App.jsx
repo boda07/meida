@@ -1,6 +1,7 @@
 import { Routes, Route } from "react-router-dom";
 import Header from "./components/Header.jsx";
 import AppFullscreen from "./components/AppFullscreen.jsx";
+import BackButton from "./components/BackButton.jsx";
 import Home from "./pages/Home.jsx";
 import Category from "./pages/Category.jsx";
 import Search from "./pages/Search.jsx";
@@ -12,6 +13,7 @@ import Settings from "./pages/Settings.jsx";
 export default function App() {
   return (
     <div className="app">
+      <BackButton />
       <AppFullscreen />
       <Header />
       <main className="content">
