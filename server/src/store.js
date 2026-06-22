@@ -278,8 +278,11 @@ export function importProgress(e) {
   if (e.poster != null) r.poster = e.poster;
   if (e.season != null) r.season = e.season;
   if (e.episode != null) r.episode = e.episode;
-  if (e.startedAt) r.started_at = e.startedAt;
-  if (e.finishedAt) r.finished_at = e.finishedAt;
+  // `!== undefined` (em vez de truthy): permite limpar uma data passando null
+  // explicito — ex.: reimportar do MAL um fim sem dia exato corrige o que antes
+  // ficou com o dia 1 inventado. (O Letterboxd nunca passa startedAt, fica intacto.)
+  if (e.startedAt !== undefined) r.started_at = e.startedAt;
+  if (e.finishedAt !== undefined) r.finished_at = e.finishedAt;
   r.status = e.status || (e.finishedAt ? "finished" : "watching");
   r.updated_at = e.finishedAt || e.startedAt || r.updated_at || new Date().toISOString();
   save();

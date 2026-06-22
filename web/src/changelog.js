@@ -2,6 +2,12 @@
 // "o que mudou" depois de o utilizador atualizar a app. Mais recente em cima.
 export const CHANGELOG = [
   {
+    version: "0.6.1",
+    items: [
+      "Datas do diário (MyAnimeList): quando o MAL não tem o dia exato, deixamos de inventar o dia 1 (que dava casos de \"acabei antes de começar\"). Os terminados sem data mostram \"data não disponível\". Reimporta a lista do MAL para corrigir as antigas.",
+    ],
+  },
+  {
     version: "0.6.0",
     items: [
       "Já podes usar uma imagem do teu computador como fundo da app (Definições → Estilo de fundo → Imagem → \"Escolher do PC\"), sem precisares de um URL.",

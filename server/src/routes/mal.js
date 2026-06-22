@@ -3,13 +3,13 @@ import crypto from "node:crypto";
 import { requireAuth } from "../services/auth.js";
 import { upsertLibrary, importProgress } from "../store.js";
 
-// "2020-12-15" | "2020-12" | "2020" -> ISO (meio-dia UTC) ou null.
+// "2020-12-15" -> ISO (meio-dia UTC). Datas SEM dia exato ("2020" ou "2020-12")
+// devolvem null: nao inventamos o dia 1, que dava datas erradas (ex.: "acabou
+// antes de comecar"). Nesses casos o diario mostra "data nao disponivel".
 function isoDate(d) {
-  const parts = String(d || "").split("-");
-  if (!/^\d{4}$/.test(parts[0])) return null;
-  const mo = /^\d{2}$/.test(parts[1] || "") ? parts[1] : "01";
-  const da = /^\d{2}$/.test(parts[2] || "") ? parts[2] : "01";
-  const dt = new Date(`${parts[0]}-${mo}-${da}T12:00:00Z`);
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(d || "").trim());
+  if (!m) return null;
+  const dt = new Date(`${m[1]}-${m[2]}-${m[3]}T12:00:00Z`);
   return isNaN(dt.getTime()) ? null : dt.toISOString();
 }
 import {

@@ -157,8 +157,8 @@ export default function Diary() {
                   </h3>
                   <div className="diary-dates">
                     {fmt(it.startedAt) && <span>Começou: {fmt(it.startedAt)}</span>}
-                    {it.status === "finished" && fmt(it.finishedAt) ? (
-                      <span>Acabou: {fmt(it.finishedAt)}</span>
+                    {it.status === "finished" ? (
+                      <span>Acabou: {fmt(it.finishedAt) || "data não disponível"}</span>
                     ) : (
                       <span className="diary-watching">A ver</span>
                     )}
