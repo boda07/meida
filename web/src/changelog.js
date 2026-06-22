@@ -2,6 +2,12 @@
 // "o que mudou" depois de o utilizador atualizar a app. Mais recente em cima.
 export const CHANGELOG = [
   {
+    version: "0.5.1",
+    items: [
+      "Nos torrents de anime, o filtro \"Legendado\" passa a tirar mesmo tudo o que tem dobragem (incluindo as versões com áudio duplo). Cada torrent mostra agora um selo DUB/DUAL.",
+    ],
+  },
+  {
     version: "0.5.0",
     items: [
       "Só conta como \"a ver\" depois de 5 minutos com algo aberto — abrir e fechar logo já não vai para o \"Continua a ver\".",

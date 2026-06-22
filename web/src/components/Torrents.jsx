@@ -12,14 +12,13 @@ function sizeToBytes(s) {
   return parseFloat(m[1]) * mult;
 }
 
-// Audio do torrent a partir do titulo (anime): legendado vs dobrado.
-function matchAudio(title, mode) {
+// Filtro de audio (anime): o backend ja marca cada torrent com `dub`/`dual`.
+// "Legendado" = sem qualquer dobragem (esconde dub e dual audio);
+// "Dobrado" = tem faixa dobrada (inclui dual audio).
+function matchAudio(t, mode) {
   if (mode === "all") return true;
-  const t = title || "";
-  const dual = /\b(dual|multi)[\s._-]?audio\b/i.test(t);
-  const dub = /\bdub(bed)?\b|\beng(?:lish)?[\s._-]?dub\b/i.test(t);
-  if (mode === "dub") return dub || dual;
-  return !dub || dual; // "sub": esconde os que so tem dobragem
+  if (mode === "dub") return !!t.dub;
+  return !t.dub; // "sub"
 }
 
 // Procura torrents (Torrentio) e reproduz o escolhido no nosso player.
@@ -75,7 +74,7 @@ export default function Torrents({ type, imdb, season, episode, anime, defaultAu
   const shown = useMemo(() => {
     let arr = list || [];
     if (quality !== "all") arr = arr.filter((t) => t.quality === quality);
-    if (anime && audio !== "all") arr = arr.filter((t) => matchAudio(t.title, audio));
+    if (anime && audio !== "all") arr = arr.filter((t) => matchAudio(t, audio));
     const sorted = [...arr].sort((a, b) => {
       if (sortBy === "size") return sizeToBytes(b.size) - sizeToBytes(a.size);
       return (b.seeders ?? -1) - (a.seeders ?? -1); // seeders desc (default)
@@ -158,7 +157,12 @@ export default function Torrents({ type, imdb, season, episode, anime, defaultAu
             onClick={() => setSelected(t)}
           >
             <span className="tq">{t.quality}</span>
-            <span className="tt">{t.title}</span>
+            <span className="tt">
+              {t.title}
+              {anime && t.dub && (
+                <span className="taudio">{t.dual ? "DUAL" : "DUB"}</span>
+              )}
+            </span>
             <span className="tmeta">
               {t.size ? t.size : ""}
               {t.seeders != null ? ` · 👤 ${t.seeders}` : ""}

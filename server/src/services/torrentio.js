@@ -30,7 +30,8 @@ function parseStream(s) {
   if (!s.infoHash) return null;
   const name = s.name || "";
   const title = s.title || "";
-  const qMatch = (name + " " + title).match(/\b(4K|2160p|1080p|720p|480p|360p)\b/i);
+  const full = name + "\n" + title; // texto todo (nome da release + ficheiro + etiquetas)
+  const qMatch = full.match(/\b(4K|2160p|1080p|720p|480p|360p)\b/i);
   const seedMatch = title.match(/👤\s*(\d+)/);
   const sizeMatch = title.match(/💾\s*([\d.]+\s*[KMGT]B)/i);
   const fileName = title.split("\n")[0].trim();
@@ -39,6 +40,12 @@ function parseStream(s) {
   let quality = qMatch ? qMatch[1].toUpperCase() : "?";
   if (quality === "2160P") quality = "4K";
 
+  // Audio (anime): o Torrentio marca "Dubbed"/"Dual Audio" numa linha do titulo.
+  // A etiqueta esta no titulo COMPLETO (release + linha de idiomas), nao so no
+  // nome do ficheiro do episodio — por isso usamos `full` para detetar.
+  const dual = /\b(dual|multi)[\s._-]?audio\b/i.test(full);
+  const dub = dual || /\bdub(bed)?\b/i.test(full); // tem faixa dobrada presente
+
   return {
     infoHash: s.infoHash,
     fileIdx: s.fileIdx ?? null,
@@ -46,6 +53,8 @@ function parseStream(s) {
     seeders: seedMatch ? Number(seedMatch[1]) : null,
     size: sizeMatch ? sizeMatch[1].replace(/\s+/, " ") : null,
     title: fileName || name,
+    dub, // inclui dual audio (tem dobragem disponivel)
+    dual, // tem ambas as faixas (legendada + dobrada)
     magnet: buildMagnet(s.infoHash, s.sources),
   };
 }
