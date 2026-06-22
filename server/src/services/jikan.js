@@ -269,18 +269,21 @@ export async function getAnimeDetails(malId, opts = {}) {
 
   const anilistId = await malToAnilist(malId);
 
-  // Match best-effort no TMDB so para arranjar o IMDB id (torrents). Nao afeta
-  // poster/titulo/sinopse (esses ficam sempre do MAL).
+  // Match best-effort no TMDB para arranjar o IMDB id (torrents) E uma imagem
+  // de fundo (backdrop) propria — o MAL so tem o poster, que ficava feio e
+  // repetido atras do cabecalho. Nao afeta poster/titulo/sinopse (do MAL).
   let imdbId = null;
   let tmdbType = isMovie ? "movie" : "tv";
+  let tmdbBackdrop = null;
   try {
     const match = await findTmdbMatch(base.title, base.year, isMovie);
     if (match?.tmdbId) {
       tmdbType = match.mediaType;
+      tmdbBackdrop = match.backdrop || null;
       imdbId = await getExternalImdb(match.mediaType, match.tmdbId);
     }
   } catch {
-    /* sem match -> sem torrents para este anime */
+    /* sem match -> sem torrents nem backdrop para este anime */
   }
 
   return {
@@ -295,7 +298,9 @@ export async function getAnimeDetails(malId, opts = {}) {
     title: base.title,
     overview: base.overview,
     poster: base.poster,
-    backdrop: full?.images?.jpg?.large_image_url || null,
+    // Backdrop do TMDB (imagem de fundo a serio); null se nao houver match (o
+    // frontend simplesmente nao mostra fundo, em vez de repetir o poster).
+    backdrop: tmdbBackdrop,
     year: base.year,
     rating: base.rating,
     genres: (full?.genres || []).map((g) => g.name),

@@ -188,7 +188,8 @@
       "Bash(node --check server/src/services/torrentEngine.js)",
       "Bash(perl -i -pe 's/\"version\": \"0\\\\.4\\\\.7\"/\"version\": \"0.4.8\"/' package.json)",
       "Bash(curl -s \"https://torrentio.strem.fun/stream/series/tt1910272:1:1.json\")",
-      "Bash(node -e \"let s='';process.stdin.on\\('data',d=>s+=d\\).on\\('end',\\(\\)=>{const j=JSON.parse\\(s\\);\\(j.streams||[]\\).slice\\(0,8\\).forEach\\(x=>{console.log\\('--- name:',JSON.stringify\\(x.name\\)\\);console.log\\('    title:',JSON.stringify\\(x.title\\)\\);}\\);}\\);\")"
+      "Bash(node -e \"let s='';process.stdin.on\\('data',d=>s+=d\\).on\\('end',\\(\\)=>{const j=JSON.parse\\(s\\);\\(j.streams||[]\\).slice\\(0,8\\).forEach\\(x=>{console.log\\('--- name:',JSON.stringify\\(x.name\\)\\);console.log\\('    title:',JSON.stringify\\(x.title\\)\\);}\\);}\\);\")",
+      "Bash(node --check server/src/services/jikan.js)"
     ],
     "additionalDirectories": [
       "\\tmp"

@@ -230,6 +230,32 @@ function LetterboxdSection({ user }) {
   );
 }
 
+// Le uma imagem do disco e devolve um data URL ja reduzido (cabe no localStorage,
+// que e onde as definicoes ficam guardadas). Reduz a largura maxima e exporta em
+// JPEG para nao ocupar megabytes.
+function imageFileToDataUrl(file, maxW = 1920) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = reject;
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = reject;
+      img.onload = () => {
+        const scale = Math.min(1, maxW / img.width);
+        const w = Math.round(img.width * scale);
+        const h = Math.round(img.height * scale);
+        const canvas = document.createElement("canvas");
+        canvas.width = w;
+        canvas.height = h;
+        canvas.getContext("2d").drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL("image/jpeg", 0.82));
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
 // Cores de destaque predefinidas.
 const ACCENT_PRESETS = [
   "#c90303", // vermelho (default)
@@ -557,14 +583,52 @@ export default function Settings() {
           ))}
         </div>
         {settings.bgStyle === "image" && (
-          <input
-            className="set-input"
-            type="text"
-            placeholder="Cola aqui o URL de uma imagem (https://...)"
-            value={settings.bgImage || ""}
-            onChange={(e) => update({ bgImage: e.target.value.trim() })}
-            style={{ marginTop: 12 }}
-          />
+          <div style={{ marginTop: 12 }}>
+            <div className="set-img-url">
+              <input
+                className="set-input"
+                type="text"
+                placeholder="Cola o URL de uma imagem (https://...)"
+                value={settings.bgImage?.startsWith("data:") ? "" : settings.bgImage || ""}
+                onChange={(e) => update({ bgImage: e.target.value.trim() })}
+              />
+              <label className="lib-watched" style={{ cursor: "pointer" }}>
+                Escolher do PC
+                <input
+                  type="file"
+                  accept="image/*"
+                  style={{ display: "none" }}
+                  onChange={async (e) => {
+                    const f = e.target.files?.[0];
+                    if (f) {
+                      try {
+                        update({ bgImage: await imageFileToDataUrl(f) });
+                      } catch {
+                        /* imagem invalida -> ignora */
+                      }
+                    }
+                    e.target.value = "";
+                  }}
+                />
+              </label>
+            </div>
+            {settings.bgImage && (
+              <div className="set-bg-preview-row">
+                <div
+                  className="set-bg-preview"
+                  style={{ backgroundImage: `url("${settings.bgImage}")` }}
+                />
+                <span className="muted" style={{ fontSize: 12 }}>
+                  {settings.bgImage.startsWith("data:")
+                    ? "Imagem do computador"
+                    : "Imagem por URL"}
+                </span>
+                <button className="set-clear" onClick={() => update({ bgImage: "" })}>
+                  Remover imagem
+                </button>
+              </div>
+            )}
+          </div>
         )}
       </section>
 

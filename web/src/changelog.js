@@ -2,6 +2,16 @@
 // "o que mudou" depois de o utilizador atualizar a app. Mais recente em cima.
 export const CHANGELOG = [
   {
+    version: "0.6.0",
+    items: [
+      "Já podes usar uma imagem do teu computador como fundo da app (Definições → Estilo de fundo → Imagem → \"Escolher do PC\"), sem precisares de um URL.",
+      "Os géneros e temas (incluindo os de anime) passam a aparecer todos no teu idioma, sem misturar inglês.",
+      "Quando os títulos estão em português, os cartazes deixam de aparecer com texto em português do Brasil — preferem uma versão sem texto.",
+      "Nos detalhes de um anime, o fundo passa a ser uma imagem própria (em vez do cartaz repetido) e fica menos desfocado.",
+      "No início, a imagem da recomendação funde-se suavemente na tua cor de fundo ao fazer scroll — sem aquela linha de corte.",
+    ],
+  },
+  {
     version: "0.5.1",
     items: [
       "Nos torrents de anime, o filtro \"Legendado\" passa a tirar mesmo tudo o que tem dobragem (incluindo as versões com áudio duplo). Cada torrent mostra agora um selo DUB/DUAL.",

@@ -236,12 +236,9 @@ export async function getDetails(type, id, opts = {}) {
   ]);
 
   const base = normalizeMedia({ ...data, media_type: type });
-  // Cartaz no idioma escolhido (cai para ingles e, por fim, para o default).
-  const posters = data.images?.posters || [];
-  const poster =
-    posters.find((p) => p.iso_639_1 === titleShort) ||
-    posters.find((p) => p.iso_639_1 === "en");
-  if (poster?.file_path) base.poster = poster.file_path;
+  // Cartaz no idioma escolhido (em PT prefere sem texto; ver pickPoster).
+  const poster = pickPoster(data.images?.posters, titleShort);
+  if (poster) base.poster = poster;
   // Titulo no idioma escolhido, com fallback para ingles quando nao ha traducao.
   const localized = locData || data;
   if (title === "en-US") {
@@ -302,10 +299,10 @@ export async function findTmdbMatch(title, year, isMovie) {
   const secondary = isMovie ? "tv" : "movie";
 
   let r = (await search(primary, true)) || (await search(primary, false));
-  if (r) return { tmdbId: r.id, mediaType: primary };
+  if (r) return { tmdbId: r.id, mediaType: primary, backdrop: r.backdrop_path || null };
 
   r = (await search(secondary, false));
-  if (r) return { tmdbId: r.id, mediaType: secondary };
+  if (r) return { tmdbId: r.id, mediaType: secondary, backdrop: r.backdrop_path || null };
 
   return null;
 }
@@ -371,15 +368,19 @@ export async function findMovieByTitle(title, year) {
   }
 }
 
-// Escolhe o cartaz no idioma pedido: idioma -> sem texto (neutro) -> ingles.
-// Assim, sem cartaz em PT, prefere um sem texto a um em ingles.
+// Escolhe o cartaz no idioma pedido.
+// Em PT: o TMDB nao separa PT-PT de PT-BR (ambos marcados "pt") e a maioria dos
+// cartazes "pt" tem texto em PT-BR, que choca com o titulo em PT-PT. Por isso,
+// preferimos um cartaz SEM texto (neutro) -> pt -> ingles.
+// Nos outros idiomas: idioma -> sem texto -> ingles.
 function pickPoster(posters, short) {
   if (!posters?.length) return null;
-  const p =
-    posters.find((x) => x.iso_639_1 === short) ||
-    posters.find((x) => x.iso_639_1 === null) ||
-    posters.find((x) => x.iso_639_1 === "en");
-  return p?.file_path || null;
+  const order = short === "pt" ? [null, "pt", "en"] : [short, null, "en"];
+  for (const code of order) {
+    const p = posters.find((x) => x.iso_639_1 === code);
+    if (p?.file_path) return p.file_path;
+  }
+  return posters[0]?.file_path || null;
 }
 
 // Titulo + cartaz de um filme/serie no idioma pedido (titulo com fallback PT->EN;
@@ -463,6 +464,15 @@ export async function getGenres(type) {
 // Generos/temas de anime (MAL/Jikan) que o TMDB nao tem (ou nomeia diferente).
 // Traducao manual para PT; os generos normais sao traduzidos pelo TMDB.
 const ANIME_GENRES_PT = {
+  // Generos principais
+  Action: "Ação",
+  Adventure: "Aventura",
+  Comedy: "Comédia",
+  Drama: "Drama",
+  Fantasy: "Fantasia",
+  Horror: "Terror",
+  Mystery: "Mistério",
+  Romance: "Romance",
   "Sci-Fi": "Ficção científica",
   "Slice of Life": "Quotidiano",
   Supernatural: "Sobrenatural",
@@ -471,6 +481,10 @@ const ANIME_GENRES_PT = {
   "Award Winning": "Premiado",
   "Avant Garde": "Vanguarda",
   Gourmet: "Gastronomia",
+  "Boys Love": "Amor entre rapazes",
+  "Girls Love": "Amor entre raparigas",
+  Erotica: "Erótico",
+  // Temas
   Ecchi: "Ecchi",
   "Martial Arts": "Artes marciais",
   Military: "Militar",
@@ -484,6 +498,7 @@ const ANIME_GENRES_PT = {
   Vampire: "Vampiros",
   Historical: "Histórico",
   Harem: "Harém",
+  "Reverse Harem": "Harém invertido",
   Mecha: "Mecha",
   Isekai: "Isekai",
   Parody: "Paródia",
@@ -492,6 +507,35 @@ const ANIME_GENRES_PT = {
   Gore: "Gore",
   Reincarnation: "Reencarnação",
   Music: "Música",
+  "Adult Cast": "Elenco adulto",
+  Anthropomorphic: "Antropomórfico",
+  Childcare: "Cuidar de crianças",
+  "Combat Sports": "Desportos de combate",
+  Crossdressing: "Travestismo",
+  Delinquents: "Delinquentes",
+  Educational: "Educativo",
+  "Gag Humor": "Humor absurdo",
+  "High Stakes Game": "Jogo de alto risco",
+  "Idols (Female)": "Idols (femininas)",
+  "Idols (Male)": "Idols (masculinos)",
+  "Love Polygon": "Polígono amoroso",
+  "Love Status Quo": "Status quo amoroso",
+  "Romantic Subtext": "Subtexto romântico",
+  "Magical Sex Shift": "Troca de sexo mágica",
+  "Mahou Shoujo": "Rapariga mágica",
+  Medical: "Medicina",
+  "Organized Crime": "Crime organizado",
+  "Otaku Culture": "Cultura otaku",
+  "Performing Arts": "Artes do espetáculo",
+  Pets: "Animais de estimação",
+  Racing: "Corridas",
+  Showbiz: "Mundo do espetáculo",
+  "Strategy Game": "Jogo de estratégia",
+  "Team Sports": "Desportos de equipa",
+  "Video Game": "Videojogos",
+  "Visual Arts": "Artes visuais",
+  Workplace: "Trabalho",
+  Kids: "Infantil",
 };
 
 // Lista completa de generos/temas/demografias do MyAnimeList (em ingles). Usada

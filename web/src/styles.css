@@ -722,28 +722,32 @@ h2 {
 .hero::before {
   background: linear-gradient(
     90deg,
-    rgba(7, 7, 8, 0.94) 0%,
-    rgba(7, 7, 8, 0.6) 42%,
-    rgba(7, 7, 8, 0.1) 72%
+    color-mix(in srgb, var(--bg-dark) 94%, transparent) 0%,
+    color-mix(in srgb, var(--bg-dark) 60%, transparent) 42%,
+    color-mix(in srgb, var(--bg-dark) 10%, transparent) 72%
   );
   z-index: 1;
 }
 
+/* Base do hero: funde-se gradualmente na cor de fundo escolhida (var(--bg-dark)),
+   nao num preto fixo — assim nao fica uma "linha" onde acaba a imagem e comeca o
+   fundo do utilizador. O blur entra suavemente (mais forte em baixo) via mask. */
 .hero::after {
   inset: auto 0 0;
-  height: 48%;
+  height: 62%;
   z-index: 1;
   background: linear-gradient(
     0deg,
-    #070708 0%,
-    rgba(7, 7, 8, 0.82) 26%,
-    rgba(7, 7, 8, 0.4) 62%,
-    rgba(7, 7, 8, 0) 100%
+    var(--bg-dark) 0%,
+    color-mix(in srgb, var(--bg-dark) 88%, transparent) 22%,
+    color-mix(in srgb, var(--bg-dark) 55%, transparent) 50%,
+    color-mix(in srgb, var(--bg-dark) 22%, transparent) 74%,
+    transparent 100%
   );
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  mask-image: linear-gradient(0deg, #000 0%, #000 30%, transparent 100%);
-  -webkit-mask-image: linear-gradient(0deg, #000 0%, #000 30%, transparent 100%);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  mask-image: linear-gradient(0deg, #000 0%, #000 20%, rgba(0, 0, 0, 0.4) 60%, transparent 92%);
+  -webkit-mask-image: linear-gradient(0deg, #000 0%, #000 20%, rgba(0, 0, 0, 0.4) 60%, transparent 92%);
 }
 
 .hero {
@@ -1113,9 +1117,9 @@ h2 {
   background-size: cover;
   background-position: center 18%;
   background-repeat: no-repeat;
-  filter: blur(8px) saturate(1.15);
-  transform: scale(1.06);
-  opacity: 0.6;
+  filter: blur(4px) saturate(1.18);
+  transform: scale(1.04);
+  opacity: 0.62;
   z-index: 0;
   pointer-events: none;
   -webkit-mask-image: linear-gradient(180deg, #000 0%, rgba(0, 0, 0, 0.65) 45%, rgba(0, 0, 0, 0.2) 80%, transparent 100%);
@@ -2616,4 +2620,22 @@ h2 {
 .set-clear:hover {
   color: var(--text);
   border-color: rgba(255, 255, 255, 0.4);
+}
+
+/* Pre-visualizacao da imagem de fundo escolhida (URL ou ficheiro do PC). */
+.set-bg-preview-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.set-bg-preview {
+  width: 120px;
+  height: 68px;
+  border-radius: 10px;
+  background-size: cover;
+  background-position: center;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  flex-shrink: 0;
 }
