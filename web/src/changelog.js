@@ -2,6 +2,13 @@
 // "o que mudou" depois de o utilizador atualizar a app. Mais recente em cima.
 export const CHANGELOG = [
   {
+    version: "0.6.8",
+    items: [
+      "O destaque no Início, Filmes, Séries e Anime passou a ser um slideshow que vai rodando entre vários títulos (com bolinhas para navegar).",
+      "Novo botão \"Procurar atualização\" no menu da conta.",
+    ],
+  },
+  {
     version: "0.6.7",
     items: [
       "O botão das novidades passou a ser um botão isolado no canto superior direito.",

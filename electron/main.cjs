@@ -15,6 +15,22 @@ ipcMain.handle("open-external", (_e, url) => {
 // Versao instalada da app (para o "o que mudou" depois de atualizar).
 ipcMain.handle("app-version", () => app.getVersion());
 
+// Procurar atualizacao a pedido (botao nas Definicoes/menu). Se houver uma nova,
+// o autoUpdater descarrega-a e o evento "update-downloaded" mostra o dialogo para
+// reiniciar. Devolve um estado simples para a UI dar feedback imediato.
+ipcMain.handle("check-update", async () => {
+  if (!app.isPackaged) return { status: "dev" };
+  try {
+    const r = await autoUpdater.checkForUpdates();
+    const latest = r?.updateInfo?.version || null;
+    const current = app.getVersion();
+    if (latest && latest !== current) return { status: "available", version: latest };
+    return { status: "latest", version: current };
+  } catch (e) {
+    return { status: "error", error: e?.message || String(e) };
+  }
+});
+
 // Desinstalar a app: pede confirmacao e corre o desinstalador do NSIS.
 ipcMain.handle("uninstall-app", async () => {
   if (!app.isPackaged) return { ok: false, error: "So funciona na app instalada." };

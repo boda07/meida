@@ -6,4 +6,5 @@ contextBridge.exposeInMainWorld("electronAPI", {
   openExternal: (url) => ipcRenderer.invoke("open-external", url),
   uninstall: () => ipcRenderer.invoke("uninstall-app"),
   appVersion: () => ipcRenderer.invoke("app-version"),
+  checkForUpdates: () => ipcRenderer.invoke("check-update"),
 });

@@ -7,7 +7,25 @@ import Avatar from "./Avatar.jsx";
 export default function ProfileMenu() {
   const { user, logout } = useAuth();
   const [open, setOpen] = useState(false);
+  const [updMsg, setUpdMsg] = useState(null);
   const ref = useRef(null);
+
+  const canUpdate =
+    typeof window !== "undefined" && Boolean(window.electronAPI?.checkForUpdates);
+
+  async function checkUpdate() {
+    setUpdMsg("A procurar...");
+    try {
+      const r = await window.electronAPI.checkForUpdates();
+      if (r?.status === "available")
+        setUpdMsg(`Nova versão ${r.version} — a descarregar...`);
+      else if (r?.status === "latest") setUpdMsg("Já tens a versão mais recente.");
+      else if (r?.status === "dev") setUpdMsg("Indisponível em desenvolvimento.");
+      else setUpdMsg("Não foi possível verificar.");
+    } catch {
+      setUpdMsg("Não foi possível verificar.");
+    }
+  }
 
   useEffect(() => {
     function onClick(e) {
@@ -47,6 +65,10 @@ export default function ProfileMenu() {
           <Link to="/settings" onClick={() => setOpen(false)}>
             Definições
           </Link>
+          {canUpdate && (
+            <button onClick={checkUpdate}>Procurar atualização</button>
+          )}
+          {updMsg && <span className="profile-upd-msg">{updMsg}</span>}
           <button onClick={logout}>Sair</button>
         </div>
       )}

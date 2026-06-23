@@ -5,15 +5,23 @@ import MediaRow from "../components/MediaRow.jsx";
 import ContinueWatching from "../components/ContinueWatching.jsx";
 import Hero from "../components/Hero.jsx";
 
-function pickHero(rows) {
-  const pool = rows.flatMap((r) => r.items).filter((i) => i.backdrop);
-  return pool.length ? pool[Math.floor(Math.random() * Math.min(pool.length, 8))] : null;
+// Escolhe varios destaques (com imagem de fundo) para o slideshow do banner.
+function pickHeroes(rows, n = 6) {
+  const seen = new Set();
+  const pool = rows
+    .flatMap((r) => r.items)
+    .filter((i) => i.backdrop && (seen.has(i.id) ? false : seen.add(i.id)));
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+  return pool.slice(0, n);
 }
 
 export default function Home() {
   const { settings } = useSettings();
   const [rows, setRows] = useState([]);
-  const [hero, setHero] = useState(null);
+  const [heroes, setHeroes] = useState([]);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -23,7 +31,7 @@ export default function Home() {
       .catalog()
       .then((d) => {
         setRows(d.rows);
-        setHero(pickHero(d.rows));
+        setHeroes(pickHeroes(d.rows));
       })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
@@ -42,7 +50,7 @@ export default function Home() {
 
   return (
     <div className="catalog-page home">
-      <Hero item={hero} />
+      <Hero items={heroes} />
       <div className="rows">
         <ContinueWatching />
         {rows.map((row) => (

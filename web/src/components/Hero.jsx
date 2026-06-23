@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { imageUrl } from "../api/client.js";
 
@@ -19,14 +20,6 @@ function InfoIcon() {
   );
 }
 
-function SpeakerIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
-    </svg>
-  );
-}
-
 function ChevronDownIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -35,45 +28,75 @@ function ChevronDownIcon() {
   );
 }
 
-export default function Hero({ item }) {
-  if (!item) return null;
+const heroBg = (it) => imageUrl(it.backdrop, "w1280") || imageUrl(it.poster, "w780");
 
-  const bg = imageUrl(item.backdrop, "w1280") || imageUrl(item.poster, "w780");
-  const to = `/details/${item.type}/${item.id}`;
+// Banner com slideshow: roda entre varios destaques (crossfade), com bolinhas
+// para navegar. Aceita `items` (lista) ou `item` (um so). So entram os que tem
+// imagem de fundo.
+export default function Hero({ items, item }) {
+  const list = (items && items.length ? items : item ? [item] : []).filter(
+    (i) => i && heroBg(i)
+  );
+
+  const [idx, setIdx] = useState(0);
+  const lastIdxRef = useRef(0);
+
+  // Recomeca do inicio quando a lista muda (ex.: troca de idioma/pagina).
+  const firstId = list[0]?.id;
+  useEffect(() => {
+    setIdx(0);
+    lastIdxRef.current = 0;
+  }, [firstId]);
+
+  // Avanca sozinho; cada mudanca re-arma o temporizador (manual tambem).
+  useEffect(() => {
+    if (list.length <= 1) return;
+    const t = setTimeout(() => setIdx((i) => (i + 1) % list.length), 7000);
+    return () => clearTimeout(t);
+  }, [idx, list.length]);
+
+  // Guarda o indice anterior (mantem-se opaco por baixo durante o crossfade).
+  const prevIdx = lastIdxRef.current;
+  useEffect(() => {
+    lastIdxRef.current = idx;
+  }, [idx]);
+
+  if (!list.length) return null;
+
+  const safe = idx % list.length;
+  const current = list[safe];
+  const to = `/details/${current.type}/${current.id}`;
 
   const handleScroll = () => {
-    const rows = document.querySelector(".rows");
-    if (rows) {
-      rows.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
+    document.querySelector(".rows")?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
-
-  const category = item.type === "tv" ? "série" : "filme";
-  const categoryLabel = category.toUpperCase();
 
   return (
     <div className="hero">
-      {/* Imagem de fundo numa camada propria: desvanece nas margens para se fundir
-          com qualquer fundo do utilizador (cor ou wallpaper) por baixo. */}
-      {bg && <div className="hero-bg" style={{ backgroundImage: `url(${bg})` }} />}
-      {/* Conteúdo */}
-      <div className="hero-content">
-        {/* Título */}
-        <h1>{item.title}</h1>
+      {/* Camadas de fundo (crossfade): a ativa por cima, a anterior opaca por baixo. */}
+      {list.map((it, i) => (
+        <div
+          key={it.id}
+          className="hero-bg"
+          style={{
+            backgroundImage: `url(${heroBg(it)})`,
+            opacity: i === safe || i === prevIdx ? 1 : 0,
+            zIndex: i === safe ? 2 : i === prevIdx ? 1 : 0,
+          }}
+        />
+      ))}
 
-        {/* Meta */}
+      {/* Conteúdo do destaque atual (refaz-se a cada slide com um fade suave). */}
+      <div className="hero-content" key={current.id}>
+        <h1>{current.title}</h1>
         <div className="meta">
-          {item.year ? <span>{item.year}</span> : null}
-          {item.type === "tv" ? <span>·</span> : null}
-          {item.type === "tv" ? <span>Série</span> : null}
-          {item.rating ? <span>·</span> : null}
-          {item.rating ? <span>⭐ {item.rating}</span> : null}
+          {current.year ? <span>{current.year}</span> : null}
+          {current.type === "tv" ? <span>·</span> : null}
+          {current.type === "tv" ? <span>Série</span> : null}
+          {current.rating ? <span>·</span> : null}
+          {current.rating ? <span>⭐ {current.rating}</span> : null}
         </div>
-
-        {/* Sinopse */}
-        {item.overview ? <p className="body-text">{item.overview}</p> : null}
-
-        {/* Ações */}
+        {current.overview ? <p className="body-text">{current.overview}</p> : null}
         <div className="hero-actions">
           <Link className="btn-play" to={to}>
             <PlayIcon />
@@ -86,7 +109,20 @@ export default function Hero({ item }) {
         </div>
       </div>
 
-      {/* Chevron para scroll */}
+      {/* Bolinhas de navegação do slideshow. */}
+      {list.length > 1 && (
+        <div className="hero-dots">
+          {list.map((it, i) => (
+            <button
+              key={it.id}
+              className={`hero-dot ${i === safe ? "active" : ""}`}
+              onClick={() => setIdx(i)}
+              aria-label={`Destaque ${i + 1}`}
+            />
+          ))}
+        </div>
+      )}
+
       <button className="hero-scroll-down" onClick={handleScroll} aria-label="Scroll para conteúdo">
         <ChevronDownIcon />
       </button>

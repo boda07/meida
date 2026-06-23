@@ -16,10 +16,17 @@ const SORTS = [
 // category (rota) -> type (discover/genres)
 const TYPE_OF = { movies: "movie", tv: "tv", anime: "anime" };
 
-// Escolhe um item aleatorio com backdrop para o banner.
-function pickHero(rows) {
-  const pool = rows.flatMap((r) => r.items).filter((i) => i.backdrop);
-  return pool.length ? pool[Math.floor(Math.random() * Math.min(pool.length, 8))] : null;
+// Escolhe varios destaques (com backdrop) para o slideshow do banner.
+function pickHeroes(rows, n = 6) {
+  const seen = new Set();
+  const pool = rows
+    .flatMap((r) => r.items)
+    .filter((i) => i.backdrop && (seen.has(i.id) ? false : seen.add(i.id)));
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+  return pool.slice(0, n);
 }
 
 export default function Category({ category, title }) {
@@ -28,7 +35,7 @@ export default function Category({ category, title }) {
 
   // Linhas curadas (estado "Destaques").
   const [rows, setRows] = useState([]);
-  const [hero, setHero] = useState(null);
+  const [heroes, setHeroes] = useState([]);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -71,7 +78,7 @@ export default function Category({ category, title }) {
       .category(category)
       .then((d) => {
         setRows(d.rows);
-        setHero(pickHero(d.rows));
+        setHeroes(pickHeroes(d.rows));
       })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
@@ -137,8 +144,8 @@ export default function Category({ category, title }) {
   if (error) return <p className="status error">{error}</p>;
 
   return (
-    <div className={`catalog-page ${!discoverActive && hero ? "" : "no-hero"}`}>
-      {!discoverActive && hero && <Hero item={hero} />}
+    <div className={`catalog-page ${!discoverActive && heroes.length ? "" : "no-hero"}`}>
+      {!discoverActive && heroes.length > 0 && <Hero items={heroes} />}
 
       <div className="cat-controls">
         <div className="lib-sort">
