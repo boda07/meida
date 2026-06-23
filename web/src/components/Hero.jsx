@@ -75,9 +75,12 @@ export default function Hero({ items, item }) {
   const current = list[safe];
   const to = `/details/${current.type}/${current.id}`;
   const go = (n) => setIdx((i) => (i + n + list.length) % list.length);
+  // Anime usa banners do AniList (muito largos e baixos): caixa mais baixa para
+  // encaixarem sem ficarem tao ampliados.
+  const allAnime = list.every((i) => i.type === "anime");
 
   return (
-    <div className="hero">
+    <div className={`hero ${allAnime ? "hero-anime" : ""}`}>
       {/* Camadas de fundo (crossfade): a ativa por cima, a anterior opaca por baixo. */}
       {list.map((it, i) => (
         <div

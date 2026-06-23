@@ -2,6 +2,12 @@
 // "o que mudou" depois de o utilizador atualizar a app. Mais recente em cima.
 export const CHANGELOG = [
   {
+    version: "0.7.4",
+    items: [
+      "Slideshow do Anime: a caixa ficou mais baixa para os banners (que são largos e baixos) encaixarem sem ficarem ampliados.",
+    ],
+  },
+  {
     version: "0.7.3",
     items: [
       "Slideshow: título e descrição com sombra (lê-se melhor) e afastados da seta da esquerda.",

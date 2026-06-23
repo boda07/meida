@@ -739,6 +739,12 @@ h2 {
   box-shadow: 0 18px 50px rgba(0, 0, 0, 0.45);
 }
 
+/* Anime: banners do AniList sao largos e baixos -> caixa mais baixa para nao
+   ficarem tao ampliados (encaixam quase a 1:1). */
+.hero.hero-anime {
+  height: clamp(300px, 46vh, 470px);
+}
+
 /* Camada da imagem de fundo (crossfade do slideshow). Preenche a caixa; as bordas
    arredondadas cortam-na, por isso nao precisa de desvanecer para o wallpaper. */
 .hero-bg {
