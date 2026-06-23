@@ -2,6 +2,7 @@ import { Routes, Route } from "react-router-dom";
 import Header from "./components/Header.jsx";
 import AppFullscreen from "./components/AppFullscreen.jsx";
 import BackButton from "./components/BackButton.jsx";
+import Changelog from "./components/Changelog.jsx";
 import Home from "./pages/Home.jsx";
 import Category from "./pages/Category.jsx";
 import Search from "./pages/Search.jsx";
@@ -17,6 +18,7 @@ export default function App() {
     <div className="app">
       <BackButton />
       <AppFullscreen />
+      <Changelog />
       <Header />
       <main className="content">
         <Routes>

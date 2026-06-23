@@ -2,6 +2,14 @@
 // "o que mudou" depois de o utilizador atualizar a app. Mais recente em cima.
 export const CHANGELOG = [
   {
+    version: "0.6.7",
+    items: [
+      "O botão das novidades passou a ser um botão isolado no canto superior direito.",
+      "Nas páginas de detalhe, a imagem de fundo deixa de ficar sobreposta ao teu wallpaper — fica limpa, a fundir-se no fundo da página.",
+      "Novo ícone de câmara de cinema para os Filmes.",
+    ],
+  },
+  {
     version: "0.6.6",
     items: [
       "Na janela das novidades há agora uma lista de versões à esquerda — podes ver também as atualizações antigas (abre na mais recente).",

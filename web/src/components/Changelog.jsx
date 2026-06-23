@@ -64,7 +64,7 @@ export default function Changelog() {
   return (
     <>
       <button
-        className="icon-btn"
+        className="app-news-btn"
         title="Novidades"
         aria-label="Novidades"
         onClick={openLatest}

@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from "react";
 import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import ProfileMenu from "./ProfileMenu.jsx";
 import WatchParty from "./WatchParty.jsx";
-import Changelog from "./Changelog.jsx";
 
 function HomeIcon() {
   return (
@@ -14,12 +13,13 @@ function HomeIcon() {
 }
 
 function FilmIcon() {
+  // Camera de cinema: dois carreteis em cima, corpo e lente.
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <rect x="2" y="7" width="20" height="15" rx="2.18" ry="2.18" />
-      <line x1="16" y1="2" x2="16" y2="22" />
-      <line x1="8" y1="2" x2="8" y2="22" />
-      <line x1="2" y1="12" x2="22" y2="12" />
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round">
+      <circle cx="8" cy="6" r="2.2" />
+      <circle cx="13" cy="6" r="2.2" />
+      <rect x="2" y="8" width="13" height="10" rx="2" />
+      <path d="M15 12 L21 9.5 L21 16.5 L15 14 Z" />
     </svg>
   );
 }
@@ -154,7 +154,6 @@ export default function Header() {
             onBlur={() => { if (!query.trim() && !onSearchPage) setSearchOpen(false); }}
           />
         </form>
-        <Changelog />
         <WatchParty />
         <ProfileMenu />
       </div>

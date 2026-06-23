@@ -174,7 +174,8 @@ h2 {
 /* ===== Botoes fixos da APP: voltar (esquerda) + ecra inteiro (direita) ===== */
 .app-fs-btn,
 .app-back-btn,
-.app-fwd-btn {
+.app-fwd-btn,
+.app-news-btn {
   position: fixed;
   top: 18px;
   z-index: 70;
@@ -205,9 +206,20 @@ h2 {
   left: 64px;
 }
 
+/* Botao isolado das novidades, no canto superior direito (a esquerda do fullscreen). */
+.app-news-btn {
+  right: 64px;
+}
+
+.app-news-btn svg {
+  width: 19px;
+  height: 19px;
+}
+
 .app-fs-btn:hover,
 .app-back-btn:hover,
-.app-fwd-btn:hover {
+.app-fwd-btn:hover,
+.app-news-btn:hover {
   background: rgba(40, 40, 48, 0.85);
 }
 
@@ -1105,6 +1117,11 @@ h2 {
   position: relative;
   padding: 100px 4% 40px;
   overflow: hidden;
+  /* Fundo solido SO na pagina de detalhes: esconde o wallpaper do utilizador aqui,
+     para a imagem relacionada (backdrop) nao ficar sobreposta a outra imagem
+     ("uma em cima da outra"). O backdrop desvanece para esta cor, limpo. */
+  min-height: 100vh;
+  background: var(--bg-dark);
 }
 
 /* Wallpaper por tras do cabecalho (cover = nunca estica). Pouco desfocado, para
@@ -1120,10 +1137,10 @@ h2 {
   background-repeat: no-repeat;
   filter: blur(4px) saturate(1.18);
   transform: scale(1.04);
-  /* Bem opaco para a imagem relacionada dominar (o wallpaper do utilizador nao
-     "espreita" por tras). Desvanece em baixo (mask) ate transparente, fundindo-se
-     com o fundo do utilizador seja qual for a cor. */
-  opacity: 0.92;
+  /* Opaco: a imagem relacionada domina. Desvanece em baixo (mask) ate transparente,
+     fundindo-se no fundo solido da pagina (.details), sem mostrar o wallpaper por
+     tras (que dava o efeito de "uma imagem em cima da outra"). */
+  opacity: 1;
   z-index: 0;
   pointer-events: none;
   -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 40%, rgba(0, 0, 0, 0.35) 78%, transparent 100%);
