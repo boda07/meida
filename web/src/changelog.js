@@ -2,6 +2,13 @@
 // "o que mudou" depois de o utilizador atualizar a app. Mais recente em cima.
 export const CHANGELOG = [
   {
+    version: "0.7.8",
+    items: [
+      "No slideshow, o título fica em cima e a informação/sinopse/botões em baixo.",
+      "O slideshow de Anime passou a ter o mesmo tamanho dos outros, e a sinopse usa reticências quando é grande (deixa de cortar de forma estranha).",
+    ],
+  },
+  {
     version: "0.7.7",
     items: [
       "Nova opção nas Definições: mostrar conteúdo adulto de anime (NSFW/hentai) na pesquisa, nos filtros de género e no \"Escolhe algo para mim\". Vem desligada por defeito.",

@@ -751,14 +751,8 @@ h2 {
   border-radius: 22px;
   overflow: hidden;
   display: flex;
-  align-items: flex-start;
+  align-items: stretch;
   box-shadow: 0 18px 50px rgba(0, 0, 0, 0.45);
-}
-
-/* Anime: banners do AniList sao largos e baixos -> caixa mais baixa para nao
-   ficarem tao ampliados (encaixam quase a 1:1). */
-.hero.hero-anime {
-  height: clamp(300px, 46vh, 470px);
 }
 
 /* Camada da imagem de fundo (crossfade do slideshow). Preenche a caixa; as bordas
@@ -778,12 +772,12 @@ h2 {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  /* Escurece o topo e a esquerda (onde fica o texto, agora em cima) + um pouco a
-     base (para as bolinhas/setas), para se ler tudo bem. */
+  /* Escurece o TOPO (titulo) e a BASE (info/sinopse/botoes) + a esquerda, para
+     se ler tudo bem em cima e em baixo. */
   background:
-    linear-gradient(180deg, rgba(0, 0, 0, 0.88) 0%, rgba(0, 0, 0, 0.38) 42%, transparent 72%),
-    linear-gradient(0deg, rgba(0, 0, 0, 0.55) 0%, transparent 26%),
-    linear-gradient(90deg, rgba(0, 0, 0, 0.65) 0%, rgba(0, 0, 0, 0) 55%);
+    linear-gradient(180deg, rgba(0, 0, 0, 0.85) 0%, rgba(0, 0, 0, 0.25) 26%, transparent 46%),
+    linear-gradient(0deg, rgba(0, 0, 0, 0.9) 0%, rgba(0, 0, 0, 0.35) 30%, transparent 58%),
+    linear-gradient(90deg, rgba(0, 0, 0, 0.6) 0%, rgba(0, 0, 0, 0) 55%);
   z-index: 1;
 }
 
@@ -810,6 +804,17 @@ h2 {
   padding: clamp(22px, 4vw, 48px);
   /* Mais espaco a esquerda para o titulo nao ficar por cima da seta de navegacao. */
   padding-left: clamp(60px, 6vw, 86px);
+  /* Preenche a altura: titulo em cima, o resto em baixo. */
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+/* Bloco de baixo do hero (info + sinopse + botoes). */
+.hero-bottom {
+  display: flex;
+  flex-direction: column;
 }
 
 /* Sombra no titulo, meta e descricao, para se ler bem sobre a imagem. */

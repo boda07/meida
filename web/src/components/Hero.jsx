@@ -75,12 +75,9 @@ export default function Hero({ items, item }) {
   const current = list[safe];
   const to = `/details/${current.type}/${current.id}`;
   const go = (n) => setIdx((i) => (i + n + list.length) % list.length);
-  // Anime usa banners do AniList (muito largos e baixos): caixa mais baixa para
-  // encaixarem sem ficarem tao ampliados.
-  const allAnime = list.every((i) => i.type === "anime");
 
   return (
-    <div className={`hero ${allAnime ? "hero-anime" : ""}`}>
+    <div className="hero">
       {/* Camadas de fundo (crossfade): a ativa por cima, a anterior opaca por baixo. */}
       {list.map((it, i) => (
         <div
@@ -94,26 +91,28 @@ export default function Hero({ items, item }) {
         />
       ))}
 
-      {/* Conteúdo do destaque atual (refaz-se a cada slide com um fade suave). */}
+      {/* Titulo em cima; o resto (info, sinopse, botoes) em baixo. */}
       <div className="hero-content" key={current.id}>
         <h1>{current.title}</h1>
-        <div className="meta">
-          {current.year ? <span>{current.year}</span> : null}
-          {current.type === "tv" ? <span>·</span> : null}
-          {current.type === "tv" ? <span>Série</span> : null}
-          {current.rating ? <span>·</span> : null}
-          {current.rating ? <span>⭐ {current.rating}</span> : null}
-        </div>
-        {current.overview ? <p className="body-text">{current.overview}</p> : null}
-        <div className="hero-actions">
-          <Link className="btn-play" to={to}>
-            <PlayIcon />
-            Reproduzir
-          </Link>
-          <Link className="btn-info" to={to}>
-            <InfoIcon />
-            Mais info
-          </Link>
+        <div className="hero-bottom">
+          <div className="meta">
+            {current.year ? <span>{current.year}</span> : null}
+            {current.type === "tv" ? <span>·</span> : null}
+            {current.type === "tv" ? <span>Série</span> : null}
+            {current.rating ? <span>·</span> : null}
+            {current.rating ? <span>⭐ {current.rating}</span> : null}
+          </div>
+          {current.overview ? <p className="body-text">{current.overview}</p> : null}
+          <div className="hero-actions">
+            <Link className="btn-play" to={to}>
+              <PlayIcon />
+              Reproduzir
+            </Link>
+            <Link className="btn-info" to={to}>
+              <InfoIcon />
+              Mais info
+            </Link>
+          </div>
         </div>
       </div>
 
