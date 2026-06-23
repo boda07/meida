@@ -252,7 +252,17 @@ export async function getDetails(type, id, opts = {}) {
     base.title = bestTitle(localized, enTitle) || base.title;
   }
   const imdbId = data.external_ids?.imdb_id || null;
-  const genres = (data.genres || []).map((g) => g.name);
+  // Generos no idioma escolhido para generos (pode diferir do das sinopses).
+  // data.genres tem ids -> traduz pelo mapa do TMDB nesse idioma.
+  const genreLang = opts.genreLang || opts.overviewLang;
+  let genres = (data.genres || []).map((g) => g.name);
+  try {
+    const gl = await getGenres(type, genreLang);
+    const byId = new Map(gl.map((g) => [g.id, g.name]));
+    genres = (data.genres || []).map((g) => byId.get(g.id) || g.name);
+  } catch {
+    /* fica com os nomes do idioma das sinopses */
+  }
   const cast = (data.credits?.cast || []).slice(0, 10).map((c) => ({
     name: c.name,
     character: c.character,

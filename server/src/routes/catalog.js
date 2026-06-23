@@ -27,6 +27,8 @@ function langOpts(req) {
   return {
     titleLang: req.query.titleLang,
     overviewLang: req.query.overviewLang,
+    // Idioma dos generos: o escolhido ou, se nao houver, segue as sinopses.
+    genreLang: req.query.genreLang || req.query.overviewLang,
     animeTitleLang: req.query.animeTitleLang,
     adult: req.query.adult === "1", // mostrar conteudo adulto (anime NSFW)
   };
@@ -115,7 +117,7 @@ catalogRouter.get("/details", async (req, res, next) => {
 catalogRouter.get("/genres", async (req, res, next) => {
   try {
     const type = req.query.type;
-    const lang = req.query.overviewLang;
+    const lang = req.query.genreLang || req.query.overviewLang;
     if (type === "anime") {
       // Os nomes vem do Jikan em ingles -> traduz pelo vocabulario (TMDB + MAL).
       const list = await getAnimeGenres();

@@ -2,6 +2,12 @@
 // "o que mudou" depois de o utilizador atualizar a app. Mais recente em cima.
 export const CHANGELOG = [
   {
+    version: "0.7.9",
+    items: [
+      "Podes escolher o idioma dos géneros (Português ou Inglês) à parte das sinopses, nas Definições.",
+    ],
+  },
+  {
     version: "0.7.8",
     items: [
       "No slideshow, o título fica em cima e a informação/sinopse/botões em baixo.",

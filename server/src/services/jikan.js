@@ -3,7 +3,7 @@
 // e episodios vem todos do MAL. A reproducao usa os providers de anime por id do
 // MAL (MegaPlay/VidLink/VidSrc.cc). O TMDB so serve para filmes e series — e para
 // arranjar o IMDB id que os torrents precisam (match best-effort).
-import { findTmdbMatch, getExternalImdb } from "./tmdb.js";
+import { findTmdbMatch, getExternalImdb, getGenreVocab } from "./tmdb.js";
 
 const JIKAN = "https://api.jikan.moe/v4";
 
@@ -359,6 +359,15 @@ export async function getAnimeDetails(malId, opts = {}) {
     /* sem match -> sem torrents nem backdrop do TMDB para este anime */
   }
 
+  // Generos no idioma escolhido (os nomes do MAL vem em ingles -> traduz).
+  let genres = (full?.genres || []).map((g) => g.name);
+  try {
+    const vocab = await getGenreVocab(opts.genreLang || opts.overviewLang);
+    if (vocab) genres = genres.map((n) => vocab.get(String(n).toLowerCase()) || n);
+  } catch {
+    /* fica com os nomes em ingles */
+  }
+
   return {
     id: Number(malId),
     type: "anime",
@@ -376,7 +385,7 @@ export async function getAnimeDetails(malId, opts = {}) {
     backdrop: anilistBanner || tmdbBackdrop,
     year: base.year,
     rating: base.rating,
-    genres: (full?.genres || []).map((g) => g.name),
+    genres,
     cast: [],
     runtime: full?.duration || null,
     episodeCount,

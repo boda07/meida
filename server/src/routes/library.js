@@ -97,7 +97,7 @@ libraryRouter.get("/library", async (req, res) => {
   // Valida + traduz os generos: so mostra generos conhecidos (TMDB + MAL), corrige
   // maiusculas, traduz para o idioma escolhido e remove duplicados. Assim some o
   // lixo que ficou guardado em listas antigas (ex.: titulos parados nos generos).
-  const vocab = await getGenreVocab(req.query.overviewLang);
+  const vocab = await getGenreVocab(req.query.genreLang || req.query.overviewLang);
   if (vocab) {
     for (const i of items) {
       const seen = new Set();

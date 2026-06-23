@@ -376,12 +376,33 @@ export default function Settings() {
 
       <section className="set-section">
         <h3>Sinopses</h3>
-        <p className="muted">Idioma das descrições/sinopses e dos géneros.</p>
+        <p className="muted">Idioma das descrições/sinopses.</p>
         <div className="set-row">
           <Choice value="pt" current={settings.overviewLang} onPick={(v) => update({ overviewLang: v })}>
             Português
           </Choice>
           <Choice value="en" current={settings.overviewLang} onPick={(v) => update({ overviewLang: v })}>
+            Inglês
+          </Choice>
+        </div>
+      </section>
+
+      <section className="set-section">
+        <h3>Géneros</h3>
+        <p className="muted">Idioma dos géneros e temas (na tua lista, filtros e detalhes).</p>
+        <div className="set-row">
+          <Choice
+            value="pt"
+            current={settings.genreLang || settings.overviewLang}
+            onPick={(v) => update({ genreLang: v })}
+          >
+            Português
+          </Choice>
+          <Choice
+            value="en"
+            current={settings.genreLang || settings.overviewLang}
+            onPick={(v) => update({ genreLang: v })}
+          >
             Inglês
           </Choice>
         </div>
