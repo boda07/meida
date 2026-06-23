@@ -2,6 +2,12 @@
 // "o que mudou" depois de o utilizador atualizar a app. Mais recente em cima.
 export const CHANGELOG = [
   {
+    version: "0.7.1",
+    items: [
+      "O slideshow passou a aparecer também na página de Anime (com as imagens widescreen do AniList).",
+    ],
+  },
+  {
     version: "0.7.0",
     items: [
       "O slideshow do banner passou a ter setas para a esquerda/direita, além das bolinhas.",

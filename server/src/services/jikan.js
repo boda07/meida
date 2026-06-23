@@ -92,6 +92,22 @@ export async function getAnimeCatalog(opts = {}) {
     await sleep(400);
   }
 
+  // Enriquece os destaques com banners do AniList para o slideshow do banner
+  // (o Jikan so da poster). So os primeiros itens, que sao os candidatos a hero.
+  try {
+    const top = rows.flatMap((r) => r.items).slice(0, 40);
+    const banners = await getAnimeBannersBatch(top.map((i) => i.id));
+    if (banners.size) {
+      for (const r of rows)
+        for (const it of r.items) {
+          const b = banners.get(Number(it.id));
+          if (b) it.backdrop = b;
+        }
+    }
+  } catch {
+    /* sem banners -> o slideshow de anime usa o que houver */
+  }
+
   // So guarda em cache se a maioria das linhas veio com conteudo.
   if (rows.filter((r) => r.items.length).length >= 2) {
     catalogCache[key] = { at: Date.now(), rows };
@@ -245,6 +261,33 @@ export async function getAnilistMeta(malId) {
     /* sem AniList -> sem banner */
   }
   anilistMetaCache.set(key, out);
+  return out;
+}
+
+// Banners (imagem widescreen) do AniList para varios anime de uma vez, por idMal
+// (50 por pedido). Devolve Map(malId -> URL). Usado para o slideshow do catalogo
+// de anime, ja que o Jikan so da poster (sem backdrop). Best-effort.
+export async function getAnimeBannersBatch(malIds) {
+  const out = new Map();
+  const ids = [...new Set(malIds.map(Number).filter(Boolean))];
+  const query = `query($ids:[Int]){Page(perPage:50){media(idMal_in:$ids,type:ANIME){idMal bannerImage}}}`;
+  for (let i = 0; i < ids.length; i += 50) {
+    const chunk = ids.slice(i, i + 50);
+    try {
+      const res = await fetch("https://graphql.anilist.co", {
+        method: "POST",
+        headers: { "content-type": "application/json", accept: "application/json" },
+        body: JSON.stringify({ query, variables: { ids: chunk } }),
+      });
+      const j = await res.json();
+      for (const m of j?.data?.Page?.media || []) {
+        if (m.idMal && m.bannerImage) out.set(Number(m.idMal), m.bannerImage);
+      }
+    } catch {
+      /* ignora este lote */
+    }
+    await sleep(700);
+  }
   return out;
 }
 
