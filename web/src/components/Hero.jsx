@@ -38,6 +38,17 @@ function ChevronRightIcon() {
 
 const heroBg = (it) => imageUrl(it.backdrop, "w1280") || imageUrl(it.poster, "w780");
 
+// Titulos de anime sao muitas vezes enormes (e empurram os botoes para fora da
+// caixa). Escolhe um tamanho mais pequeno conforme o comprimento; a CSS ainda
+// limita a 2 linhas com reticencias como rede de seguranca.
+const titleSize = (t = "") => {
+  const n = t.length;
+  if (n > 46) return "is-xs";
+  if (n > 30) return "is-sm";
+  if (n > 18) return "is-md";
+  return "";
+};
+
 // Banner com slideshow: roda entre varios destaques (crossfade), com bolinhas
 // para navegar. Aceita `items` (lista) ou `item` (um so). So entram os que tem
 // imagem de fundo.
@@ -93,7 +104,7 @@ export default function Hero({ items, item }) {
 
       {/* Titulo em cima; o resto (info, sinopse, botoes) em baixo. */}
       <div className="hero-content" key={current.id}>
-        <h1>{current.title}</h1>
+        <h1 className={`hero-title ${titleSize(current.title)}`}>{current.title}</h1>
         <div className="hero-bottom">
           <div className="meta">
             {current.year ? <span>{current.year}</span> : null}

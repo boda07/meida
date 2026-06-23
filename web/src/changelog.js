@@ -2,6 +2,12 @@
 // "o que mudou" depois de o utilizador atualizar a app. Mais recente em cima.
 export const CHANGELOG = [
   {
+    version: "0.8.0",
+    items: [
+      "No slideshow (sobretudo no Anime), os títulos muito grandes deixam de empurrar a informação e os botões para fora — o título encolhe conforme o tamanho e limita-se a 2 linhas.",
+    ],
+  },
+  {
     version: "0.7.9",
     items: [
       "Podes escolher o idioma dos géneros (Português ou Inglês) à parte das sinopses, nas Definições.",
