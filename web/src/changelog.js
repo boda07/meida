@@ -2,6 +2,12 @@
 // "o que mudou" depois de o utilizador atualizar a app. Mais recente em cima.
 export const CHANGELOG = [
   {
+    version: "0.7.7",
+    items: [
+      "Nova opção nas Definições: mostrar conteúdo adulto de anime (NSFW/hentai) na pesquisa, nos filtros de género e no \"Escolhe algo para mim\". Vem desligada por defeito.",
+    ],
+  },
+  {
     version: "0.7.6",
     items: [
       "Já dá mesmo para usar uma imagem do PC como avatar (antes dava erro \"avatar inválido\").",

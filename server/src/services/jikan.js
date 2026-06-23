@@ -147,10 +147,10 @@ export async function discoverAnime(
   const params = new URLSearchParams({
     page: String(Math.max(1, Number(page) || 1)),
     limit: "24",
-    sfw: "true",
     order_by: order,
     sort: dir === "asc" ? "asc" : "desc",
   });
+  if (!opts.adult) params.set("sfw", "true"); // sem conteudo adulto, salvo opt-in
   if (genres.length) params.set("genres", genres.join(","));
   try {
     const d = await jikanFetch(`/anime?${params}`);
@@ -186,7 +186,7 @@ export async function getAnimeGenres() {
 // Escolhe um anime aleatorio com generos a incluir/excluir.
 export async function pickAnime({ genres = [], exclude = [] }, opts = {}) {
   const romaji = isRomaji(opts);
-  let q = `/anime?order_by=popularity&sort=asc&sfw=true&limit=25`;
+  let q = `/anime?order_by=popularity&sort=asc&limit=25${opts.adult ? "" : "&sfw=true"}`;
   if (genres.length) q += `&genres=${genres.join(",")}`;
   if (exclude.length) q += `&genres_exclude=${exclude.join(",")}`;
 
@@ -392,12 +392,12 @@ export async function searchAnime(query, opts = {}) {
   const q = String(query || "").trim().toLowerCase();
   if (!q) return [];
   const romaji = isRomaji(opts);
-  const key = `${romaji ? "r" : "e"}:${q}`;
+  const key = `${romaji ? "r" : "e"}${opts.adult ? "+x" : ""}:${q}`;
   const cached = searchCache.get(key);
   if (cached && Date.now() - cached.at < SEARCH_TTL) return cached.items;
   try {
     const d = await jikanFetch(
-      `/anime?q=${encodeURIComponent(q)}&limit=10&sfw=true&order_by=members&sort=desc`
+      `/anime?q=${encodeURIComponent(q)}&limit=10${opts.adult ? "" : "&sfw=true"}&order_by=members&sort=desc`
     );
     const items = dedupe(clean(d, romaji));
     searchCache.set(key, { at: Date.now(), items });

@@ -438,6 +438,22 @@ export default function Settings() {
       </section>
 
       <section className="set-section">
+        <h3>Conteúdo adulto (anime)</h3>
+        <p className="muted">
+          Mostrar anime adulto (NSFW/hentai) na pesquisa, nos filtros de género e no
+          "Escolhe algo para mim". Desligado por defeito.
+        </p>
+        <div className="set-row">
+          <Choice value={false} current={settings.showAdult} onPick={(v) => update({ showAdult: v })}>
+            Esconder
+          </Choice>
+          <Choice value={true} current={settings.showAdult} onPick={(v) => update({ showAdult: v })}>
+            Mostrar
+          </Choice>
+        </div>
+      </section>
+
+      <section className="set-section">
         <h3>Separador inicial</h3>
         <p className="muted">Onde abrir por defeito ao ver um título.</p>
         <div className="set-row">

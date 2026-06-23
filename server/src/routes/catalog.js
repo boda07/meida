@@ -28,6 +28,7 @@ function langOpts(req) {
     titleLang: req.query.titleLang,
     overviewLang: req.query.overviewLang,
     animeTitleLang: req.query.animeTitleLang,
+    adult: req.query.adult === "1", // mostrar conteudo adulto (anime NSFW)
   };
 }
 

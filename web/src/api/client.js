@@ -17,6 +17,7 @@ export const DEFAULT_SETTINGS = {
   subtitleLang: "pt", // legenda preferida: "pt" | "en" | "off"
   defaultTab: "providers", // separador inicial: providers | extract | torrents
   animeAudio: "sub", // anime: "sub" (legendado) ou "dub" (dobrado)
+  showAdult: false, // mostrar conteudo adulto (anime NSFW/hentai) na pesquisa/filtros
   accent: "#c90303", // cor de destaque da UI (botoes, realces)
   bgColor: "#070708", // cor de fundo da app
   bgStyle: "none", // estilo de fundo: none|glow|aurora|mesh|dots|grid|image
@@ -41,13 +42,14 @@ export const settingsStore = {
   },
 };
 
-// Parametros de idioma a juntar aos pedidos de catálogo.
+// Parametros de idioma (+ conteudo adulto) a juntar aos pedidos de catálogo.
 function langParams() {
   const s = settingsStore.get();
   return {
     titleLang: s.titleLang,
     overviewLang: s.overviewLang,
     animeTitleLang: s.animeTitleLang,
+    adult: s.showAdult ? "1" : "", // "" e descartado em get()
   };
 }
 
