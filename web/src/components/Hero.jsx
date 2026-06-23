@@ -52,7 +52,10 @@ export default function Hero({ item }) {
   const categoryLabel = category.toUpperCase();
 
   return (
-    <div className="hero" style={bg ? { backgroundImage: `url(${bg})` } : undefined}>
+    <div className="hero">
+      {/* Imagem de fundo numa camada propria: desvanece nas margens para se fundir
+          com qualquer fundo do utilizador (cor ou wallpaper) por baixo. */}
+      {bg && <div className="hero-bg" style={{ backgroundImage: `url(${bg})` }} />}
       {/* Conteúdo */}
       <div className="hero-content">
         {/* Título */}

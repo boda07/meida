@@ -2,6 +2,15 @@
 // "o que mudou" depois de o utilizador atualizar a app. Mais recente em cima.
 export const CHANGELOG = [
   {
+    version: "0.6.4",
+    items: [
+      "Novo botão de avançar (→) ao lado do voltar atrás.",
+      "As novidades passam a ter um botão no topo (📢) para as veres quando quiseres — com um aviso quando há algo novo.",
+      "O fundo das páginas de detalhe funde-se agora com o teu wallpaper, seja qual for a cor (deixa de ficar aquele tom azul estranho).",
+      "Detalhes de anime: o fundo passa a ser a imagem widescreen do AniList, em vez do cartaz repetido.",
+    ],
+  },
+  {
     version: "0.6.3",
     items: [
       "Watch Party: o reproduzir/pausa/avançar passa a sincronizar de verdade — se um dá play, pausa ou salta à frente, o outro acompanha (nos separadores Sem anúncios e Torrents).",

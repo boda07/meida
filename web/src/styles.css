@@ -173,7 +173,8 @@ h2 {
 
 /* ===== Botoes fixos da APP: voltar (esquerda) + ecra inteiro (direita) ===== */
 .app-fs-btn,
-.app-back-btn {
+.app-back-btn,
+.app-fwd-btn {
   position: fixed;
   top: 18px;
   z-index: 70;
@@ -200,8 +201,13 @@ h2 {
   left: 18px;
 }
 
+.app-fwd-btn {
+  left: 64px;
+}
+
 .app-fs-btn:hover,
-.app-back-btn:hover {
+.app-back-btn:hover,
+.app-fwd-btn:hover {
   background: rgba(40, 40, 48, 0.85);
 }
 
@@ -711,48 +717,43 @@ h2 {
   min-height: 100vh;
 }
 
-.hero::before,
-.hero::after {
+/* Camada da imagem de fundo do hero. Desvanece em baixo (mask) ate transparente,
+   deixando ver o fundo REAL do utilizador por baixo (cor OU wallpaper) — assim
+   funde com qualquer fundo, sem cortar para uma cor fixa. */
+.hero-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background-size: cover;
+  background-position: center;
+  mask-image: linear-gradient(
+    0deg,
+    transparent 0%,
+    rgba(0, 0, 0, 0.45) 16%,
+    #000 40%
+  );
+  -webkit-mask-image: linear-gradient(
+    0deg,
+    transparent 0%,
+    rgba(0, 0, 0, 0.45) 16%,
+    #000 40%
+  );
+}
+
+.hero::before {
   content: "";
   position: absolute;
   inset: 0;
   pointer-events: none;
-}
-
-.hero::before {
+  /* Escurecimento NEUTRO (preto) do lado do texto: legivel sobre qualquer imagem
+     e nao tinge o fundo do utilizador com uma cor. */
   background: linear-gradient(
     90deg,
-    color-mix(in srgb, var(--bg-dark) 94%, transparent) 0%,
-    color-mix(in srgb, var(--bg-dark) 60%, transparent) 42%,
-    color-mix(in srgb, var(--bg-dark) 10%, transparent) 72%
+    rgba(0, 0, 0, 0.82) 0%,
+    rgba(0, 0, 0, 0.5) 40%,
+    rgba(0, 0, 0, 0) 72%
   );
   z-index: 1;
-}
-
-/* Base do hero: funde-se gradualmente na cor de fundo escolhida (var(--bg-dark)),
-   nao num preto fixo — assim nao fica uma "linha" onde acaba a imagem e comeca o
-   fundo do utilizador. O blur entra suavemente (mais forte em baixo) via mask. */
-.hero::after {
-  inset: auto 0 0;
-  height: 62%;
-  z-index: 1;
-  background: linear-gradient(
-    0deg,
-    var(--bg-dark) 0%,
-    color-mix(in srgb, var(--bg-dark) 88%, transparent) 22%,
-    color-mix(in srgb, var(--bg-dark) 55%, transparent) 50%,
-    color-mix(in srgb, var(--bg-dark) 22%, transparent) 74%,
-    transparent 100%
-  );
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  mask-image: linear-gradient(0deg, #000 0%, #000 20%, rgba(0, 0, 0, 0.4) 60%, transparent 92%);
-  -webkit-mask-image: linear-gradient(0deg, #000 0%, #000 20%, rgba(0, 0, 0, 0.4) 60%, transparent 92%);
-}
-
-.hero {
-  background-size: cover;
-  background-position: center;
 }
 
 .hero-watermark {
@@ -1119,19 +1120,22 @@ h2 {
   background-repeat: no-repeat;
   filter: blur(4px) saturate(1.18);
   transform: scale(1.04);
-  opacity: 0.62;
+  /* Bem opaco para a imagem relacionada dominar (o wallpaper do utilizador nao
+     "espreita" por tras). Desvanece em baixo (mask) ate transparente, fundindo-se
+     com o fundo do utilizador seja qual for a cor. */
+  opacity: 0.92;
   z-index: 0;
   pointer-events: none;
-  -webkit-mask-image: linear-gradient(180deg, #000 0%, rgba(0, 0, 0, 0.65) 45%, rgba(0, 0, 0, 0.2) 80%, transparent 100%);
-  mask-image: linear-gradient(180deg, #000 0%, rgba(0, 0, 0, 0.65) 45%, rgba(0, 0, 0, 0.2) 80%, transparent 100%);
+  -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 40%, rgba(0, 0, 0, 0.35) 78%, transparent 100%);
+  mask-image: linear-gradient(180deg, #000 0%, #000 40%, rgba(0, 0, 0, 0.35) 78%, transparent 100%);
 }
 
-/* Escurece a base do wallpaper para o texto continuar legivel por cima. */
+/* Escurece (neutro) a imagem para o texto continuar legivel por cima. */
 .details-backdrop::after {
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, rgba(7, 7, 8, 0.1) 0%, rgba(7, 7, 8, 0.45) 100%);
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.25) 0%, rgba(0, 0, 0, 0.6) 100%);
 }
 
 .details-head {

@@ -11,14 +11,12 @@ import Diary from "./pages/Diary.jsx";
 import Login from "./pages/Login.jsx";
 import Settings from "./pages/Settings.jsx";
 import PickForMe from "./pages/PickForMe.jsx";
-import WhatsNew from "./components/WhatsNew.jsx";
 
 export default function App() {
   return (
     <div className="app">
       <BackButton />
       <AppFullscreen />
-      <WhatsNew />
       <Header />
       <main className="content">
         <Routes>

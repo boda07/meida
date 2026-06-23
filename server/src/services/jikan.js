@@ -219,6 +219,35 @@ export async function getAnimeRatingsBatch(malIds) {
   return out;
 }
 
+// AniList por id do MyAnimeList: id (alguns providers usam) + bannerImage (fundo
+// widescreen do anime, muito melhor que o poster para o fundo dos detalhes).
+// Cache em memoria; falha em silencio.
+const anilistMetaCache = new Map();
+export async function getAnilistMeta(malId) {
+  const key = Number(malId);
+  if (anilistMetaCache.has(key)) return anilistMetaCache.get(key);
+  let out = { id: null, banner: null };
+  try {
+    const res = await fetch("https://graphql.anilist.co", {
+      method: "POST",
+      headers: { "content-type": "application/json", accept: "application/json" },
+      body: JSON.stringify({
+        query: "query($m:Int){Media(idMal:$m,type:ANIME){id bannerImage}}",
+        variables: { m: key },
+      }),
+    });
+    const j = await res.json();
+    out = {
+      id: j?.data?.Media?.id || null,
+      banner: j?.data?.Media?.bannerImage || null,
+    };
+  } catch {
+    /* sem AniList -> sem banner */
+  }
+  anilistMetaCache.set(key, out);
+  return out;
+}
+
 // Converte um id do MyAnimeList no id do AniList (alguns providers de anime
 // usam AniList). Cache em memoria; falha em silencio (devolve null).
 const anilistCache = new Map();
@@ -267,11 +296,12 @@ export async function getAnimeDetails(malId, opts = {}) {
   if (isMovie) episodeCount = 1;
   if (!episodeCount) episodeCount = 24; // fallback razoavel
 
-  const anilistId = await malToAnilist(malId);
+  // AniList: id (alguns providers usam) + bannerImage (fundo do anime).
+  const { id: anilistId, banner: anilistBanner } = await getAnilistMeta(malId);
 
-  // Match best-effort no TMDB para arranjar o IMDB id (torrents) E uma imagem
-  // de fundo (backdrop) propria — o MAL so tem o poster, que ficava feio e
-  // repetido atras do cabecalho. Nao afeta poster/titulo/sinopse (do MAL).
+  // Match best-effort no TMDB para arranjar o IMDB id (torrents) E um backdrop
+  // de reserva quando o AniList nao tem banner. O MAL so tem o poster, que
+  // ficava feio e repetido atras do cabecalho. Nao afeta poster/titulo/sinopse.
   let imdbId = null;
   let tmdbType = isMovie ? "movie" : "tv";
   let tmdbBackdrop = null;
@@ -283,7 +313,7 @@ export async function getAnimeDetails(malId, opts = {}) {
       imdbId = await getExternalImdb(match.mediaType, match.tmdbId);
     }
   } catch {
-    /* sem match -> sem torrents nem backdrop para este anime */
+    /* sem match -> sem torrents nem backdrop do TMDB para este anime */
   }
 
   return {
@@ -298,9 +328,9 @@ export async function getAnimeDetails(malId, opts = {}) {
     title: base.title,
     overview: base.overview,
     poster: base.poster,
-    // Backdrop do TMDB (imagem de fundo a serio); null se nao houver match (o
-    // frontend simplesmente nao mostra fundo, em vez de repetir o poster).
-    backdrop: tmdbBackdrop,
+    // Fundo a serio: banner do AniList (preferido) -> backdrop do TMDB. null se
+    // nenhum existir (o frontend nao mostra fundo, em vez de repetir o poster).
+    backdrop: anilistBanner || tmdbBackdrop,
     year: base.year,
     rating: base.rating,
     genres: (full?.genres || []).map((g) => g.name),
