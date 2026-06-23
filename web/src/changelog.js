@@ -2,6 +2,14 @@
 // "o que mudou" depois de o utilizador atualizar a app. Mais recente em cima.
 export const CHANGELOG = [
   {
+    version: "0.6.3",
+    items: [
+      "Watch Party: o reproduzir/pausa/avançar passa a sincronizar de verdade — se um dá play, pausa ou salta à frente, o outro acompanha (nos separadores Sem anúncios e Torrents).",
+      "Watch Party: quem entra a meio começa logo no ponto e no estado (a tocar ou em pausa) em que a sala está.",
+      "Watch Party: aviso claro de que nos Providers (páginas externas) o play/pausa não dá para sincronizar.",
+    ],
+  },
+  {
     version: "0.6.2",
     items: [
       "Watch Party: quem entra agora vai parar ao mesmo sítio onde está o anfitrião (antes, se já tinhas aberto o episódio, o convidado ficava na página inicial).",

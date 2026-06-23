@@ -428,6 +428,12 @@ export default function Details() {
                 Fontes dedicadas de anime (sub/dub via MyAnimeList). Muda entre
                 legendado e dobrado nas Definições.
               </p>
+              {party?.active && (
+                <p className="muted" style={{ fontSize: 12, marginTop: 4 }}>
+                  🔴 Watch Party: estas fontes são em iframe, o play/pausa <b>não</b>{" "}
+                  sincroniza — usem <b>Torrents</b> para verem em sincronia.
+                </p>
+              )}
             </>
           )}
         </div>
@@ -471,6 +477,12 @@ export default function Details() {
               <b>Sem anúncios</b> e <b>Torrents</b> (os Providers são páginas
               externas em iframe).
             </p>
+            {party?.active && (
+              <p className="muted" style={{ fontSize: 12, marginTop: 4 }}>
+                🔴 Watch Party: aqui (Providers) o play/pausa <b>não</b> sincroniza
+                — usem <b>Sem anúncios</b> ou <b>Torrents</b> para verem em sincronia.
+              </p>
+            )}
           </>
         )}
         {mode === "extract" && (
