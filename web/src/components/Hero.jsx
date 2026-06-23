@@ -20,6 +20,22 @@ function InfoIcon() {
   );
 }
 
+function ChevronLeftIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+      <polyline points="15 18 9 12 15 6" />
+    </svg>
+  );
+}
+
+function ChevronRightIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+      <polyline points="9 18 15 12 9 6" />
+    </svg>
+  );
+}
+
 const heroBg = (it) => imageUrl(it.backdrop, "w1280") || imageUrl(it.poster, "w780");
 
 // Banner com slideshow: roda entre varios destaques (crossfade), com bolinhas
@@ -58,6 +74,7 @@ export default function Hero({ items, item }) {
   const safe = idx % list.length;
   const current = list[safe];
   const to = `/details/${current.type}/${current.id}`;
+  const go = (n) => setIdx((i) => (i + n + list.length) % list.length);
 
   return (
     <div className="hero">
@@ -96,6 +113,26 @@ export default function Hero({ items, item }) {
           </Link>
         </div>
       </div>
+
+      {/* Setas esquerda/direita. */}
+      {list.length > 1 && (
+        <>
+          <button
+            className="hero-arrow hero-arrow-left"
+            onClick={() => go(-1)}
+            aria-label="Anterior"
+          >
+            <ChevronLeftIcon />
+          </button>
+          <button
+            className="hero-arrow hero-arrow-right"
+            onClick={() => go(1)}
+            aria-label="Seguinte"
+          >
+            <ChevronRightIcon />
+          </button>
+        </>
+      )}
 
       {/* Bolinhas de navegação do slideshow. */}
       {list.length > 1 && (

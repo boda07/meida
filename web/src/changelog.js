@@ -2,6 +2,12 @@
 // "o que mudou" depois de o utilizador atualizar a app. Mais recente em cima.
 export const CHANGELOG = [
   {
+    version: "0.7.0",
+    items: [
+      "O slideshow do banner passou a ter setas para a esquerda/direita, além das bolinhas.",
+    ],
+  },
+  {
     version: "0.6.9",
     items: [
       "O slideshow do banner passou a ser uma caixa arredondada por cima do fundo (estilo miruro) — o teu wallpaper aparece à volta, sem misturas estranhas.",

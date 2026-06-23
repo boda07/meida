@@ -887,6 +887,48 @@ h2 {
 }
 
 /* Slideshow do hero: bolinhas de navegacao + fade do conteudo a cada slide. */
+/* Setas de navegacao do slideshow (esquerda/direita). */
+.hero-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 3;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(6px);
+  color: #fff;
+  cursor: pointer;
+  opacity: 0.65;
+  transition: opacity 0.2s, background 0.2s;
+}
+
+.hero-arrow svg {
+  width: 22px;
+  height: 22px;
+}
+
+.hero:hover .hero-arrow {
+  opacity: 1;
+}
+
+.hero-arrow:hover {
+  background: rgba(0, 0, 0, 0.65);
+}
+
+.hero-arrow-left {
+  left: 16px;
+}
+
+.hero-arrow-right {
+  right: 16px;
+}
+
 .hero-dots {
   position: absolute;
   bottom: 18px;
