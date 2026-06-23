@@ -19,7 +19,7 @@ function MegaphoneIcon() {
 // desde a ultima versao vista) e poe um ponto vermelho enquanto nao for visto.
 export default function Changelog() {
   const [version, setVersion] = useState(null);
-  const [view, setView] = useState(null); // { items, subtitle, version } | null
+  const [view, setView] = useState(null); // { initialVersion, subtitle } | null
   const [hasNew, setHasNew] = useState(false);
 
   useEffect(() => {
@@ -34,14 +34,9 @@ export default function Changelog() {
         return;
       }
       if (cmpVersion(v, seen) <= 0) return; // nao atualizou
-      const news = CHANGELOG.filter(
-        (c) => cmpVersion(c.version, seen) > 0 && cmpVersion(c.version, v) <= 0
-      );
-      const items = (news.length ? news : CHANGELOG.slice(0, 1)).flatMap((e) => e.items);
       setHasNew(true);
       setView({
-        items,
-        version: v,
+        initialVersion: v,
         subtitle: `Atualizaste a MEIDA para a versão ${v}. Novidades:`,
       });
     })();
@@ -55,14 +50,9 @@ export default function Changelog() {
     setHasNew(false);
   }
 
-  // Abertura manual: mostra as novidades da versao mais recente.
+  // Abertura manual: arranca na versao mais recente (e da para navegar as antigas).
   function openLatest() {
-    const latest = CHANGELOG[0];
-    setView({
-      items: latest?.items || [],
-      version: latest?.version || version,
-      subtitle: "As novidades mais recentes:",
-    });
+    setView({ initialVersion: CHANGELOG[0]?.version, subtitle: null });
     markSeen();
   }
 
@@ -82,11 +72,10 @@ export default function Changelog() {
         <MegaphoneIcon />
         {hasNew && <span className="wp-badge">!</span>}
       </button>
-      {view && view.items.length > 0 && (
+      {view && (
         <ChangelogModal
-          version={view.version}
+          initialVersion={view.initialVersion}
           subtitle={view.subtitle}
-          items={view.items}
           onClose={close}
         />
       )}
