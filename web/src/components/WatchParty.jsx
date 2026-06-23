@@ -15,10 +15,18 @@ function PeopleIcon() {
 export default function WatchParty() {
   const party = useWatchParty();
   const [open, setOpen] = useState(false);
-  const [nick, setNick] = useState("");
+  // Lembra o nome entre sessoes (para nao o teres de escrever sempre).
+  const [nick, setNick] = useState(() => localStorage.getItem("wp_nick") || "");
   const [code, setCode] = useState("");
   const [copied, setCopied] = useState(false);
   const ref = useRef(null);
+
+  // Guarda o nome e devolve-o ja limpo (com fallback) para criar/entrar.
+  const useNick = (fallback) => {
+    const n = nick.trim();
+    if (n) localStorage.setItem("wp_nick", n);
+    return n || fallback;
+  };
 
   // Fecha ao clicar fora.
   useEffect(() => {
@@ -79,36 +87,37 @@ export default function WatchParty() {
           ) : (
             <>
               <p className="muted">
-                Cria uma sala e envia o codigo ao teu amigo, ou entra com um
-                codigo.
+                Escreve o teu nome, depois cria uma sala e envia o codigo ao teu
+                amigo — ou entra com o codigo dele.
               </p>
+              <label className="wp-label">O teu nome</label>
               <input
                 className="wp-input"
-                placeholder="O teu nome"
+                placeholder="Como queres aparecer"
                 value={nick}
                 onChange={(e) => setNick(e.target.value)}
               />
               <button
                 className="set-choice active wp-block"
                 onClick={() => {
-                  party.createRoom(nick);
+                  party.createRoom(useNick("Host"));
                   setOpen(true);
                 }}
               >
                 Criar sala
               </button>
-              <div className="wp-or">ou</div>
+              <div className="wp-or">ou entrar numa sala</div>
               <div className="wp-join">
                 <input
                   className="wp-input"
-                  placeholder="Codigo"
+                  placeholder="Codigo da sala"
                   value={code}
                   onChange={(e) => setCode(e.target.value.toUpperCase())}
                   maxLength={5}
                 />
                 <button
                   className="set-choice"
-                  onClick={() => party.joinRoom(code, nick)}
+                  onClick={() => party.joinRoom(code, useNick("Convidado"))}
                   disabled={!code.trim()}
                 >
                   Entrar

@@ -45,6 +45,9 @@ export default function Details() {
   // Fontes / player
   const [embeds, setEmbeds] = useState([]);
   const [active, setActive] = useState(null);
+  // Watch Party: fonte (provider) que o host escolheu, para os convidados verem a
+  // mesma — senao cada um fica no 1o provider, que pode estar partido ("nao vejo nada").
+  const wantedSourceRef = useRef(null);
 
   // Separador inicial vindo das definições (providers/extract/torrents)
   const [mode, setMode] = useState(settings.defaultTab || "providers");
@@ -114,7 +117,8 @@ export default function Details() {
         })
         .then((d) => {
           setEmbeds(d.embeds);
-          setActive(d.embeds[0] || null);
+          const want = wantedSourceRef.current;
+          setActive((want && d.embeds.find((e) => e.provider === want)) || d.embeds[0] || null);
         })
         .catch((e) => setError(e.message));
       return;
@@ -130,7 +134,8 @@ export default function Details() {
       .sources(opts)
       .then((d) => {
         setEmbeds(d.embeds);
-        setActive(d.embeds[0] || null);
+        const want = wantedSourceRef.current;
+        setActive((want && d.embeds.find((e) => e.provider === want)) || d.embeds[0] || null);
       })
       .catch((e) => setError(e.message));
   }, [details, season, episode, settings.animeAudio]);
@@ -227,29 +232,35 @@ export default function Details() {
     }
   }
 
-  // Watch Party: sincroniza temporada/episódio/separador entre a sala.
+  // Watch Party: sincroniza temporada/episódio/separador E a fonte escolhida.
   const applyingUntil = useRef(0);
   useEffect(() => {
     if (!party?.active) return;
     return party.subscribe((p) => {
       if (p.kind === "hello") {
-        party.send("session", { season, episode, mode });
+        party.send("session", { season, episode, mode, provider: active?.provider });
         return;
       }
       if (p.kind !== "session") return;
-      applyingUntil.current = Date.now() + 300;
+      applyingUntil.current = Date.now() + 400;
       const d = p.data || {};
       if (d.season != null) setSeason(d.season);
       if (d.episode != null) setEpisode(d.episode);
       if (d.mode) setMode(d.mode);
+      if (d.provider) {
+        // Guarda para aplicar quando as fontes carregarem; aplica ja se possivel.
+        wantedSourceRef.current = d.provider;
+        const match = embeds.find((e) => e.provider === d.provider);
+        if (match) setActive(match);
+      }
     });
-  }, [party, season, episode, mode]);
+  }, [party, season, episode, mode, embeds, active]);
 
   useEffect(() => {
     if (!party?.active) return;
     if (Date.now() < applyingUntil.current) return;
-    party.send("session", { season, episode, mode });
-  }, [party, season, episode, mode]);
+    party.send("session", { season, episode, mode, provider: active?.provider });
+  }, [party, season, episode, mode, active]);
 
   // Mantem o bloco de 100 visivel alinhado com o episódio atual/selecionado.
   useEffect(() => {

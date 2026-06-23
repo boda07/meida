@@ -1200,6 +1200,14 @@ h2 {
   margin: 0 0 12px;
 }
 
+.wp-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  margin: 2px 0 6px;
+}
+
 .wp-input {
   width: 100%;
   padding: 9px 12px;

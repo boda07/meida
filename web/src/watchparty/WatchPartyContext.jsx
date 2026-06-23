@@ -33,6 +33,11 @@ export function WatchPartyProvider({ children }) {
   const idRef = useRef(Math.random().toString(36).slice(2)); // id deste cliente
   const handlersRef = useRef(new Set()); // subscritores de eventos
   const suppressNavRef = useRef(false); // evita reenviar nav aplicada do remoto
+  // Caminho atual SEMPRE atualizado (o handler do canal e criado uma vez e nao
+  // veria as navegacoes seguintes). Usado para responder ao "hello" com a rota
+  // onde o host esta AGORA — senao um membro que entra depois vai parar a home.
+  const pathRef = useRef(location.pathname + location.search);
+  const hostRef = useRef(false); // se este cliente e o host (estavel no canal)
 
   // Envia um evento para a sala.
   const send = useCallback((kind, data) => {
@@ -56,6 +61,7 @@ export function WatchPartyProvider({ children }) {
     const ch = channelRef.current;
     if (ch) getSupabase()?.removeChannel(ch);
     channelRef.current = null;
+    hostRef.current = false;
     setRoom(null);
     setMembers([]);
     setIsHost(false);
@@ -71,6 +77,7 @@ export function WatchPartyProvider({ children }) {
       }
       setError(null);
       if (channelRef.current) supabase.removeChannel(channelRef.current);
+      hostRef.current = host;
 
       const ch = supabase.channel(`wp-${code}`, {
         config: { broadcast: { self: false }, presence: { key: idRef.current } },
@@ -81,15 +88,15 @@ export function WatchPartyProvider({ children }) {
         // Navegacao: o contexto trata da rota; o resto vai aos subscritores.
         if (payload.kind === "nav") {
           const path = payload.data?.path;
-          if (path && path !== location.pathname + location.search) {
+          if (path && path !== pathRef.current) {
             suppressNavRef.current = true;
             navigate(path);
           }
           return;
         }
         if (payload.kind === "hello") {
-          // Um membro novo entrou: o host reenvia a rota atual.
-          if (host) send("nav", { path: location.pathname + location.search });
+          // Um membro novo entrou: o host reenvia a rota ONDE ESTA AGORA.
+          if (hostRef.current) send("nav", { path: pathRef.current });
         }
         for (const h of handlersRef.current) h(payload);
       });
@@ -114,7 +121,7 @@ export function WatchPartyProvider({ children }) {
       setNick(nickname);
       setIsHost(host);
     },
-    [location, navigate, send]
+    [navigate, send]
   );
 
   const createRoom = useCallback(
@@ -132,13 +139,15 @@ export function WatchPartyProvider({ children }) {
   );
 
   // Propaga a navegacao local para a sala (a menos que tenha vindo do remoto).
+  // Mantem tambem o pathRef atualizado para o handler do canal e o "hello".
   useEffect(() => {
+    pathRef.current = location.pathname + location.search;
     if (!room) return;
     if (suppressNavRef.current) {
       suppressNavRef.current = false;
       return;
     }
-    send("nav", { path: location.pathname + location.search });
+    send("nav", { path: pathRef.current });
   }, [location.pathname, location.search, room, send]);
 
   // Limpeza ao desmontar.

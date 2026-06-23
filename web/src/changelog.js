@@ -2,6 +2,14 @@
 // "o que mudou" depois de o utilizador atualizar a app. Mais recente em cima.
 export const CHANGELOG = [
   {
+    version: "0.6.2",
+    items: [
+      "Watch Party: quem entra agora vai parar ao mesmo sítio onde está o anfitrião (antes, se já tinhas aberto o episódio, o convidado ficava na página inicial).",
+      "Watch Party: a fonte que o anfitrião escolhe passa a ser a mesma para todos — já não ficas num provider partido a ver um ecrã vazio.",
+      "Watch Party: o teu nome fica guardado e é mesmo o teu nome a aparecer ao entrares numa sala.",
+    ],
+  },
+  {
     version: "0.6.1",
     items: [
       "Datas do diário (MyAnimeList): quando o MAL não tem o dia exato, deixamos de inventar o dia 1 (que dava casos de \"acabei antes de começar\"). Os terminados sem data mostram \"data não disponível\". Reimporta a lista do MAL para corrigir as antigas.",
