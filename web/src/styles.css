@@ -726,8 +726,12 @@ h2 {
    fundo do utilizador aparece a volta e nao ha mistura entre as duas imagens. */
 .hero {
   position: relative;
-  margin: 84px clamp(14px, 3.5vw, 46px) 6px;
-  height: clamp(340px, 60vh, 580px);
+  width: calc(100% - 2 * clamp(14px, 3.5vw, 46px));
+  max-width: 1500px;
+  margin: 84px auto 6px;
+  /* Mais alta + largura limitada/centrada => proporcao mais perto de 16:9, por
+     isso a imagem (cover) corta menos e nao fica com tanto "zoom". */
+  height: clamp(380px, 64vh, 640px);
   border-radius: 22px;
   overflow: hidden;
   display: flex;
@@ -780,6 +784,15 @@ h2 {
   z-index: 2;
   max-width: 620px;
   padding: clamp(22px, 4vw, 48px);
+  /* Mais espaco a esquerda para o titulo nao ficar por cima da seta de navegacao. */
+  padding-left: clamp(60px, 6vw, 86px);
+}
+
+/* Sombra no titulo, meta e descricao, para se ler bem sobre a imagem. */
+.hero-content h1,
+.hero-content .meta,
+.hero-content .body-text {
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.9), 0 1px 4px rgba(0, 0, 0, 0.85);
 }
 
 .hero-content .body-text {
@@ -1216,11 +1229,9 @@ h2 {
   position: relative;
   padding: 100px 4% 40px;
   overflow: hidden;
-  /* Fundo solido SO na pagina de detalhes: esconde o wallpaper do utilizador aqui,
-     para a imagem relacionada (backdrop) nao ficar sobreposta a outra imagem
-     ("uma em cima da outra"). O backdrop desvanece para esta cor, limpo. */
-  min-height: 100vh;
-  background: var(--bg-dark);
+  /* Sem fundo solido: o wallpaper do utilizador aparece aqui tambem. O backdrop
+     (imagem relacionada) e opaco no topo (nao deixa o wallpaper "espreitar") e
+     desvanece em baixo para o wallpaper — transicao limpa, sem imagem sobreposta. */
 }
 
 /* Wallpaper por tras do cabecalho (cover = nunca estica). Pouco desfocado, para

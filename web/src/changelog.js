@@ -2,6 +2,14 @@
 // "o que mudou" depois de o utilizador atualizar a app. Mais recente em cima.
 export const CHANGELOG = [
   {
+    version: "0.7.3",
+    items: [
+      "Slideshow: título e descrição com sombra (lê-se melhor) e afastados da seta da esquerda.",
+      "Slideshow: as imagens ficam menos \"esticadas\"/com menos zoom.",
+      "Nas páginas de detalhe, o teu wallpaper volta a aparecer à volta da imagem (sem ficar um bloco escuro).",
+    ],
+  },
+  {
     version: "0.7.2",
     items: [
       "Atualizações mais leves: o instalador deixou de incluir ficheiros desnecessários, por isso ocupa menos espaço e descarrega mais depressa (continua a baixar só o que mudou).",
