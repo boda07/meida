@@ -2,6 +2,13 @@
 // "o que mudou" depois de o utilizador atualizar a app. Mais recente em cima.
 export const CHANGELOG = [
   {
+    version: "0.7.5",
+    items: [
+      "O estilo de fundo (padrão ou imagem) passa a cobrir a página toda, mesmo ao fazer scroll — acabou aquele retângulo só com a cor.",
+      "O avatar de perfil também pode ser uma imagem do teu computador (não só um link).",
+    ],
+  },
+  {
     version: "0.7.4",
     items: [
       "Slideshow do Anime: a caixa ficou mais baixa para os banners (que são largos e baixos) encaixarem sem ficarem ampliados.",

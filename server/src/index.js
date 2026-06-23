@@ -15,7 +15,8 @@ import { progressRouter } from "./routes/progress.js";
 
 const app = express();
 app.use(cors());
-app.use(express.json());
+// Limite generoso para o body: o avatar pode vir como imagem (data URL).
+app.use(express.json({ limit: "4mb" }));
 
 // Healthcheck + aviso se o TMDB nao estiver configurado.
 app.get("/api/health", (req, res) => {

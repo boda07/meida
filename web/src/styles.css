@@ -25,19 +25,35 @@
 html,
 body {
   margin: 0;
-  background-color: var(--bg-dark);
-  background-repeat: no-repeat;
-  background-position: center;
-  background-size: cover;
-  background-attachment: fixed;
   color: var(--text);
   font-family: "Manrope", system-ui, sans-serif;
   line-height: 1.5;
 }
 
+/* Cor base (fica por tras da camada de fundo). */
+html {
+  background-color: var(--bg-dark);
+}
+
+/* ===== Fundo da app numa CAMADA FIXA que cobre o ecra inteiro =====
+   Num pseudo-elemento fixo (inset:0), nao no body. Assim o padrao/imagem cobre
+   SEMPRE a pagina toda, em qualquer scroll — antes ficava preso a caixa do body
+   e so cobria parte (o "retangulo"). O conteudo passa por cima (z-index > -1). */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-color: var(--bg-dark);
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: cover;
+}
+
 /* ===== Estilos de fundo da app (escolhidos nas Definicoes) =====
    "none" (default) = so a cor. Os restantes poem um padrao/imagem por cima. */
-html[data-bg="glow"] body {
+html[data-bg="glow"] body::before {
   background-image: radial-gradient(
     90% 55% at 50% -12%,
     color-mix(in srgb, var(--accent) 30%, transparent),
@@ -45,27 +61,27 @@ html[data-bg="glow"] body {
   );
 }
 
-html[data-bg="aurora"] body {
+html[data-bg="aurora"] body::before {
   background-image:
     radial-gradient(42% 50% at 12% 8%, color-mix(in srgb, var(--accent) 32%, transparent), transparent 70%),
     radial-gradient(46% 55% at 88% 18%, color-mix(in srgb, var(--accent) 22%, transparent), transparent 70%),
     radial-gradient(55% 60% at 50% 108%, color-mix(in srgb, var(--accent) 18%, transparent), transparent 70%);
 }
 
-html[data-bg="mesh"] body {
+html[data-bg="mesh"] body::before {
   background-image:
     radial-gradient(32% 42% at 18% 22%, rgba(120, 100, 255, 0.20), transparent 70%),
     radial-gradient(36% 46% at 82% 28%, rgba(255, 90, 150, 0.16), transparent 70%),
     radial-gradient(42% 52% at 60% 92%, rgba(60, 190, 255, 0.16), transparent 70%);
 }
 
-html[data-bg="dots"] body {
+html[data-bg="dots"] body::before {
   background-image: radial-gradient(rgba(255, 255, 255, 0.07) 1.3px, transparent 1.3px);
   background-size: 22px 22px;
   background-repeat: repeat;
 }
 
-html[data-bg="grid"] body {
+html[data-bg="grid"] body::before {
   background-image:
     linear-gradient(rgba(255, 255, 255, 0.045) 1px, transparent 1px),
     linear-gradient(90deg, rgba(255, 255, 255, 0.045) 1px, transparent 1px);
@@ -73,8 +89,8 @@ html[data-bg="grid"] body {
   background-repeat: repeat;
 }
 
-/* Imagem personalizada (URL): escurecida para o texto continuar legivel. */
-html[data-bg="image"] body {
+/* Imagem personalizada (URL ou ficheiro): escurecida para o texto continuar legivel. */
+html[data-bg="image"] body::before {
   background-image: linear-gradient(rgba(7, 7, 8, 0.55), rgba(7, 7, 8, 0.78)),
     var(--app-bg-image, none);
 }

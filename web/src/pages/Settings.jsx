@@ -686,8 +686,27 @@ export default function Settings() {
                 onClick={() => pickAvatar(imgUrl)}
                 disabled={saving || !imgUrl.trim()}
               >
-                Usar imagem
+                Usar URL
               </button>
+              <label className="lib-watched" style={{ cursor: "pointer" }}>
+                Escolher do PC
+                <input
+                  type="file"
+                  accept="image/*"
+                  style={{ display: "none" }}
+                  onChange={async (e) => {
+                    const f = e.target.files?.[0];
+                    if (f) {
+                      try {
+                        await pickAvatar(await imageFileToDataUrl(f, 256));
+                      } catch {
+                        /* imagem invalida -> ignora */
+                      }
+                    }
+                    e.target.value = "";
+                  }}
+                />
+              </label>
             </div>
 
             {user.avatar && (
