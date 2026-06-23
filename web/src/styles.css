@@ -721,23 +721,22 @@ h2 {
   background: rgba(255, 255, 255, 0.1);
 }
 
-/* ===== Hero ===== */
+/* ===== Hero (slideshow numa CAIXA, estilo miruro) =====
+   E uma caixa arredondada por cima do wallpaper, com margens a toda a volta — o
+   fundo do utilizador aparece a volta e nao ha mistura entre as duas imagens. */
 .hero {
   position: relative;
-  min-height: 90vh;
-  display: flex;
-  align-items: center;
+  margin: 84px clamp(14px, 3.5vw, 46px) 6px;
+  height: clamp(340px, 60vh, 580px);
+  border-radius: 22px;
   overflow: hidden;
+  display: flex;
+  align-items: flex-end;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.45);
 }
 
-/* Home: a recomendacao ocupa o ecra todo (so ela aparece ao abrir). */
-.catalog-page.home .hero {
-  min-height: 100vh;
-}
-
-/* Camada da imagem de fundo do hero. Desvanece em baixo (mask) ate transparente,
-   deixando ver o fundo REAL do utilizador por baixo (cor OU wallpaper) — assim
-   funde com qualquer fundo, sem cortar para uma cor fixa. */
+/* Camada da imagem de fundo (crossfade do slideshow). Preenche a caixa; as bordas
+   arredondadas cortam-na, por isso nao precisa de desvanecer para o wallpaper. */
 .hero-bg {
   position: absolute;
   inset: 0;
@@ -746,18 +745,6 @@ h2 {
   background-position: center;
   opacity: 0;
   transition: opacity 0.9s ease;
-  mask-image: linear-gradient(
-    0deg,
-    transparent 0%,
-    rgba(0, 0, 0, 0.45) 16%,
-    #000 40%
-  );
-  -webkit-mask-image: linear-gradient(
-    0deg,
-    transparent 0%,
-    rgba(0, 0, 0, 0.45) 16%,
-    #000 40%
-  );
 }
 
 .hero::before {
@@ -765,14 +752,10 @@ h2 {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  /* Escurecimento NEUTRO (preto) do lado do texto: legivel sobre qualquer imagem
-     e nao tinge o fundo do utilizador com uma cor. */
-  background: linear-gradient(
-    90deg,
-    rgba(0, 0, 0, 0.82) 0%,
-    rgba(0, 0, 0, 0.5) 40%,
-    rgba(0, 0, 0, 0) 72%
-  );
+  /* Escurece a base e a esquerda (onde fica o texto), para se ler bem. */
+  background:
+    linear-gradient(0deg, rgba(0, 0, 0, 0.9) 0%, rgba(0, 0, 0, 0.4) 42%, transparent 78%),
+    linear-gradient(90deg, rgba(0, 0, 0, 0.7) 0%, rgba(0, 0, 0, 0) 55%);
   z-index: 1;
 }
 
@@ -795,9 +778,20 @@ h2 {
 .hero-content {
   position: relative;
   z-index: 2;
-  max-width: 640px;
-  padding: 0 clamp(28px, 6vw, 90px);
-  margin-top: 80px;
+  max-width: 620px;
+  padding: clamp(22px, 4vw, 48px);
+}
+
+.hero-content .body-text {
+  max-width: 540px;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--text-muted);
+  margin: 10px 0 20px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .hero-overview {
@@ -895,8 +889,8 @@ h2 {
 /* Slideshow do hero: bolinhas de navegacao + fade do conteudo a cada slide. */
 .hero-dots {
   position: absolute;
-  bottom: 40px;
-  right: clamp(28px, 6vw, 90px);
+  bottom: 18px;
+  right: 22px;
   z-index: 3;
   display: flex;
   gap: 8px;
@@ -1198,11 +1192,10 @@ h2 {
   background-size: cover;
   background-position: center 18%;
   background-repeat: no-repeat;
-  filter: blur(4px) saturate(1.18);
-  transform: scale(1.04);
-  /* Opaco: a imagem relacionada domina. Desvanece em baixo (mask) ate transparente,
-     fundindo-se no fundo solido da pagina (.details), sem mostrar o wallpaper por
-     tras (que dava o efeito de "uma imagem em cima da outra"). */
+  /* Sem desfoco (nitida); a legibilidade do texto vem da sombra nas letras + do
+     escurecimento (::after). Desvanece em baixo (mask) ate transparente, fundindo
+     no fundo solido da pagina (.details), sem mostrar o wallpaper por tras. */
+  filter: saturate(1.1);
   opacity: 1;
   z-index: 0;
   pointer-events: none;
@@ -1821,6 +1814,7 @@ h2 {
 
 .details-meta h1 {
   margin: 0 0 12px;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.9), 0 1px 3px rgba(0, 0, 0, 0.9);
 }
 
 .details-tags {
@@ -1841,6 +1835,7 @@ h2 {
   max-width: 720px;
   line-height: 1.6;
   color: var(--text-muted);
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.85);
 }
 
 /* ===== Library ===== */

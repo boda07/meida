@@ -6,6 +6,7 @@ import {
   getDetails,
   getSeason,
   getGenres,
+  getGenreVocab,
   pickRandom,
   discover,
 } from "../services/tmdb.js";
@@ -109,13 +110,22 @@ catalogRouter.get("/details", async (req, res, next) => {
   }
 });
 
-// Lista de generos para o "Escolhe algo para mim".
+// Lista de generos para o "Escolhe algo para mim", no idioma escolhido.
 catalogRouter.get("/genres", async (req, res, next) => {
   try {
     const type = req.query.type;
-    if (type === "anime") return res.json({ genres: await getAnimeGenres() });
+    const lang = req.query.overviewLang;
+    if (type === "anime") {
+      // Os nomes vem do Jikan em ingles -> traduz pelo vocabulario (TMDB + MAL).
+      const list = await getAnimeGenres();
+      const vocab = await getGenreVocab(lang);
+      const genres = vocab
+        ? list.map((g) => ({ id: g.id, name: vocab.get(String(g.name).toLowerCase()) || g.name }))
+        : list;
+      return res.json({ genres });
+    }
     if (type === "movie" || type === "tv") {
-      return res.json({ genres: await getGenres(type) });
+      return res.json({ genres: await getGenres(type, lang) });
     }
     res.status(400).json({ error: "type tem de ser movie, tv ou anime" });
   } catch (err) {

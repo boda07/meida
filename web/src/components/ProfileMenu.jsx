@@ -10,20 +10,22 @@ export default function ProfileMenu() {
   const [updMsg, setUpdMsg] = useState(null);
   const ref = useRef(null);
 
-  const canUpdate =
-    typeof window !== "undefined" && Boolean(window.electronAPI?.checkForUpdates);
-
   async function checkUpdate() {
+    // Fora da app instalada (browser) nao ha atualizacao automatica.
+    if (!window.electronAPI?.checkForUpdates) {
+      setUpdMsg("Atualizações automáticas só na app instalada.");
+      return;
+    }
     setUpdMsg("A procurar...");
     try {
       const r = await window.electronAPI.checkForUpdates();
       if (r?.status === "available")
         setUpdMsg(`Nova versão ${r.version} — a descarregar...`);
-      else if (r?.status === "latest") setUpdMsg("Já tens a versão mais recente.");
+      else if (r?.status === "latest") setUpdMsg("Já tens a versão mais recente. ✓");
       else if (r?.status === "dev") setUpdMsg("Indisponível em desenvolvimento.");
-      else setUpdMsg("Não foi possível verificar.");
+      else setUpdMsg("Não foi possível verificar agora.");
     } catch {
-      setUpdMsg("Não foi possível verificar.");
+      setUpdMsg("Não foi possível verificar agora.");
     }
   }
 
@@ -65,9 +67,7 @@ export default function ProfileMenu() {
           <Link to="/settings" onClick={() => setOpen(false)}>
             Definições
           </Link>
-          {canUpdate && (
-            <button onClick={checkUpdate}>Procurar atualização</button>
-          )}
+          <button onClick={checkUpdate}>Procurar atualização</button>
           {updMsg && <span className="profile-upd-msg">{updMsg}</span>}
           <button onClick={logout}>Sair</button>
         </div>

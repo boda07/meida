@@ -20,14 +20,6 @@ function InfoIcon() {
   );
 }
 
-function ChevronDownIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <polyline points="6 9 12 15 18 9" />
-    </svg>
-  );
-}
-
 const heroBg = (it) => imageUrl(it.backdrop, "w1280") || imageUrl(it.poster, "w780");
 
 // Banner com slideshow: roda entre varios destaques (crossfade), com bolinhas
@@ -66,10 +58,6 @@ export default function Hero({ items, item }) {
   const safe = idx % list.length;
   const current = list[safe];
   const to = `/details/${current.type}/${current.id}`;
-
-  const handleScroll = () => {
-    document.querySelector(".rows")?.scrollIntoView({ behavior: "smooth", block: "start" });
-  };
 
   return (
     <div className="hero">
@@ -122,10 +110,6 @@ export default function Hero({ items, item }) {
           ))}
         </div>
       )}
-
-      <button className="hero-scroll-down" onClick={handleScroll} aria-label="Scroll para conteúdo">
-        <ChevronDownIcon />
-      </button>
     </div>
   );
 }

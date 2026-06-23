@@ -450,14 +450,17 @@ export async function getExternalImdb(type, id) {
   }
 }
 
-// Lista de generos (TMDB) por tipo, para o "Escolhe algo para mim".
+// Lista de generos (TMDB) por tipo e idioma, para o "Escolhe algo para mim".
+// O TMDB devolve os nomes ja traduzidos no idioma pedido. Cache por tipo+idioma.
 const genreCache = {};
-export async function getGenres(type) {
+export async function getGenres(type, lang) {
   if (type !== "movie" && type !== "tv") throw new Error("type invalido");
-  if (genreCache[type]) return genreCache[type];
-  const data = await tmdbFetch(`/genre/${type}/list`, {}, "en-US");
+  const target = LANG_MAP[lang] || (String(lang || "").includes("-") ? lang : "en-US");
+  const key = `${type}:${target}`;
+  if (genreCache[key]) return genreCache[key];
+  const data = await tmdbFetch(`/genre/${type}/list`, {}, target);
   const list = (data.genres || []).map((g) => ({ id: g.id, name: g.name }));
-  genreCache[type] = list;
+  genreCache[key] = list;
   return list;
 }
 

@@ -2,6 +2,15 @@
 // "o que mudou" depois de o utilizador atualizar a app. Mais recente em cima.
 export const CHANGELOG = [
   {
+    version: "0.6.9",
+    items: [
+      "O slideshow do banner passou a ser uma caixa arredondada por cima do fundo (estilo miruro) — o teu wallpaper aparece à volta, sem misturas estranhas.",
+      "Nas páginas de detalhe, o fundo deixou de estar desfocado e o texto ganhou sombra para se ler bem.",
+      "Os géneros do \"Escolhe algo para mim\" aparecem agora no teu idioma (filmes, séries e anime).",
+      "O botão \"Procurar atualização\" está sempre visível e diz-te quando já estás na versão mais recente.",
+    ],
+  },
+  {
     version: "0.6.8",
     items: [
       "O destaque no Início, Filmes, Séries e Anime passou a ser um slideshow que vai rodando entre vários títulos (com bolinhas para navegar).",
