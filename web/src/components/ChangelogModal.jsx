@@ -1,7 +1,11 @@
+import { createPortal } from "react-dom";
+
 // Modal das novidades (reutilizado pelo aviso automatico de atualizacao e pelo
-// botao "Novidades" do cabecalho).
+// botao "Novidades" do cabecalho). Renderizado num portal para o body: o botao
+// vive no Header, que tem `transform`, e isso faria o overlay `position: fixed`
+// colar-se a barra em vez de cobrir o ecra todo.
 export default function ChangelogModal({ version, subtitle, items, onClose }) {
-  return (
+  return createPortal(
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal whatsnew" onClick={(e) => e.stopPropagation()}>
         <div className="modal-head">
@@ -26,6 +30,7 @@ export default function ChangelogModal({ version, subtitle, items, onClose }) {
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

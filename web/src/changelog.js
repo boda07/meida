@@ -2,6 +2,12 @@
 // "o que mudou" depois de o utilizador atualizar a app. Mais recente em cima.
 export const CHANGELOG = [
   {
+    version: "0.6.5",
+    items: [
+      "A janela das novidades volta a aparecer centrada no ecrã (estava a ficar cortada no topo).",
+    ],
+  },
+  {
     version: "0.6.4",
     items: [
       "Novo botão de avançar (→) ao lado do voltar atrás.",
