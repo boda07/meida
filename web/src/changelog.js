@@ -2,6 +2,12 @@
 // "o que mudou" depois de o utilizador atualizar a app. Mais recente em cima.
 export const CHANGELOG = [
   {
+    version: "0.7.2",
+    items: [
+      "Atualizações mais leves: o instalador deixou de incluir ficheiros desnecessários, por isso ocupa menos espaço e descarrega mais depressa (continua a baixar só o que mudou).",
+    ],
+  },
+  {
     version: "0.7.1",
     items: [
       "O slideshow passou a aparecer também na página de Anime (com as imagens widescreen do AniList).",
