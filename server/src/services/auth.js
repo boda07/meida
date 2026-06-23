@@ -36,11 +36,28 @@ export function login(username, password) {
   return { token: signToken(user), user };
 }
 
-// Atualiza o avatar (emoji predefinido tipo "emoji:🦊" ou URL http(s) de imagem).
+// Atualiza o avatar. Aceita: emoji predefinido ("emoji:🦊"), URL http(s) de
+// imagem, ou uma imagem do PC como data URL ("data:image/...;base64,...").
 export function setAvatar(userId, avatar) {
-  const value = String(avatar || "").trim().slice(0, 500) || null;
-  if (value && value.length > 4 && !/^(emoji:|https?:\/\/)/i.test(value)) {
-    throw httpError(400, "Avatar invalido (usa um predefinido ou um URL de imagem).");
+  let value = String(avatar || "").trim();
+  if (!value) return setUserAvatar(userId, null); // remover avatar
+
+  if (/^data:image\/(png|jpe?g|webp|gif);base64,/i.test(value)) {
+    // Imagem do computador. Sem cortar (data URLs sao longos); so um teto de
+    // seguranca para nao guardar imagens enormes.
+    if (value.length > 3_000_000) {
+      throw httpError(
+        400,
+        "Essa imagem é demasiado grande. Escolhe uma mais pequena (até ~2MB)."
+      );
+    }
+  } else if (/^(emoji:|https?:\/\/)/i.test(value)) {
+    value = value.slice(0, 500);
+  } else {
+    throw httpError(
+      400,
+      "Avatar inválido: usa um emoji predefinido, um link de imagem (https://...) ou uma imagem do teu computador."
+    );
   }
   return setUserAvatar(userId, value);
 }

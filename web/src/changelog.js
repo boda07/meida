@@ -2,6 +2,13 @@
 // "o que mudou" depois de o utilizador atualizar a app. Mais recente em cima.
 export const CHANGELOG = [
   {
+    version: "0.7.6",
+    items: [
+      "Já dá mesmo para usar uma imagem do PC como avatar (antes dava erro \"avatar inválido\").",
+      "No slideshow, o título e a informação passam para o topo.",
+    ],
+  },
+  {
     version: "0.7.5",
     items: [
       "O estilo de fundo (padrão ou imagem) passa a cobrir a página toda, mesmo ao fazer scroll — acabou aquele retângulo só com a cor.",

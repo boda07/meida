@@ -751,7 +751,7 @@ h2 {
   border-radius: 22px;
   overflow: hidden;
   display: flex;
-  align-items: flex-end;
+  align-items: flex-start;
   box-shadow: 0 18px 50px rgba(0, 0, 0, 0.45);
 }
 
@@ -778,10 +778,12 @@ h2 {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  /* Escurece a base e a esquerda (onde fica o texto), para se ler bem. */
+  /* Escurece o topo e a esquerda (onde fica o texto, agora em cima) + um pouco a
+     base (para as bolinhas/setas), para se ler tudo bem. */
   background:
-    linear-gradient(0deg, rgba(0, 0, 0, 0.9) 0%, rgba(0, 0, 0, 0.4) 42%, transparent 78%),
-    linear-gradient(90deg, rgba(0, 0, 0, 0.7) 0%, rgba(0, 0, 0, 0) 55%);
+    linear-gradient(180deg, rgba(0, 0, 0, 0.88) 0%, rgba(0, 0, 0, 0.38) 42%, transparent 72%),
+    linear-gradient(0deg, rgba(0, 0, 0, 0.55) 0%, transparent 26%),
+    linear-gradient(90deg, rgba(0, 0, 0, 0.65) 0%, rgba(0, 0, 0, 0) 55%);
   z-index: 1;
 }
 
