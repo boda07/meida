@@ -2,6 +2,12 @@
 // "o que mudou" depois de o utilizador atualizar a app. Mais recente em cima.
 export const CHANGELOG = [
   {
+    version: "0.8.6",
+    items: [
+      "Mangá \"Para ler\": nos géneros podes escolher entre \"Todos (E)\" — tem de ter todos — e \"Qualquer (OU)\" — basta ter um.",
+    ],
+  },
+  {
     version: "0.8.5",
     items: [
       "Mangá \"Para ler\": passou a ter também filtro por Estado (Completo, A publicar, Em pausa, Descontinuado), e os cartões mostram esse estado.",

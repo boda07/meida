@@ -13,9 +13,14 @@ const clientTypeMatch = (mediaType, types) => {
   }
   return false;
 };
-const clientGenreMatch = (genres, sel) => {
+// mode: "and" = tem de ter todos os generos; "or" = basta ter um.
+const clientGenreMatch = (genres, sel, mode = "and") => {
   if (!sel.size) return true;
   const set = new Set((genres || []).map((g) => g.toLowerCase()));
+  if (mode === "or") {
+    for (const g of sel) if (set.has(g.toLowerCase())) return true;
+    return false;
+  }
   for (const g of sel) if (!set.has(g.toLowerCase())) return false;
   return true;
 };
@@ -273,6 +278,7 @@ function ToRead() {
   const [types, setTypes] = useState(() => new Set());
   const [statuses, setStatuses] = useState(() => new Set());
   const [genreSel, setGenreSel] = useState(() => new Set());
+  const [genreMode, setGenreMode] = useState("and"); // "and" | "or"
   const [sort, setSort] = useState("rating");
   const [dir, setDir] = useState("desc");
 
@@ -303,7 +309,7 @@ function ToRead() {
       (it) =>
         clientTypeMatch(it.mediaType, types) &&
         clientStatusMatch(it.status, statuses) &&
-        clientGenreMatch(it.genres, genreSel)
+        clientGenreMatch(it.genres, genreSel, genreMode)
     );
     const mul = dir === "asc" ? -1 : 1;
     list = [...list].sort((a, b) => {
@@ -315,7 +321,7 @@ function ToRead() {
       return (b.rating - a.rating) * mul;
     });
     return list;
-  }, [all, types, statuses, genreSel, sort, dir]);
+  }, [all, types, statuses, genreSel, genreMode, sort, dir]);
 
   const toggleType = toggleInSet(setTypes);
   const toggleStatus = toggleInSet(setStatuses);
@@ -388,6 +394,22 @@ function ToRead() {
           <label className="manga-filter-label">
             Géneros{genreSel.size ? ` (${genreSel.size})` : ""}
           </label>
+          <div className="lib-filters" style={{ marginBottom: 8 }}>
+            <button
+              className={`tf-chip ${genreMode === "and" ? "active" : ""}`}
+              onClick={() => setGenreMode("and")}
+              title="Tem de ter todos os géneros escolhidos"
+            >
+              Todos (E)
+            </button>
+            <button
+              className={`tf-chip ${genreMode === "or" ? "active" : ""}`}
+              onClick={() => setGenreMode("or")}
+              title="Basta ter um dos géneros escolhidos"
+            >
+              Qualquer (OU)
+            </button>
+          </div>
           <div className="genre-grid">
             {availGenres.map((g) => (
               <button
