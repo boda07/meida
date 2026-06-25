@@ -101,8 +101,13 @@ mangaRouter.get("/manga/recommend", requireAuth, async (req, res, next) => {
     }
     const types = typesOf(req);
     const statuses = statusesOf(req);
+    // Ids ja mostrados (para "Mais recomendacoes" trazer titulos novos).
+    const seen = String(req.query.seen || "").split(",").map(Number).filter(Boolean);
     const raw = await userMangaList(req.user.id);
-    const allIds = new Set(raw.map((it) => Number(it.node?.id)).filter(Boolean));
+    const allIds = new Set([
+      ...raw.map((it) => Number(it.node?.id)).filter(Boolean),
+      ...seen,
+    ]);
     // So conta o que reflete o gosto: a ler, terminado ou em pausa.
     const readList = raw
       .map((it) => {
@@ -120,7 +125,7 @@ mangaRouter.get("/manga/recommend", requireAuth, async (req, res, next) => {
       );
     const rec = await recommendManga(
       readList,
-      { types, statuses, excludeIds: allIds },
+      { types, statuses, excludeIds: allIds, seenCount: seen.length },
       langOpts(req)
     );
     res.json({ linked: true, read: readList.length, ...rec });

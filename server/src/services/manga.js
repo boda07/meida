@@ -243,10 +243,12 @@ export async function discoverManga(
 // entradas que refletem o gosto ({ id, status, genres:[nomes] }). Conta a
 // frequencia dos generos (terminados contam a dobrar), procura no Jikan pelos
 // generos mais lidos e ordena pela sobreposicao com o gosto. excludeIds esconde o
-// que ja esta na lista; types (varios) filtra o tipo localmente.
+// que ja esta na lista (e o que ja foi mostrado); types (varios) filtra o tipo.
+// seenCount = quantas recomendacoes ja foram mostradas: quanto mais, mais paginas
+// procuramos (para "Mais recomendacoes" trazer titulos novos, nao os mesmos).
 export async function recommendManga(
   readList,
-  { types = [], statuses = [], excludeIds = null, limit = 24 },
+  { types = [], statuses = [], excludeIds = null, seenCount = 0, limit = 24 },
   opts = {}
 ) {
   const counts = new Map();
@@ -270,48 +272,54 @@ export async function recommendManga(
     }
     if (topIds.length >= 4) break;
   }
-  if (!topIds.length) return { topGenres: [], items: [] };
+  if (!topIds.length) return { topGenres: [], items: [], hasMore: false };
 
   // Um pedido por genero do topo (mais variedade que cruzar tudo num so). Sem
   // filtro de tipo no Jikan (filtramos localmente, para suportar varios tipos).
+  // Quanto mais ja foi mostrado, mais paginas procuramos (cap a 4).
+  const pagesPerGenre = Math.min(4, 1 + Math.floor(seenCount / 48));
   const pool = new Map();
-  for (const gid of topIds.slice(0, 3)) {
-    const params = new URLSearchParams({
-      limit: "25",
-      order_by: "members",
-      sort: "desc",
-      genres: String(gid),
-    });
-    if (!opts.adult) params.set("sfw", "true");
-    try {
-      const d = await jikanFetch(`/manga?${params}`);
-      for (const m of d.data || []) {
-        const n = normalizeManga(m);
-        if (!n) continue;
-        const id = Number(n.id);
-        if (excludeIds && excludeIds.has(id)) continue;
-        if (!typeMatches(n.mediaType, types)) continue;
-        if (!statusMatches(n.status, statuses)) continue;
-        if (!pool.has(id)) pool.set(id, n);
+  for (const gid of topIds) {
+    for (let p = 1; p <= pagesPerGenre; p++) {
+      const params = new URLSearchParams({
+        limit: "25",
+        order_by: "members",
+        sort: "desc",
+        genres: String(gid),
+        page: String(p),
+      });
+      if (!opts.adult) params.set("sfw", "true");
+      try {
+        const d = await jikanFetch(`/manga?${params}`);
+        for (const m of d.data || []) {
+          const n = normalizeManga(m);
+          if (!n) continue;
+          const id = Number(n.id);
+          if (excludeIds && excludeIds.has(id)) continue;
+          if (!typeMatches(n.mediaType, types)) continue;
+          if (!statusMatches(n.status, statuses)) continue;
+          if (!pool.has(id)) pool.set(id, n);
+        }
+      } catch {
+        /* ignora esta pagina/genero */
       }
-    } catch {
-      /* ignora este genero */
+      await sleep(350); // respeita o rate limit do Jikan
     }
-    await sleep(400); // respeita o rate limit do Jikan
   }
 
   const topSet = new Set(topNames);
-  let items = [...pool.values()]
+  const rankedPool = [...pool.values()]
     .map((n) => ({
       n,
       overlap: (n.genres || []).filter((g) => topSet.has(String(g).toLowerCase())).length,
       score: n.rating || 0,
     }))
     .sort((a, b) => b.overlap - a.overlap || b.score - a.score)
-    .slice(0, limit)
     .map((x) => x.n);
 
+  let items = rankedPool.slice(0, limit);
+  const hasMore = rankedPool.length > limit;
   items = await withTranslatedGenres(items, opts);
   const topGenres = await translateNames(topNames, opts);
-  return { topGenres, items };
+  return { topGenres, items, hasMore };
 }

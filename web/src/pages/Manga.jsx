@@ -1,8 +1,24 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../api/client.js";
 import { useSettings } from "../settings/SettingsContext.jsx";
 import MangaCard from "../components/MangaCard.jsx";
+
+// Filtros client-side (a lista "Para ler" ja vem toda — filtra/ordena no browser).
+const clientTypeMatch = (mediaType, types) => {
+  if (!types.size) return true;
+  const mt = String(mediaType || "").toLowerCase();
+  for (const t of types) {
+    if (t === "novel" ? mt.includes("novel") : mt.includes(t)) return true;
+  }
+  return false;
+};
+const clientGenreMatch = (genres, sel) => {
+  if (!sel.size) return true;
+  const set = new Set((genres || []).map((g) => g.toLowerCase()));
+  for (const g of sel) if (!set.has(g.toLowerCase())) return false;
+  return true;
+};
 
 // Tipos (Jikan) — multi-seleção; vazio = todos.
 const TYPES = [
@@ -97,16 +113,30 @@ export default function Manga({ embedded = false }) {
 // --- Recomendacoes com base na lista do MAL ---
 function ForYou() {
   const [types, setTypes] = useState(() => new Set());
-  const [data, setData] = useState(null); // { linked, read, topGenres, items }
-  const [loading, setLoading] = useState(false);
+  const [items, setItems] = useState([]);
+  const [topGenres, setTopGenres] = useState([]);
+  const [read, setRead] = useState(0);
+  const [linked, setLinked] = useState(true);
+  const [hasMore, setHasMore] = useState(false);
+  const [loading, setLoading] = useState(true); // carga inicial / troca de tipo
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState(null);
+  const seenRef = useRef(new Set()); // ids ja mostrados (para trazer novos)
 
-  async function load(typeSet = types) {
+  // Carga de raiz (1.ª vez ou ao mudar o tipo): limpa o que ja foi mostrado.
+  async function loadFresh(typeSet) {
     setLoading(true);
     setError(null);
+    seenRef.current = new Set();
     try {
-      const d = await api.mangaRecommend({ types: [...typeSet].join(",") });
-      setData(d);
+      const d = await api.mangaRecommend({ types: [...typeSet].join(","), seen: "" });
+      setLinked(d.linked !== false);
+      setRead(d.read || 0);
+      setTopGenres(d.topGenres || []);
+      const its = d.items || [];
+      its.forEach((i) => seenRef.current.add(i.id));
+      setItems(its);
+      setHasMore(Boolean(d.hasMore));
     } catch (e) {
       setError(e.message);
     } finally {
@@ -114,8 +144,28 @@ function ForYou() {
     }
   }
 
+  // "Mais recomendacoes": acrescenta titulos NOVOS (diz ao servidor o que ja viu).
+  async function loadMore() {
+    setLoadingMore(true);
+    try {
+      const d = await api.mangaRecommend({
+        types: [...types].join(","),
+        seen: [...seenRef.current].join(","),
+      });
+      const fresh = (d.items || []).filter((i) => !seenRef.current.has(i.id));
+      fresh.forEach((i) => seenRef.current.add(i.id));
+      setItems((prev) => [...prev, ...fresh]);
+      setHasMore(Boolean(d.hasMore) && fresh.length > 0);
+      if (d.topGenres?.length) setTopGenres(d.topGenres);
+    } catch {
+      setHasMore(false);
+    } finally {
+      setLoadingMore(false);
+    }
+  }
+
   useEffect(() => {
-    load(new Set());
+    loadFresh(new Set());
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -123,15 +173,15 @@ function ForYou() {
     setTypes((prev) => {
       const next = new Set(prev);
       next.has(id) ? next.delete(id) : next.add(id);
-      load(next);
+      loadFresh(next);
       return next;
     });
   }
 
-  if (loading && !data) return <p className="status">A ver o que andas a ler...</p>;
+  if (loading && !items.length) return <p className="status">A ver o que andas a ler...</p>;
   if (error) return <p className="status error">{error}</p>;
 
-  if (data && !data.linked) {
+  if (!linked) {
     return (
       <div className="manga-empty">
         <p className="muted">
@@ -149,8 +199,8 @@ function ForYou() {
     <>
       <p className="muted" style={{ marginTop: 14 }}>
         Recomendações com base nas tags que mais lês na tua lista do MAL
-        {data?.read ? ` (${data.read} títulos analisados)` : ""}. Nunca te recomendo
-        nada que já tenhas na lista.
+        {read ? ` (${read} títulos analisados)` : ""}. Nunca te recomendo nada que já
+        tenhas na lista.
       </p>
 
       <div className="manga-filter-block">
@@ -158,10 +208,10 @@ function ForYou() {
         <MultiChips options={TYPES} value={types} onToggle={onToggle} />
       </div>
 
-      {data?.topGenres?.length ? (
+      {topGenres.length ? (
         <div className="manga-toptags">
           <span className="muted">Com base em:</span>
-          {data.topGenres.map((g) => (
+          {topGenres.map((g) => (
             <span key={g} className="genre-chip want">
               {g}
             </span>
@@ -169,38 +219,48 @@ function ForYou() {
         </div>
       ) : null}
 
-      {loading && <p className="status">A escolher recomendações...</p>}
-
-      {!loading && data && (
+      {loading ? (
+        <p className="status">A escolher recomendações...</p>
+      ) : items.length ? (
         <>
-          {data.items?.length ? (
-            <div className="grid" style={{ marginTop: 18 }}>
-              {data.items.map((it) => (
-                <MangaCard key={it.id} item={it} />
-              ))}
-            </div>
-          ) : (
-            <p className="muted" style={{ marginTop: 18 }}>
-              Não consegui recomendar nada com estes tipos. Tira alguns filtros, ou
-              lê (e marca no MAL) títulos com géneros, e tenta de novo.
-            </p>
-          )}
-          <div className="load-more-wrap">
-            <button className="load-more" onClick={() => load()} disabled={loading}>
-              Atualizar recomendações
-            </button>
+          <div className="grid" style={{ marginTop: 18 }}>
+            {items.map((it) => (
+              <MangaCard key={it.id} item={it} />
+            ))}
           </div>
+          {hasMore && (
+            <div className="load-more-wrap">
+              <button className="load-more" onClick={loadMore} disabled={loadingMore}>
+                {loadingMore ? "A procurar mais..." : "Mais recomendações"}
+              </button>
+            </div>
+          )}
         </>
+      ) : (
+        <p className="muted" style={{ marginTop: 18 }}>
+          Não consegui recomendar nada com estes tipos. Tira alguns filtros, ou lê (e
+          marca no MAL) títulos com géneros, e tenta de novo.
+        </p>
       )}
     </>
   );
 }
 
-// --- "Para ler": a lista plan_to_read do MAL ---
+// --- "Para ler": a lista plan_to_read do MAL (filtrada/ordenada no browser) ---
+const TOREAD_SORTS = [
+  { id: "rating", label: "Nota" },
+  { id: "title", label: "Título" },
+];
+
 function ToRead() {
   const [data, setData] = useState(null); // { linked, items }
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  const [types, setTypes] = useState(() => new Set());
+  const [genreSel, setGenreSel] = useState(() => new Set());
+  const [sort, setSort] = useState("rating");
+  const [dir, setDir] = useState("desc");
 
   useEffect(() => {
     let cancel = false;
@@ -214,6 +274,34 @@ function ToRead() {
       cancel = true;
     };
   }, []);
+
+  const all = data?.items || [];
+
+  // Géneros que de facto aparecem na lista, por frequência (so estes interessam).
+  const availGenres = useMemo(() => {
+    const counts = new Map();
+    for (const it of all) for (const g of it.genres || []) counts.set(g, (counts.get(g) || 0) + 1);
+    return [...counts.entries()].sort((a, b) => b[1] - a[1]).map(([g]) => g);
+  }, [all]);
+
+  const shown = useMemo(() => {
+    let list = all.filter(
+      (it) => clientTypeMatch(it.mediaType, types) && clientGenreMatch(it.genres, genreSel)
+    );
+    const mul = dir === "asc" ? -1 : 1;
+    list = [...list].sort((a, b) => {
+      if (sort === "title") return a.title.localeCompare(b.title) * mul;
+      // nota: em falta vai sempre para o fim
+      if (a.rating == null && b.rating == null) return 0;
+      if (a.rating == null) return 1;
+      if (b.rating == null) return -1;
+      return (b.rating - a.rating) * mul;
+    });
+    return list;
+  }, [all, types, genreSel, sort, dir]);
+
+  const toggleType = toggleInSet(setTypes);
+  const toggleGenre = toggleInSet(setGenreSel);
 
   if (loading) return <p className="status">A carregar a tua lista...</p>;
   if (error) return <p className="status error">{error}</p>;
@@ -232,20 +320,75 @@ function ToRead() {
     );
   }
 
+  if (!all.length) {
+    return (
+      <p className="muted" style={{ marginTop: 14 }}>
+        A tua lista de "para ler" está vazia. Adiciona mangá ao plan to read no MAL.
+      </p>
+    );
+  }
+
   return (
     <>
       <p className="muted" style={{ marginTop: 14 }}>
-        Os títulos que marcaste como "para ler" (plan to read) no MyAnimeList.
+        Os títulos que marcaste como "para ler" (plan to read) no MyAnimeList
+        {all.length ? ` (${all.length})` : ""}.
       </p>
-      {data?.items?.length ? (
+
+      <div className="manga-filter-block">
+        <label className="manga-filter-label">Tipo (vazio = todos)</label>
+        <MultiChips options={TYPES} value={types} onToggle={toggleType} />
+      </div>
+
+      <div className="manga-filter-block">
+        <label className="manga-filter-label">Ordenar</label>
+        <div className="lib-sort">
+          <select value={sort} onChange={(e) => setSort(e.target.value)}>
+            {TOREAD_SORTS.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.label}
+              </option>
+            ))}
+          </select>
+          <button
+            className="lib-sort-dir"
+            title={dir === "desc" ? "Decrescente" : "Crescente"}
+            onClick={() => setDir((d) => (d === "desc" ? "asc" : "desc"))}
+          >
+            {dir === "desc" ? "↓" : "↑"}
+          </button>
+        </div>
+      </div>
+
+      {availGenres.length > 0 && (
+        <div className="manga-filter-block">
+          <label className="manga-filter-label">
+            Géneros{genreSel.size ? ` (${genreSel.size})` : ""}
+          </label>
+          <div className="genre-grid">
+            {availGenres.map((g) => (
+              <button
+                key={g}
+                className={`genre-chip ${genreSel.has(g) ? "want" : ""}`}
+                onClick={() => toggleGenre(g)}
+              >
+                {genreSel.has(g) ? "+ " : ""}
+                {g}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {shown.length ? (
         <div className="grid" style={{ marginTop: 18 }}>
-          {data.items.map((it) => (
+          {shown.map((it) => (
             <MangaCard key={it.id} item={it} />
           ))}
         </div>
       ) : (
         <p className="muted" style={{ marginTop: 18 }}>
-          A tua lista de "para ler" está vazia. Adiciona mangá ao plan to read no MAL.
+          Nada na tua lista com estes filtros.
         </p>
       )}
     </>
