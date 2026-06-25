@@ -121,12 +121,37 @@ export function normalizeMedia(item) {
   };
 }
 
+// Filmes "mais bem avaliados" pela COMUNIDADE DO LETTERBOXD, nao pelo vote_average
+// do TMDB (que deixa entrar estreias com poucos votos a 9, tipo o "Swapped"). Usa
+// o top_rated do TMDB (2 paginas, ~40) so como conjunto de candidatos e reordena/
+// filtra pela nota real do Letterboxd. Falha em silencio para o top_rated do TMDB.
+async function topRatedMovies(opts = {}) {
+  const [p1, p2] = await Promise.all([
+    tmdbList("/movie/top_rated", { page: 1 }, opts),
+    tmdbList("/movie/top_rated", { page: 2 }, opts),
+  ]);
+  const pool = [...p1, ...p2];
+  try {
+    const { getRatings } = await import("./letterboxd.js");
+    const lb = await getRatings(pool.map((i) => i.id));
+    const ranked = pool
+      .map((i) => ({ ...i, rating: lb.get(Number(i.id)) }))
+      .filter((i) => i.rating != null && i.rating >= 7) // nota fiavel e mesmo alta
+      .sort((a, b) => b.rating - a.rating)
+      .slice(0, 20);
+    if (ranked.length >= 10) return ranked;
+  } catch {
+    /* sem Letterboxd -> fica o top_rated do TMDB */
+  }
+  return p1;
+}
+
 export async function getCatalog(opts = {}) {
   const [trending, popularMovies, popularTv, topRated] = await Promise.all([
     tmdbList("/trending/all/week", {}, opts),
     tmdbList("/movie/popular", {}, opts),
     tmdbList("/tv/popular", {}, opts),
-    tmdbList("/movie/top_rated", {}, opts),
+    topRatedMovies(opts),
   ]);
 
   return [
@@ -143,7 +168,7 @@ export async function getCategory(category, opts = {}) {
     const [trending, popular, top, now] = await Promise.all([
       tmdbList("/trending/movie/week", {}, opts),
       tmdbList("/movie/popular", {}, opts),
-      tmdbList("/movie/top_rated", {}, opts),
+      topRatedMovies(opts),
       tmdbList("/movie/now_playing", {}, opts),
     ]);
     return [

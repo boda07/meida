@@ -2,6 +2,12 @@
 // "o que mudou" depois de o utilizador atualizar a app. Mais recente em cima.
 export const CHANGELOG = [
   {
+    version: "0.8.8",
+    items: [
+      "A fila \"Filmes mais bem avaliados\" (Início e Filmes) passou a ser ordenada pela nota da comunidade do Letterboxd, não pela do TMDB — deixam de aparecer lá estreias com poucos votos e nota inflacionada (ex.: o \"Swapped\").",
+    ],
+  },
+  {
     version: "0.8.7",
     items: [
       "Notas de filmes mais fiáveis: passam a ser a média da comunidade do Letterboxd (em vez do TMDB, que em estreias com poucos votos dava notas erradas, tipo 9 num filme fraco). Aplica-se aos detalhes e à tua lista (corrige também as que já estavam guardadas).",
