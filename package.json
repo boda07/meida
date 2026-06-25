@@ -14,7 +14,7 @@
     "app:electron": "cross-env ELECTRON_DEV=1 electron .",
     "app": "npm run build && electron .",
     "app:pack": "npm run build && electron-builder",
-    "app:publish": "npm run build && electron-builder --publish always"
+    "app:publish": "npm run build && electron-builder --publish always && node scripts/prune-releases.mjs"
   },
   "devDependencies": {
     "concurrently": "^9.1.0",
