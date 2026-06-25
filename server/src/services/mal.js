@@ -118,6 +118,22 @@ export async function getAnimeList(userId) {
   return out;
 }
 
+// Lista de manga do utilizador no MAL (estado + generos, para recomendacoes).
+export async function getMangaList(userId) {
+  const token = await getValidToken(userId);
+  const out = [];
+  let url =
+    "/users/@me/mangalist?fields=list_status,num_chapters,main_picture,media_type,alternative_titles,genres&limit=1000&nsfw=true";
+  for (let i = 0; i < 10; i++) {
+    const data = await apiGet(url, token);
+    for (const it of data.data || []) out.push(it);
+    const next = data.paging?.next;
+    if (!next) break;
+    url = next.replace(API, "");
+  }
+  return out;
+}
+
 // Mapa malId -> media da comunidade (mean) da lista do utilizador. Pagina a
 // lista toda (1000/pagina) num minimo de pedidos. Usado no backfill de notas.
 export async function getMeanScores(userId) {

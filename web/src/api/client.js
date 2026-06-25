@@ -145,6 +145,11 @@ export const api = {
   removeLibrary: (type, tmdb) => del("/api/library/item", { type, tmdb }),
   clearWatchlist: (type) => del("/api/library/watchlist", { type }),
 
+  // Manga / Manhwa / Manhua (Jikan + recomendacoes via lista do MAL)
+  mangaGenres: () => get("/api/manga/genres", langParams()),
+  mangaDiscover: (opts) => get("/api/manga/discover", { ...opts, ...langParams() }),
+  mangaRecommend: (opts) => get("/api/manga/recommend", { ...opts, ...langParams() }),
+
   // MyAnimeList
   malEnabled: () => get("/api/mal/enabled"),
   malStatus: () => get("/api/mal/status"),

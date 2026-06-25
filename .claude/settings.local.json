@@ -192,7 +192,9 @@
       "Bash(node --check server/src/services/jikan.js)",
       "Bash(node --check server/src/routes/catalog.js)",
       "Bash(awk '{print $5, $9}')",
-      "Bash(awk '{print $5}')"
+      "Bash(awk '{print $5}')",
+      "Bash(cat /tmp/msrv.log 2>&1 | head -n 20; echo \"--- config ---\"; grep -i \"port\" /c/Users/Boda/Documents/Coding/server/src/config.js)",
+      "Bash(node -e \"let s='';process.stdin.on\\('data',d=>s+=d\\).on\\('end',\\(\\)=>{const j=JSON.parse\\(s\\);console.log\\('items:',\\(j.items||[]\\).length\\);\\(j.items||[]\\).slice\\(0,5\\).forEach\\(a=>console.log\\(' -',a.title,'|',a.mediaType,'|',a.status\\)\\)}\\)\")"
     ],
     "additionalDirectories": [
       "\\tmp"

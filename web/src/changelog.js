@@ -2,6 +2,13 @@
 // "o que mudou" depois de o utilizador atualizar a app. Mais recente em cima.
 export const CHANGELOG = [
   {
+    version: "0.8.1",
+    items: [
+      "Nova secção Manga (Manhwa & Manhua)! Em \"Para ti\", recomendamos com base nas tags que mais lês na tua lista do MyAnimeList. Em \"Procurar por filtros\", escolhes o tipo (manhwa/manhua/...), o estado (completo, a publicar...) e os géneros/temas (ex.: Romance, Viagem no tempo) e trazemos títulos com essas tags. Os cartões abrem a página do MAL para leres/adicionares à lista.",
+      "A sinopse do slideshow ficou com uma sombra mais forte (lê-se melhor sobre imagens claras).",
+    ],
+  },
+  {
     version: "0.8.0",
     items: [
       "No slideshow (sobretudo no Anime), os títulos muito grandes deixam de empurrar a informação e os botões para fora — o título encolhe conforme o tamanho e limita-se a 2 linhas.",

@@ -7,11 +7,11 @@ import { findTmdbMatch, getExternalImdb, getGenreVocab } from "./tmdb.js";
 
 const JIKAN = "https://api.jikan.moe/v4";
 
-const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+export const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 // O Jikan limita a ~3 req/s (429 quando excede) e por vezes da 5xx.
 // Tentamos de novo com backoff antes de desistir.
-async function jikanFetch(path, tries = 0) {
+export async function jikanFetch(path, tries = 0) {
   const res = await fetch(`${JIKAN}${path}`, { headers: { accept: "application/json" } });
   if ((res.status === 429 || res.status >= 500) && tries < 3) {
     await sleep(700 * (tries + 1));
