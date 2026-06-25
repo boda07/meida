@@ -19,6 +19,7 @@ import {
   pickAnime,
   discoverAnime,
 } from "../services/jikan.js";
+import { getRating as getLetterboxdRating } from "../services/letterboxd.js";
 
 export const catalogRouter = Router();
 
@@ -107,7 +108,19 @@ catalogRouter.get("/details", async (req, res, next) => {
     if (type === "anime") {
       return res.json(await getAnimeDetails(String(id), langOpts(req)));
     }
-    res.json(await getDetails(String(type), String(id), langOpts(req)));
+    const details = await getDetails(String(type), String(id), langOpts(req));
+    // Filmes: a nota da comunidade vem do Letterboxd (mais fiavel que o
+    // vote_average do TMDB, sobretudo em estreias com poucos votos). Se o
+    // Letterboxd nao tiver media, fica a do TMDB.
+    if (type === "movie") {
+      try {
+        const lb = await getLetterboxdRating(Number(id));
+        if (lb != null) details.rating = lb;
+      } catch {
+        /* fica com a nota do TMDB */
+      }
+    }
+    res.json(details);
   } catch (err) {
     next(err);
   }

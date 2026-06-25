@@ -74,11 +74,13 @@ libraryRouter.get("/library", async (req, res) => {
     for (const i of stillAnime) applyRating(req.user.id, i, map.get(Number(i.tmdbId)));
   }
 
-  // Filmes: nota da comunidade do Letterboxd (so para os que faltam).
-  const movieRatingMissing = items.filter((i) => i.type === "movie" && i.rating == null);
-  if (movieRatingMissing.length) {
-    const lb = await getLetterboxdRatings(movieRatingMissing.map((i) => i.tmdbId));
-    for (const i of movieRatingMissing) applyRating(req.user.id, i, lb.get(Number(i.tmdbId)));
+  // Filmes: a nota da comunidade e a do Letterboxd (mais fiavel que o vote_average
+  // do TMDB). Aplica a TODOS os filmes — corrige tambem os que ficaram com a nota
+  // do TMDB de quando foram adicionados (so substitui quando o Letterboxd tem media).
+  const movies = items.filter((i) => i.type === "movie");
+  if (movies.length) {
+    const lb = await getLetterboxdRatings(movies.map((i) => i.tmdbId));
+    for (const i of movies) applyRating(req.user.id, i, lb.get(Number(i.tmdbId)));
   }
 
   // Filmes/series: TMDB preenche nota em falta E/OU generos em falta, numa so
