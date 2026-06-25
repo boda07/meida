@@ -32,8 +32,49 @@ export function normalizeManga(m) {
     status: m.status || "", // "Finished" | "Publishing" | "On Hiatus" | ...
     mediaType: m.type || "", // "Manga" | "Manhwa" | "Manhua" | "Novel" | ...
     url: m.url || null, // pagina do MAL (a app abre no browser)
+    members: m.members || 0, // para reordenar quando juntamos varios tipos
     genres,
   };
+}
+
+// Tipos do MAL (na lista do utilizador vem em snake_case) -> rotulo bonito.
+const MAL_TYPE_LABEL = {
+  manga: "Manga",
+  manhwa: "Manhwa",
+  manhua: "Manhua",
+  novel: "Novel",
+  light_novel: "Light Novel",
+  one_shot: "One-shot",
+  doujinshi: "Doujinshi",
+};
+
+// Normaliza um no da lista do MAL (formato diferente do Jikan) para cartao. Sem
+// sinopse/ano (a lista nao os traz); o URL aponta para a pagina do manga no MAL.
+export function normalizeMalManga(node) {
+  if (!node?.id) return null;
+  return {
+    id: node.id,
+    type: "manga",
+    title: node.alternative_titles?.en || node.title || "",
+    overview: "",
+    poster: node.main_picture?.large || node.main_picture?.medium || null,
+    year: "",
+    rating: node.mean ? Math.round(node.mean * 10) / 10 : null,
+    chapters: node.num_chapters || null,
+    status: "",
+    mediaType: MAL_TYPE_LABEL[node.media_type] || node.media_type || "",
+    url: `https://myanimelist.net/manga/${node.id}`,
+    members: 0,
+    genres: (node.genres || []).map((g) => g.name),
+  };
+}
+
+// O mediaType (texto do Jikan) corresponde a algum dos tipos pedidos? "novel"
+// abrange "Novel" e "Light Novel".
+function typeMatches(mediaType, types) {
+  if (!types.length) return true;
+  const mt = String(mediaType || "").toLowerCase();
+  return types.some((t) => (t === "novel" ? mt.includes("novel") : mt === t || mt.includes(t)));
 }
 
 // Remove duplicados por id.
@@ -52,7 +93,7 @@ async function genreVocab(opts) {
 }
 const tr = (vocab, name) => (vocab ? vocab.get(String(name).toLowerCase()) || name : name);
 
-async function withTranslatedGenres(items, opts) {
+export async function withTranslatedGenres(items, opts) {
   const vocab = await genreVocab(opts);
   if (!vocab) return items;
   return items.map((it) => ({ ...it, genres: (it.genres || []).map((n) => tr(vocab, n)) }));
@@ -89,50 +130,87 @@ async function mangaGenreNameToId() {
   return map;
 }
 
-// Grelha filtravel de manga. type: manga|manhwa|manhua|novel|...; status:
-// complete|publishing|hiatus|discontinued|upcoming. Generos a incluir = AND
-// (igual ao MAL), excluir via genres_exclude.
+// Grelha filtravel de manga. types: lista (manhwa|manhua|manga|novel|...); vazio =
+// todos. status: complete|publishing|hiatus|... Generos a incluir = AND (igual ao
+// MAL), excluir via genres_exclude. excludeIds: Set de ids a esconder (ex.: o que
+// ja esta na lista do utilizador). O Jikan so aceita 1 tipo por pedido, por isso
+// com varios tipos fazemos um pedido por tipo e juntamos (reordenando).
 export async function discoverManga(
-  { type = "", genres = [], exclude = [], status = "", sort = "popularity", dir = "desc", page = 1 },
+  {
+    types = [],
+    genres = [],
+    exclude = [],
+    status = "",
+    sort = "popularity",
+    dir = "desc",
+    page = 1,
+    excludeIds = null,
+  },
   opts = {}
 ) {
   const order =
     { popularity: "members", rating: "score", recent: "start_date", chapters: "chapters" }[sort] ||
     "members";
-  const params = new URLSearchParams({
-    page: String(Math.max(1, Number(page) || 1)),
-    limit: "24",
-    order_by: order,
-    sort: dir === "asc" ? "asc" : "desc",
-  });
-  if (!opts.adult) params.set("sfw", "true");
-  if (type) params.set("type", type);
-  if (status) params.set("status", status);
-  if (genres.length) params.set("genres", genres.join(","));
-  if (exclude.length) params.set("genres_exclude", exclude.join(","));
-  try {
-    const d = await jikanFetch(`/manga?${params}`);
-    let items = dedupe((d.data || []).map(normalizeManga).filter(Boolean));
-    items = await withTranslatedGenres(items, opts);
-    return {
-      items,
-      page: d?.pagination?.current_page || Number(page) || 1,
-      hasMore: Boolean(d?.pagination?.has_next_page),
-    };
-  } catch {
-    return { items: [], page: Number(page) || 1, hasMore: false };
+  const buildParams = (type) => {
+    const params = new URLSearchParams({
+      page: String(Math.max(1, Number(page) || 1)),
+      limit: "24",
+      order_by: order,
+      sort: dir === "asc" ? "asc" : "desc",
+    });
+    if (!opts.adult) params.set("sfw", "true");
+    if (type) params.set("type", type);
+    if (status) params.set("status", status);
+    if (genres.length) params.set("genres", genres.join(","));
+    if (exclude.length) params.set("genres_exclude", exclude.join(","));
+    return params;
+  };
+
+  const typeList = types.length ? types : [""];
+  let all = [];
+  let hasMore = false;
+  for (let i = 0; i < typeList.length; i++) {
+    if (i > 0) await sleep(400); // respeita o rate limit do Jikan
+    try {
+      const d = await jikanFetch(`/manga?${buildParams(typeList[i])}`);
+      all.push(...(d.data || []).map(normalizeManga).filter(Boolean));
+      if (d?.pagination?.has_next_page) hasMore = true;
+    } catch {
+      /* ignora este tipo */
+    }
   }
+
+  let items = dedupe(all);
+  if (excludeIds && excludeIds.size) items = items.filter((it) => !excludeIds.has(Number(it.id)));
+
+  // Com varios tipos a juncao quebra a ordem global -> reordena pelo criterio.
+  if (typeList.length > 1) {
+    const cmp =
+      {
+        members: (a, b) => (b.members || 0) - (a.members || 0),
+        score: (a, b) => (b.rating || 0) - (a.rating || 0),
+        start_date: (a, b) => (Number(b.year) || 0) - (Number(a.year) || 0),
+      }[order] || ((a, b) => (b.members || 0) - (a.members || 0));
+    items.sort(cmp);
+    if (dir === "asc") items.reverse();
+  }
+
+  items = await withTranslatedGenres(items, opts);
+  return { items, page: Number(page) || 1, hasMore };
 }
 
 // Recomenda manga com base nas tags mais lidas do utilizador. `readList` sao as
-// entradas da lista do MAL ja simplificadas ({ id, status, genres:[nomes] }).
-// Conta a frequencia dos generos (terminados contam a dobrar), procura no Jikan
-// pelos generos mais lidos e ordena pela sobreposicao com o gosto do utilizador.
-export async function recommendManga(readList, { type = "", status = "", limit = 24 }, opts = {}) {
+// entradas que refletem o gosto ({ id, status, genres:[nomes] }). Conta a
+// frequencia dos generos (terminados contam a dobrar), procura no Jikan pelos
+// generos mais lidos e ordena pela sobreposicao com o gosto. excludeIds esconde o
+// que ja esta na lista; types (varios) filtra o tipo localmente.
+export async function recommendManga(
+  readList,
+  { types = [], status = "", excludeIds = null, limit = 24 },
+  opts = {}
+) {
   const counts = new Map();
-  const readIds = new Set();
   for (const it of readList) {
-    readIds.add(Number(it.id));
     const weight = it.status === "completed" ? 2 : 1;
     for (const name of it.genres || []) {
       const k = String(name).toLowerCase();
@@ -154,7 +232,8 @@ export async function recommendManga(readList, { type = "", status = "", limit =
   }
   if (!topIds.length) return { topGenres: [], items: [] };
 
-  // Um pedido por genero do topo (mais variedade que cruzar tudo num so).
+  // Um pedido por genero do topo (mais variedade que cruzar tudo num so). Sem
+  // filtro de tipo no Jikan (filtramos localmente, para suportar varios tipos).
   const pool = new Map();
   for (const gid of topIds.slice(0, 3)) {
     const params = new URLSearchParams({
@@ -164,13 +243,16 @@ export async function recommendManga(readList, { type = "", status = "", limit =
       genres: String(gid),
     });
     if (!opts.adult) params.set("sfw", "true");
-    if (type) params.set("type", type);
     if (status) params.set("status", status);
     try {
       const d = await jikanFetch(`/manga?${params}`);
       for (const m of d.data || []) {
         const n = normalizeManga(m);
-        if (n && !readIds.has(Number(n.id)) && !pool.has(n.id)) pool.set(n.id, n);
+        if (!n) continue;
+        const id = Number(n.id);
+        if (excludeIds && excludeIds.has(id)) continue;
+        if (!typeMatches(n.mediaType, types)) continue;
+        if (!pool.has(id)) pool.set(id, n);
       }
     } catch {
       /* ignora este genero */

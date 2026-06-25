@@ -149,6 +149,7 @@ export const api = {
   mangaGenres: () => get("/api/manga/genres", langParams()),
   mangaDiscover: (opts) => get("/api/manga/discover", { ...opts, ...langParams() }),
   mangaRecommend: (opts) => get("/api/manga/recommend", { ...opts, ...langParams() }),
+  mangaToRead: () => get("/api/manga/to-read", langParams()),
 
   // MyAnimeList
   malEnabled: () => get("/api/mal/enabled"),

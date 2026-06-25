@@ -2,6 +2,15 @@
 // "o que mudou" depois de o utilizador atualizar a app. Mais recente em cima.
 export const CHANGELOG = [
   {
+    version: "0.8.2",
+    items: [
+      "Manga: já podes escolher vários tipos ao mesmo tempo (ex.: Manhwa + Manhua).",
+      "Manga: nova opção \"Esconder o que já tenho na lista\" na procura por filtros — só te mostra coisas novas (precisa do MyAnimeList ligado).",
+      "Manga: novo separador \"Para ler\" que mostra a tua lista de plan to read do MyAnimeList (como uma watchlist).",
+      "As recomendações \"Para ti\" deixaram de sugerir títulos que já tens na lista.",
+    ],
+  },
+  {
     version: "0.8.1",
     items: [
       "Nova secção Manga (Manhwa & Manhua)! Em \"Para ti\", recomendamos com base nas tags que mais lês na tua lista do MyAnimeList. Em \"Procurar por filtros\", escolhes o tipo (manhwa/manhua/...), o estado (completo, a publicar...) e os géneros/temas (ex.: Romance, Viagem no tempo) e trazemos títulos com essas tags. Os cartões abrem a página do MAL para leres/adicionares à lista.",

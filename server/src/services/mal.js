@@ -123,7 +123,7 @@ export async function getMangaList(userId) {
   const token = await getValidToken(userId);
   const out = [];
   let url =
-    "/users/@me/mangalist?fields=list_status,num_chapters,main_picture,media_type,alternative_titles,genres&limit=1000&nsfw=true";
+    "/users/@me/mangalist?fields=list_status,num_chapters,main_picture,media_type,alternative_titles,genres,mean&limit=1000&nsfw=true";
   for (let i = 0; i < 10; i++) {
     const data = await apiGet(url, token);
     for (const it of data.data || []) out.push(it);
