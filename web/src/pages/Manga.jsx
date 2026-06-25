@@ -19,6 +19,19 @@ const clientGenreMatch = (genres, sel) => {
   for (const g of sel) if (!set.has(g.toLowerCase())) return false;
   return true;
 };
+// Id do estado (chip) -> texto contido no campo `status` do item.
+const CLIENT_STATUS_TEXT = {
+  complete: "finished",
+  publishing: "publishing",
+  hiatus: "on hiatus",
+  discontinued: "discontinued",
+};
+const clientStatusMatch = (status, sel) => {
+  if (!sel.size) return true;
+  const st = String(status || "").toLowerCase();
+  for (const s of sel) if (CLIENT_STATUS_TEXT[s] && st.includes(CLIENT_STATUS_TEXT[s])) return true;
+  return false;
+};
 
 // Tipos (Jikan) — multi-seleção; vazio = todos.
 const TYPES = [
@@ -258,6 +271,7 @@ function ToRead() {
   const [error, setError] = useState(null);
 
   const [types, setTypes] = useState(() => new Set());
+  const [statuses, setStatuses] = useState(() => new Set());
   const [genreSel, setGenreSel] = useState(() => new Set());
   const [sort, setSort] = useState("rating");
   const [dir, setDir] = useState("desc");
@@ -286,7 +300,10 @@ function ToRead() {
 
   const shown = useMemo(() => {
     let list = all.filter(
-      (it) => clientTypeMatch(it.mediaType, types) && clientGenreMatch(it.genres, genreSel)
+      (it) =>
+        clientTypeMatch(it.mediaType, types) &&
+        clientStatusMatch(it.status, statuses) &&
+        clientGenreMatch(it.genres, genreSel)
     );
     const mul = dir === "asc" ? -1 : 1;
     list = [...list].sort((a, b) => {
@@ -298,9 +315,10 @@ function ToRead() {
       return (b.rating - a.rating) * mul;
     });
     return list;
-  }, [all, types, genreSel, sort, dir]);
+  }, [all, types, statuses, genreSel, sort, dir]);
 
   const toggleType = toggleInSet(setTypes);
+  const toggleStatus = toggleInSet(setStatuses);
   const toggleGenre = toggleInSet(setGenreSel);
 
   if (loading) return <p className="status">A carregar a tua lista...</p>;
@@ -338,6 +356,11 @@ function ToRead() {
       <div className="manga-filter-block">
         <label className="manga-filter-label">Tipo (vazio = todos)</label>
         <MultiChips options={TYPES} value={types} onToggle={toggleType} />
+      </div>
+
+      <div className="manga-filter-block">
+        <label className="manga-filter-label">Estado (vazio = qualquer)</label>
+        <MultiChips options={STATUSES} value={statuses} onToggle={toggleStatus} />
       </div>
 
       <div className="manga-filter-block">

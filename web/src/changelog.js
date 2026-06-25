@@ -2,6 +2,12 @@
 // "o que mudou" depois de o utilizador atualizar a app. Mais recente em cima.
 export const CHANGELOG = [
   {
+    version: "0.8.5",
+    items: [
+      "Mangá \"Para ler\": passou a ter também filtro por Estado (Completo, A publicar, Em pausa, Descontinuado), e os cartões mostram esse estado.",
+    ],
+  },
+  {
     version: "0.8.4",
     items: [
       "Mangá \"Para ti\": o botão passou a ser \"Mais recomendações\" e traz títulos NOVOS de cada vez (deixou de repetir os mesmos).",

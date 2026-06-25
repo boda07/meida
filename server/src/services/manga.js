@@ -48,6 +48,16 @@ const MAL_TYPE_LABEL = {
   doujinshi: "Doujinshi",
 };
 
+// Estado de publicacao do MAL (snake_case) -> mesmo rotulo que o Jikan usa nos
+// cartoes (ver STATUS_PT em MangaCard).
+const MAL_STATUS_LABEL = {
+  finished: "Finished",
+  currently_publishing: "Publishing",
+  on_hiatus: "On Hiatus",
+  discontinued: "Discontinued",
+  not_yet_published: "Not yet published",
+};
+
 // Normaliza um no da lista do MAL (formato diferente do Jikan) para cartao. Sem
 // sinopse/ano (a lista nao os traz); o URL aponta para a pagina do manga no MAL.
 export function normalizeMalManga(node) {
@@ -61,7 +71,7 @@ export function normalizeMalManga(node) {
     year: "",
     rating: node.mean ? Math.round(node.mean * 10) / 10 : null,
     chapters: node.num_chapters || null,
-    status: "",
+    status: MAL_STATUS_LABEL[node.status] || "",
     mediaType: MAL_TYPE_LABEL[node.media_type] || node.media_type || "",
     url: `https://myanimelist.net/manga/${node.id}`,
     members: 0,
