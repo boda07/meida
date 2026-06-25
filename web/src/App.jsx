@@ -12,7 +12,6 @@ import Diary from "./pages/Diary.jsx";
 import Login from "./pages/Login.jsx";
 import Settings from "./pages/Settings.jsx";
 import PickForMe from "./pages/PickForMe.jsx";
-import Manga from "./pages/Manga.jsx";
 
 export default function App() {
   return (
@@ -27,7 +26,6 @@ export default function App() {
           <Route path="/movies" element={<Category category="movies" title="Filmes" />} />
           <Route path="/series" element={<Category category="tv" title="Séries" />} />
           <Route path="/anime" element={<Category category="anime" title="Anime" />} />
-          <Route path="/manga" element={<Manga />} />
           <Route path="/search" element={<Search />} />
           <Route path="/details/:type/:id" element={<Details />} />
           <Route path="/library" element={<Library />} />

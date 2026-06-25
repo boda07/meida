@@ -77,6 +77,39 @@ function typeMatches(mediaType, types) {
   return types.some((t) => (t === "novel" ? mt.includes("novel") : mt === t || mt.includes(t)));
 }
 
+// Id de estado (igual ao parametro do Jikan) -> texto do campo `status` que o
+// Jikan devolve em cada item. Usado para filtrar localmente quando ha varios
+// estados (o Jikan so aceita 1 estado por pedido).
+const STATUS_TEXT = {
+  complete: "finished",
+  publishing: "publishing",
+  hiatus: "on hiatus",
+  discontinued: "discontinued",
+  upcoming: "not yet published",
+};
+function statusMatches(itemStatus, statuses) {
+  if (!statuses.length) return true;
+  const st = String(itemStatus || "").toLowerCase();
+  return statuses.some((s) => STATUS_TEXT[s] && st.includes(STATUS_TEXT[s]));
+}
+
+// Comparador para ordenar (criterio + direcao), com a nota em falta sempre no fim.
+function comparator(order, dir) {
+  const mul = dir === "asc" ? -1 : 1; // base = descendente
+  if (order === "score") {
+    return (a, b) => {
+      if (a.rating == null && b.rating == null) return 0;
+      if (a.rating == null) return 1;
+      if (b.rating == null) return -1;
+      return (b.rating - a.rating) * mul;
+    };
+  }
+  if (order === "start_date") {
+    return (a, b) => ((Number(b.year) || 0) - (Number(a.year) || 0)) * mul;
+  }
+  return (a, b) => ((b.members || 0) - (a.members || 0)) * mul; // popularidade
+}
+
 // Remove duplicados por id.
 function dedupe(items) {
   const seen = new Set();
@@ -140,7 +173,7 @@ export async function discoverManga(
     types = [],
     genres = [],
     exclude = [],
-    status = "",
+    statuses = [],
     sort = "popularity",
     dir = "desc",
     page = 1,
@@ -151,16 +184,24 @@ export async function discoverManga(
   const order =
     { popularity: "members", rating: "score", recent: "start_date", chapters: "chapters" }[sort] ||
     "members";
+  // Ordenar por nota: o Jikan com score asc devolve montes de titulos sem nota
+  // (tratados como 0). Por isso pedimos sempre os mais bem avaliados (desc),
+  // descartamos os sem nota e aplicamos a direcao do utilizador localmente.
+  const ratingSort = sort === "rating";
+  const jikanDir = ratingSort ? "desc" : dir === "asc" ? "asc" : "desc";
+  // O Jikan so aceita 1 estado por pedido: com 1 estado filtramos no Jikan; com
+  // varios pedimos sem estado e filtramos localmente (campo `status` de cada item).
+  const singleStatus = statuses.length === 1 ? statuses[0] : "";
   const buildParams = (type) => {
     const params = new URLSearchParams({
       page: String(Math.max(1, Number(page) || 1)),
       limit: "24",
       order_by: order,
-      sort: dir === "asc" ? "asc" : "desc",
+      sort: jikanDir,
     });
     if (!opts.adult) params.set("sfw", "true");
     if (type) params.set("type", type);
-    if (status) params.set("status", status);
+    if (singleStatus) params.set("status", singleStatus);
     if (genres.length) params.set("genres", genres.join(","));
     if (exclude.length) params.set("genres_exclude", exclude.join(","));
     return params;
@@ -182,17 +223,16 @@ export async function discoverManga(
 
   let items = dedupe(all);
   if (excludeIds && excludeIds.size) items = items.filter((it) => !excludeIds.has(Number(it.id)));
+  // Varios estados: o Jikan nao filtrou -> filtra aqui.
+  if (statuses.length > 1) items = items.filter((it) => statusMatches(it.status, statuses));
 
-  // Com varios tipos a juncao quebra a ordem global -> reordena pelo criterio.
-  if (typeList.length > 1) {
-    const cmp =
-      {
-        members: (a, b) => (b.members || 0) - (a.members || 0),
-        score: (a, b) => (b.rating || 0) - (a.rating || 0),
-        start_date: (a, b) => (Number(b.year) || 0) - (Number(a.year) || 0),
-      }[order] || ((a, b) => (b.members || 0) - (a.members || 0));
-    items.sort(cmp);
-    if (dir === "asc") items.reverse();
+  if (ratingSort) {
+    // Sem nota fora; depois ordena pela direcao escolhida (nota crescente/decrescente).
+    items = items.filter((it) => it.rating != null);
+    items.sort(comparator("score", dir));
+  } else if (typeList.length > 1) {
+    // Com varios tipos a juncao quebra a ordem global -> reordena pelo criterio.
+    items.sort(comparator(order, dir));
   }
 
   items = await withTranslatedGenres(items, opts);
@@ -206,7 +246,7 @@ export async function discoverManga(
 // que ja esta na lista; types (varios) filtra o tipo localmente.
 export async function recommendManga(
   readList,
-  { types = [], status = "", excludeIds = null, limit = 24 },
+  { types = [], statuses = [], excludeIds = null, limit = 24 },
   opts = {}
 ) {
   const counts = new Map();
@@ -243,7 +283,6 @@ export async function recommendManga(
       genres: String(gid),
     });
     if (!opts.adult) params.set("sfw", "true");
-    if (status) params.set("status", status);
     try {
       const d = await jikanFetch(`/manga?${params}`);
       for (const m of d.data || []) {
@@ -252,6 +291,7 @@ export async function recommendManga(
         const id = Number(n.id);
         if (excludeIds && excludeIds.has(id)) continue;
         if (!typeMatches(n.mediaType, types)) continue;
+        if (!statusMatches(n.status, statuses)) continue;
         if (!pool.has(id)) pool.set(id, n);
       }
     } catch {

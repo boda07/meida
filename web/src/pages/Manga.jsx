@@ -8,34 +8,23 @@ import MangaCard from "../components/MangaCard.jsx";
 const TYPES = [
   { id: "manhwa", label: "Manhwa" },
   { id: "manhua", label: "Manhua" },
-  { id: "manga", label: "Manga" },
+  { id: "manga", label: "Mangá" },
   { id: "novel", label: "Novel" },
 ];
 
-// Estado de publicacao (Jikan) — seleção única.
+// Estado de publicacao (Jikan) — multi-seleção; vazio = qualquer.
 const STATUSES = [
-  { id: "", label: "Qualquer estado" },
   { id: "complete", label: "Completo" },
   { id: "publishing", label: "A publicar" },
   { id: "hiatus", label: "Em pausa" },
+  { id: "discontinued", label: "Descontinuado" },
 ];
 
-// Chips de seleção única.
-function Chips({ options, value, onChange }) {
-  return (
-    <div className="lib-filters">
-      {options.map((o) => (
-        <button
-          key={o.id}
-          className={`tf-chip ${value === o.id ? "active" : ""}`}
-          onClick={() => onChange(o.id)}
-        >
-          {o.label}
-        </button>
-      ))}
-    </div>
-  );
-}
+const SORTS = [
+  { id: "popularity", label: "Popularidade" },
+  { id: "rating", label: "Nota" },
+  { id: "recent", label: "Mais recentes" },
+];
 
 // Chips de multi-seleção (Set).
 function MultiChips({ options, value, onToggle }) {
@@ -61,13 +50,14 @@ const toggleInSet = (setter) => (id) =>
     return next;
   });
 
-export default function Manga() {
+// `embedded`: renderizado dentro de outra página (ex.: "Escolhe algo para mim"),
+// sem o invólucro/título próprios.
+export default function Manga({ embedded = false }) {
   const { settings } = useSettings();
   const [tab, setTab] = useState("forYou"); // forYou | toRead | filters
 
-  return (
-    <div className="sub-page manga-page">
-      <h2 className="row-title">Manga, Manhwa &amp; Manhua</h2>
+  const body = (
+    <>
       <div className="lib-filters" style={{ marginTop: 6 }}>
         <button
           className={`tf-chip ${tab === "forYou" ? "active" : ""}`}
@@ -92,6 +82,14 @@ export default function Manga() {
       {tab === "forYou" && <ForYou key={settings.genreLang} />}
       {tab === "toRead" && <ToRead key={settings.genreLang} />}
       {tab === "filters" && <Filters />}
+    </>
+  );
+
+  if (embedded) return <div className="manga-page">{body}</div>;
+  return (
+    <div className="sub-page manga-page">
+      <h2 className="row-title">Mangá, Manhwa &amp; Manhua</h2>
+      {body}
     </div>
   );
 }
@@ -247,7 +245,7 @@ function ToRead() {
         </div>
       ) : (
         <p className="muted" style={{ marginTop: 18 }}>
-          A tua lista de "para ler" está vazia. Adiciona manga ao plan to read no MAL.
+          A tua lista de "para ler" está vazia. Adiciona mangá ao plan to read no MAL.
         </p>
       )}
     </>
@@ -258,8 +256,10 @@ function ToRead() {
 function Filters() {
   const { settings } = useSettings();
   const [types, setTypes] = useState(() => new Set(["manhwa"]));
-  const [status, setStatus] = useState("");
+  const [statuses, setStatuses] = useState(() => new Set());
   const [notInList, setNotInList] = useState(false);
+  const [sort, setSort] = useState("popularity");
+  const [dir, setDir] = useState("desc");
   const [allGenres, setAllGenres] = useState([]);
   const [genreSel, setGenreSel] = useState(() => new Set());
   const [genreFilter, setGenreFilter] = useState("");
@@ -278,6 +278,7 @@ function Filters() {
   }, [settings.genreLang, settings.overviewLang]);
 
   const toggleType = toggleInSet(setTypes);
+  const toggleStatus = toggleInSet(setStatuses);
   const toggleGenre = toggleInSet(setGenreSel);
 
   async function search(p = 1) {
@@ -286,10 +287,11 @@ function Filters() {
     try {
       const d = await api.mangaDiscover({
         types: [...types].join(","),
-        status,
+        statuses: [...statuses].join(","),
         genres: [...genreSel].join(","),
         notInList: notInList ? "1" : "",
-        sort: "popularity",
+        sort,
+        dir,
         page: p,
       });
       setItems((prev) => (p === 1 ? d.items || [] : [...prev, ...(d.items || [])]));
@@ -310,8 +312,8 @@ function Filters() {
   return (
     <>
       <p className="muted" style={{ marginTop: 14 }}>
-        Escolhe um ou mais tipos, o estado e os géneros/temas (ex.: Romance, Viagem
-        no tempo) — eu trago títulos com essas tags.
+        Escolhe um ou mais tipos, um ou mais estados e os géneros/temas (ex.:
+        Romance, Viagem no tempo) — eu trago títulos com essas tags.
       </p>
 
       <div className="manga-filter-block">
@@ -320,8 +322,28 @@ function Filters() {
       </div>
 
       <div className="manga-filter-block">
-        <label className="manga-filter-label">Estado</label>
-        <Chips options={STATUSES} value={status} onChange={setStatus} />
+        <label className="manga-filter-label">Estado (vazio = qualquer)</label>
+        <MultiChips options={STATUSES} value={statuses} onToggle={toggleStatus} />
+      </div>
+
+      <div className="manga-filter-block">
+        <label className="manga-filter-label">Ordenar</label>
+        <div className="lib-sort">
+          <select value={sort} onChange={(e) => setSort(e.target.value)}>
+            {SORTS.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.label}
+              </option>
+            ))}
+          </select>
+          <button
+            className="lib-sort-dir"
+            title={dir === "desc" ? "Decrescente" : "Crescente"}
+            onClick={() => setDir((d) => (d === "desc" ? "asc" : "desc"))}
+          >
+            {dir === "desc" ? "↓" : "↑"}
+          </button>
+        </div>
       </div>
 
       <div className="manga-filter-block">

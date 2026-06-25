@@ -31,6 +31,9 @@ function optionalUser(req) {
 // "manhwa,manhua" -> ["manhwa","manhua"]. Aceita `types` (novo) ou `type` (antigo).
 const typesOf = (req) =>
   String(req.query.types || req.query.type || "").split(",").filter(Boolean);
+// "complete,publishing" -> [...]. Aceita `statuses` (novo) ou `status` (antigo).
+const statusesOf = (req) =>
+  String(req.query.statuses || req.query.status || "").split(",").filter(Boolean);
 
 // Cache curta da lista do MAL por utilizador (evita re-puxar a cada toggle).
 const listCache = new Map(); // userId -> { at, list }
@@ -62,7 +65,7 @@ mangaRouter.get("/manga/genres", async (req, res, next) => {
 mangaRouter.get("/manga/discover", async (req, res, next) => {
   try {
     const types = typesOf(req);
-    const status = String(req.query.status || "");
+    const statuses = statusesOf(req);
     const genres = String(req.query.genres || "").split(",").filter(Boolean);
     const exclude = String(req.query.exclude || "").split(",").filter(Boolean);
     const sort = req.query.sort || "popularity";
@@ -80,7 +83,7 @@ mangaRouter.get("/manga/discover", async (req, res, next) => {
 
     res.json(
       await discoverManga(
-        { types, status, genres, exclude, sort, dir, page, excludeIds },
+        { types, statuses, genres, exclude, sort, dir, page, excludeIds },
         langOpts(req)
       )
     );
@@ -97,7 +100,7 @@ mangaRouter.get("/manga/recommend", requireAuth, async (req, res, next) => {
       return res.json({ linked: false, items: [], topGenres: [], read: 0 });
     }
     const types = typesOf(req);
-    const status = String(req.query.status || "");
+    const statuses = statusesOf(req);
     const raw = await userMangaList(req.user.id);
     const allIds = new Set(raw.map((it) => Number(it.node?.id)).filter(Boolean));
     // So conta o que reflete o gosto: a ler, terminado ou em pausa.
@@ -117,7 +120,7 @@ mangaRouter.get("/manga/recommend", requireAuth, async (req, res, next) => {
       );
     const rec = await recommendManga(
       readList,
-      { types, status, excludeIds: allIds },
+      { types, statuses, excludeIds: allIds },
       langOpts(req)
     );
     res.json({ linked: true, read: readList.length, ...rec });

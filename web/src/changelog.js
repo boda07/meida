@@ -2,6 +2,15 @@
 // "o que mudou" depois de o utilizador atualizar a app. Mais recente em cima.
 export const CHANGELOG = [
   {
+    version: "0.8.3",
+    items: [
+      "O Mangá saiu da barra de cima (estava a deixá-la grande) e passou a ser uma opção dentro de \"Escolhe algo para mim\" (o dado).",
+      "Na procura de mangá já podes escolher vários estados ao mesmo tempo (ex.: Completo + A publicar).",
+      "Nova ordenação por Nota, crescente ou decrescente, na procura de mangá.",
+      "Corrigida a escrita: passou a dizer \"Mangá\".",
+    ],
+  },
+  {
     version: "0.8.2",
     items: [
       "Manga: já podes escolher vários tipos ao mesmo tempo (ex.: Manhwa + Manhua).",

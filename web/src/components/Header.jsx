@@ -41,16 +41,6 @@ function StarIcon() {
   );
 }
 
-function BookIcon() {
-  // Livro aberto (manga/manhwa/manhua).
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round">
-      <path d="M12 5.5C10.5 4.3 8.3 3.8 4 4v14c4.3-.2 6.5.3 8 1.5" />
-      <path d="M12 5.5C13.5 4.3 15.7 3.8 20 4v14c-4.3-.2-6.5.3-8 1.5" />
-    </svg>
-  );
-}
-
 function DiceIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -134,10 +124,6 @@ export default function Header() {
           <NavLink to="/anime" title="Anime">
             <StarIcon />
             <span>Anime</span>
-          </NavLink>
-          <NavLink to="/manga" title="Manga, Manhwa & Manhua">
-            <BookIcon />
-            <span>Manga</span>
           </NavLink>
           <NavLink to="/pick" title="Escolhe algo para mim" className="nav-dice">
             <DiceIcon />

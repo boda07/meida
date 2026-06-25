@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 import { api } from "../api/client.js";
 import MediaCard from "../components/MediaCard.jsx";
+import Manga from "./Manga.jsx";
 
 const TYPES = [
   { id: "movie", label: "Filmes" },
   { id: "tv", label: "Séries" },
   { id: "anime", label: "Anime" },
+  { id: "manga", label: "Mangá" },
 ];
 
 export default function PickForMe() {
@@ -17,17 +19,21 @@ export default function PickForMe() {
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState(null);
 
-  // Carrega os géneros quando muda o tipo (e limpa as escolhas).
+  const isManga = type === "manga";
+
+  // Carrega os géneros quando muda o tipo (e limpa as escolhas). O Mangá tem a
+  // sua própria interface (recomendador), por isso não usa esta grelha.
   useEffect(() => {
     setGenres([]);
     setPicks({});
     setResult(null);
     setMsg(null);
+    if (isManga) return;
     api
       .genres(type)
       .then((d) => setGenres(d.genres || []))
       .catch(() => setGenres([]));
-  }, [type]);
+  }, [type, isManga]);
 
   // Clicar num género cicla: indiferente -> quero -> não quero -> indiferente.
   function cycle(id) {
@@ -65,10 +71,6 @@ export default function PickForMe() {
   return (
     <div className="sub-page pick-page">
       <h2 className="row-title">Escolhe algo para mim</h2>
-      <p className="muted">
-        Escolhe o tipo e toca nos géneros: 1x = <b className="want">quero</b>, 2x
-        = <b className="avoid">não quero</b>. Depois carrega no botao.
-      </p>
 
       <div className="lib-filters" style={{ marginTop: 14 }}>
         {TYPES.map((t) => (
@@ -82,39 +84,54 @@ export default function PickForMe() {
         ))}
       </div>
 
-      <div className="genre-grid">
-        {genres.map((g) => {
-          const st = picks[g.id] || 0;
-          return (
-            <button
-              key={g.id}
-              className={`genre-chip ${st === 1 ? "want" : ""} ${st === 2 ? "avoid" : ""}`}
-              onClick={() => cycle(g.id)}
-            >
-              {st === 1 ? "+ " : st === 2 ? "− " : ""}
-              {g.name}
-            </button>
-          );
-        })}
-        {!genres.length && <p className="muted">A carregar géneros...</p>}
-      </div>
+      {isManga ? (
+        <Manga embedded />
+      ) : (
+        <>
+          <p className="muted" style={{ marginTop: 14 }}>
+            Toca nos géneros: 1x = <b className="want">quero</b>, 2x ={" "}
+            <b className="avoid">não quero</b>. Depois carrega no botao.
+          </p>
 
-      <button className="pick-btn" onClick={pick} disabled={loading}>
-        {loading ? "A escolher..." : "🎲 Escolhe algo para mim"}
-      </button>
-
-      {msg && <p className="muted" style={{ marginTop: 16 }}>{msg}</p>}
-
-      {result && (
-        <div className="pick-result">
-          <h3 className="row-title">A tua escolha</h3>
-          <div className="pick-result-row">
-            <MediaCard item={result} />
-            <button className="set-choice" onClick={pick}>
-              Escolhe outra
-            </button>
+          <div className="genre-grid">
+            {genres.map((g) => {
+              const st = picks[g.id] || 0;
+              return (
+                <button
+                  key={g.id}
+                  className={`genre-chip ${st === 1 ? "want" : ""} ${st === 2 ? "avoid" : ""}`}
+                  onClick={() => cycle(g.id)}
+                >
+                  {st === 1 ? "+ " : st === 2 ? "− " : ""}
+                  {g.name}
+                </button>
+              );
+            })}
+            {!genres.length && <p className="muted">A carregar géneros...</p>}
           </div>
-        </div>
+
+          <button className="pick-btn" onClick={pick} disabled={loading}>
+            {loading ? "A escolher..." : "🎲 Escolhe algo para mim"}
+          </button>
+
+          {msg && (
+            <p className="muted" style={{ marginTop: 16 }}>
+              {msg}
+            </p>
+          )}
+
+          {result && (
+            <div className="pick-result">
+              <h3 className="row-title">A tua escolha</h3>
+              <div className="pick-result-row">
+                <MediaCard item={result} />
+                <button className="set-choice" onClick={pick}>
+                  Escolhe outra
+                </button>
+              </div>
+            </div>
+          )}
+        </>
       )}
     </div>
   );
