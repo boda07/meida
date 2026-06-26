@@ -202,7 +202,13 @@
       "Bash(curl -s \"http://localhost:5199/api/details?type=movie&id=1007757&titleLang=en&overviewLang=pt\")",
       "Bash(node -e \"let s='';process.stdin.on\\('data',d=>s+=d\\).on\\('end',\\(\\)=>{const j=JSON.parse\\(s\\);console.log\\('title:',j.title,'| year:',j.year,'| rating\\(now\\):',j.rating\\)}\\)\")",
       "Bash(curl -s -L -A \"Mozilla/5.0 \\(Windows NT 10.0; Win64; x64\\) AppleWebKit/537.36 Chrome/124 Safari/537.36\" \"https://letterboxd.com/tmdb/1007757/\")",
-      "PowerShell(Get-NetAdapter | Where-Object Status -eq 'Up' | Select-Object Name, InterfaceDescription, Status | Format-Table -AutoSize; \"--- DNS atual ---\"; Get-DnsClientServerAddress -AddressFamily IPv4 | Where-Object { $_.ServerAddresses } | Select-Object InterfaceAlias, ServerAddresses | Format-Table -AutoSize)"
+      "PowerShell(Get-NetAdapter | Where-Object Status -eq 'Up' | Select-Object Name, InterfaceDescription, Status | Format-Table -AutoSize; \"--- DNS atual ---\"; Get-DnsClientServerAddress -AddressFamily IPv4 | Where-Object { $_.ServerAddresses } | Select-Object InterfaceAlias, ServerAddresses | Format-Table -AutoSize)",
+      "WebFetch(domain:yarrlist.net)",
+      "WebFetch(domain:ezvidapi.com)",
+      "Bash(node -e \"import\\('./server/src/services/providers.js'\\).then\\(m=>console.log\\(m.PROVIDERS.map\\(p=>p.id\\).join\\(', '\\)\\)\\)\")",
+      "WebFetch(domain:vidfast.domains)",
+      "Bash(node --check server/src/routes/play.js)",
+      "Bash(node --check server/src/services/extractor/index.js)"
     ],
     "additionalDirectories": [
       "\\tmp"

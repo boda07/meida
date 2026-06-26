@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { extractStream } from "../services/extractor/index.js";
+import { extractStream, extractEnabled } from "../services/extractor/index.js";
 import { extractAnime, animeExtractorEnabled } from "../services/animeStream.js";
 import { handleProxy, buildProxyUrl } from "../services/proxy.js";
 import {
@@ -17,6 +17,11 @@ playRouter.get("/proxy", handleProxy);
 // O extrator de anime (player proprio) esta configurado?
 playRouter.get("/anime/enabled", (req, res) => {
   res.json({ enabled: animeExtractorEnabled() });
+});
+
+// O extrator "Sem anuncios" de filmes/series (Consumet) esta configurado?
+playRouter.get("/extract/enabled", (req, res) => {
+  res.json({ enabled: extractEnabled() });
 });
 
 // Extrai stream + legendas de um episodio de anime (player proprio).

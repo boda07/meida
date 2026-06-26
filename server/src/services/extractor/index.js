@@ -21,6 +21,13 @@ function activeProviders() {
   return list;
 }
 
+// O modo "Sem anuncios" (filmes/series) so e fiavel com o Consumet (Docker); os
+// extractores best-effort (vidsrc.cc/embed.su) morreram. Por isso so consideramos
+// disponivel quando o EXTRACTOR_API_BASE esta configurado.
+export function extractEnabled() {
+  return Boolean(config.extractorApiBase);
+}
+
 export async function extractStream(ctx) {
   const errors = [];
   for (const p of activeProviders()) {

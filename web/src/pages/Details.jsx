@@ -53,9 +53,19 @@ export default function Details() {
   const [mode, setMode] = useState(settings.defaultTab || "providers");
   // O extrator de anime (player próprio) esta configurado no servidor?
   const [animeExtractorOn, setAnimeExtractorOn] = useState(false);
+  // O "Sem anúncios" de filmes/series (Consumet) esta configurado? Se nao (sem
+  // Docker), escondemos a aba — so confundia, nunca funcionava.
+  const [extractOn, setExtractOn] = useState(null);
   useEffect(() => {
     api.animeEnabled().then((d) => setAnimeExtractorOn(d.enabled)).catch(() => {});
+    api.extractEnabled().then((d) => setExtractOn(d.enabled)).catch(() => setExtractOn(false));
   }, []);
+
+  // Se a aba "Sem anúncios" nao esta disponivel mas era o separador inicial,
+  // cai para os Providers (para nao ficar um ecra vazio).
+  useEffect(() => {
+    if (extractOn === false && mode === "extract") setMode("providers");
+  }, [extractOn, mode]);
 
   // Carregar detalhes
   useEffect(() => {
@@ -446,12 +456,14 @@ export default function Details() {
           >
             Providers
           </button>
-          <button
-            className={mode === "extract" ? "active" : ""}
-            onClick={() => setMode("extract")}
-          >
-            Sem anúncios
-          </button>
+          {extractOn && (
+            <button
+              className={mode === "extract" ? "active" : ""}
+              onClick={() => setMode("extract")}
+            >
+              Sem anúncios
+            </button>
+          )}
           <button
             className={mode === "torrents" ? "active" : ""}
             onClick={() => setMode("torrents")}
@@ -473,19 +485,20 @@ export default function Details() {
               <p className="muted">A carregar fontes...</p>
             )}
             <p className="muted" style={{ fontSize: 12, marginTop: 8 }}>
-              As legendas próprias só funcionam nos separadores{" "}
-              <b>Sem anúncios</b> e <b>Torrents</b> (os Providers são páginas
-              externas em iframe).
+              As legendas próprias (incl. português) só funcionam no separador{" "}
+              <b>Torrents</b>{extractOn ? <> e <b>Sem anúncios</b></> : null} (os
+              Providers são páginas externas em iframe).
             </p>
             {party?.active && (
               <p className="muted" style={{ fontSize: 12, marginTop: 4 }}>
                 🔴 Watch Party: aqui (Providers) o play/pausa <b>não</b> sincroniza
-                — usem <b>Sem anúncios</b> ou <b>Torrents</b> para verem em sincronia.
+                — usem <b>Torrents</b>{extractOn ? <> ou <b>Sem anúncios</b></> : null}{" "}
+                para verem em sincronia.
               </p>
             )}
           </>
         )}
-        {mode === "extract" && (
+        {mode === "extract" && extractOn && (
           <Extract details={details} season={season} episode={episode} />
         )}
         {mode === "torrents" && (

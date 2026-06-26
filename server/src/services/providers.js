@@ -21,34 +21,10 @@ export const PROVIDERS = [
     tv: "https://vidlink.pro/tv/{tmdb}/{season}/{episode}?autoplay=true",
   },
   {
-    id: "vidsrc-cc",
-    name: "VidSrc.cc",
-    movie: "https://vidsrc.cc/v3/embed/movie/{tmdb}?autoPlay=true",
-    tv: "https://vidsrc.cc/v3/embed/tv/{tmdb}/{season}/{episode}?autoPlay=true",
-  },
-  {
-    // A familia vidsrc.xyz/.net/.in/.me caiu (redireciona para o .xyz morto).
-    // O vidsrc.to e um servico independente que continua a funcionar.
-    id: "vidsrc-to",
-    name: "VidSrc",
-    movie: "https://vidsrc.to/embed/movie/{tmdb}",
-    tv: "https://vidsrc.to/embed/tv/{tmdb}/{season}/{episode}",
-  },
-  {
-    // player.autoembed.cc e autoembed.cc cairam (DNS morto) -> removido.
-    id: "embedsu",
-    name: "Embed.su",
-    movie: "https://embed.su/embed/movie/{tmdb}",
-    tv: "https://embed.su/embed/tv/{tmdb}/{season}/{episode}",
-  },
-  {
-    // vidsrc.vip caiu (DNS morto) -> substituido pelo vidsrc.su (mesmo formato).
-    id: "vidsrc-su",
-    name: "VidSrc.su",
-    movie: "https://vidsrc.su/embed/movie/{tmdb}",
-    tv: "https://vidsrc.su/embed/tv/{tmdb}/{season}/{episode}",
-  },
-  {
+    // Removidos os providers da familia VidSrc (vidsrc.cc/.to/.su) e o embed.su:
+    // davam "media unavailable" e/ou eram bloqueados por DNS em alguns ISPs (PT),
+    // o que obrigava cada utilizador a trocar de DNS. Ficam so os que funcionam
+    // sem mexer em nada.
     // moviesapi.club caiu (DNS morto) -> migrou para moviesapi.to.
     id: "moviesapi",
     name: "MoviesAPI",
@@ -109,12 +85,7 @@ export const ANIME_PROVIDERS = [
     idType: "mal",
     url: "https://vidlink.pro/anime/{mal}/{ep}/{audio}",
   },
-  {
-    id: "vidsrccc-anime",
-    name: "VidSrc.cc (anime)",
-    idType: "mal",
-    url: "https://vidsrc.cc/v2/embed/anime/{mal}/{ep}/{audio}",
-  },
+  // VidSrc.cc (anime) removido junto com a familia VidSrc (ver PROVIDERS acima).
 ];
 
 function fill(template, vars) {

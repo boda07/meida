@@ -2,6 +2,13 @@
 // "o que mudou" depois de o utilizador atualizar a app. Mais recente em cima.
 export const CHANGELOG = [
   {
+    version: "0.9.0",
+    items: [
+      "Removidas as fontes que não funcionavam (VidSrc.cc, VidSrc, VidSrc.su e Embed.su): davam \"media unavailable\" e/ou eram bloqueadas por alguns operadores, obrigando a mexer no DNS. Ficam as que funcionam sem mexer em nada: VidFast, VidLink, MoviesAPI, 2Embed e 111Movies.",
+      "A aba \"Sem anúncios\" (filmes/séries) deixa de aparecer quando não está configurada (precisa de Docker/Consumet) — só confundia. Para legendas em português usa os Torrents: o leitor próprio liga a legenda PT automaticamente.",
+    ],
+  },
+  {
     version: "0.8.9",
     items: [
       "Fontes (providers) atualizadas: removido o AutoEmbed (domínio morto), o VidSrc.vip passou a VidSrc.su e o MoviesAPI passou para o domínio novo (moviesapi.to).",

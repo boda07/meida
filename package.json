@@ -1,6 +1,6 @@
 {
   "name": "streamapp",
-  "version": "0.8.9",
+  "version": "0.9.0",
   "private": true,
   "description": "App pessoal tipo Stremio: catalogo TMDB + embed providers + torrents",
   "main": "electron/main.cjs",
