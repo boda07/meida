@@ -2,6 +2,12 @@
 // "o que mudou" depois de o utilizador atualizar a app. Mais recente em cima.
 export const CHANGELOG = [
   {
+    version: "0.8.9",
+    items: [
+      "Fontes (providers) atualizadas: removido o AutoEmbed (domínio morto), o VidSrc.vip passou a VidSrc.su e o MoviesAPI passou para o domínio novo (moviesapi.to).",
+    ],
+  },
+  {
     version: "0.8.8",
     items: [
       "A fila \"Filmes mais bem avaliados\" (Início e Filmes) passou a ser ordenada pela nota da comunidade do Letterboxd, não pela do TMDB — deixam de aparecer lá estreias com poucos votos e nota inflacionada (ex.: o \"Swapped\").",

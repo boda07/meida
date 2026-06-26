@@ -35,28 +35,25 @@ export const PROVIDERS = [
     tv: "https://vidsrc.to/embed/tv/{tmdb}/{season}/{episode}",
   },
   {
-    id: "autoembed",
-    name: "AutoEmbed",
-    movie: "https://player.autoembed.cc/embed/movie/{tmdb}",
-    tv: "https://player.autoembed.cc/embed/tv/{tmdb}/{season}/{episode}",
-  },
-  {
+    // player.autoembed.cc e autoembed.cc cairam (DNS morto) -> removido.
     id: "embedsu",
     name: "Embed.su",
     movie: "https://embed.su/embed/movie/{tmdb}",
     tv: "https://embed.su/embed/tv/{tmdb}/{season}/{episode}",
   },
   {
-    id: "vidsrc-vip",
-    name: "VidSrc.vip",
-    movie: "https://vidsrc.vip/embed/movie/{tmdb}",
-    tv: "https://vidsrc.vip/embed/tv/{tmdb}/{season}/{episode}",
+    // vidsrc.vip caiu (DNS morto) -> substituido pelo vidsrc.su (mesmo formato).
+    id: "vidsrc-su",
+    name: "VidSrc.su",
+    movie: "https://vidsrc.su/embed/movie/{tmdb}",
+    tv: "https://vidsrc.su/embed/tv/{tmdb}/{season}/{episode}",
   },
   {
+    // moviesapi.club caiu (DNS morto) -> migrou para moviesapi.to.
     id: "moviesapi",
     name: "MoviesAPI",
-    movie: "https://moviesapi.club/movie/{tmdb}",
-    tv: "https://moviesapi.club/tv/{tmdb}-{season}-{episode}",
+    movie: "https://moviesapi.to/movie/{tmdb}",
+    tv: "https://moviesapi.to/tv/{tmdb}-{season}-{episode}",
   },
   {
     id: "2embed",
