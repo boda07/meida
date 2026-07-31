@@ -87,11 +87,30 @@ catalogRouter.get("/search", async (req, res, next) => {
   try {
     const q = String(req.query.q || "").trim();
     if (!q) return res.json({ results: [] });
-    // Filmes/series do TMDB (sem anime) + anime do MAL (Jikan), sem duplicados.
-    const [media, anime] = await Promise.all([
+    // Filmes/series do TMDB (sem anime) + anime do MAL (Jikan). Se um provider
+    // falhar temporariamente, a pesquisa devolve o que o outro conseguiu obter.
+    const [mediaResult, animeResult] = await Promise.allSettled([
       search(q, langOpts(req)),
       searchAnime(q, langOpts(req)),
     ]);
+
+    const media = mediaResult.status === "fulfilled" ? mediaResult.value : [];
+    const anime = animeResult.status === "fulfilled" ? animeResult.value : [];
+    if (mediaResult.status === "rejected") {
+      console.warn("[search] TMDB falhou:", mediaResult.reason?.message || mediaResult.reason);
+    }
+    if (animeResult.status === "rejected") {
+      console.warn("[search] Jikan falhou:", animeResult.reason?.message || animeResult.reason);
+    }
+    if (
+      !media.length &&
+      !anime.length &&
+      mediaResult.status === "rejected" &&
+      animeResult.status === "rejected"
+    ) {
+      throw mediaResult.reason || animeResult.reason;
+    }
+
     res.json({ results: [...media, ...anime] });
   } catch (err) {
     next(err);

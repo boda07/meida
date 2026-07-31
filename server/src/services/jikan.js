@@ -6,18 +6,53 @@
 import { findTmdbMatch, getExternalImdb, getGenreVocab } from "./tmdb.js";
 
 const JIKAN = "https://api.jikan.moe/v4";
+const JIKAN_COOLDOWN_MS = 30 * 1000;
+let jikanBlockedUntil = 0;
 
 export const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
+function coolDownJikan() {
+  jikanBlockedUntil = Math.max(jikanBlockedUntil, Date.now() + JIKAN_COOLDOWN_MS);
+}
+
 // O Jikan limita a ~3 req/s (429 quando excede) e por vezes da 5xx.
 // Tentamos de novo com backoff antes de desistir.
-export async function jikanFetch(path, tries = 0) {
-  const res = await fetch(`${JIKAN}${path}`, { headers: { accept: "application/json" } });
-  if ((res.status === 429 || res.status >= 500) && tries < 3) {
-    await sleep(700 * (tries + 1));
-    return jikanFetch(path, tries + 1);
+export async function jikanFetch(path, options = {}) {
+  const opts = typeof options === "number" ? { tries: options } : options;
+  const { tries = 0, retries = 3, timeoutMs = 9000 } = opts;
+  if (tries === 0 && Date.now() < jikanBlockedUntil) {
+    throw new Error("Jikan temporariamente indisponivel");
   }
-  if (!res.ok) throw new Error(`Jikan ${res.status}`);
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+  let res;
+  try {
+    res = await fetch(`${JIKAN}${path}`, {
+      headers: { accept: "application/json" },
+      signal: controller.signal,
+    });
+  } catch (err) {
+    clearTimeout(timer);
+    if (tries < retries) {
+      await sleep(700 * (tries + 1));
+      return jikanFetch(path, { ...opts, tries: tries + 1 });
+    }
+    coolDownJikan();
+    if (err?.name === "AbortError") throw new Error("Jikan timeout");
+    throw err;
+  } finally {
+    clearTimeout(timer);
+  }
+
+  if ((res.status === 429 || res.status >= 500) && tries < retries) {
+    await sleep(700 * (tries + 1));
+    return jikanFetch(path, { ...opts, tries: tries + 1 });
+  }
+  if (!res.ok) {
+    if (res.status === 429 || res.status >= 500) coolDownJikan();
+    throw new Error(`Jikan ${res.status}`);
+  }
   return res.json();
 }
 
@@ -53,10 +88,151 @@ const clean = (d, romaji) =>
 
 const isRomaji = (opts) => opts?.animeTitleLang === "romaji";
 
+function stripHtml(s) {
+  return String(s || "").replace(/<br\s*\/?\s*>/gi, "\n").replace(/<[^>]+>/g, "").trim();
+}
+
+function normalizeAnilistAnime(a, romaji = false) {
+  if (!a?.idMal) return null;
+  const title = romaji
+    ? a.title?.romaji || a.title?.english || a.title?.native || ""
+    : a.title?.english || a.title?.romaji || a.title?.native || "";
+  return {
+    id: a.idMal,
+    type: "anime",
+    title,
+    overview: stripHtml(a.description),
+    poster: a.coverImage?.extraLarge || a.coverImage?.large || null,
+    backdrop: a.bannerImage || null,
+    year: String(a.startDate?.year || ""),
+    rating: a.averageScore || a.meanScore ? Math.round((a.averageScore || a.meanScore) / 10) : null,
+  };
+}
+
+async function searchAnimeAnilist(query, opts = {}) {
+  const romaji = isRomaji(opts);
+  const adultFilter = opts.adult ? "" : ",isAdult:false";
+  const queryText = `query($q:String){Page(page:1,perPage:10){media(search:$q,type:ANIME,sort:POPULARITY_DESC${adultFilter}){idMal title{romaji english native} description(asHtml:false) coverImage{extraLarge large} bannerImage startDate{year} averageScore meanScore}}}`;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 4500);
+  try {
+    const res = await fetch("https://graphql.anilist.co", {
+      method: "POST",
+      headers: { "content-type": "application/json", accept: "application/json" },
+      body: JSON.stringify({ query: queryText, variables: { q: query } }),
+      signal: controller.signal,
+    });
+    if (!res.ok) throw new Error(`AniList ${res.status}`);
+    const data = await res.json();
+    return dedupe(
+      (data?.data?.Page?.media || []).map((a) => normalizeAnilistAnime(a, romaji)).filter(Boolean)
+    );
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function getAnimeDetailsFromAnilist(malId, opts = {}) {
+  const id = Number(malId);
+  const query = `query($id:Int){Media(idMal:$id,type:ANIME){id idMal title{romaji english native} description(asHtml:false) coverImage{extraLarge large} bannerImage startDate{year} averageScore meanScore genres episodes duration format}}`;
+  const res = await fetch("https://graphql.anilist.co", {
+    method: "POST",
+    headers: { "content-type": "application/json", accept: "application/json" },
+    body: JSON.stringify({ query, variables: { id } }),
+  });
+  if (!res.ok) throw new Error(`AniList ${res.status}`);
+  const data = await res.json();
+  const full = data?.data?.Media;
+  const base = normalizeAnilistAnime(full, isRomaji(opts));
+  if (!base) throw new Error("Anime nao encontrado no AniList");
+
+  const isMovie = full?.format === "MOVIE";
+  let genres = full?.genres || [];
+  try {
+    const vocab = await getGenreVocab(opts.genreLang || opts.overviewLang);
+    if (vocab) genres = genres.map((n) => vocab.get(String(n).toLowerCase()) || n);
+  } catch {
+    /* fica com os nomes em ingles */
+  }
+
+  return {
+    id,
+    type: "anime",
+    malId: id,
+    anilistId: full?.id || null,
+    imdbId: null,
+    tmdbType: isMovie ? "movie" : "tv",
+    isAnime: true,
+    isMovie,
+    title: base.title,
+    overview: base.overview,
+    poster: base.poster,
+    backdrop: base.backdrop,
+    year: base.year,
+    rating: base.rating,
+    genres,
+    cast: [],
+    runtime: full?.duration ? `${full.duration} min` : null,
+    episodeCount: isMovie ? 1 : full?.episodes || 24,
+  };
+}
+
 // Remove duplicados por id (o Jikan repete entradas entre listas as vezes).
 function dedupe(items) {
   const seen = new Set();
   return items.filter((i) => (seen.has(i.id) ? false : seen.add(i.id)));
+}
+
+function currentAnilistSeason(date = new Date()) {
+  const m = date.getMonth() + 1;
+  if (m <= 3) return "WINTER";
+  if (m <= 6) return "SPRING";
+  if (m <= 9) return "SUMMER";
+  return "FALL";
+}
+
+async function fetchAnilistAnimeList({ sort, format = null, status = null, season = null, seasonYear = null }, opts = {}) {
+  const romaji = isRomaji(opts);
+  const query = `query($sort:[MediaSort],$format:MediaFormat,$status:MediaStatus,$season:MediaSeason,$seasonYear:Int,$isAdult:Boolean){Page(page:1,perPage:24){media(type:ANIME,sort:$sort,format:$format,status:$status,season:$season,seasonYear:$seasonYear,isAdult:$isAdult){idMal title{romaji english native} description(asHtml:false) coverImage{extraLarge large} bannerImage startDate{year} averageScore meanScore}}}`;
+  const variables = {
+    sort: [sort],
+    isAdult: opts.adult ? null : false,
+  };
+  if (format) variables.format = format;
+  if (status) variables.status = status;
+  if (season) variables.season = season;
+  if (seasonYear) variables.seasonYear = seasonYear;
+
+  const res = await fetch("https://graphql.anilist.co", {
+    method: "POST",
+    headers: { "content-type": "application/json", accept: "application/json" },
+    body: JSON.stringify({ query, variables }),
+  });
+  if (!res.ok) throw new Error(`AniList ${res.status}`);
+  const data = await res.json();
+  return dedupe(
+    (data?.data?.Page?.media || []).map((a) => normalizeAnilistAnime(a, romaji)).filter(Boolean)
+  );
+}
+async function getAnimeCatalogFromAnilist(opts = {}) {
+  const year = new Date().getFullYear();
+  const season = currentAnilistSeason();
+  const defs = [
+    ["a-top", "Anime popular", { sort: "POPULARITY_DESC" }],
+    ["a-season", "Esta epoca", { sort: "POPULARITY_DESC", season, seasonYear: year }],
+    ["a-airing", "A passar agora", { sort: "POPULARITY_DESC", status: "RELEASING" }],
+    ["a-movies", "Filmes de anime", { sort: "POPULARITY_DESC", format: "MOVIE" }],
+  ];
+
+  const rows = [];
+  for (const [id, title, params] of defs) {
+    try {
+      rows.push({ id, title, items: await fetchAnilistAnimeList(params, opts) });
+    } catch {
+      rows.push({ id, title, items: [] });
+    }
+  }
+  return rows;
 }
 
 // Cache em memoria: evita martelar o Jikan a cada visita/refresh.
@@ -108,11 +284,21 @@ export async function getAnimeCatalog(opts = {}) {
     /* sem banners -> o slideshow de anime usa o que houver */
   }
 
-  // So guarda em cache se a maioria das linhas veio com conteudo.
-  if (rows.filter((r) => r.items.length).length >= 2) {
-    catalogCache[key] = { at: Date.now(), rows };
+  let out = rows;
+  if (rows.filter((r) => r.items.length).length < 2) {
+    try {
+      const fallbackRows = await getAnimeCatalogFromAnilist(opts);
+      if (fallbackRows.filter((r) => r.items.length).length >= 2) out = fallbackRows;
+    } catch {
+      /* fica com o que o Jikan conseguiu devolver */
+    }
   }
-  return rows;
+
+  // So guarda em cache se a maioria das linhas veio com conteudo.
+  if (out.filter((r) => r.items.length).length >= 2) {
+    catalogCache[key] = { at: Date.now(), rows: out };
+  }
+  return out;
 }
 
 // Filmes de anime (MAL), para mostrar tambem na pagina de Filmes.
@@ -130,7 +316,13 @@ export async function getAnimeMovies(opts = {}) {
     if (items.length) animeMoviesCache[key] = { at: Date.now(), items };
     return items;
   } catch {
-    return [];
+    try {
+      const items = await fetchAnilistAnimeList({ sort: "POPULARITY_DESC", format: "MOVIE" }, opts);
+      if (items.length) animeMoviesCache[key] = { at: Date.now(), items };
+      return items;
+    } catch {
+      return [];
+    }
   }
 }
 
@@ -160,7 +352,18 @@ export async function discoverAnime(
       hasMore: Boolean(d?.pagination?.has_next_page),
     };
   } catch {
-    return { items: [], page: Number(page) || 1, hasMore: false };
+    if (genres.length) return { items: [], page: Number(page) || 1, hasMore: false };
+    try {
+      const sortMap = {
+        popularity: "POPULARITY_DESC",
+        rating: "SCORE_DESC",
+        recent: "START_DATE_DESC",
+      };
+      const items = await fetchAnilistAnimeList({ sort: sortMap[sort] || "POPULARITY_DESC" }, opts);
+      return { items, page: Number(page) || 1, hasMore: false };
+    } catch {
+      return { items: [], page: Number(page) || 1, hasMore: false };
+    }
   }
 }
 
@@ -170,17 +373,21 @@ export async function discoverAnime(
 let animeGenresCache = null;
 export async function getAnimeGenres() {
   if (animeGenresCache) return animeGenresCache;
-  const [g, t] = await Promise.all([
-    jikanFetch(`/genres/anime`),
-    jikanFetch(`/genres/anime?filter=themes`),
-  ]);
-  const seen = new Set();
-  const list = [...(g.data || []), ...(t.data || [])]
-    .map((x) => ({ id: x.mal_id, name: x.name }))
-    .filter((x) => (seen.has(x.id) ? false : seen.add(x.id)))
-    .sort((a, b) => a.name.localeCompare(b.name));
-  animeGenresCache = list;
-  return list;
+  try {
+    const [g, t] = await Promise.all([
+      jikanFetch(`/genres/anime`),
+      jikanFetch(`/genres/anime?filter=themes`),
+    ]);
+    const seen = new Set();
+    const list = [...(g.data || []), ...(t.data || [])]
+      .map((x) => ({ id: x.mal_id, name: x.name }))
+      .filter((x) => (seen.has(x.id) ? false : seen.add(x.id)))
+      .sort((a, b) => a.name.localeCompare(b.name));
+    animeGenresCache = list;
+    return list;
+  } catch {
+    return animeGenresCache || [];
+  }
 }
 
 // Escolhe um anime aleatorio com generos a incluir/excluir.
@@ -190,7 +397,12 @@ export async function pickAnime({ genres = [], exclude = [] }, opts = {}) {
   if (genres.length) q += `&genres=${genres.join(",")}`;
   if (exclude.length) q += `&genres_exclude=${exclude.join(",")}`;
 
-  const first = await jikanFetch(q);
+  let first;
+  try {
+    first = await jikanFetch(q);
+  } catch {
+    return null;
+  }
   const totalPages = Math.min(first?.pagination?.last_visible_page || 1, 20);
   let items = first.data || [];
   if (totalPages > 1) {
@@ -318,7 +530,12 @@ export async function malToAnilist(malId) {
 // Detalhes de um anime: 100% MyAnimeList (poster, titulo, sinopse, episodios).
 // A reproducao usa os providers de anime por id do MAL (ver providers.js).
 export async function getAnimeDetails(malId, opts = {}) {
-  const full = (await jikanFetch(`/anime/${malId}/full`)).data;
+  let full;
+  try {
+    full = (await jikanFetch(`/anime/${malId}/full`)).data;
+  } catch {
+    return getAnimeDetailsFromAnilist(malId, opts);
+  }
   const base = normalizeAnime(full, isRomaji(opts));
   const isMovie = /movie|music/i.test(full?.type || "");
 
@@ -396,6 +613,7 @@ export async function getAnimeDetails(malId, opts = {}) {
 // durante a pesquisa instantanea.
 const searchCache = new Map(); // q -> { at, items }
 const SEARCH_TTL = 5 * 60 * 1000;
+const SEARCH_FETCH_OPTS = { retries: 1, timeoutMs: 3500 };
 
 export async function searchAnime(query, opts = {}) {
   const q = String(query || "").trim().toLowerCase();
@@ -406,12 +624,20 @@ export async function searchAnime(query, opts = {}) {
   if (cached && Date.now() - cached.at < SEARCH_TTL) return cached.items;
   try {
     const d = await jikanFetch(
-      `/anime?q=${encodeURIComponent(q)}&limit=10${opts.adult ? "" : "&sfw=true"}&order_by=members&sort=desc`
+      `/anime?q=${encodeURIComponent(q)}&limit=10${opts.adult ? "" : "&sfw=true"}&order_by=members&sort=desc`,
+      SEARCH_FETCH_OPTS
     );
     const items = dedupe(clean(d, romaji));
     searchCache.set(key, { at: Date.now(), items });
     return items;
   } catch {
-    return [];
+    if (cached) return cached.items;
+    try {
+      const items = await searchAnimeAnilist(q, opts);
+      if (items.length) searchCache.set(key, { at: Date.now(), items });
+      return items;
+    } catch {
+      return [];
+    }
   }
 }
