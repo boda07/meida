@@ -44,6 +44,12 @@ export default function Details() {
   // episódio vindo do "Continua a ver" (senão os players começam do 0).
   const resumeAtRef = useRef(resumeRef.current.position);
 
+  // Estado de séries
+  const [season, setSeason] = useState(1);
+  const [episodes, setEpisodes] = useState([]);
+  const [episode, setEpisode] = useState(1);
+  const [epStart, setEpStart] = useState(0); // inicio do bloco de 100 visivel
+
   // Retomar a meio: posição guardada no servidor para este título (com o
   // episódio a que pertence, para só retomar no mesmo episódio).
   const [saved, setSaved] = useState(null); // { position, season, episode }
@@ -103,12 +109,6 @@ export default function Details() {
       })
       .catch(() => {});
   }, [user, details, season, episode]);
-
-  // Estado de séries
-  const [season, setSeason] = useState(1);
-  const [episodes, setEpisodes] = useState([]);
-  const [episode, setEpisode] = useState(1);
-  const [epStart, setEpStart] = useState(0); // inicio do bloco de 100 visivel
 
   // Fontes / player
   const [embeds, setEmbeds] = useState([]);
