@@ -9,7 +9,7 @@ Lista de coisas que podemos alterar ou adicionar à MEIDA. Organizada por priori
 - [x] **Timeouts mais baixos no pick/épisódios** — os ~4.9s da 1ª chamada com Jikan em baixo podem ser reduzidos com `tries: 1` no Jikan quando o mirror está ativo. *(feito: `JIKAN_RETRIES = 1` em `server/src/services/jikan.js` — 704ms vs ~4.2s)*
 
 ## Conteúdo / catálogo
-- [ ] **Filmes/séries não-anime com fallback** — hoje filmes dependem 100% do TMDB; adicionar fallback de detalhes via TMDB alternativo ou IMDb.
+- [x] **Filmes/séries não-anime com fallback** — hoje filmes dependem 100% do TMDB; adicionar fallback de detalhes via TMDB alternativo ou IMDb. *(feito: `tmdbFetch` resiliente — cada resposta fica em disco e, se o TMDB falhar (rede/5xx/chave), serve a última conhecida; séries têm fallback extra via TVMaze (`server/src/services/tvmaze.js` — detalhes + episódios por temporada, procura por título+ano do índice `tvidx` alimentado pelo catálogo e pela library)*
 - [x] **Trailers** — no player ou nos detalhes, ligação ao trailer do TMDB (barato de implementar). *(feito: `web/src/components/Trailer.jsx` + `trailer` em `tmdb.js getDetails` e em `jikan.js getAnimeDetails` via `/anime/{id}/videos`)*
 - [ ] **Temporadas do anime** — a página de detalhes de anime não mostra temporadas/episódios por temporada; o Jikan tem `/anime/{id}/episodes` e dá para agrupar por season.
 - [ ] **Recomendações relacionadas** — "Se gostaste disto" nos detalhes (o TMDB e o Jikan ambos têm `/similar`).

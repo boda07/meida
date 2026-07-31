@@ -22,6 +22,8 @@ function langsFrom(opts = {}) {
 /**
  * Chamada generica ao TMDB. Usa o token v4 (Bearer) se existir, senao a chave v3.
  * `lang` permite forcar um idioma diferente do default (ex.: para titulos em ingles).
+ * Resiliente: cada resposta bem-sucedida fica em disco; se o TMDB falhar (rede,
+ * 5xx, chave invalida), serve a ultima resposta conhecida em vez de rebentar.
  */
 async function tmdbFetch(path, params = {}, lang = language) {
   assertTmdbConfigured();
@@ -39,12 +41,20 @@ async function tmdbFetch(path, params = {}, lang = language) {
     url.searchParams.set("api_key", config.tmdb.apiKey);
   }
 
-  const res = await netFetch(url, { headers });
-  if (!res.ok) {
-    const body = await res.text().catch(() => "");
-    throw new Error(`TMDB ${res.status} em ${path}: ${body.slice(0, 200)}`);
+  try {
+    const res = await netFetch(url, { headers });
+    if (!res.ok) {
+      const body = await res.text().catch(() => "");
+      throw new Error(`TMDB ${res.status} em ${path}: ${body.slice(0, 200)}`);
+    }
+    const json = await res.json();
+    cacheSet(`tmdb:${url.pathname + url.search}`, json);
+    return json;
+  } catch (err) {
+    const disk = cacheGet(`tmdb:${url.pathname + url.search}`);
+    if (disk) return disk;
+    throw err;
   }
-  return res.json();
 }
 
 // Titulo de um resultado TMDB no idioma pedido, com fallback para ingles quando
@@ -111,7 +121,7 @@ export function normalizeMedia(item) {
   if (!item) return null;
   const type = item.media_type || (item.title ? "movie" : "tv");
   if (type !== "movie" && type !== "tv") return null;
-  return {
+  const out = {
     id: item.id,
     type,
     title: item.title || item.name || "",
@@ -121,6 +131,16 @@ export function normalizeMedia(item) {
     year: (item.release_date || item.first_air_date || "").slice(0, 4),
     rating: item.vote_average ? Math.round(item.vote_average * 10) / 10 : null,
   };
+  // Indice titulo/ano por id: alimenta o fallback do TVMaze quando o TMDB esta
+  // em baixo (o TVMaze procura por titulo, nao por id do TMDB).
+  if (out.title) {
+    const idxKey = `tvidx:${type}:${item.id}`;
+    const idx = cacheGet(idxKey);
+    if (!idx || idx.title !== out.title || idx.year !== out.year) {
+      cacheSet(idxKey, { title: out.title, year: out.year });
+    }
+  }
+  return out;
 }
 
 // Filmes "mais bem avaliados" pela COMUNIDADE DO LETTERBOXD, nao pelo vote_average
@@ -247,22 +267,35 @@ export async function getDetails(type, id, opts = {}) {
   const { overview, title } = langsFrom(opts);
   const titleShort = (title || "en-US").slice(0, 2); // "pt" | "en"
   // Em paralelo: sinopse (overview) + imagens localizadas, titulo localizado e ingles.
-  const [data, locData, enData, videosData] = await Promise.all([
-    tmdbFetch(
-      `/${type}/${id}`,
-      {
-        append_to_response: "external_ids,credits,images",
-        include_image_language: `${titleShort},en,null`,
-      },
-      overview
-    ),
-    title === overview ? Promise.resolve(null) : tmdbFetch(`/${type}/${id}`, {}, title),
-    title !== "en-US" && overview !== "en-US"
-      ? tmdbFetch(`/${type}/${id}`, {}, "en-US")
-      : Promise.resolve(null),
-    // Trailer em ingles (os trailers PT sao raros; o en-US cobre quase tudo).
-    tmdbFetch(`/${type}/${id}/videos`, {}, "en-US").catch(() => ({ results: [] })),
-  ]);
+  let data, locData, enData, videosData;
+  try {
+    [data, locData, enData, videosData] = await Promise.all([
+      tmdbFetch(
+        `/${type}/${id}`,
+        {
+          append_to_response: "external_ids,credits,images",
+          include_image_language: `${titleShort},en,null`,
+        },
+        overview
+      ),
+      title === overview ? Promise.resolve(null) : tmdbFetch(`/${type}/${id}`, {}, title),
+      title !== "en-US" && overview !== "en-US"
+        ? tmdbFetch(`/${type}/${id}`, {}, "en-US")
+        : Promise.resolve(null),
+      // Trailer em ingles (os trailers PT sao raros; o en-US cobre quase tudo).
+      tmdbFetch(`/${type}/${id}/videos`, {}, "en-US").catch(() => ({ results: [] })),
+    ]);
+  } catch (err) {
+    // TMDB em baixo e o pedido nao tinha cache: para series, detalhes via TVMaze
+    // (procura por titulo+ano guardados no indice tvidx).
+    if (type === "tv") {
+      const idx = cacheGet(`tvidx:tv:${id}`);
+      const { getTvDetailsByTitle } = await import("./tvmaze.js");
+      const fb = await getTvDetailsByTitle(idx?.title, idx?.year);
+      if (fb) return { ...fb, id: Number(id) };
+    }
+    throw err;
+  }
 
   // Trailer (YouTube): prefere o trailer oficial; senao qualquer trailer.
   const trailerKey =
@@ -761,7 +794,17 @@ export async function pickRandom({ type, genres = [], without = [] }, opts = {})
 
 export async function getSeason(id, seasonNumber, opts = {}) {
   const { overview } = langsFrom(opts);
-  const data = await tmdbFetch(`/tv/${id}/season/${seasonNumber}`, {}, overview);
+  let data;
+  try {
+    data = await tmdbFetch(`/tv/${id}/season/${seasonNumber}`, {}, overview);
+  } catch (err) {
+    // TMDB em baixo: episodios da temporada via TVMaze (mesmo titulo do indice).
+    const idx = cacheGet(`tvidx:tv:${id}`);
+    const { getTvEpisodesByTitle } = await import("./tvmaze.js");
+    const fb = await getTvEpisodesByTitle(idx?.title, idx?.year, seasonNumber);
+    if (fb) return fb;
+    throw err;
+  }
   return (data.episodes || []).map((e) => ({
     episodeNumber: e.episode_number,
     name: e.name,

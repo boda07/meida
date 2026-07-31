@@ -21,6 +21,7 @@ import { getAnimeRatingsBatch } from "../services/jikan.js";
 import { status as malStatus, getMeanScores } from "../services/mal.js";
 import { getCachedRating, getCachedRatings, getRatings as getLetterboxdRatings } from "../services/letterboxd.js";
 import { isOnline } from "../services/net.js";
+import { cacheGet, cacheSet } from "../services/cache.js";
 
 export const libraryRouter = Router();
 libraryRouter.use(requireAuth);
@@ -73,6 +74,15 @@ libraryRouter.get("/library", async (req, res) => {
   // Sem internet: serve só o que já está em cache (sem pedidos externos, sem
   // esperas de timeout) — a lista abre na mesma, com os dados guardados.
   const online = isOnline();
+
+  // Indice titulo -> id para o fallback TVMaze (series cujo detalhe nunca foi
+  // aberto nao passaram pelo catalogo; a library tem o titulo guardado).
+  for (const i of items) {
+    if ((i.type === "movie" || i.type === "tv") && i.title) {
+      const idxKey = `tvidx:${i.type}:${i.tmdbId}`;
+      if (!cacheGet(idxKey)) cacheSet(idxKey, { title: i.title, year: "" });
+    }
+  }
 
   // Anime: media EXATA do MAL (1 pedido) e o resto via AniList em lote.
   const animeMissing = items.filter((i) => i.type === "anime" && i.rating == null);
