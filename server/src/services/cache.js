@@ -56,6 +56,14 @@ export function cacheSet(key, value) {
   }
 }
 
+export function cacheDel(key) {
+  try {
+    unlinkSync(fileFor(key));
+  } catch {
+    /* nao existe -> ok */
+  }
+}
+
 // Limpa entradas antigas (14 dias) no arranque, para a pasta nao crescer sem fim.
 export function pruneCache(maxAgeMs = 14 * 24 * 60 * 60 * 1000) {
   try {

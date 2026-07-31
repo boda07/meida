@@ -2,8 +2,9 @@
 // lista e marcar episodios vistos (scrobble).
 import crypto from "node:crypto";
 import { config } from "../config.js";
-import { setMalTokens, getMalTokens } from "../store.js";
+import { setMalTokens, getMalTokens, upsertLibrary, importProgress } from "../store.js";
 import { netFetch } from "./net.js";
+import { cacheGetTtl, cacheSet, cacheDel } from "./cache.js";
 
 const AUTH = "https://myanimelist.net/v1/oauth2";
 const API = "https://api.myanimelist.net/v2";
@@ -200,6 +201,86 @@ export function status(userId) {
 
 export function unlink(userId) {
   setMalTokens(userId, null);
+}
+
+/* ===== Sincronizacao da lista ===== */
+
+// "2020-12-15" -> ISO (meio-dia UTC). Datas SEM dia exato ("2020" ou "2020-12")
+// devolvem null: nao inventamos o dia 1, que dava datas erradas (ex.: "acabou
+// antes de comecar"). Nesses casos o diario mostra "data nao disponivel".
+function isoDate(d) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(d || "").trim());
+  if (!m) return null;
+  const dt = new Date(`${m[1]}-${m[2]}-${m[3]}T12:00:00Z`);
+  return isNaN(dt.getTime()) ? null : dt.toISOString();
+}
+
+// O MAL é a fonte de verdade da lista de anime: importa o estado preciso
+// (visto/ver/watchlist, nota pessoal, progresso, diario). Usado pelo /mal/import
+// e pelo sync automatico na Library (fire-and-forget, sem bloquear a resposta).
+export async function importMalList(userId) {
+  const list = await getAnimeList(userId);
+  let count = 0;
+  let diary = 0;
+  for (const it of list) {
+    const node = it.node || {};
+    const ls = it.list_status || {};
+    if (!node.id) continue;
+    const watched = ls.status === "completed";
+    const watchlist = ls.status === "plan_to_watch" || ls.status === "watching";
+    const titleRomaji = node.title || "";
+    const titleEn = node.alternative_titles?.en || "";
+    const poster = node.main_picture?.large || node.main_picture?.medium || null;
+    upsertLibrary({
+      userId,
+      tmdbId: node.id, // id do MAL (a app trata "anime" por malId)
+      type: "anime",
+      title: titleEn || titleRomaji, // ingles por default
+      titleEn: titleEn || null,
+      titleRomaji: titleRomaji || null,
+      genres: (node.genres || []).map((g) => g.name),
+      poster,
+      watched: watched ? 1 : 0,
+      watchlist: watchlist ? 1 : 0,
+      score: ls.score ? ls.score : null,
+    });
+    count++;
+
+    // Diario: usa as datas de inicio/fim que o MAL guarda por anime.
+    const startedAt = isoDate(ls.start_date);
+    const finishedAt = isoDate(ls.finish_date);
+    if (startedAt || finishedAt) {
+      const watching = ls.status === "watching";
+      const seen = ls.num_episodes_watched || 0;
+      importProgress({
+        userId,
+        type: "anime",
+        tmdbId: node.id,
+        title: titleEn || titleRomaji,
+        poster,
+        // "A ver" -> retoma no episodio seguinte; concluido -> ultimo visto.
+        episode: watching ? seen + 1 : seen || null,
+        startedAt,
+        finishedAt,
+        status: watching ? "watching" : "finished",
+      });
+      diary++;
+    }
+  }
+  return { imported: count, diary };
+}
+
+// Controlo do sync automatico (a Library chama no maximo de 6 em 6 horas).
+const MAL_SYNC_TTL = 6 * 60 * 60 * 1000;
+export function shouldAutoSync(userId) {
+  const hit = cacheGetTtl(`malsync:${userId}`, MAL_SYNC_TTL);
+  return !hit.found;
+}
+export function markAutoSync(userId) {
+  cacheSet(`malsync:${userId}`, Date.now());
+}
+export function unmarkAutoSync(userId) {
+  cacheDel(`malsync:${userId}`);
 }
 
 function httpError(s, m) {

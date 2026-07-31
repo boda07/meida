@@ -18,7 +18,7 @@ import {
 import { requireAuth } from "../services/auth.js";
 import { getMeta, getGenreVocab, getLocalizedMeta, getLocalizedMetaCached } from "../services/tmdb.js";
 import { getAnimeRatingsBatch } from "../services/jikan.js";
-import { status as malStatus, getMeanScores } from "../services/mal.js";
+import { status as malStatus, getMeanScores, shouldAutoSync, markAutoSync, unmarkAutoSync, importMalList } from "../services/mal.js";
 import { getCachedRating, getCachedRatings, getRatings as getLetterboxdRatings } from "../services/letterboxd.js";
 import { isOnline } from "../services/net.js";
 import { cacheGet, cacheSet } from "../services/cache.js";
@@ -98,6 +98,18 @@ libraryRouter.get("/library", async (req, res) => {
   if (online && stillAnime.length) {
     const map = await getAnimeRatingsBatch(stillAnime.map((i) => i.tmdbId));
     for (const i of stillAnime) applyRating(req.user.id, i, map.get(Number(i.tmdbId)));
+  }
+
+  // MAL ligado: sincroniza a lista (estado preciso: visto/ver, nota pessoal,
+  // progresso, diario) no maximo de 6 em 6 horas. Em background — a resposta
+  // nao espera; a proxima abertura ja vem com o estado do MAL aplicado.
+  if (online && malStatus(req.user.id).linked && shouldAutoSync(req.user.id)) {
+    markAutoSync(req.user.id);
+    importMalList(req.user.id).catch(() => {
+      // Sem sucesso (rede/MAL em baixo, conta invalida): desmarca para a
+      // proxima abertura voltar a tentar, em vez de esperar as 6h.
+      unmarkAutoSync(req.user.id);
+    });
   }
 
   // Filmes: aplica ja as notas Letterboxd conhecidas (memoria/disco, sem scraping).

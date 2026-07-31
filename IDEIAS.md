@@ -23,7 +23,7 @@ Lista de coisas que podemos alterar ou adicionar à MEIDA. Organizada por priori
 - [x] **Acessibilidade** — foco visível, contraste, aria-labels nos botões de ícones. *(feito: `:focus-visible` global em `styles.css`; aria-labels em botões de ícones (Library, nav-dice); `aria-hidden` em todos os SVGs decorativos; contraste das setas do hero)*
 
 ## Integrações novas
-- [ ] **MAL API v2 de verdade** — já há `mal.clientId/clientSecret` na config; a Library de anime hoje usa scraping do Jikan. Ligar a API oficial do MAL para listas/estado precisos.
+- [x] **MAL API v2 de verdade** — já há `mal.clientId/clientSecret` na config; a Library de anime hoje usa scraping do Jikan. Ligar a API oficial do MAL para listas/estado precisos. *(feito: OAuth2 PKCE + ligar/desligar em `server/src/routes/mal.js`; `importMalList` em `mal.js` (estado preciso: visto/ver/watchlist, nota pessoal, progresso, diário); `getMeanScores` usa a API oficial na Library; sync AUTOMATICO ao abrir a Library (máx. 6h, retry na falha) — AniList/Jikan ficam só como reserva para quem não liga o MAL)*
 - [ ] **AniList sync** — importar/exportar listas entre MAL e AniList.
 - [ ] **Trakt** — scrobble do que vês (alternativa ao Letterboxd para séries).
 - [ ] **Telegram/notificações push** — avisar quando um título da lista sai um novo episódio.
