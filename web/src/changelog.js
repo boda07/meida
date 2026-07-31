@@ -2,6 +2,12 @@
 // "o que mudou" depois de o utilizador atualizar a app. Mais recente em cima.
 export const CHANGELOG = [
   {
+    version: "0.9.3",
+    items: [
+      "Corrigido: ao abrir um filme, série ou anime, o ecrã podia ficar preto (a página não abria) — agora os detalhes abrem normalmente.",
+    ],
+  },
+  {
     version: "0.9.2",
     items: [
       "Nova animação de carregamento: enquanto a app está a trabalhar (por exemplo, ao mudar de Filmes/Séries/Anime ou a abrir páginas), aparece um anel animado com \"A carregar\" e pontinhos a mexer — já não ficas sem saber se está mesmo a funcionar.",
