@@ -20,7 +20,7 @@ Lista de coisas que podemos alterar ou adicionar à MEIDA. Organizada por priori
 - [ ] **Multi-perfil** — a app já tem auth; adicionar perfis por utilizador com progresso separado.
 - [ ] **Modo offline da Library** — abrir a Library e ver o que tens sem internet (com cache local).
 - [x] **Atalhos de teclado no player** (F para fullscreen, ←/→ para saltar 10s, M para mute) — confirmar o que o HlsPlayer já tem. *(feito: `web/src/components/usePlayerShortcuts.js` ligado ao VideoPlayer e HlsPlayer)*
-- [ ] **Acessibilidade** — foco visível, contraste, aria-labels nos botões de ícones.
+- [x] **Acessibilidade** — foco visível, contraste, aria-labels nos botões de ícones. *(feito: `:focus-visible` global em `styles.css`; aria-labels em botões de ícones (Library, nav-dice); `aria-hidden` em todos os SVGs decorativos; contraste das setas do hero)*
 
 ## Integrações novas
 - [ ] **MAL API v2 de verdade** — já há `mal.clientId/clientSecret` na config; a Library de anime hoje usa scraping do Jikan. Ligar a API oficial do MAL para listas/estado precisos.
