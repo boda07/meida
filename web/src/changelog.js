@@ -2,6 +2,13 @@
 // "o que mudou" depois de o utilizador atualizar a app. Mais recente em cima.
 export const CHANGELOG = [
   {
+    version: "0.9.4",
+    items: [
+      "Melhorado: \"A minha lista\" abre agora quase instantaneamente — as notas do Letterboxd e as fichas são carregadas em segundo plano e aparecem mal estejam prontas (antes podia demorar vários segundos sempre que a app arrancava).",
+      "Acessibilidade: ao navegar com o teclado (Tab) aparece agora um contorno visível à volta da opção onde estás, e os botões que só mostram um ícone passaram a ter descrição para leitores de ecrã.",
+    ],
+  },
+  {
     version: "0.9.3",
     items: [
       "Corrigido: ao abrir um filme, série ou anime, o ecrã podia ficar preto (a página não abria) — agora os detalhes abrem normalmente.",
