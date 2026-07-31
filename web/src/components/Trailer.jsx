@@ -17,7 +17,7 @@ export default function Trailer({ src }) {
   return (
     <>
       <button type="button" className="lib-trailer" onClick={() => setOpen(true)}>
-        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden>
+        <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
           <path d="M8 5v14l11-7z" />
         </svg>
         Trailer

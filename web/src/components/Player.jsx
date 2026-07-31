@@ -58,7 +58,7 @@ export default function Player({ src, title }) {
             aria-label="Recarregar fonte"
             onClick={() => setReloadKey((k) => k + 1)}
           >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <polyline points="23 4 23 10 17 10" />
               <polyline points="1 20 1 14 7 14" />
               <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
@@ -72,7 +72,7 @@ export default function Player({ src, title }) {
           onClick={() => setStarted(true)}
           aria-label="Reproduzir"
         >
-          <svg viewBox="0 0 24 24" fill="currentColor">
+          <svg aria-hidden="true" viewBox="0 0 24 24" fill="currentColor">
             <path d="M8 5v14l11-7z" />
           </svg>
           <span>Reproduzir</span>

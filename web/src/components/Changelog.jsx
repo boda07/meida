@@ -6,7 +6,7 @@ const KEY = "meida_seen_version";
 
 function MegaphoneIcon() {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
       <path d="M3 11l14-6v14L3 13z" />
       <path d="M3 11v2a2 2 0 0 0 2 2h1" />
       <path d="M7 15v3a1 1 0 0 0 1 1h1a1 1 0 0 0 1-1v-2" />

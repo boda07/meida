@@ -360,6 +360,7 @@ export default function Library() {
                 <button
                   className="lib-list-btn"
                   title="Renomear"
+                  aria-label={`Renomear lista ${l.name}`}
                   onClick={() => openListModal("rename", l.id, l.name)}
                 >
                   ✎
@@ -367,6 +368,7 @@ export default function Library() {
                 <button
                   className="lib-list-btn danger"
                   title="Apagar lista"
+                  aria-label={`Apagar lista ${l.name}`}
                   onClick={() => openListModal("delete", l.id)}
                 >
                   ✕
@@ -576,6 +578,7 @@ export default function Library() {
                   <button
                     className="card-remove"
                     title="Remover da lista"
+                    aria-label={`Remover ${t} da lista`}
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
