@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { api } from "../api/client.js";
 import { useSettings } from "../settings/SettingsContext.jsx";
 import MangaCard from "../components/MangaCard.jsx";
+import LoadingStatus from "../components/LoadingStatus.jsx";
 
 // Filtros client-side (a lista "Para ler" ja vem toda — filtra/ordena no browser).
 const clientTypeMatch = (mediaType, types) => {
@@ -196,7 +197,7 @@ function ForYou() {
     });
   }
 
-  if (loading && !items.length) return <p className="status">A ver o que andas a ler...</p>;
+  if (loading && !items.length) return <LoadingStatus>A ver o que andas a ler</LoadingStatus>;
   if (error) return <p className="status error">{error}</p>;
 
   if (!linked) {
@@ -238,7 +239,7 @@ function ForYou() {
       ) : null}
 
       {loading ? (
-        <p className="status">A escolher recomendações...</p>
+        <LoadingStatus compact>A escolher recomendações</LoadingStatus>
       ) : items.length ? (
         <>
           <div className="grid" style={{ marginTop: 18 }}>
@@ -327,7 +328,7 @@ function ToRead() {
   const toggleStatus = toggleInSet(setStatuses);
   const toggleGenre = toggleInSet(setGenreSel);
 
-  if (loading) return <p className="status">A carregar a tua lista...</p>;
+  if (loading) return <LoadingStatus>A carregar a tua lista</LoadingStatus>;
   if (error) return <p className="status error">{error}</p>;
 
   if (data && !data.linked) {

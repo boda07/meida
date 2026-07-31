@@ -5,7 +5,7 @@ import HlsPlayer from "./HlsPlayer.jsx";
 
 // Reprodução de anime "sem anúncios" no nosso player (via extrator alojado).
 // Da legendas soft (toggle no player) e sync no watch party (HlsPlayer).
-export default function AnimeExtract({ details, episode }) {
+export default function AnimeExtract({ details, episode, startAt, onProgress }) {
   const { settings } = useSettings();
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
@@ -46,7 +46,12 @@ export default function AnimeExtract({ details, episode }) {
 
   return (
     <>
-      <HlsPlayer sources={data.sources} subtitles={data.subtitles} />
+      <HlsPlayer
+        sources={data.sources}
+        subtitles={data.subtitles}
+        startAt={startAt}
+        onProgress={onProgress}
+      />
       <p className="muted" style={{ fontSize: 12 }}>
         Fonte: {data.provider} ·{" "}
         {settings.animeAudio === "dub" ? "Dobrado" : "Legendado"} ·{" "}

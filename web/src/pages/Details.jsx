@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import { api, imageUrl } from "../api/client.js";
 import { useSettings } from "../settings/SettingsContext.jsx";
@@ -6,10 +6,14 @@ import { useAuth } from "../auth/AuthContext.jsx";
 import { useWatchParty } from "../watchparty/WatchPartyContext.jsx";
 import Player from "../components/Player.jsx";
 import SourceSelector from "../components/SourceSelector.jsx";
+import useProviderHealth from "../components/useProviderHealth.js";
 import LibraryControls from "../components/LibraryControls.jsx";
+import Trailer from "../components/Trailer.jsx";
+import AddToList from "../components/AddToList.jsx";
 import Torrents from "../components/Torrents.jsx";
 import Extract from "../components/Extract.jsx";
 import AnimeExtract from "../components/AnimeExtract.jsx";
+import LoadingStatus from "../components/LoadingStatus.jsx";
 
 export default function Details() {
   const { type, id } = useParams();
@@ -20,10 +24,11 @@ export default function Details() {
   const [details, setDetails] = useState(null);
   const [error, setError] = useState(null);
 
-  // Retomar no episódio vindo do "Continua a ver" (?s=temporada&e=episódio).
+  // Retomar no episódio vindo do "Continua a ver" (?s=temporada&e=episódio&t=seg).
   const resumeRef = useRef({
     season: Number(searchParams.get("s")) || null,
     episode: Number(searchParams.get("e")) || null,
+    position: Number(searchParams.get("t")) || null,
     pending: true,
   });
   // Devolve o episódio inicial: o de retoma (uma vez) ou 1.
@@ -35,6 +40,69 @@ export default function Details() {
     }
     return 1;
   }
+  // Posição (segundos) para retomar a meio, só quando voltamos ao mesmo
+  // episódio vindo do "Continua a ver" (senão os players começam do 0).
+  const resumeAtRef = useRef(resumeRef.current.position);
+
+  // Retomar a meio: posição guardada no servidor para este título (com o
+  // episódio a que pertence, para só retomar no mesmo episódio).
+  const [saved, setSaved] = useState(null); // { position, season, episode }
+  const [startAt, setStartAt] = useState(null); // passado aos players (seg.)
+  useEffect(() => {
+    if (!user || !details) {
+      setSaved(null);
+      return;
+    }
+    api
+      .progressItem(details.type, details.id)
+      .then((d) => {
+        const it = d.item;
+        setSaved(
+          it?.position
+            ? {
+                position: it.position,
+                duration: it.duration ?? null,
+                season: details.type === "tv" ? it.season : null,
+                episode: it.episode ?? null,
+              }
+            : null
+        );
+      })
+      .catch(() => {});
+  }, [user, details]);
+
+  // startAt = posição do "Continua a ver" (?t=) ou a guardada, mas só quando o
+  // episódio atual é o mesmo em que estivemos. Limpa ao trocar de episódio.
+  useEffect(() => {
+    const fromUrl = resumeAtRef.current;
+    resumeAtRef.current = null; // só vale na primeira abertura
+    const curSeason = details?.type === "tv" ? season : null;
+    const curEpisode =
+      details?.type === "anime" || details?.type === "tv" ? episode : null;
+    const match =
+      saved && (details?.type === "movie" || (saved.season === curSeason && saved.episode === curEpisode));
+    // Retoma a meio só se vale a pena (não logo no início nem quase no fim).
+    const worth =
+      match && saved.position > 20 && (saved.duration == null || saved.duration - saved.position > 30);
+    setStartAt(fromUrl || (worth ? saved.position : null));
+  }, [details, season, episode, saved]);
+
+  // Player a reportar posição (nos players próprios: torrents/HLS/extratores).
+  const reportPos = useCallback((position, duration) => {
+    if (!user || !details) return;
+    api
+      .progressPosition({
+        type: details.type,
+        tmdbId: details.id,
+        title: details.title,
+        poster: details.poster,
+        season: details.type === "tv" ? season : null,
+        episode: details.type === "anime" || details.type === "tv" ? episode : null,
+        position,
+        duration,
+      })
+      .catch(() => {});
+  }, [user, details, season, episode]);
 
   // Estado de séries
   const [season, setSeason] = useState(1);
@@ -48,6 +116,23 @@ export default function Details() {
   // Watch Party: fonte (provider) que o host escolheu, para os convidados verem a
   // mesma — senao cada um fica no 1o provider, que pode estar partido ("nao vejo nada").
   const wantedSourceRef = useRef(null);
+  // Health-check dos providers (ids mortos; null = ainda desconhecido).
+  const deadProviders = useProviderHealth();
+
+  // Fonte inicial: a escolhida pelo host da watch party, ou a primeira viva
+  // (salta os que o health-check marcou como mortos).
+  function pickDefault(embedsList) {
+    const want = wantedSourceRef.current;
+    const alive = embedsList.filter(
+      (e) => !deadProviders?.has(e.provider)
+    );
+    return (
+      (want && (alive.find((e) => e.provider === want) || embedsList.find((e) => e.provider === want))) ||
+      alive[0] ||
+      embedsList[0] ||
+      null
+    );
+  }
 
   // Separador inicial vindo das definições (providers/extract/torrents)
   const [mode, setMode] = useState(settings.defaultTab || "providers");
@@ -127,8 +212,7 @@ export default function Details() {
         })
         .then((d) => {
           setEmbeds(d.embeds);
-          const want = wantedSourceRef.current;
-          setActive((want && d.embeds.find((e) => e.provider === want)) || d.embeds[0] || null);
+          setActive(pickDefault(d.embeds));
         })
         .catch((e) => setError(e.message));
       return;
@@ -144,10 +228,10 @@ export default function Details() {
       .sources(opts)
       .then((d) => {
         setEmbeds(d.embeds);
-        const want = wantedSourceRef.current;
-        setActive((want && d.embeds.find((e) => e.provider === want)) || d.embeds[0] || null);
+        setActive(pickDefault(d.embeds));
       })
       .catch((e) => setError(e.message));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [details, season, episode, settings.animeAudio]);
 
   // Diário: só considera que estás a ver depois de 5 MINUTOS com uma fonte aberta
@@ -278,7 +362,7 @@ export default function Details() {
   }, [episode]);
 
   if (error) return <p className="status error">{error}</p>;
-  if (!details) return <p className="status">A carregar...</p>;
+  if (!details) return <LoadingStatus>A carregar</LoadingStatus>;
 
   const backdrop = imageUrl(details.backdrop, "w1280");
 
@@ -325,7 +409,11 @@ export default function Details() {
             ))}
           </div>
           <p className="details-overview">{details.overview || "Sem sinopse."}</p>
-          <LibraryControls details={details} />
+          <div className="details-actions">
+            <Trailer src={details.trailer} />
+            <AddToList details={details} />
+            <LibraryControls details={details} />
+          </div>
         </div>
       </div>
 
@@ -412,6 +500,8 @@ export default function Details() {
             <AnimeExtract
               details={details}
               episode={details.isMovie ? 1 : episode}
+              startAt={startAt}
+              onProgress={reportPos}
             />
           ) : mode === "torrents" && details.imdbId ? (
             <Torrents
@@ -421,6 +511,8 @@ export default function Details() {
               episode={details.isMovie ? 1 : episode}
               anime
               defaultAudio={settings.animeAudio}
+              startAt={startAt}
+              onProgress={reportPos}
             />
           ) : (
             <>
@@ -428,6 +520,7 @@ export default function Details() {
                 embeds={embeds}
                 activeId={active?.provider}
                 onSelect={setActive}
+                deadIds={deadProviders}
               />
               {active ? (
                 <Player src={active.embedUrl} title={details.title} />
@@ -478,6 +571,7 @@ export default function Details() {
               embeds={embeds}
               activeId={active?.provider}
               onSelect={setActive}
+              deadIds={deadProviders}
             />
             {active ? (
               <Player src={active.embedUrl} title={details.title} />
@@ -499,7 +593,13 @@ export default function Details() {
           </>
         )}
         {mode === "extract" && extractOn && (
-          <Extract details={details} season={season} episode={episode} />
+          <Extract
+            details={details}
+            season={season}
+            episode={episode}
+            startAt={startAt}
+            onProgress={reportPos}
+          />
         )}
         {mode === "torrents" && (
           <Torrents
@@ -507,6 +607,8 @@ export default function Details() {
             imdb={details.imdbId}
             season={season}
             episode={episode}
+            startAt={startAt}
+            onProgress={reportPos}
           />
         )}
       </div>

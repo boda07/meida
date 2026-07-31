@@ -4,6 +4,7 @@ import { useSettings } from "../settings/SettingsContext.jsx";
 import MediaRow from "../components/MediaRow.jsx";
 import ContinueWatching from "../components/ContinueWatching.jsx";
 import Hero from "../components/Hero.jsx";
+import LoadingStatus from "../components/LoadingStatus.jsx";
 
 // Escolhe varios destaques (com imagem de fundo) para o slideshow do banner.
 function pickHeroes(rows, n = 6) {
@@ -37,7 +38,7 @@ export default function Home() {
       .finally(() => setLoading(false));
   }, [settings.titleLang, settings.overviewLang]);
 
-  if (loading) return <p className="status">A carregar...</p>;
+  if (loading) return <LoadingStatus>A carregar</LoadingStatus>;
   if (error)
     return (
       <div className="status error">

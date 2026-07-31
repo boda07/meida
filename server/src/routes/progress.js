@@ -7,6 +7,7 @@ import {
   finishProgress,
   updateProgress,
   deleteProgress,
+  setProgressPosition,
 } from "../store.js";
 
 export const progressRouter = Router();
@@ -68,6 +69,23 @@ progressRouter.patch("/progress/item", (req, res) => {
   const item = updateProgress(req.user.id, type, Number(tmdbId), req.body);
   if (!item) return res.status(404).json({ error: "entrada nao encontrada" });
   res.json({ item });
+});
+
+// Guarda a posicao atual (para retomar a meio de um episodio). Chamado com
+// frequencia pelo player; cria a entrada se ainda nao existir.
+progressRouter.post("/progress/position", (req, res) => {
+  const { type, tmdbId, position, duration, season, episode } = req.body || {};
+  if (!type || !tmdbId || position == null) {
+    return res.status(400).json({ error: "faltam type, tmdbId e position" });
+  }
+  res.json({
+    item: setProgressPosition(req.user.id, type, Number(tmdbId), {
+      position: Number(position),
+      duration: duration != null ? Number(duration) : null,
+      season: season != null ? Number(season) : null,
+      episode: episode != null ? Number(episode) : null,
+    }),
+  });
 });
 
 // Remover do "continua a ver" / diario.

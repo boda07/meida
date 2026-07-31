@@ -27,6 +27,13 @@ export function toVtt(text) {
 }
 
 // Pesquisa legendas no OpenSubtitles por IMDB id (+ temporada/episodio).
+// Ordena a dar prioridade a portugues de Portugal (pt/por) acima de PT-BR,
+// para o europeu nao ficar enterrado nos resultados (PT-BR tem mais downloads).
+function langRank(lang) {
+  const l = String(lang || "").toLowerCase();
+  return l === "pt" || l === "por" || l === "pt-pt" || l === "por-pt" ? 0 : 1;
+}
+
 export async function searchSubtitles({ imdb, season, episode, languages }) {
   if (!subtitlesEnabled() || !imdb) return [];
   const id = String(imdb).replace(/^tt/i, "");
@@ -56,7 +63,10 @@ export async function searchSubtitles({ imdb, season, episode, languages }) {
       };
     })
     .filter(Boolean)
-    .sort((x, y) => y.downloads - x.downloads)
+    .sort(
+      (x, y) =>
+        langRank(x.lang) - langRank(y.lang) || y.downloads - x.downloads
+    )
     .slice(0, 12);
 }
 

@@ -356,6 +356,16 @@ export default function Settings() {
     }
   }
 
+  // Mudar as sinopses nao deve arrastar os generos: se estes estao a seguir as
+  // sinopses (genreLang vazio), fixa-os no idioma antigo ao trocar as sinopses.
+  function pickOverview(value) {
+    const patch = { overviewLang: value };
+    if (value !== settings.overviewLang && !settings.genreLang) {
+      patch.genreLang = settings.overviewLang;
+    }
+    update(patch);
+  }
+
   return (
     <div className="sub-page settings-page">
       <h2 className="row-title">Definições</h2>
@@ -365,11 +375,11 @@ export default function Settings() {
         <h3>Títulos</h3>
         <p className="muted">Idioma dos nomes de filmes, séries e anime.</p>
         <div className="set-row">
-          <Choice value="en" current={settings.titleLang} onPick={(v) => update({ titleLang: v })}>
-            Inglês
-          </Choice>
           <Choice value="pt" current={settings.titleLang} onPick={(v) => update({ titleLang: v })}>
             Português
+          </Choice>
+          <Choice value="en" current={settings.titleLang} onPick={(v) => update({ titleLang: v })}>
+            Inglês
           </Choice>
         </div>
       </section>
@@ -378,10 +388,10 @@ export default function Settings() {
         <h3>Sinopses</h3>
         <p className="muted">Idioma das descrições/sinopses.</p>
         <div className="set-row">
-          <Choice value="pt" current={settings.overviewLang} onPick={(v) => update({ overviewLang: v })}>
+          <Choice value="pt" current={settings.overviewLang} onPick={pickOverview}>
             Português
           </Choice>
-          <Choice value="en" current={settings.overviewLang} onPick={(v) => update({ overviewLang: v })}>
+          <Choice value="en" current={settings.overviewLang} onPick={pickOverview}>
             Inglês
           </Choice>
         </div>

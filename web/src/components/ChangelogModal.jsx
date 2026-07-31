@@ -1,18 +1,22 @@
 import { useState } from "react";
 import { createPortal } from "react-dom";
-import { CHANGELOG } from "../changelog.js";
+import { CHANGELOG, cmpVersion } from "../changelog.js";
 
 // Modal das novidades, com uma barra lateral para ver tambem as versoes antigas.
 // `initialVersion` define a versao mostrada por defeito (a mais recente, ou a que
 // acabou de ser instalada no aviso automatico). Renderizado num portal para o
 // body: o botao vive no Header (que tem `transform`), e isso faria o overlay
 // `position: fixed` colar-se a barra em vez de cobrir o ecra.
+function initialChangelogVersion(initialVersion) {
+  if (!initialVersion) return CHANGELOG[0]?.version;
+  const exact = CHANGELOG.find((c) => c.version === initialVersion);
+  if (exact) return exact.version;
+  const closest = CHANGELOG.find((c) => cmpVersion(c.version, initialVersion) <= 0);
+  return closest?.version || CHANGELOG[0]?.version;
+}
+
 export default function ChangelogModal({ initialVersion, subtitle, onClose }) {
-  const [selected, setSelected] = useState(() =>
-    initialVersion && CHANGELOG.some((c) => c.version === initialVersion)
-      ? initialVersion
-      : CHANGELOG[0]?.version
-  );
+  const [selected, setSelected] = useState(() => initialChangelogVersion(initialVersion));
   const entry = CHANGELOG.find((c) => c.version === selected) || CHANGELOG[0];
 
   return createPortal(

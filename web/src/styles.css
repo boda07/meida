@@ -582,6 +582,24 @@ h2 {
   font-weight: 700;
 }
 
+/* Barra de progresso do episodio no "Continua a ver". */
+.cw-progress {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 46px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.18);
+  z-index: 2;
+}
+
+.cw-progress-fill {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+  border-radius: 0 2px 2px 0;
+}
+
 /* ===== Diario ===== */
 .diary-list {
   display: flex;
@@ -1386,6 +1404,96 @@ h2 {
   color: var(--accent);
 }
 
+.loading-status {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  min-height: 280px;
+  color: var(--text-secondary);
+}
+
+.loading-status.compact {
+  min-height: 150px;
+  padding-top: 44px;
+}
+
+.loading-ring {
+  position: relative;
+  width: 42px;
+  height: 42px;
+  animation: loading-rotate 1.15s linear infinite;
+}
+
+.loading-ring span {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: var(--accent);
+  opacity: calc(0.25 + (var(--i) * 0.12));
+  transform: translateX(-50%) rotate(calc(var(--i) * 60deg));
+  transform-origin: 50% 21px;
+}
+
+.loading-copy {
+  display: inline-flex;
+  align-items: baseline;
+  justify-content: center;
+  min-width: 13ch;
+  font-size: 0.98rem;
+  font-weight: 600;
+}
+
+.loading-dots {
+  display: inline-flex;
+  width: 2.1ch;
+  justify-content: flex-start;
+}
+
+.loading-dots span {
+  animation: loading-dot 1.2s ease-in-out infinite;
+  opacity: 0.25;
+}
+
+.loading-dots span:nth-child(2) {
+  animation-delay: 0.16s;
+}
+
+.loading-dots span:nth-child(3) {
+  animation-delay: 0.32s;
+}
+
+@keyframes loading-rotate {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes loading-dot {
+  0%,
+  80%,
+  100% {
+    opacity: 0.25;
+    transform: translateY(0);
+  }
+
+  35% {
+    opacity: 1;
+    transform: translateY(-2px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loading-ring,
+  .loading-dots span {
+    animation: none;
+  }
+}
+
 .muted {
   color: var(--text-secondary);
 }
@@ -1683,6 +1791,33 @@ h2 {
 
 .modal-close:hover {
   opacity: 1;
+}
+
+/* Modal de trailers (16:9, preenchido ao maximo do ecra). */
+.trailer-modal {
+  width: min(960px, 100%);
+}
+
+/* Linha de acoes nos detalhes (Play, biblioteca, trailer). */
+.details-actions {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.trailer-frame {
+  padding: 0 20px 20px;
+  aspect-ratio: 16 / 9;
+}
+
+.trailer-frame iframe {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  border-radius: var(--radius-modal);
+  display: block;
+  background: #000;
 }
 
 /* Modal de generos agrupado por tipo (Filmes / Series / Anime). */
@@ -2060,7 +2195,7 @@ h2 {
 /* ===== Library ===== */
 .lib-controls {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 16px;
   margin-top: 18px;
   flex-wrap: wrap;
@@ -2081,6 +2216,28 @@ h2 {
 
 .lib-watchlist:hover,
 .lib-watched:hover {
+  border-color: rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+/* Botao "Trailer" com o mesmo aspeto dos controlos da biblioteca. */
+.lib-trailer {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 18px;
+  padding: 10px 22px;
+  border-radius: var(--radius-pill);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.lib-trailer:hover {
   border-color: rgba(255, 255, 255, 0.5);
   background: rgba(255, 255, 255, 0.06);
 }
@@ -2149,6 +2306,194 @@ h2 {
   flex-direction: column;
   gap: 14px;
   margin-bottom: 16px;
+}
+
+/* Listas personalizadas: linha de chips abaixo do toolbar. */
+.lib-lists {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.lib-list-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: var(--radius-pill);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  overflow: hidden;
+}
+
+.lib-list-chip.active {
+  border-color: var(--accent);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.lib-list-open {
+  border: none;
+  background: transparent;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 7px 12px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.lib-list-actions {
+  display: inline-flex;
+  gap: 2px;
+  padding-right: 4px;
+}
+
+.lib-list-btn {
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 12px;
+  cursor: pointer;
+  padding: 4px 5px;
+  border-radius: 50%;
+  line-height: 1;
+}
+
+.lib-list-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text);
+}
+
+.lib-list-btn.danger:hover {
+  color: #ff6b6b;
+}
+
+.lib-list-new {
+  border-style: dashed;
+}
+
+.lib-list-name-input {
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: var(--radius-pill);
+  background: var(--bg-surface);
+  color: var(--text);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  font-family: inherit;
+  font-size: 14px;
+}
+
+.lib-list-name-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+/* Botao de remover titulo de uma lista (so visivel quando ha lista aberta). */
+.card-remove {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 3;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0, 0, 0, 0.75);
+  color: #fff;
+  font-size: 13px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+
+.card-remove:hover {
+  background: #e5484d;
+  transform: scale(1.1);
+}
+
+/* Menu "Adicionar a lista" nos detalhes. */
+.addtolist {
+  position: relative;
+}
+
+.addtolist-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 60;
+  width: 260px;
+  max-height: 340px;
+  overflow-y: auto;
+  background: var(--bg-surface);
+  border: 1px solid #333;
+  border-radius: var(--radius-modal);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.addtolist-hint {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.addtolist-lists {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.addtolist-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 9px 12px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 14px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.addtolist-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.addtolist-new {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.addtolist-new input {
+  padding: 9px 12px;
+  border-radius: 10px;
+  background: var(--bg-surface);
+  color: var(--text);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  font-family: inherit;
+  font-size: 13px;
+}
+
+.addtolist-new input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.addtolist-msg {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--accent);
 }
 
 .lib-header .row-title {
@@ -2823,6 +3168,24 @@ h2 {
   background: var(--accent);
   border-color: var(--accent);
   color: #fff;
+}
+
+/* Provider sinalizado pelo health-check como em baixo. */
+.source-btn.dead {
+  opacity: 0.45;
+  border-style: dashed;
+  text-decoration: line-through;
+}
+
+.source-btn.dead:hover {
+  opacity: 0.7;
+}
+
+.source-dead-tag {
+  margin-left: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  text-decoration: none;
 }
 
 .vbar {

@@ -23,9 +23,9 @@ export default function App() {
       <main className="content">
         <Routes>
           <Route path="/" element={<Home />} />
-          <Route path="/movies" element={<Category category="movies" title="Filmes" />} />
-          <Route path="/series" element={<Category category="tv" title="Séries" />} />
-          <Route path="/anime" element={<Category category="anime" title="Anime" />} />
+          <Route path="/movies" element={<Category key="movies" category="movies" title="Filmes" />} />
+          <Route path="/series" element={<Category key="tv" category="tv" title="Séries" />} />
+          <Route path="/anime" element={<Category key="anime" category="anime" title="Anime" />} />
           <Route path="/search" element={<Search />} />
           <Route path="/details/:type/:id" element={<Details />} />
           <Route path="/library" element={<Library />} />

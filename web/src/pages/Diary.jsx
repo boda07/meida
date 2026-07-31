@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { api, imageUrl } from "../api/client.js";
 import { useAuth } from "../auth/AuthContext.jsx";
+import LoadingStatus from "../components/LoadingStatus.jsx";
 
 const FILTERS = [
   { id: "all", label: "Tudo" },
@@ -111,7 +112,7 @@ export default function Diary() {
         <Link to="/login">Entra</Link> para veres o teu diário.
       </p>
     );
-  if (loading) return <p className="status">A carregar o diário...</p>;
+  if (loading) return <LoadingStatus>A carregar o diário</LoadingStatus>;
 
   const shown = filter === "all" ? items : items.filter((i) => i.status === filter);
 

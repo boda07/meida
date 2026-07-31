@@ -4,12 +4,18 @@ import {
   buildAnimeEmbedSources,
   PROVIDERS,
 } from "../services/providers.js";
+import { getProviderHealth } from "../services/providerHealth.js";
 
 export const sourcesRouter = Router();
 
 // Lista de providers disponiveis (para o frontend mostrar no seletor).
 sourcesRouter.get("/providers", (req, res) => {
   res.json({ providers: PROVIDERS.map((p) => ({ id: p.id, name: p.name })) });
+});
+
+// Estado (vivo/morto) dos providers: health-check automatico 1x/dia.
+sourcesRouter.get("/providers/health", (req, res) => {
+  res.json(getProviderHealth());
 });
 
 // Fontes de embed para um titulo especifico.

@@ -151,15 +151,24 @@ async function translateNames(names, opts) {
 let mangaGenresCache = null;
 export async function getMangaGenresRaw() {
   if (mangaGenresCache) return mangaGenresCache;
-  const [g, t] = await Promise.all([
+  // allSettled: se um dos dois endpoints falhar (ex.: 504 no "themes"),
+  // usa o que tiver funcionado em vez de deitar tudo fora.
+  const results = await Promise.allSettled([
     jikanFetch(`/genres/manga`),
     jikanFetch(`/genres/manga?filter=themes`),
   ]);
   const seen = new Set();
-  const list = [...(g.data || []), ...(t.data || [])]
-    .map((x) => ({ id: x.mal_id, name: x.name }))
-    .filter((x) => (seen.has(x.id) ? false : seen.add(x.id)))
-    .sort((a, b) => a.name.localeCompare(b.name));
+  const list = [];
+  for (const r of results) {
+    if (r.status !== "fulfilled" || !r.value?.data) continue;
+    for (const x of r.value.data) {
+      if (seen.has(x.mal_id)) continue;
+      seen.add(x.mal_id);
+      list.push({ id: x.mal_id, name: x.name });
+    }
+  }
+  list.sort((a, b) => a.name.localeCompare(b.name));
+  if (!list.length) return mangaGenresCache || [];
   mangaGenresCache = list;
   return list;
 }

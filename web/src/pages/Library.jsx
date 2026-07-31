@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { api, imageUrl } from "../api/client.js";
 import { useAuth } from "../auth/AuthContext.jsx";
 import { useSettings } from "../settings/SettingsContext.jsx";
+import LoadingStatus from "../components/LoadingStatus.jsx";
 
 const FILTERS = [
   { id: "all", label: "Tudo" },
@@ -51,6 +52,32 @@ export default function Library() {
   const [page, setPage] = useState(1);
   const PER_PAGE = 60;
 
+  // Listas personalizadas: todas (menu), a selecionada, e gestao (criar/apagar).
+  const [lists, setLists] = useState([]);
+  const [selList, setSelList] = useState(null); // id da lista aberta (null = tudo)
+  const [listItems, setListItems] = useState([]);
+  const [listError, setListError] = useState(null);
+  const [listModal, setListModal] = useState(null); // { action, id?, name? } | null
+  const [listName, setListName] = useState("");
+  const [listBusy, setListBusy] = useState(false);
+
+  function loadLists() {
+    return api.lists().then((d) => setLists(d.lists));
+  }
+
+  // Ao selecionar uma lista, carrega os titulos dela.
+  useEffect(() => {
+    if (!user || selList == null) {
+      setListItems([]);
+      setListError(null);
+      return;
+    }
+    api
+      .listTitles(selList)
+      .then((d) => setListItems(d.list.items))
+      .catch((e) => setListError(e.message));
+  }, [user, selList]);
+
   // Fecha os modais com a tecla Escape.
   useEffect(() => {
     if (!genreOpen && !wlOpen) return;
@@ -83,7 +110,7 @@ export default function Library() {
       setLoading(false);
       return;
     }
-    load().finally(() => setLoading(false));
+    Promise.all([load(), loadLists()]).finally(() => setLoading(false));
   }, [user]);
 
   async function clearWatchlist(type) {
@@ -96,6 +123,60 @@ export default function Library() {
       /* ignora */
     } finally {
       setClearing(false);
+    }
+  }
+
+  function openListModal(action, id, name) {
+    setListName(name || "");
+    setListModal({ action, id });
+  }
+
+  async function submitListModal() {
+    const name = listName.trim();
+    if (!name) return;
+    setListBusy(true);
+    try {
+      if (listModal.action === "create") {
+        const { list } = await api.createList(name);
+        setLists((prev) => [list, ...prev]);
+        setSelList(list.id);
+      } else if (listModal.action === "rename") {
+        await api.renameList(listModal.id, name);
+        setLists((prev) =>
+          prev.map((l) => (l.id === listModal.id ? { ...l, name } : l))
+        );
+      }
+      setListModal(null);
+    } catch {
+      /* ignora */
+    } finally {
+      setListBusy(false);
+    }
+  }
+
+  async function confirmDeleteList() {
+    setListBusy(true);
+    try {
+      await api.deleteList(listModal.id);
+      setLists((prev) => prev.filter((l) => l.id !== listModal.id));
+      if (selList === listModal.id) setSelList(null);
+      setListModal(null);
+    } catch {
+      /* ignora */
+    } finally {
+      setListBusy(false);
+    }
+  }
+
+  async function removeFromList(it) {
+    try {
+      await api.removeListTitle(selList, it.tmdbId, it.type);
+      setListItems((prev) => prev.filter((x) => !(x.tmdbId === it.tmdbId && x.type === it.type)));
+      setLists((prev) =>
+        prev.map((l) => (l.id === selList ? { ...l, count: l.count - 1 } : l))
+      );
+    } catch {
+      /* ignora */
     }
   }
 
@@ -119,16 +200,19 @@ export default function Library() {
   const hasGenres = genreGroups.length > 0;
 
   const shown = useMemo(() => {
-    let arr = items;
-    if (filter === "watchlist") arr = arr.filter((i) => i.watchlist);
-    else if (filter === "watched") arr = arr.filter((i) => i.watched);
-    if (typeFilter !== "all") arr = arr.filter((i) => i.type === typeFilter);
-    if (genreSel.size)
-      arr = arr.filter((i) => {
-        const g = i.genres || [];
-        for (const sel of genreSel) if (!g.includes(sel)) return false;
-        return true;
-      });
+    // Lista personalizada aberta: mostra so os titulos dela.
+    let arr = selList != null ? listItems : items;
+    if (selList == null) {
+      if (filter === "watchlist") arr = arr.filter((i) => i.watchlist);
+      else if (filter === "watched") arr = arr.filter((i) => i.watched);
+      if (typeFilter !== "all") arr = arr.filter((i) => i.type === typeFilter);
+      if (genreSel.size)
+        arr = arr.filter((i) => {
+          const g = i.genres || [];
+          for (const sel of genreSel) if (!g.includes(sel)) return false;
+          return true;
+        });
+    }
     // Ordenação. Comparador base (ascendente); a direção inverte no fim.
     const romaji = settings.animeTitleLang === "romaji";
     let cmp;
@@ -145,13 +229,14 @@ export default function Library() {
         return ra - rb;
       };
     } else {
-      // recentes: pela data de atualizacao.
-      cmp = (a, b) => (a.updatedAt || "").localeCompare(b.updatedAt || "");
+      // recentes: pela data de atualizacao (nas listas, a de adicao).
+      const date = (i) => i.updatedAt || i.addedAt || "";
+      cmp = (a, b) => date(a).localeCompare(date(b));
     }
     const sign = dir === "asc" ? 1 : -1;
     arr = [...arr].sort((a, b) => cmp(a, b) * sign);
     return arr;
-  }, [items, filter, typeFilter, genreSel, sort, dir, settings.animeTitleLang]);
+  }, [items, listItems, selList, filter, typeFilter, genreSel, sort, dir, settings.animeTitleLang]);
 
   // Paginacao: volta a página 1 sempre que a lista filtrada/ordenada muda.
   useEffect(() => {
@@ -176,7 +261,7 @@ export default function Library() {
         <Link to="/login">Entra</Link> para veres a tua lista.
       </p>
     );
-  if (loading) return <p className="status">A carregar a tua lista...</p>;
+  if (loading) return <LoadingStatus>A carregar a tua lista</LoadingStatus>;
   if (error) return <p className="status error">{error}</p>;
 
   return (
@@ -243,6 +328,127 @@ export default function Library() {
         </div>
         </div>
       </div>
+
+      {/* Listas personalizadas: "Tudo" + cada lista, com gestao (criar/renomear/apagar). */}
+      <div className="lib-lists">
+        <button
+          className={`tf-chip ${selList == null ? "active" : ""}`}
+          onClick={() => setSelList(null)}
+        >
+          Tudo
+        </button>
+        {lists.map((l) => (
+          <span
+            key={l.id}
+            className={`lib-list-chip ${selList === l.id ? "active" : ""}`}
+          >
+            <button className="lib-list-open" onClick={() => setSelList(l.id)}>
+              {l.name} <span className="muted">{l.count}</span>
+            </button>
+            {selList === l.id && (
+              <span className="lib-list-actions">
+                <button
+                  className="lib-list-btn"
+                  title="Renomear"
+                  onClick={() => openListModal("rename", l.id, l.name)}
+                >
+                  ✎
+                </button>
+                <button
+                  className="lib-list-btn danger"
+                  title="Apagar lista"
+                  onClick={() => openListModal("delete", l.id)}
+                >
+                  ✕
+                </button>
+              </span>
+            )}
+          </span>
+        ))}
+        <button className="tf-chip lib-list-new" onClick={() => openListModal("create")}>
+          + Nova lista
+        </button>
+      </div>
+
+      {listModal && (
+        <div className="modal-overlay" onClick={() => setListModal(null)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-head">
+              <h3>
+                {listModal.action === "delete"
+                  ? "Apagar lista"
+                  : listModal.action === "rename"
+                  ? "Renomear lista"
+                  : "Nova lista"}
+              </h3>
+              <button
+                className="modal-close"
+                aria-label="Fechar"
+                onClick={() => setListModal(null)}
+              >
+                ✕
+              </button>
+            </div>
+            {listModal.action === "delete" ? (
+              <>
+                <p className="muted" style={{ padding: "0 20px" }}>
+                  Apagar esta lista? Os títulos continuam na biblioteca, só saem
+                  da lista.
+                </p>
+                <div className="modal-actions">
+                  <button
+                    className="modal-btn ghost"
+                    disabled={listBusy}
+                    onClick={() => setListModal(null)}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    className="modal-btn danger"
+                    disabled={listBusy}
+                    onClick={confirmDeleteList}
+                  >
+                    Apagar
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <p className="muted" style={{ padding: "0 20px" }}>
+                  Nome da lista:
+                </p>
+                <div style={{ padding: "0 20px" }}>
+                  <input
+                    className="lib-list-name-input"
+                    value={listName}
+                    maxLength={60}
+                    autoFocus
+                    onChange={(e) => setListName(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && submitListModal()}
+                    placeholder="Ex.: Para ver com amigos"
+                  />
+                </div>
+                <div className="modal-actions">
+                  <button
+                    className="modal-btn ghost"
+                    disabled={listBusy}
+                    onClick={() => setListModal(null)}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    className="modal-btn"
+                    disabled={listBusy || !listName.trim()}
+                    onClick={submitListModal}
+                  >
+                    {listModal.action === "rename" ? "Guardar" : "Criar"}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
 
       {wlOpen && (
         <div className="modal-overlay" onClick={() => setWlOpen(false)}>
@@ -327,7 +533,9 @@ export default function Library() {
 
       {!shown.length ? (
         <p className="muted">
-          {items.length
+          {selList != null
+            ? "Esta lista esta vazia. Abre um filme/série e usa o botao \"+ Lista\"."
+            : items.length
             ? "Nada nesta categoria."
             : "A tua lista esta vazia. Abre um filme/série e adiciona a watchlist, marca como visto ou da nota."}
         </p>
@@ -354,6 +562,19 @@ export default function Library() {
                 {it.watchlist && !it.watched ? (
                   <span className="card-watchlist">+</span>
                 ) : null}
+                {selList != null && (
+                  <button
+                    className="card-remove"
+                    title="Remover da lista"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      removeFromList(it);
+                    }}
+                  >
+                    ✕
+                  </button>
+                )}
                 <div className="card-footer">
                   <h3 className="card-title">{t}</h3>
                 </div>

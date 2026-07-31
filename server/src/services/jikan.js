@@ -4,9 +4,14 @@
 // MAL (MegaPlay/VidLink/VidSrc.cc). O TMDB so serve para filmes e series — e para
 // arranjar o IMDB id que os torrents precisam (match best-effort).
 import { findTmdbMatch, getExternalImdb, getGenreVocab } from "./tmdb.js";
+import { cacheGet, cacheSet } from "./cache.js";
 
 const JIKAN = "https://api.jikan.moe/v4";
+const JIKAN_MIRROR = "https://api.tenrai.org/v1"; // espelho do schema v4 do Jikan
 const JIKAN_COOLDOWN_MS = 30 * 1000;
+// Com o espelho sempre à frente, no Jikan basta 1 tentativa (backoff 700ms) em
+// vez de 3 (4.2s) quando ele está em baixo — cai-se logo para o Tenrai.
+const JIKAN_RETRIES = 1;
 let jikanBlockedUntil = 0;
 
 export const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -17,18 +22,14 @@ function coolDownJikan() {
 
 // O Jikan limita a ~3 req/s (429 quando excede) e por vezes da 5xx.
 // Tentamos de novo com backoff antes de desistir.
-export async function jikanFetch(path, options = {}) {
-  const opts = typeof options === "number" ? { tries: options } : options;
-  const { tries = 0, retries = 3, timeoutMs = 9000 } = opts;
-  if (tries === 0 && Date.now() < jikanBlockedUntil) {
-    throw new Error("Jikan temporariamente indisponivel");
-  }
+async function jikanFetchBase(base, path, options, tries) {
+  const { retries = 3, timeoutMs = 9000 } = options;
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
 
   let res;
   try {
-    res = await fetch(`${JIKAN}${path}`, {
+    res = await fetch(`${base}${path}`, {
       headers: { accept: "application/json" },
       signal: controller.signal,
     });
@@ -36,9 +37,8 @@ export async function jikanFetch(path, options = {}) {
     clearTimeout(timer);
     if (tries < retries) {
       await sleep(700 * (tries + 1));
-      return jikanFetch(path, { ...opts, tries: tries + 1 });
+      return jikanFetchBase(base, path, options, tries + 1);
     }
-    coolDownJikan();
     if (err?.name === "AbortError") throw new Error("Jikan timeout");
     throw err;
   } finally {
@@ -47,13 +47,57 @@ export async function jikanFetch(path, options = {}) {
 
   if ((res.status === 429 || res.status >= 500) && tries < retries) {
     await sleep(700 * (tries + 1));
-    return jikanFetch(path, { ...opts, tries: tries + 1 });
+    return jikanFetchBase(base, path, options, tries + 1);
   }
-  if (!res.ok) {
-    if (res.status === 429 || res.status >= 500) coolDownJikan();
-    throw new Error(`Jikan ${res.status}`);
-  }
+  if (!res.ok) throw new Error(`Jikan ${res.status}`);
   return res.json();
+}
+
+// Tenta o Jikan primeiro; se falhar (timeout/5xx/429/rede), cai para o espelho
+// Tenrai (mesmo schema v4). Se o Jikan falhar mas o espelho responder, marcam-se
+// 30s de cooldown do Jikan para os proximos pedidos irem diretos ao espelho
+// (em vez de queimarem retries em cada chamada). Durante o cooldown, a cache em
+// disco e consultada primeiro (resposta imediata). Se ambos falharem, a cache
+// em disco serve os ultimos dados conhecidos. Cada resposta bem-sucedida fica
+// gravada na cache em disco.
+export async function jikanFetch(path, options = {}) {
+  const opts = typeof options === "number" ? { tries: options } : options;
+  const { tries = 0 } = opts;
+  // No Jikan (primário) limita-se o nº de retries: com o espelho à frente,
+  // desistir cedo e cair para o Tenrai é mais rápido que insistir no Jikan.
+  const jikanOpts = { ...opts, retries: Math.min(opts.retries ?? 3, JIKAN_RETRIES) };
+  if (tries === 0 && Date.now() < jikanBlockedUntil) {
+    const disk = cacheGet(path);
+    if (disk) return disk;
+    try {
+      const data = await jikanFetchBase(JIKAN_MIRROR, path, opts, 0);
+      cacheSet(path, data);
+      return data;
+    } catch {
+      coolDownJikan();
+      throw new Error("Jikan temporariamente indisponivel");
+    }
+  }
+  try {
+    const data = await jikanFetchBase(JIKAN, path, jikanOpts, 0);
+    cacheSet(path, data);
+    return data;
+  } catch (jikanErr) {
+    try {
+      const data = await jikanFetchBase(JIKAN_MIRROR, path, opts, 0);
+      cacheSet(path, data);
+      coolDownJikan();
+      return data;
+    } catch {
+      const disk = cacheGet(path);
+      if (disk) {
+        coolDownJikan();
+        return disk;
+      }
+      coolDownJikan();
+      throw jikanErr;
+    }
+  }
 }
 
 function yearOf(a) {
@@ -374,15 +418,24 @@ let animeGenresCache = null;
 export async function getAnimeGenres() {
   if (animeGenresCache) return animeGenresCache;
   try {
-    const [g, t] = await Promise.all([
+    // allSettled: se um dos dois endpoints falhar (ex.: 504 no "themes"),
+    // usa o que tiver funcionado em vez de deitar tudo fora.
+    const results = await Promise.allSettled([
       jikanFetch(`/genres/anime`),
       jikanFetch(`/genres/anime?filter=themes`),
     ]);
     const seen = new Set();
-    const list = [...(g.data || []), ...(t.data || [])]
-      .map((x) => ({ id: x.mal_id, name: x.name }))
-      .filter((x) => (seen.has(x.id) ? false : seen.add(x.id)))
-      .sort((a, b) => a.name.localeCompare(b.name));
+    const list = [];
+    for (const r of results) {
+      if (r.status !== "fulfilled" || !r.value?.data) continue;
+      for (const x of r.value.data) {
+        if (seen.has(x.mal_id)) continue;
+        seen.add(x.mal_id);
+        list.push({ id: x.mal_id, name: x.name });
+      }
+    }
+    list.sort((a, b) => a.name.localeCompare(b.name));
+    if (!list.length) return animeGenresCache || [];
     animeGenresCache = list;
     return list;
   } catch {
@@ -401,7 +454,9 @@ export async function pickAnime({ genres = [], exclude = [] }, opts = {}) {
   try {
     first = await jikanFetch(q);
   } catch {
-    return null;
+    // Jikan em baixo/instavel -> fallback na AniList (que aceita nomes de
+    // genero em vez de ids do MAL).
+    return pickAnimeFromAnilist({ genres, exclude }, opts);
   }
   const totalPages = Math.min(first?.pagination?.last_visible_page || 1, 20);
   let items = first.data || [];
@@ -415,8 +470,43 @@ export async function pickAnime({ genres = [], exclude = [] }, opts = {}) {
     }
   }
   const list = items.map((a) => normalizeAnime(a, romaji)).filter(Boolean);
-  if (!list.length) return null;
+  if (!list.length) return pickAnimeFromAnilist({ genres, exclude }, opts);
   return list[Math.floor(Math.random() * list.length)];
+}
+
+// Fallback do "Escolhe algo para mim" de anime quando o Jikan falha. A AniList
+// filtra por nomes de genero, por isso converte os ids do MAL em nomes.
+async function pickAnimeFromAnilist({ genres = [], exclude = [] }, opts = {}) {
+  try {
+    const all = await getAnimeGenres();
+    const byId = new Map(all.map((g) => [String(g.id), g.name]));
+    const genreIn = genres.map((id) => byId.get(String(id))).filter(Boolean);
+    const genreNotIn = exclude.map((id) => byId.get(String(id))).filter(Boolean);
+    const romaji = isRomaji(opts);
+    const query = `query($genre_in:[String],$genre_not_in:[String],$isAdult:Boolean){Page(page:1,perPage:25){media(type:ANIME,sort:POPULARITY_DESC,genre_in:$genre_in,genre_not_in:$genre_not_in,isAdult:$isAdult){idMal title{romaji english native} description(asHtml:false) coverImage{extraLarge large} bannerImage startDate{year} averageScore meanScore}}}`;
+    const res = await fetch("https://graphql.anilist.co", {
+      method: "POST",
+      headers: { "content-type": "application/json", accept: "application/json" },
+      body: JSON.stringify({
+        query,
+        variables: {
+          // A AniList nao aceita arrays vazios (devolvem 0 resultados): usa null.
+          genre_in: genreIn.length ? genreIn : null,
+          genre_not_in: genreNotIn.length ? genreNotIn : null,
+          isAdult: opts.adult ? null : false,
+        },
+      }),
+    });
+    if (!res.ok) throw new Error(`AniList ${res.status}`);
+    const data = await res.json();
+    const list = dedupe(
+      (data?.data?.Page?.media || []).map((a) => normalizeAnilistAnime(a, romaji)).filter(Boolean)
+    );
+    if (!list.length) return null;
+    return list[Math.floor(Math.random() * list.length)];
+  } catch {
+    return null;
+  }
 }
 
 // Media da comunidade para varios anime de uma vez, via AniList (filtra por
@@ -576,6 +666,16 @@ export async function getAnimeDetails(malId, opts = {}) {
     /* sem match -> sem torrents nem backdrop do TMDB para este anime */
   }
 
+  // Trailer (promo) do MAL/Jikan, best-effort (muitos animes nao tem).
+  let trailer = null;
+  try {
+    const v = await jikanFetch(`/anime/${malId}/videos`);
+    const promo = v?.data?.promo?.[0]?.trailer?.youtube_id;
+    if (promo) trailer = `https://www.youtube.com/embed/${promo}?autoplay=1`;
+  } catch {
+    /* sem trailer */
+  }
+
   // Generos no idioma escolhido (os nomes do MAL vem em ingles -> traduz).
   let genres = (full?.genres || []).map((g) => g.name);
   try {
@@ -592,6 +692,7 @@ export async function getAnimeDetails(malId, opts = {}) {
     anilistId,
     imdbId,
     tmdbType,
+    trailer,
     isAnime: true,
     isMovie,
     title: base.title,

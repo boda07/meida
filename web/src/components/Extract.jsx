@@ -3,7 +3,7 @@ import { api } from "../api/client.js";
 import HlsPlayer from "./HlsPlayer.jsx";
 
 // Reprodução "sem anúncios": extrai o stream direto e junta legendas.
-export default function Extract({ details, season, episode }) {
+export default function Extract({ details, season, episode, startAt, onProgress }) {
   const [data, setData] = useState(null);
   const [subs, setSubs] = useState([]);
   const [error, setError] = useState(null);
@@ -63,7 +63,7 @@ export default function Extract({ details, season, episode }) {
   const allSubs = [...subs, ...(data.subtitles || [])];
   return (
     <>
-      <HlsPlayer sources={data.sources} subtitles={allSubs} />
+      <HlsPlayer sources={data.sources} subtitles={allSubs} startAt={startAt} onProgress={onProgress} />
       <p className="muted" style={{ fontSize: 12 }}>
         Fonte: {data.provider}
         {allSubs.length ? ` · ${allSubs.length} legendas` : " · sem legendas"}

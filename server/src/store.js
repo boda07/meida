@@ -12,10 +12,10 @@ const dataDir = process.env.DB_DIR
 mkdirSync(dataDir, { recursive: true });
 const FILE = resolve(dataDir, "data.json");
 
-let data = { users: [], library: [], progress: [], seq: { users: 0 } };
+let data = { users: [], library: [], progress: [], lists: [], seq: { users: 0 } };
 if (existsSync(FILE)) {
   try {
-    data = { users: [], library: [], progress: [], seq: { users: 0 }, ...JSON.parse(readFileSync(FILE, "utf8")) };
+    data = { users: [], library: [], progress: [], lists: [], seq: { users: 0 }, ...JSON.parse(readFileSync(FILE, "utf8")) };
   } catch {
     // ficheiro corrompido -> comeca limpo
   }
@@ -199,6 +199,8 @@ function toApiProgress(r) {
     poster: r.poster ?? null,
     season: r.season ?? null,
     episode: r.episode ?? null,
+    position: r.position ?? null, // segundos a meio (para retomar)
+    duration: r.duration ?? null, // duracao total em segundos
     startedAt: r.started_at ?? null,
     finishedAt: r.finished_at ?? null,
     status: r.status ?? "watching",
@@ -232,12 +234,16 @@ function findOrCreateProgress(userId, type, tmdbId) {
 }
 
 // Inicio: regista o arranque (so a 1a vez ou num recomeco) e a posicao atual.
+// Ao mudar de episodio, limpa a posicao guardada (para nao retomar no meio do
+// episodio anterior); se for o mesmo episodio, mantem-na (retoma a meio).
 export function startProgress(e) {
   const r = findOrCreateProgress(e.userId, e.type, e.tmdbId);
   if (e.title != null) r.title = e.title;
   if (e.poster != null) r.poster = e.poster;
+  const sameEpisode = r.season === (e.season ?? null) && r.episode === (e.episode ?? null);
   if (e.season != null) r.season = e.season;
   if (e.episode != null) r.episode = e.episode;
+  if (!sameEpisode) r.position = null;
   if (!r.started_at || r.status === "finished") {
     r.started_at = new Date().toISOString();
     r.finished_at = null;
@@ -256,6 +262,7 @@ export function finishProgress(e) {
   if (e.poster != null) r.poster = e.poster;
   if (!r.started_at) r.started_at = new Date().toISOString();
   r.finished_at = new Date().toISOString();
+  r.position = null; // episodio acabado: nada para retomar
   if (e.nextSeason != null && e.nextEpisode != null) {
     r.season = e.nextSeason;
     r.episode = e.nextEpisode;
@@ -305,9 +312,115 @@ export function updateProgress(userId, type, tmdbId, patch) {
   return toApiProgress(r);
 }
 
+// Guarda a posicao atual (segundos) para retomar a meio. Cria a entrada se nao
+// existir (ex.: utilizador saiu antes dos 5 min que o diario exige).
+export function setProgressPosition(userId, type, tmdbId, { position, duration, season, episode }) {
+  const r = findOrCreateProgress(userId, type, tmdbId);
+  if (position != null) r.position = Math.max(0, Math.floor(position));
+  if (duration != null) r.duration = Math.floor(duration);
+  if (season != null) r.season = season;
+  if (episode != null) r.episode = episode;
+  if (!r.started_at) r.started_at = new Date().toISOString();
+  if (!r.status || r.status === "finished") r.status = "watching";
+  r.updated_at = new Date().toISOString();
+  save();
+  return toApiProgress(r);
+}
+
 export function deleteProgress(userId, type, tmdbId) {
   data.progress = data.progress.filter(
     (x) => !(x.user_id === userId && x.type === type && x.tmdb_id === tmdbId)
   );
   save();
+}
+
+/* ===== Listas personalizadas =====
+   Uma lista por utilizador: { id, name, items: [{ tmdbId, type, title, poster,
+   addedAt }] }. As listas guardam titulo/cartaz no momento em que o titulo foi
+   adicionado (nao precisa de re-pedir ao TMDB para mostrar a lista). */
+function toApiList(l) {
+  return {
+    id: l.id,
+    name: l.name,
+    createdAt: l.created_at,
+    count: (l.items || []).length,
+  };
+}
+
+export function listLists(userId) {
+  return data.lists
+    .filter((l) => l.user_id === userId)
+    .sort((a, b) => (a.created_at < b.created_at ? 1 : -1))
+    .map(toApiList);
+}
+
+export function getList(userId, id) {
+  const l = data.lists.find((x) => x.user_id === userId && x.id === id);
+  if (!l) return null;
+  return {
+    id: l.id,
+    name: l.name,
+    createdAt: l.created_at,
+    items: (l.items || [])
+      .map((i) => ({
+        tmdbId: i.tmdb_id,
+        type: i.type,
+        title: i.title ?? null,
+        poster: i.poster ?? null,
+        addedAt: i.added_at ?? null,
+      }))
+      .sort((a, b) => (a.addedAt < b.addedAt ? 1 : -1)),
+  };
+}
+
+export function createList(userId, name) {
+  data.seq.lists = (data.seq.lists || 0) + 1;
+  const id = data.seq.lists;
+  const l = { id, user_id: userId, name, created_at: new Date().toISOString(), items: [] };
+  data.lists.push(l);
+  save();
+  return toApiList(l);
+}
+
+export function renameList(userId, id, name) {
+  const l = data.lists.find((x) => x.user_id === userId && x.id === id);
+  if (!l) return null;
+  l.name = name;
+  save();
+  return toApiList(l);
+}
+
+export function deleteList(userId, id) {
+  const before = data.lists.length;
+  data.lists = data.lists.filter((x) => !(x.user_id === userId && x.id === id));
+  save();
+  return data.lists.length < before;
+}
+
+export function addListTitle(userId, listId, { tmdbId, type, title, poster }) {
+  const l = data.lists.find((x) => x.user_id === userId && x.id === listId);
+  if (!l) return null;
+  l.items = l.items || [];
+  if (!l.items.some((i) => i.tmdb_id === tmdbId && i.type === type)) {
+    l.items.push({
+      tmdb_id: tmdbId,
+      type,
+      title: title ?? null,
+      poster: poster ?? null,
+      added_at: new Date().toISOString(),
+    });
+    save();
+  }
+  return getList(userId, listId);
+}
+
+export function removeListTitle(userId, listId, tmdbId, type) {
+  const l = data.lists.find((x) => x.user_id === userId && x.id === listId);
+  if (!l) return false;
+  const before = (l.items || []).length;
+  l.items = (l.items || []).filter(
+    (i) => !(i.tmdb_id === tmdbId && i.type === type)
+  );
+  save();
+  return (l.items || []).length < before;
 }

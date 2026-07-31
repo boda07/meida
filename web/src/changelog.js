@@ -2,6 +2,39 @@
 // "o que mudou" depois de o utilizador atualizar a app. Mais recente em cima.
 export const CHANGELOG = [
   {
+    version: "0.9.2",
+    items: [
+      "Nova animação de carregamento: enquanto a app está a trabalhar (por exemplo, ao mudar de Filmes/Séries/Anime ou a abrir páginas), aparece um anel animado com \"A carregar\" e pontinhos a mexer — já não ficas sem saber se está mesmo a funcionar.",
+      "O \"o que mudou\" passou a abrir sempre na versão certa, mesmo quando a versão instalada não está na lista de novidades.",
+      "Nas Definições, o idioma dos títulos passou a mostrar primeiro \"Português\" e depois \"Inglês\", como nas outras opções de idioma.",
+      "Corrigido: mudar o idioma das sinopses já não muda o idioma dos géneros ao mesmo tempo (os géneros ficam no idioma que estavam).",
+      "Novas fontes de reprodução: SuperEmbed, VidAPI e MegaEmbed (filmes e séries).",
+      "Novas fontes de reprodução: SMASHYStream (filmes e séries) — player com legendas em vários idiomas.",
+      "Legendas: o português de Portugal (PT) passou a ser preferido em relação ao português do Brasil (PT-BR) — nos resultados do OpenSubtitles e na escolha automática da legenda.",
+      "Corrigido: no \"Escolhe algo para mim\" de anime, os géneros podiam não carregar e a escolha podia falhar quando o MyAnimeList/Jikan estava instável — agora carregam e a escolha usa a AniList como reserva.",
+      "Anime: nova fonte MegaVid (legendado/dobrado), agora também a fonte default do anime.",
+      "Anime: removida a fonte MegaPlay, que deixou de funcionar (dava erro para todos os títulos).",
+      "Anime: removida a fonte VidPlus, que deixou de funcionar e ficou redundante com o MegaVid.",
+      "Anime: removida a fonte VidLink (no anime não devolvia stream; continua a funcionar em filmes e séries).",
+      "Corrigido: quando o MyAnimeList/Jikan falha, a app passa a usar automaticamente uma fonte alternativa de catálogo (Tenrai) antes de desistir — catálogo, pesquisa, géneros e episódios continuam a funcionar.",
+      "Melhorado: as fichas de anime (catálogo, pesquisa, detalhes e episódios) ficam agora guardadas no computador — se o MyAnimeList e a fonte alternativa estiverem ambos em baixo, a app usa os últimos dados conhecidos em vez de mostrar páginas vazias.",
+      "Novo: atalhos de teclado no player (torrents e HLS) — Espaço ou K para reproduzir/pausar, setas ←/→ para saltar 10 segundos, setas ↑/↓ para o volume, M para mudo e F para ecrã inteiro.",
+      "Corrigido: no manga, os géneros podiam não carregar quando o MyAnimeList/Jikan estava instável — agora usam a fonte alternativa e a cache, como o anime.",
+      "Melhorado: quando o MyAnimeList/Jikan está em baixo, a app demora agora muito menos a obter catálogo, géneros e episódios (passa logo para a fonte alternativa em vez de insistir várias vezes no Jikan).",
+      "Novo: botão \"Trailer\" nas fichas de filmes, séries e anime — abre o trailer oficial (YouTube) sem sair da app.",
+      "Novo: as fontes de reprodução são agora testadas automaticamente 1x por dia — as que estiverem em baixo aparecem sinalizadas na lista (riscadas, com \"em baixo\") e a app deixa de escolher por defeito uma fonte partida.",
+      "Novo: listas personalizadas — podes criar as tuas listas (\"Para ver\", \"Favoritos\", listas temáticas), adicionar filmes/séries/anime com o botão \"+ Lista\" nas fichas, e vê-las na página \"A minha lista\" (criar, renomear, apagar e remover títulos).",
+      "Novo: \"Continua a ver\" retoma agora mesmo a meio de um episódio — nos torrents e nos players sem anúncios, a posição é guardada automaticamente e os cards mostram uma barra de progresso; ao voltar, o vídeo começa onde ficaste (se mudares de episódio, recomeça do início).",
+    ],
+  },
+  {
+    version: "0.9.1",
+    items: [
+      "A aba Anime volta a carregar mesmo quando o MyAnimeList/Jikan esta em baixo: a app usa a AniList como reserva para manter catalogo, pesquisa e filtros a funcionar.",
+      "A pesquisa de anime ficou mais resistente a falhas temporarias dos providers.",
+    ],
+  },
+  {
     version: "0.9.0",
     items: [
       "Removidas as fontes que não funcionavam (VidSrc.cc, VidSrc, VidSrc.su e Embed.su): davam \"media unavailable\" e/ou eram bloqueadas por alguns operadores, obrigando a mexer no DNS. Ficam as que funcionam sem mexer em nada: VidFast, VidLink, MoviesAPI, 2Embed e 111Movies.",

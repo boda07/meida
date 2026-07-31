@@ -2,17 +2,37 @@ import { useEffect, useState } from "react";
 import { useSettings } from "../settings/SettingsContext.jsx";
 
 // Normaliza codigos de idioma variados (pt, pt-BR, por, en, eng...).
-function langMatches(lang, pref) {
-  const l = String(lang || "").toLowerCase();
-  if (pref === "pt") return l.startsWith("pt") || l.startsWith("por");
-  if (pref === "en") return l.startsWith("en") || l.startsWith("eng");
-  return false;
+// Devolve 0 (nao corresponde), 1 (corresponde) ou 2 (corresponde em
+// portugues de Portugal / ingles exato) para a preferencia dada.
+function langScore(lang, pref) {
+  const l = String(lang || "").toLowerCase().trim();
+  if (pref === "pt") {
+    if (l === "pt" || l === "por" || l === "pt-pt" || l === "por-pt") return 2;
+    if (l.startsWith("pt") || l.startsWith("por") || l.startsWith("pob") || l.startsWith("pb")) return 1;
+    return 0;
+  }
+  if (pref === "en") {
+    if (l === "en" || l === "eng") return 2;
+    if (l.startsWith("en") || l.startsWith("eng")) return 1;
+    return 0;
+  }
+  return 0;
 }
 
-// Indice da primeira legenda que corresponde ao idioma preferido (-1 se nenhum).
+// Indice da melhor legenda que corresponde ao idioma preferido (-1 se nenhum).
+// Prefere sempre PT-PT (2) a PT-BR (1) quando a preferencia e "pt".
 function preferredIndex(subtitles, pref) {
   if (pref === "off") return -1;
-  return subtitles.findIndex((s) => langMatches(s.lang, pref));
+  let best = -1;
+  let bestScore = 0;
+  subtitles.forEach((s, i) => {
+    const sc = langScore(s.lang, pref);
+    if (sc > bestScore) {
+      bestScore = sc;
+      best = i;
+    }
+  });
+  return best;
 }
 
 // Faixas <track> para colocar dentro de um <video>.

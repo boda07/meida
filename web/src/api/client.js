@@ -126,6 +126,7 @@ export const api = {
   genres: (type) => get("/api/genres", { type, ...langParams() }),
   pick: (opts) => get("/api/pick", { ...opts, ...langParams() }),
   sources: (opts) => get("/api/sources", opts),
+  providersHealth: () => get("/api/providers/health"),
   torrents: (opts) => get("/api/torrents", opts),
   extract: (opts) => get("/api/extract", opts),
   animeEnabled: () => get("/api/anime/enabled"),
@@ -146,6 +147,16 @@ export const api = {
   removeLibrary: (type, tmdb) => del("/api/library/item", { type, tmdb }),
   clearWatchlist: (type) => del("/api/library/watchlist", { type }),
 
+  // Listas personalizadas
+  lists: () => get("/api/lists"),
+  createList: (name) => post("/api/lists", { name }),
+  renameList: (id, name) => patch_(`/api/lists/${id}`, { name }),
+  deleteList: (id) => del(`/api/lists/${id}`),
+  listTitles: (id) => get(`/api/lists/${id}`),
+  addListTitle: (id, entry) => post(`/api/lists/${id}/titles`, entry),
+  removeListTitle: (id, tmdbId, type) =>
+    del(`/api/lists/${id}/titles`, { tmdbId, type }),
+
   // Manga / Manhwa / Manhua (Jikan + recomendacoes via lista do MAL)
   mangaGenres: () => get("/api/manga/genres", langParams()),
   mangaDiscover: (opts) => get("/api/manga/discover", { ...opts, ...langParams() }),
@@ -165,6 +176,7 @@ export const api = {
   progressItem: (type, tmdb) => get("/api/progress/item", { type, tmdb }),
   progressStart: (entry) => post("/api/progress/start", entry),
   progressFinish: (entry) => post("/api/progress/finish", entry),
+  progressPosition: (entry) => post("/api/progress/position", entry),
   progressUpdate: (patch) => patch_("/api/progress/item", patch),
   progressRemove: (type, tmdb) => del("/api/progress/item", { type, tmdb }),
 

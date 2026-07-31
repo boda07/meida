@@ -3,6 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { api } from "../api/client.js";
 import { useSettings } from "../settings/SettingsContext.jsx";
 import MediaRow from "../components/MediaRow.jsx";
+import LoadingStatus from "../components/LoadingStatus.jsx";
 
 const TYPE_FILTERS = [
   { id: "all", label: "Tudo" },
@@ -38,7 +39,7 @@ export default function Search() {
   }, [q, settings.titleLang, settings.overviewLang]);
 
   if (!q) return <p className="status muted">Escreve algo na pesquisa.</p>;
-  if (loading) return <p className="status">A procurar "{q}"...</p>;
+  if (loading) return <LoadingStatus>A procurar "{q}"</LoadingStatus>;
   if (error) return <p className="status error">{error}</p>;
   if (!results.length)
     return <p className="status muted">Sem resultados para "{q}".</p>;

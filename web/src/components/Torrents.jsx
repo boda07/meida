@@ -23,7 +23,7 @@ function matchAudio(t, mode) {
 
 // Procura torrents (Torrentio) e reproduz o escolhido no nosso player.
 // `anime` ativa o filtro de audio (sub/dub); `defaultAudio` e a preferencia.
-export default function Torrents({ type, imdb, season, episode, anime, defaultAudio }) {
+export default function Torrents({ type, imdb, season, episode, anime, defaultAudio, startAt, onProgress }) {
   const [list, setList] = useState(null);
   const [error, setError] = useState(null);
   const [selected, setSelected] = useState(null);
@@ -101,6 +101,8 @@ export default function Torrents({ type, imdb, season, episode, anime, defaultAu
           src={streamUrl}
           infoHash={selected.infoHash}
           subtitles={subs}
+          startAt={startAt}
+          onProgress={onProgress}
         />
       )}
       <div className="torrent-filters">

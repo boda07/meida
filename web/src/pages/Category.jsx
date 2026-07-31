@@ -4,6 +4,7 @@ import { useSettings } from "../settings/SettingsContext.jsx";
 import MediaRow from "../components/MediaRow.jsx";
 import MediaCard from "../components/MediaCard.jsx";
 import Hero from "../components/Hero.jsx";
+import LoadingStatus from "../components/LoadingStatus.jsx";
 
 // "Destaques" = as linhas curadas (estado inicial); as restantes usam /discover.
 const SORTS = [
@@ -185,7 +186,7 @@ export default function Category({ category, title }) {
               ))}
             </div>
           )}
-          {discLoading && <p className="status">A carregar...</p>}
+          {discLoading && <LoadingStatus>A carregar</LoadingStatus>}
           {!discLoading && !items.length && (
             <p className="muted">Nada encontrado com estes filtros.</p>
           )}
@@ -198,7 +199,7 @@ export default function Category({ category, title }) {
           )}
         </>
       ) : loading ? (
-        <p className="status">A carregar {title}...</p>
+        <LoadingStatus>A carregar {title}</LoadingStatus>
       ) : (
         <div className="rows">
           {rows.map((row) => (

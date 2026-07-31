@@ -43,6 +43,38 @@ export const PROVIDERS = [
     movie: "https://111movies.com/movie/{tmdb}",
     tv: "https://111movies.com/tv/{tmdb}/{season}/{episode}",
   },
+  {
+    // Adicionados a 2026-07-31 (testados: respondem com o player, formato TMDB).
+    // SuperEmbed usa query string; os outros usam path igual aos restantes.
+    id: "superembed",
+    name: "SuperEmbed",
+    movie: "https://multiembed.mov/?video_id={tmdb}&tmdb=1",
+    tv: "https://multiembed.mov/?video_id={tmdb}&tmdb=1&s={season}&e={episode}",
+  },
+  {
+    id: "vidapi",
+    name: "VidAPI",
+    movie: "https://vidapi.xyz/embed/movie/{tmdb}",
+    tv: "https://vidapi.xyz/embed/tv/{tmdb}/{season}/{episode}",
+  },
+  {
+    // MegEmbed (mgeb.top) anuncia poucos anuncios e tem opcoes sub/dub.
+    id: "megaembed",
+    name: "MegaEmbed",
+    movie: "https://mgeb.top/embed/movie/{tmdb}",
+    tv: "https://mgeb.top/embed/tv/{tmdb}/{season}/{episode}",
+  },
+  {
+    // SMASHYStream (embed.smashystream.com, player "AnyEmbed"): anuncia legendas
+    // em multiplos idiomas. Adicionado a 2026-07-31 (responde 200 com player).
+    // A familia VidSrc (vidsrc.fyi/.sbs -> vsembed.ru/.su) nao foi readicionada:
+    // e o mesmo backend que ja foi removido por "media unavailable" e bloqueios
+    // de DNS em alguns ISPs de Portugal.
+    id: "smashystream",
+    name: "SMASHYStream",
+    movie: "https://embed.smashystream.com/playere.php?tmdb={tmdb}",
+    tv: "https://embed.smashystream.com/playere.php?tmdb={tmdb}&season={season}&episode={episode}",
+  },
 ];
 
 /**
@@ -51,26 +83,27 @@ export const PROVIDERS = [
  * o que os providers normais (via TMDB) nao permitem.
  */
 export const ANIME_PROVIDERS = [
+  // MegaPlay (o mesmo backend do anisuge.tv) removido: os endpoints /stream/...
+  // devolviam erro 410 para todos os titulos (megaplay.buzz a 2026-07-31).
+  // VidPlus (player.vidplus.to) removido a 2026-07-31: devolvia 403 mesmo na raiz
+  // e era redundante com o MegaVid (ambos usam ids do AniList).
+  // VidLink (anime) removido a 2026-07-31: nao devolvia fontes (resolucao de
+  // stream no cliente devolvia url=undefined). Fica so para filmes/series.
   {
-    // MegaPlay (o mesmo backend do anisuge.tv) aceita o id do MAL diretamente.
-    id: "megaplay-anime",
-    name: "MegaPlay (anime)",
+    // MegaVid: player embed com formatos /mal/ e /ani/ (sub/dub). Testado a
+    // 2026-07-31: responde 200 em contexto de iframe (bloqueia acesso direto sem
+    // referer, por isso pede o header de origem ao embutir). Primeiro na lista
+    // para ser a fonte default do anime.
+    id: "megavid-mal",
+    name: "MegaVid (anime)",
     idType: "mal",
-    url: "https://megaplay.buzz/stream/mal/{mal}/{ep}/{audio}",
+    url: "https://megavid.buzz/mal/{mal}/{ep}/{audio}",
   },
   {
-    // Mesma fonte, mapeamento por AniList — util quando a por MAL engasga (520).
-    id: "megaplay-ani",
-    name: "MegaPlay 2 (anime)",
+    id: "megavid-ani",
+    name: "MegaVid 2 (anime)",
     idType: "anilist",
-    url: "https://megaplay.buzz/stream/ani/{anilist}/{ep}/{audio}",
-  },
-  {
-    // VidPlus usa AniList id — cobertura diferente, bom quando o MegaPlay falha.
-    id: "vidplus-anime",
-    name: "VidPlus (anime)",
-    idType: "anilist",
-    url: "https://player.vidplus.to/embed/anime/{anilist}/{ep}?dub={dubBool}&autoplay=true",
+    url: "https://megavid.buzz/ani/{anilist}/{ep}/{audio}",
   },
   {
     // VidNest tambem usa AniList id.
@@ -78,12 +111,6 @@ export const ANIME_PROVIDERS = [
     name: "VidNest (anime)",
     idType: "anilist",
     url: "https://vidnest.fun/anime/{anilist}/{ep}/{audio}",
-  },
-  {
-    id: "vidlink-anime",
-    name: "VidLink (anime)",
-    idType: "mal",
-    url: "https://vidlink.pro/anime/{mal}/{ep}/{audio}",
   },
   // VidSrc.cc (anime) removido junto com a familia VidSrc (ver PROVIDERS acima).
 ];
@@ -105,7 +132,6 @@ export function buildAnimeEmbedSources({ mal, anilist, episode, audio }) {
     anilist,
     ep: episode || 1,
     audio: dub ? "dub" : "sub",
-    dubBool: dub ? "true" : "false",
   };
   return ANIME_PROVIDERS
     // So inclui um provider se tivermos o id que ele precisa.

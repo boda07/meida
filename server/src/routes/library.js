@@ -7,6 +7,13 @@ import {
   setLibraryGenres,
   clearWatchlist,
   deleteLibrary,
+  listLists,
+  getList,
+  createList,
+  renameList,
+  deleteList,
+  addListTitle,
+  removeListTitle,
 } from "../store.js";
 import { requireAuth } from "../services/auth.js";
 import { getMeta, getGenreVocab, getLocalizedMeta } from "../services/tmdb.js";
@@ -179,5 +186,66 @@ libraryRouter.delete("/library/item", (req, res) => {
   const { type, tmdb } = req.query;
   if (!type || !tmdb) return res.status(400).json({ error: "faltam type e tmdb" });
   deleteLibrary(req.user.id, Number(tmdb), type);
+  res.json({ ok: true });
+});
+
+/* ===== Listas personalizadas ===== */
+
+// Lista das listas do utilizador (com contagem de titulos).
+libraryRouter.get("/lists", (req, res) => {
+  res.json({ lists: listLists(req.user.id) });
+});
+
+// Cria uma lista.
+libraryRouter.post("/lists", (req, res) => {
+  const name = String(req.body?.name || "").trim().slice(0, 60);
+  if (!name) return res.status(400).json({ error: "a lista precisa de um nome" });
+  res.json({ list: createList(req.user.id, name) });
+});
+
+// Conteudo de uma lista.
+libraryRouter.get("/lists/:id", (req, res) => {
+  const list = getList(req.user.id, Number(req.params.id));
+  if (!list) return res.status(404).json({ error: "lista nao encontrada" });
+  res.json({ list });
+});
+
+// Renomeia uma lista.
+libraryRouter.patch("/lists/:id", (req, res) => {
+  const name = String(req.body?.name || "").trim().slice(0, 60);
+  if (!name) return res.status(400).json({ error: "a lista precisa de um nome" });
+  const list = renameList(req.user.id, Number(req.params.id), name);
+  if (!list) return res.status(404).json({ error: "lista nao encontrada" });
+  res.json({ list });
+});
+
+// Apaga uma lista (e os titulos dela).
+libraryRouter.delete("/lists/:id", (req, res) => {
+  const ok = deleteList(req.user.id, Number(req.params.id));
+  if (!ok) return res.status(404).json({ error: "lista nao encontrada" });
+  res.json({ ok: true });
+});
+
+// Adiciona um titulo a uma lista.
+libraryRouter.post("/lists/:id/titles", (req, res) => {
+  const { tmdbId, type, title, poster } = req.body || {};
+  if (!tmdbId || (type !== "movie" && type !== "tv" && type !== "anime")) {
+    return res.status(400).json({ error: "tmdbId e type (movie|tv|anime) sao obrigatorios" });
+  }
+  const list = addListTitle(req.user.id, Number(req.params.id), {
+    tmdbId: Number(tmdbId),
+    type,
+    title,
+    poster,
+  });
+  if (!list) return res.status(404).json({ error: "lista nao encontrada" });
+  res.json({ list });
+});
+
+// Remove um titulo de uma lista.
+libraryRouter.delete("/lists/:id/titles", (req, res) => {
+  const { tmdbId, type } = req.query;
+  if (!tmdbId || !type) return res.status(400).json({ error: "faltam tmdbId e type" });
+  removeListTitle(req.user.id, Number(req.params.id), Number(tmdbId), type);
   res.json({ ok: true });
 });

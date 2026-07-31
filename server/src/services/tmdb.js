@@ -245,7 +245,7 @@ export async function getDetails(type, id, opts = {}) {
   const { overview, title } = langsFrom(opts);
   const titleShort = (title || "en-US").slice(0, 2); // "pt" | "en"
   // Em paralelo: sinopse (overview) + imagens localizadas, titulo localizado e ingles.
-  const [data, locData, enData] = await Promise.all([
+  const [data, locData, enData, videosData] = await Promise.all([
     tmdbFetch(
       `/${type}/${id}`,
       {
@@ -258,7 +258,18 @@ export async function getDetails(type, id, opts = {}) {
     title !== "en-US" && overview !== "en-US"
       ? tmdbFetch(`/${type}/${id}`, {}, "en-US")
       : Promise.resolve(null),
+    // Trailer em ingles (os trailers PT sao raros; o en-US cobre quase tudo).
+    tmdbFetch(`/${type}/${id}/videos`, {}, "en-US").catch(() => ({ results: [] })),
   ]);
+
+  // Trailer (YouTube): prefere o trailer oficial; senao qualquer trailer.
+  const trailerKey =
+    (videosData.results || []).find(
+      (v) => v.site === "YouTube" && v.type === "Trailer" && /official/i.test(v.name || "")
+    )?.key ||
+    (videosData.results || []).find((v) => v.site === "YouTube" && v.type === "Trailer")?.key ||
+    null;
+  const trailer = trailerKey ? `https://www.youtube.com/embed/${trailerKey}?autoplay=1` : null;
 
   const base = normalizeMedia({ ...data, media_type: type });
   // Cartaz no idioma escolhido (em PT prefere sem texto; ver pickPoster).
@@ -308,6 +319,7 @@ export async function getDetails(type, id, opts = {}) {
   return {
     ...base,
     imdbId,
+    trailer,
     genres,
     cast,
     runtime: data.runtime || (data.episode_run_time?.[0] ?? null),
