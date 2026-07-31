@@ -98,10 +98,20 @@ export default function Library() {
       return next;
     });
 
+  // Já re-fetched uma vez após resposta com `pending` (evita loop).
+  const refetched = useRef(false);
   function load() {
     return api
       .library()
-      .then((d) => setItems(d.items))
+      .then((d) => {
+        setItems(d.items);
+        if (d.pending && !refetched.current) {
+          // Notas/idiomas ainda a ser apanhados em background no servidor:
+          // volta a pedir uma vez daqui a pouco (silencioso, sem loading).
+          refetched.current = true;
+          setTimeout(load, 8000);
+        }
+      })
       .catch((e) => setError(e.message));
   }
 

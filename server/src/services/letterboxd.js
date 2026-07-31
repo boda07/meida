@@ -5,6 +5,7 @@
 // A escrita (marcar visto no Letterboxd) precisa da API oficial (ver config).
 
 import { findMovieByTitle } from "./tmdb.js";
+import { cacheGetTtl, cacheSet } from "./cache.js";
 
 const UA =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124 Safari/537.36";
@@ -169,12 +170,41 @@ export async function importWatchlist(username, maxPages = 30) {
 }
 
 // Media da comunidade (0-10) de um filme, via pagina publica do Letterboxd.
-// Best-effort (scraping): null se falhar. Cache em memoria por tmdbId.
+// Best-effort (scraping): null se falhar. Cache em memoria + disco: a memoria
+// perde-se ao reiniciar o servidor, e sem o disco a "A minha lista" voltava a
+// fazer scraping de todos os filmes a cada arranque (dezenas de segundos).
 const ratingCache = new Map();
+// TTL do disco: notas valem 14 dias (o prune global limpa); "não tem nota" (null)
+// vale 24h — evita re-scraping a cada abertura de filmes sem página no Letterboxd.
+const ratingTtl = (value) => (value == null ? 24 * 60 * 60 * 1000 : 0);
+// Só o que já é conhecido (memória ou disco) — sem scraping. Serve para a lista
+// abrir já com as notas que temos e o resto vir em background.
+export function getCachedRating(tmdbId) {
+  const key = Number(tmdbId);
+  if (!key) return { rating: null, known: false };
+  if (ratingCache.has(key)) return { rating: ratingCache.get(key), known: true };
+  const hit = cacheGetTtl(`lb:${key}`, ratingTtl(null));
+  if (hit.found) {
+    ratingCache.set(key, hit.value);
+    return { rating: hit.value, known: true };
+  }
+  return { rating: null, known: false };
+}
+
+export function getCachedRatings(tmdbIds) {
+  const out = new Map();
+  for (const id of new Set(tmdbIds.map(Number).filter(Boolean))) {
+    const st = getCachedRating(id);
+    if (st.known && st.rating != null) out.set(id, st.rating);
+  }
+  return out;
+}
+
 export async function getRating(tmdbId) {
   const key = Number(tmdbId);
   if (!key) return null;
-  if (ratingCache.has(key)) return ratingCache.get(key);
+  const st = getCachedRating(key);
+  if (st.known) return st.rating;
   let rating = null;
   try {
     // /tmdb/{id} redireciona para a pagina do filme.
@@ -195,6 +225,9 @@ export async function getRating(tmdbId) {
     /* ignora */
   }
   ratingCache.set(key, rating);
+  // Persiste sempre (nota ou "sem nota"): o sem-nota expira em 24h, por isso uma
+  // falha temporaria do Letterboxd nao deixa o filme sem nota para sempre.
+  cacheSet(`lb:${key}`, rating);
   return rating;
 }
 
@@ -206,8 +239,9 @@ export async function getRatings(tmdbIds, concurrency = 5) {
   async function worker() {
     while (i < ids.length) {
       const id = ids[i++];
+      const scraped = !getCachedRating(id).known;
       out.set(id, await getRating(id));
-      await sleep(120); // gentil com o Letterboxd
+      if (scraped) await sleep(120); // gentil com o Letterboxd (so no scraping)
     }
   }
   await Promise.all(Array.from({ length: Math.min(concurrency, ids.length) }, worker));

@@ -16,10 +16,10 @@ import {
   removeListTitle,
 } from "../store.js";
 import { requireAuth } from "../services/auth.js";
-import { getMeta, getGenreVocab, getLocalizedMeta } from "../services/tmdb.js";
+import { getMeta, getGenreVocab, getLocalizedMeta, getLocalizedMetaCached } from "../services/tmdb.js";
 import { getAnimeRatingsBatch } from "../services/jikan.js";
 import { status as malStatus, getMeanScores } from "../services/mal.js";
-import { getRatings as getLetterboxdRatings } from "../services/letterboxd.js";
+import { getCachedRating, getCachedRatings, getRatings as getLetterboxdRatings } from "../services/letterboxd.js";
 
 export const libraryRouter = Router();
 libraryRouter.use(requireAuth);
@@ -62,6 +62,11 @@ async function pMap(arr, concurrency, fn) {
 // comunidade E dos generos dos itens antigos que ainda nao os tenham (ex.: filmes
 // importados do Letterboxd vieram sem generos). Em lote, para aguentar listas
 // grandes (centenas de titulos) em poucos segundos.
+//
+// A resposta usa o que ja esta em cache (memoria/disco) e dispara o que falta
+// (scraping do Letterboxd, TMDB por item) em background — assim a lista abre
+// sempre imediatamente e as notas aparecem no pedido seguinte (`pending` diz ao
+// frontend para voltar a pedir daqui a pouco).
 libraryRouter.get("/library", async (req, res) => {
   const items = listLibrary(req.user.id).map(normalizeRow);
 
@@ -81,26 +86,19 @@ libraryRouter.get("/library", async (req, res) => {
     for (const i of stillAnime) applyRating(req.user.id, i, map.get(Number(i.tmdbId)));
   }
 
-  // Filmes: a nota da comunidade e a do Letterboxd (mais fiavel que o vote_average
-  // do TMDB). Aplica a TODOS os filmes — corrige tambem os que ficaram com a nota
-  // do TMDB de quando foram adicionados (so substitui quando o Letterboxd tem media).
+  // Filmes: aplica ja as notas Letterboxd conhecidas (memoria/disco, sem scraping).
   const movies = items.filter((i) => i.type === "movie");
-  if (movies.length) {
-    const lb = await getLetterboxdRatings(movies.map((i) => i.tmdbId));
-    for (const i of movies) applyRating(req.user.id, i, lb.get(Number(i.tmdbId)));
-  }
+  const lbKnown = getCachedRatings(movies.map((i) => i.tmdbId));
+  for (const i of movies) applyRating(req.user.id, i, lbKnown.get(Number(i.tmdbId)));
 
-  // Filmes/series: TMDB preenche nota em falta E/OU generos em falta, numa so
-  // chamada por item (concorrencia limitada).
-  const needMeta = items.filter(
-    (i) =>
-      (i.type === "movie" || i.type === "tv") &&
-      (i.rating == null || !i.genres || !i.genres.length)
-  );
-  if (needMeta.length) {
-    await pMap(needMeta, 12, async (i) =>
-      applyMeta(req.user.id, i, await getMeta(i.type, i.tmdbId))
-    );
+  // Titulos E cartazes de filmes/series no idioma escolhido (ex.: watchlist
+  // importada do Letterboxd vinha em ingles) — os ja conhecidos, sem pedidos.
+  const localizable = items.filter((i) => i.type === "movie" || i.type === "tv");
+  const titleLang = req.query.titleLang;
+  for (const i of localizable) {
+    const m = getLocalizedMetaCached(i.type, i.tmdbId, titleLang);
+    if (m?.title) i.title = m.title;
+    if (m?.poster) i.poster = m.poster;
   }
 
   // Valida + traduz os generos: so mostra generos conhecidos (TMDB + MAL), corrige
@@ -122,20 +120,69 @@ libraryRouter.get("/library", async (req, res) => {
     }
   }
 
-  // Titulos E cartazes de filmes/series no idioma escolhido (ex.: watchlist
-  // importada do Letterboxd vinha em ingles). Em cache, por isso so a 1a vez e
-  // mais lento.
-  const localizable = items.filter((i) => i.type === "movie" || i.type === "tv");
-  if (localizable.length) {
-    await pMap(localizable, 12, async (i) => {
-      const m = await getLocalizedMeta(i.type, i.tmdbId, req.query.titleLang);
-      if (m?.title) i.title = m.title;
-      if (m?.poster) i.poster = m.poster;
-    });
+  // O que falta preencher vai para background (não bloqueia a resposta):
+  //  - notas Letterboxd dos filmes ainda não conhecidas;
+  //  - generos do TMDB dos itens em falta (a nota em falta eterna — filme sem
+  //    nota em lado nenhum — não mantém `pending` para sempre);
+  //  - titulo/cartaz localizados em falta.
+  const pending = Boolean(
+    movies.some((i) => !getCachedRating(Number(i.tmdbId)).known) ||
+    items.some(
+      (i) =>
+        (i.type === "movie" || i.type === "tv") &&
+        (!i.genres || !i.genres.length)
+    ) ||
+    localizable.some((i) => !getLocalizedMetaCached(i.type, i.tmdbId, titleLang))
+  );
+  if (pending) {
+    // Sem await: corre em paralelo e a proxima abertura ja vem completa.
+    runBackfill(req.user.id, items, titleLang);
   }
 
-  res.json({ items });
+  res.json({ items, pending });
 });
+
+// Preenchimento em background do que a lista ainda nao tinha em cache.
+async function runBackfill(userId, items, titleLang) {
+  try {
+    // Filmes: scraping do Letterboxd so para os que nao tem nota conhecida.
+    const movies = items.filter((i) => i.type === "movie");
+    const missingLb = movies.filter(
+      (i) => !getCachedRating(Number(i.tmdbId)).known
+    );
+    if (missingLb.length) {
+      const lb = await getLetterboxdRatings(missingLb.map((i) => i.tmdbId));
+      for (const i of missingLb) applyRating(userId, i, lb.get(Number(i.tmdbId)));
+    }
+
+    // Filmes/series: TMDB preenche nota em falta E/OU generos em falta.
+    const needMeta = items.filter(
+      (i) =>
+        (i.type === "movie" || i.type === "tv") &&
+        (i.rating == null || !i.genres || !i.genres.length)
+    );
+    if (needMeta.length) {
+      await pMap(needMeta, 12, async (i) =>
+        applyMeta(userId, i, await getMeta(i.type, i.tmdbId))
+      );
+    }
+
+    // Titulo/cartaz localizados em falta.
+    const localizable = items.filter((i) => i.type === "movie" || i.type === "tv");
+    const needLoc = localizable.filter(
+      (i) => !getLocalizedMetaCached(i.type, i.tmdbId, titleLang)
+    );
+    if (needLoc.length) {
+      await pMap(needLoc, 12, async (i) => {
+        const m = await getLocalizedMeta(i.type, i.tmdbId, titleLang);
+        if (m?.title) i.title = m.title;
+        if (m?.poster) i.poster = m.poster;
+      });
+    }
+  } catch {
+    /* best-effort: a proxima abertura tenta outra vez */
+  }
+}
 
 // Estado de um titulo (para a pagina de detalhe saber visto/nota atuais).
 libraryRouter.get("/library/item", (req, res) => {

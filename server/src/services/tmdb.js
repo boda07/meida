@@ -1,4 +1,5 @@
 import { config, assertTmdbConfigured } from "../config.js";
+import { cacheGet, cacheSet } from "./cache.js";
 
 const { baseUrl, language, titleLanguage } = config.tmdb;
 
@@ -430,6 +431,19 @@ function pickPoster(posters, short) {
   return posters[0]?.file_path || null;
 }
 
+// Só o que já é conhecido (memória/disco), sem pedidos ao TMDB. Para a lista
+// abrir já com os títulos/cartazes localizados que temos.
+export function getLocalizedMetaCached(type, id, titleLang) {
+  if (type !== "movie" && type !== "tv") return null;
+  const target =
+    LANG_MAP[titleLang] || (String(titleLang || "").includes("-") ? titleLang : "en-US");
+  const key = `${type}:${id}:${target}`;
+  if (localMetaCache.has(key)) return localMetaCache.get(key);
+  const disk = cacheGet(`tmeta:${key}`);
+  if (disk) localMetaCache.set(key, disk);
+  return disk;
+}
+
 // Titulo + cartaz de um filme/serie no idioma pedido (titulo com fallback PT->EN;
 // cartaz no idioma). Em cache por (tipo, id, idioma) para nao repetir pedidos a
 // cada abertura da lista. Os dois vem do(s) mesmo(s) pedido(s) — sem custo extra.
@@ -441,6 +455,13 @@ export async function getLocalizedMeta(type, id, titleLang) {
   const short = target.slice(0, 2);
   const key = `${type}:${id}:${target}`;
   if (localMetaCache.has(key)) return localMetaCache.get(key);
+  // Cache em disco: a memoria perde-se ao reiniciar e a lista re-faria 2 pedidos
+  // ao TMDB por item de cada vez.
+  const disk = cacheGet(`tmeta:${key}`);
+  if (disk) {
+    localMetaCache.set(key, disk);
+    return disk;
+  }
   try {
     const imgParams = {
       append_to_response: "images",
@@ -461,6 +482,9 @@ export async function getLocalizedMeta(type, id, titleLang) {
     }
     const out = { title, poster };
     localMetaCache.set(key, out);
+    // Só persiste quando há alguma coisa (uma falha temporaria do TMDB nao deve
+    // travar titulo/cartaz para sempre).
+    if (out.title || out.poster) cacheSet(`tmeta:${key}`, out);
     return out;
   } catch {
     return null;

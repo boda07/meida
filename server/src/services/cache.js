@@ -27,13 +27,24 @@ const fileFor = (key) =>
   resolve(cacheDir, createHash("sha1").update(key).digest("hex") + ".json");
 
 export function cacheGet(key) {
+  const hit = cacheGetTtl(key, 0);
+  return hit.found ? hit.value : null;
+}
+
+// Como cacheGet, mas devolve { found, value } e respeita uma idade máxima
+// (ms). Com maxAgeMs = 0 ignora a idade. Serve para entradas que devem
+// "expirar" mais cedo que o prune global (ex.: resultados null temporarios).
+export function cacheGetTtl(key, maxAgeMs = 0) {
   try {
     const f = fileFor(key);
-    if (!existsSync(f)) return null;
+    if (!existsSync(f)) return { found: false, value: null };
     const entry = JSON.parse(readFileSync(f, "utf8"));
-    return entry?.value ?? null;
+    if (maxAgeMs && Date.now() - (entry.at || 0) > maxAgeMs) {
+      return { found: false, value: null };
+    }
+    return { found: true, value: entry?.value ?? null };
   } catch {
-    return null;
+    return { found: false, value: null };
   }
 }
 
@@ -63,3 +74,4 @@ export function pruneCache(maxAgeMs = 14 * 24 * 60 * 60 * 1000) {
 }
 
 pruneCache();
+
