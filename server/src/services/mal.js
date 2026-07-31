@@ -3,6 +3,7 @@
 import crypto from "node:crypto";
 import { config } from "../config.js";
 import { setMalTokens, getMalTokens } from "../store.js";
+import { netFetch } from "./net.js";
 
 const AUTH = "https://myanimelist.net/v1/oauth2";
 const API = "https://api.myanimelist.net/v2";
@@ -34,7 +35,7 @@ async function tokenRequest(params) {
     ...(config.mal.clientSecret ? { client_secret: config.mal.clientSecret } : {}),
     ...params,
   });
-  const res = await fetch(`${AUTH}/token`, {
+  const res = await netFetch(`${AUTH}/token`, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body,
@@ -94,7 +95,7 @@ async function getValidToken(userId) {
 }
 
 async function apiGet(path, token) {
-  const res = await fetch(`${API}${path}`, {
+  const res = await netFetch(`${API}${path}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   if (!res.ok) throw new Error(`MAL GET ${path} ${res.status}`);
@@ -180,7 +181,7 @@ export async function updateEpisode(userId, animeId, episode) {
     status,
     num_watched_episodes: String(watched),
   });
-  const res = await fetch(`${API}/anime/${animeId}/my_list_status`, {
+  const res = await netFetch(`${API}/anime/${animeId}/my_list_status`, {
     method: "PATCH",
     headers: {
       Authorization: `Bearer ${token}`,

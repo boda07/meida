@@ -6,6 +6,7 @@
 
 import { findMovieByTitle } from "./tmdb.js";
 import { cacheGetTtl, cacheSet } from "./cache.js";
+import { netFetch } from "./net.js";
 
 const UA =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124 Safari/537.36";
@@ -26,7 +27,7 @@ export async function importDiary(username) {
   const user = String(username || "").trim().toLowerCase().replace(/[^a-z0-9_]/g, "");
   if (!user) throw httpError(400, "Nome de utilizador do Letterboxd invalido.");
 
-  const res = await fetch(`https://letterboxd.com/${user}/rss/`, {
+  const res = await netFetch(`https://letterboxd.com/${user}/rss/`, {
     headers: { "user-agent": UA, accept: "application/rss+xml,text/xml" },
   });
   if (res.status === 404) throw httpError(404, `Utilizador "${user}" nao encontrado no Letterboxd.`);
@@ -80,7 +81,7 @@ export async function importFilms(username, maxPages = 60) {
       page === 1
         ? `https://letterboxd.com/${user}/films/`
         : `https://letterboxd.com/${user}/films/page/${page}/`;
-    const res = await fetch(url, { headers: { "user-agent": UA, accept: "text/html" } });
+    const res = await netFetch(url, { headers: { "user-agent": UA, accept: "text/html" } });
     if (!res.ok) break;
     const html = await res.text();
     let added = 0;
@@ -133,7 +134,7 @@ export async function importWatchlist(username, maxPages = 30) {
   const films = [];
   const seenName = new Set();
   for (let page = 1; page <= maxPages; page++) {
-    const res = await fetch(`https://letterboxd.com/${user}/watchlist/page/${page}/`, {
+    const res = await netFetch(`https://letterboxd.com/${user}/watchlist/page/${page}/`, {
       headers: { "user-agent": UA, accept: "text/html" },
     });
     if (!res.ok) break;
@@ -208,7 +209,7 @@ export async function getRating(tmdbId) {
   let rating = null;
   try {
     // /tmdb/{id} redireciona para a pagina do filme.
-    const res = await fetch(`https://letterboxd.com/tmdb/${key}/`, {
+    const res = await netFetch(`https://letterboxd.com/tmdb/${key}/`, {
       headers: { "user-agent": UA, accept: "text/html" },
       redirect: "follow",
     });

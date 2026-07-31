@@ -2,6 +2,12 @@
 // "o que mudou" depois de o utilizador atualizar a app. Mais recente em cima.
 export const CHANGELOG = [
   {
+    version: "0.9.5",
+    items: [
+      "Novo: modo offline da \"A minha lista\" — sem internet, a lista continua a abrir com os títulos, cartazes, notas e géneros que já tinham sido carregados alguma vez (um aviso discreto diz que estás sem internet; os dados em falta são preenchidos quando a rede voltar).",
+    ],
+  },
+  {
     version: "0.9.4",
     items: [
       "Melhorado: \"A minha lista\" abre agora quase instantaneamente — as notas do Letterboxd e as fichas são carregadas em segundo plano e aparecem mal estejam prontas (antes podia demorar vários segundos sempre que a app arrancava).",

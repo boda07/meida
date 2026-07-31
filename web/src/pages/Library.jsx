@@ -40,6 +40,7 @@ export default function Library() {
   const [items, setItems] = useState([]);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [offline, setOffline] = useState(false);
   const [filter, setFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
   const [sort, setSort] = useState("recent");
@@ -105,9 +106,11 @@ export default function Library() {
       .library()
       .then((d) => {
         setItems(d.items);
-        if (d.pending && !refetched.current) {
+        setOffline(d.online === false);
+        if (d.pending && d.online !== false && !refetched.current) {
           // Notas/idiomas ainda a ser apanhados em background no servidor:
           // volta a pedir uma vez daqui a pouco (silencioso, sem loading).
+          // Offline não: sem rede não há backfill, só voltaria a pedir à toa.
           refetched.current = true;
           setTimeout(load, 8000);
         }
@@ -276,6 +279,11 @@ export default function Library() {
 
   return (
     <div className="sub-page">
+      {offline && (
+        <p className="lib-offline" role="status">
+          Sem internet — a mostrar os dados guardados.
+        </p>
+      )}
       <div className="lib-header">
         <h2 className="row-title">A minha lista</h2>
         <div className="lib-toolbar">

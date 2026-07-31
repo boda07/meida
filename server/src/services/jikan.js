@@ -5,6 +5,7 @@
 // arranjar o IMDB id que os torrents precisam (match best-effort).
 import { findTmdbMatch, getExternalImdb, getGenreVocab } from "./tmdb.js";
 import { cacheGet, cacheSet } from "./cache.js";
+import { netFetch } from "./net.js";
 
 const JIKAN = "https://api.jikan.moe/v4";
 const JIKAN_MIRROR = "https://api.tenrai.org/v1"; // espelho do schema v4 do Jikan
@@ -29,7 +30,7 @@ async function jikanFetchBase(base, path, options, tries) {
 
   let res;
   try {
-    res = await fetch(`${base}${path}`, {
+    res = await netFetch(`${base}${path}`, {
       headers: { accept: "application/json" },
       signal: controller.signal,
     });
@@ -160,7 +161,7 @@ async function searchAnimeAnilist(query, opts = {}) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 4500);
   try {
-    const res = await fetch("https://graphql.anilist.co", {
+    const res = await netFetch("https://graphql.anilist.co", {
       method: "POST",
       headers: { "content-type": "application/json", accept: "application/json" },
       body: JSON.stringify({ query: queryText, variables: { q: query } }),
@@ -179,7 +180,7 @@ async function searchAnimeAnilist(query, opts = {}) {
 async function getAnimeDetailsFromAnilist(malId, opts = {}) {
   const id = Number(malId);
   const query = `query($id:Int){Media(idMal:$id,type:ANIME){id idMal title{romaji english native} description(asHtml:false) coverImage{extraLarge large} bannerImage startDate{year} averageScore meanScore genres episodes duration format}}`;
-  const res = await fetch("https://graphql.anilist.co", {
+  const res = await netFetch("https://graphql.anilist.co", {
     method: "POST",
     headers: { "content-type": "application/json", accept: "application/json" },
     body: JSON.stringify({ query, variables: { id } }),
@@ -247,7 +248,7 @@ async function fetchAnilistAnimeList({ sort, format = null, status = null, seaso
   if (season) variables.season = season;
   if (seasonYear) variables.seasonYear = seasonYear;
 
-  const res = await fetch("https://graphql.anilist.co", {
+  const res = await netFetch("https://graphql.anilist.co", {
     method: "POST",
     headers: { "content-type": "application/json", accept: "application/json" },
     body: JSON.stringify({ query, variables }),
@@ -484,7 +485,7 @@ async function pickAnimeFromAnilist({ genres = [], exclude = [] }, opts = {}) {
     const genreNotIn = exclude.map((id) => byId.get(String(id))).filter(Boolean);
     const romaji = isRomaji(opts);
     const query = `query($genre_in:[String],$genre_not_in:[String],$isAdult:Boolean){Page(page:1,perPage:25){media(type:ANIME,sort:POPULARITY_DESC,genre_in:$genre_in,genre_not_in:$genre_not_in,isAdult:$isAdult){idMal title{romaji english native} description(asHtml:false) coverImage{extraLarge large} bannerImage startDate{year} averageScore meanScore}}}`;
-    const res = await fetch("https://graphql.anilist.co", {
+    const res = await netFetch("https://graphql.anilist.co", {
       method: "POST",
       headers: { "content-type": "application/json", accept: "application/json" },
       body: JSON.stringify({
@@ -519,7 +520,7 @@ export async function getAnimeRatingsBatch(malIds) {
   for (let i = 0; i < ids.length; i += 50) {
     const chunk = ids.slice(i, i + 50);
     try {
-      const res = await fetch("https://graphql.anilist.co", {
+      const res = await netFetch("https://graphql.anilist.co", {
         method: "POST",
         headers: { "content-type": "application/json", accept: "application/json" },
         body: JSON.stringify({ query, variables: { ids: chunk } }),
@@ -546,7 +547,7 @@ export async function getAnilistMeta(malId) {
   if (anilistMetaCache.has(key)) return anilistMetaCache.get(key);
   let out = { id: null, banner: null };
   try {
-    const res = await fetch("https://graphql.anilist.co", {
+    const res = await netFetch("https://graphql.anilist.co", {
       method: "POST",
       headers: { "content-type": "application/json", accept: "application/json" },
       body: JSON.stringify({
@@ -576,7 +577,7 @@ export async function getAnimeBannersBatch(malIds) {
   for (let i = 0; i < ids.length; i += 50) {
     const chunk = ids.slice(i, i + 50);
     try {
-      const res = await fetch("https://graphql.anilist.co", {
+      const res = await netFetch("https://graphql.anilist.co", {
         method: "POST",
         headers: { "content-type": "application/json", accept: "application/json" },
         body: JSON.stringify({ query, variables: { ids: chunk } }),
@@ -600,7 +601,7 @@ export async function malToAnilist(malId) {
   const key = Number(malId);
   if (anilistCache.has(key)) return anilistCache.get(key);
   try {
-    const res = await fetch("https://graphql.anilist.co", {
+    const res = await netFetch("https://graphql.anilist.co", {
       method: "POST",
       headers: { "content-type": "application/json", accept: "application/json" },
       body: JSON.stringify({

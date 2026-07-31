@@ -20,6 +20,7 @@ import { getMeta, getGenreVocab, getLocalizedMeta, getLocalizedMetaCached } from
 import { getAnimeRatingsBatch } from "../services/jikan.js";
 import { status as malStatus, getMeanScores } from "../services/mal.js";
 import { getCachedRating, getCachedRatings, getRatings as getLetterboxdRatings } from "../services/letterboxd.js";
+import { isOnline } from "../services/net.js";
 
 export const libraryRouter = Router();
 libraryRouter.use(requireAuth);
@@ -69,10 +70,13 @@ async function pMap(arr, concurrency, fn) {
 // frontend para voltar a pedir daqui a pouco).
 libraryRouter.get("/library", async (req, res) => {
   const items = listLibrary(req.user.id).map(normalizeRow);
+  // Sem internet: serve só o que já está em cache (sem pedidos externos, sem
+  // esperas de timeout) — a lista abre na mesma, com os dados guardados.
+  const online = isOnline();
 
   // Anime: media EXATA do MAL (1 pedido) e o resto via AniList em lote.
   const animeMissing = items.filter((i) => i.type === "anime" && i.rating == null);
-  if (animeMissing.length && malStatus(req.user.id).linked) {
+  if (online && animeMissing.length && malStatus(req.user.id).linked) {
     try {
       const means = await getMeanScores(req.user.id);
       for (const i of animeMissing) applyRating(req.user.id, i, means.get(Number(i.tmdbId)));
@@ -81,7 +85,7 @@ libraryRouter.get("/library", async (req, res) => {
     }
   }
   const stillAnime = animeMissing.filter((i) => i.rating == null);
-  if (stillAnime.length) {
+  if (online && stillAnime.length) {
     const map = await getAnimeRatingsBatch(stillAnime.map((i) => i.tmdbId));
     for (const i of stillAnime) applyRating(req.user.id, i, map.get(Number(i.tmdbId)));
   }
@@ -104,7 +108,8 @@ libraryRouter.get("/library", async (req, res) => {
   // Valida + traduz os generos: so mostra generos conhecidos (TMDB + MAL), corrige
   // maiusculas, traduz para o idioma escolhido e remove duplicados. Assim some o
   // lixo que ficou guardado em listas antigas (ex.: titulos parados nos generos).
-  const vocab = await getGenreVocab(req.query.genreLang || req.query.overviewLang);
+  // Offline: salta (faria pedidos ao TMDB); os generos ja validados ficam como estao.
+  const vocab = online ? await getGenreVocab(req.query.genreLang || req.query.overviewLang) : null;
   if (vocab) {
     for (const i of items) {
       const seen = new Set();
@@ -134,12 +139,12 @@ libraryRouter.get("/library", async (req, res) => {
     ) ||
     localizable.some((i) => !getLocalizedMetaCached(i.type, i.tmdbId, titleLang))
   );
-  if (pending) {
+  if (pending && online) {
     // Sem await: corre em paralelo e a proxima abertura ja vem completa.
     runBackfill(req.user.id, items, titleLang);
   }
 
-  res.json({ items, pending });
+  res.json({ items, pending, online });
 });
 
 // Preenchimento em background do que a lista ainda nao tinha em cache.

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { imageUrl } from "../api/client.js";
 
@@ -6,14 +7,16 @@ export default function MediaCard({ item, landscape = false }) {
   const img = landscape
     ? imageUrl(item.backdrop, "w500")
     : imageUrl(item.poster, "w342");
+  // Poster que falhou (ex.: sem internet) cai no placeholder, sem icone partido.
+  const [broken, setBroken] = useState(false);
 
   const subtitle = item.type === "tv" ? `${item.year || ""} · Série` : item.year;
 
   return (
     <Link to={`/details/${item.type}/${item.id}`} className={`card ${landscape ? "card-landscape" : "card-portrait"}`}>
       <div className="card-poster">
-        {img ? (
-          <img src={img} alt={item.title} loading="lazy" />
+        {img && !broken ? (
+          <img src={img} alt={item.title} loading="lazy" onError={() => setBroken(true)} />
         ) : (
           <div style={{ width: "100%", height: "100%", background: "#333", display: "flex", alignItems: "center", justifyContent: "center" }}>
             {item.title}
