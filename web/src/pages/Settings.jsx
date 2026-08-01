@@ -108,6 +108,143 @@ function MalSection({ user }) {
   );
 }
 
+// Seccao de ligacao ao AniList (anime). Fonte de verdade da lista quando o MAL
+// nao esta ligado: importa estado/nota/progresso e marca episodios vistos.
+function AniListSection({ user }) {
+  const [enabled, setEnabled] = useState(false);
+  const [linked, setLinked] = useState(false);
+  const [username, setUsername] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const [syncing, setSyncing] = useState(false);
+  const [malLinked, setMalLinked] = useState(false);
+  const [msg, setMsg] = useState(null);
+
+  function refresh() {
+    api
+      .anilistStatus()
+      .then((d) => {
+        setLinked(d.linked);
+        setUsername(d.username);
+      })
+      .catch(() => {});
+    // Verifica tambem se o MAL esta ligado: o cross-sync so faz sentido se sim.
+    api
+      .malStatus()
+      .then((d) => setMalLinked(d.linked))
+      .catch(() => {});
+  }
+
+  useEffect(() => {
+    if (!user) return;
+    api
+      .anilistEnabled()
+      .then((d) => setEnabled(d.enabled))
+      .catch(() => {});
+    refresh();
+  }, [user]);
+
+  useEffect(() => {
+    const onFocus = () => refresh();
+    window.addEventListener("focus", onFocus);
+    return () => window.removeEventListener("focus", onFocus);
+  }, []);
+
+  async function link() {
+    setMsg(null);
+    try {
+      const { authUrl } = await api.anilistLogin();
+      openExternal(authUrl);
+      setMsg("Autoriza no browser e volta a esta janela.");
+    } catch (e) {
+      setMsg(e.message);
+    }
+  }
+
+  async function importList() {
+    setBusy(true);
+    setMsg(null);
+    try {
+      const d = await api.anilistImport();
+      setMsg(`Importados ${d.imported} animes para a tua lista.`);
+    } catch (e) {
+      setMsg(e.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function unlink() {
+    await api.anilistUnlink().catch(() => {});
+    refresh();
+    setMsg(null);
+  }
+
+  async function syncCross() {
+    setSyncing(true);
+    setMsg(null);
+    try {
+      const d = await api.anilistSync();
+      setMsg(`Cross-sync concluído: +${d.malUpdated} no MAL, +${d.aniUpdated} no AniList.`);
+    } catch (e) {
+      setMsg(e.message || "Falha na sincronização.");
+    } finally {
+      setSyncing(false);
+    }
+  }
+
+  if (!user) {
+    return (
+      <p className="muted">
+        <Link to="/login">Entra</Link> para ligares o AniList.
+      </p>
+    );
+  }
+  if (!enabled) {
+    return (
+      <p className="muted">
+        O servidor não tem o AniList configurado (falta ANILIST_CLIENT_ID).
+      </p>
+    );
+  }
+
+  return (
+    <div>
+      {linked ? (
+        <>
+            <p className="muted">
+              Ligado como <b>{username || "?"}</b>. Quando não tens o MyAnimeList
+              ligado, os episódios de anime que vires são marcados no teu AniList
+              automaticamente. Se tens o MAL também ligado, podes fazer cross-sync
+              manual (Sincronizar com MAL) ou ela corre automaticamente ao abrir a
+              Library.
+            </p>
+          <div className="set-row">
+            <button className="set-choice active" onClick={importList} disabled={busy}>
+              {busy ? "A importar..." : "Importar lista do AniList"}
+            </button>
+            {malLinked && (
+              <button className="set-choice" onClick={syncCross} disabled={syncing}>
+                {syncing ? "A sincronizar..." : "Sincronizar com MAL"}
+              </button>
+            )}
+            <button className="set-clear" onClick={unlink}>Desligar conta</button>
+          </div>
+        </>
+      ) : (
+        <>
+          <p className="muted">
+            Liga a tua conta para importar a tua lista e marcar episódios vistos.
+          </p>
+          <button className="set-choice active" onClick={link}>
+            Ligar AniList
+          </button>
+        </>
+      )}
+      {msg && <p className="muted" style={{ marginTop: 10 }}>{msg}</p>}
+    </div>
+  );
+}
+
 // Seccao de ligacao ao Letterboxd (filmes).
 function LetterboxdSection({ user }) {
   const [username, setUsername] = useState(null);
@@ -343,6 +480,12 @@ export default function Settings() {
   const [imgUrl, setImgUrl] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
+  const [provHealth, setProvHealth] = useState(null);
+
+  // Estado (vivo/morto) dos providers: carregado uma vez (refresh manual no botão).
+  useEffect(() => {
+    api.providersHealth().then(setProvHealth).catch(() => {});
+  }, []);
 
   async function pickAvatar(value) {
     setError(null);
@@ -685,6 +828,12 @@ export default function Settings() {
         <MalSection user={user} />
       </section>
 
+      {/* ===== AniList ===== */}
+      <section className="set-section">
+        <h3>AniList</h3>
+        <AniListSection user={user} />
+      </section>
+
       {/* ===== Letterboxd ===== */}
       <section className="set-section">
         <h3>Letterboxd</h3>
@@ -768,6 +917,49 @@ export default function Settings() {
             {error && <p className="auth-error">{error}</p>}
           </>
         )}
+      </section>
+
+      {/* ===== Estado dos providers ===== */}
+      <section className="set-section">
+        <h3>Estado dos providers</h3>
+        <p className="muted">
+          Fontes de stream usadas no player (embeds). Quando um está morto fica
+          riscado e é saltado na escolha automática.
+        </p>
+        {provHealth.checking && !provHealth.providers ? (
+          <p className="muted">A testar providers...</p>
+        ) : !provHealth.providers ? (
+          <p className="muted">Sem informação.</p>
+        ) : (
+          <div className="provider-health-list">
+            {provHealth.providers.map((p) => (
+              <div className="provider-health-row" key={p.id}>
+                <span className={p.ok ? "ph-ok" : "ph-dead"}>
+                  {p.ok ? "●" : "✕"} {p.name}
+                </span>
+                {!p.ok && p.error && (
+                  <span className="ph-reason muted">({p.error})</span>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+        {provHealth.stale && <span className="ph-stale">Atualizado há 24h+</span>}
+        <div className="set-row" style={{ marginTop: 8 }}>
+          <button
+            className="btn"
+            onClick={async () => {
+              setProvHealth({ checking: true, providers: null, stale: false });
+              try {
+                setProvHealth(await api.providersHealth(true));
+              } catch (e) {
+                setProvHealth(null);
+              }
+            }}
+          >
+            Rever agora
+          </button>
+        </div>
       </section>
 
       {/* ===== App (só na app instalada) ===== */}

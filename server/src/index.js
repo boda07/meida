@@ -10,9 +10,11 @@ import { libraryRouter } from "./routes/library.js";
 import { streamRouter } from "./routes/stream.js";
 import { playRouter } from "./routes/play.js";
 import { malRouter } from "./routes/mal.js";
+import { anilistRouter } from "./routes/anilist.js";
 import { mangaRouter } from "./routes/manga.js";
 import { letterboxdRouter } from "./routes/letterboxd.js";
 import { progressRouter } from "./routes/progress.js";
+import { log } from "./services/log.js";
 
 const app = express();
 app.use(cors());
@@ -35,6 +37,7 @@ app.use("/api", playRouter);
 // malRouter ANTES do libraryRouter: o library aplica requireAuth a tudo o que
 // passa por ele, e as rotas publicas do MAL (callback OAuth) nao podem ser bloqueadas.
 app.use("/api", malRouter);
+app.use("/api", anilistRouter);
 app.use("/api", mangaRouter);
 app.use("/api", letterboxdRouter);
 app.use("/api", progressRouter);
@@ -53,18 +56,17 @@ if (process.env.SERVE_WEB === "1") {
   });
 }
 
-// Handler de erros central.
-app.use((err, req, res, next) => {
-  console.error("[erro]", err.message);
-  res.status(500).json({ error: err.message });
+// Handler de erros central. `_next` precisa de estar na assinatura para o
+// Express saber que isto e um error handler (4 argumentos).
+app.use((err, req, res, _next) => {
+  log.error("backend", err.message, { url: req.path, status: err.status });
+  res.status(err.status || 500).json({ error: err.message });
 });
 
 app.listen(config.port, () => {
-  console.log(`Backend a correr em http://localhost:${config.port}`);
+  log.info("backend", `Backend a correr em http://localhost:${config.port}`);
   // Force reload
   if (!config.tmdb.apiKey && !config.tmdb.accessToken) {
-    console.warn(
-      "AVISO: TMDB nao configurado. Cria server/.env a partir de server/.env.example."
-    );
+    log.warn("backend", "TMDB nao configurado. Cria server/.env a partir de server/.env.example.");
   }
 });

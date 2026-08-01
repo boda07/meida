@@ -73,7 +73,9 @@ async function handle(res) {
     try {
       const body = await res.json();
       if (body.error) msg = body.error;
-    } catch {}
+    } catch {
+      /* corpo nao e JSON: fica o erro por defeito */
+    }
     throw new Error(msg);
   }
   return res.json();
@@ -122,11 +124,13 @@ export const api = {
   discover: (opts) => get("/api/discover", { ...opts, ...langParams() }),
   search: (q) => get("/api/search", { q, ...langParams() }),
   details: (type, id) => get("/api/details", { type, id, ...langParams() }),
+  recommendations: (type, id) => get("/api/recommendations", { type, id, ...langParams() }),
   season: (id, season) => get("/api/season", { id, season, ...langParams() }),
+  animeEpisodes: (mal) => get("/api/anime/episodes", { mal }),
   genres: (type) => get("/api/genres", { type, ...langParams() }),
   pick: (opts) => get("/api/pick", { ...opts, ...langParams() }),
   sources: (opts) => get("/api/sources", opts),
-  providersHealth: () => get("/api/providers/health"),
+  providersHealth: (refresh) => get("/api/providers/health", { refresh }),
   torrents: (opts) => get("/api/torrents", opts),
   extract: (opts) => get("/api/extract", opts),
   animeEnabled: () => get("/api/anime/enabled"),
@@ -170,6 +174,15 @@ export const api = {
   malImport: () => post("/api/mal/import", {}),
   malUnlink: () => post("/api/mal/unlink", {}),
   malScrobble: (malId, episode) => post("/api/mal/scrobble", { malId, episode }),
+
+  // AniList
+  anilistEnabled: () => get("/api/anilist/enabled"),
+  anilistStatus: () => get("/api/anilist/status"),
+  anilistLogin: () => get("/api/anilist/login"),
+  anilistImport: () => post("/api/anilist/import", {}),
+  anilistUnlink: () => post("/api/anilist/unlink", {}),
+  anilistScrobble: (malId, episode) => post("/api/anilist/scrobble", { malId, episode }),
+  anilistSync: () => post("/api/anilist/sync", {}),
 
   // Diário / continua a ver
   progress: () => get("/api/progress"),

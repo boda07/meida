@@ -2,6 +2,14 @@
 // "o que mudou" depois de o utilizador atualizar a app. Mais recente em cima.
 export const CHANGELOG = [
   {
+    version: "0.9.6",
+    items: [
+      "Novo: liga a tua conta AniList nas Definições. A app passa a marcar episódios vistos no AniList automaticamente (quando o MyAnimeList não está ligado) e, se ligares **as duas**, faz uma sincronização bidireccional: compara o progresso entre MAL e AniList e empurra o maior para a conta atrasada — sempre sem perder o que já marcaste.",
+      "Importa a tua lista completa do AniList (o que já viste, a ver, watchlist, notas) com um botão, e podes sincronizar de novo a qualquer momento.",
+      "Melhorado: os catálogos, pesquisas e episódios de anime e séries agora têm cache resiliente em disco — se o servidor de origem (TMDB/AniList/etc.) estiver em baixo, a app usa os últimos dados conhecidos em vez de ficar sem resultados.",
+    ],
+  },
+  {
     version: "0.9.5",
     items: [
       "Novo: modo offline da \"A minha lista\" — sem internet, a lista continua a abrir com os títulos, cartazes, notas e géneros que já tinham sido carregados alguma vez (um aviso discreto diz que estás sem internet; os dados em falta são preenchidos quando a rede voltar).",

@@ -71,6 +71,20 @@ export function getMalTokens(id) {
   return u?.mal || null;
 }
 
+/* ===== Tokens do AniList (por utilizador) ===== */
+export function setAnilistTokens(id, tokens) {
+  const u = data.users.find((x) => x.id === id);
+  if (u) {
+    u.anilist = tokens; // { accessToken, refreshToken, expiresAt, username } ou null
+    save();
+  }
+}
+
+export function getAnilistTokens(id) {
+  const u = data.users.find((x) => x.id === id);
+  return u?.anilist || null;
+}
+
 /* ===== Letterboxd (por utilizador) ===== */
 export function setLetterboxd(id, lb) {
   const u = data.users.find((x) => x.id === id);

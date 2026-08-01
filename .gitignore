@@ -8,3 +8,5 @@ server/.env
 .cache/
 torrent-data/
 server/data/
+server/dev.out
+server/dev.err

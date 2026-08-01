@@ -30,7 +30,7 @@ streamRouter.get("/torrents", async (req, res, next) => {
     });
     // Guardamos o magnet completo no servidor; ao frontend so vao os metadados.
     for (const t of list) rememberMagnet(t.infoHash, t.magnet);
-    res.json({ torrents: list.map(({ magnet, ...rest }) => rest) });
+    res.json({ torrents: list.map(({ magnet: _magnet, ...rest }) => rest) });
   } catch (err) {
     next(err);
   }

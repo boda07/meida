@@ -22,7 +22,7 @@ export default function WatchParty() {
   const ref = useRef(null);
 
   // Guarda o nome e devolve-o ja limpo (com fallback) para criar/entrar.
-  const useNick = (fallback) => {
+  const getNick = (fallback) => {
     const n = nick.trim();
     if (n) localStorage.setItem("wp_nick", n);
     return n || fallback;
@@ -100,7 +100,7 @@ export default function WatchParty() {
               <button
                 className="set-choice active wp-block"
                 onClick={() => {
-                  party.createRoom(useNick("Host"));
+                  party.createRoom(getNick("Host"));
                   setOpen(true);
                 }}
               >
@@ -117,7 +117,7 @@ export default function WatchParty() {
                 />
                 <button
                   className="set-choice"
-                  onClick={() => party.joinRoom(code, useNick("Convidado"))}
+                  onClick={() => party.joinRoom(code, getNick("Convidado"))}
                   disabled={!code.trim()}
                 >
                   Entrar

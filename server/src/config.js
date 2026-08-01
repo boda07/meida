@@ -24,6 +24,15 @@ export const config = {
       process.env.MAL_REDIRECT_URI?.trim() ||
       "http://localhost:5175/api/mal/callback",
   },
+  // AniList (GraphQL). Cria uma app em https://anilist.co/api/v1/auth
+  // e obtem client id + client secret. Usa Authorization Code Grant.
+  anilist: {
+    clientId: process.env.ANILIST_CLIENT_ID?.trim() || "",
+    clientSecret: process.env.ANILIST_CLIENT_SECRET?.trim() || "",
+    redirectUri:
+      process.env.ANILIST_REDIRECT_URI?.trim() ||
+      "http://localhost:5175/api/anilist/callback",
+  },
   // Letterboxd (filmes). A leitura (importar diario + nota da comunidade) usa
   // recursos publicos e nao precisa de chaves. A ESCRITA (marcar visto no
   // Letterboxd) precisa da API oficial, que e fechada e requer aprovacao:

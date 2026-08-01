@@ -57,7 +57,7 @@ playRouter.get("/anime/extract", async (req, res) => {
 });
 
 // Extrai stream sem anuncios e devolve URLs ja encaminhadas pelo proxy.
-playRouter.get("/extract", async (req, res, next) => {
+playRouter.get("/extract", async (req, res) => {
   try {
     const { type, tmdb, imdb, title, year, season, episode } = req.query;
     if (type !== "movie" && type !== "tv") {
@@ -127,7 +127,7 @@ playRouter.get("/subtitles", async (req, res, next) => {
 });
 
 // Descarrega uma legenda do OpenSubtitles (devolve VTT).
-playRouter.get("/subtitles/download/:fileId", async (req, res, next) => {
+playRouter.get("/subtitles/download/:fileId", async (req, res) => {
   try {
     const vtt = await getSubtitleVtt(req.params.fileId);
     res.setHeader("Content-Type", "text/vtt; charset=utf-8");
@@ -138,7 +138,7 @@ playRouter.get("/subtitles/download/:fileId", async (req, res, next) => {
 });
 
 // Converte uma legenda de um URL externo (do extractor) para VTT.
-playRouter.get("/subtitles/vtt", async (req, res, next) => {
+playRouter.get("/subtitles/vtt", async (req, res) => {
   try {
     const { url } = req.query;
     if (!url) return res.status(400).json({ error: "falta url" });

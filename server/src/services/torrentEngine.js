@@ -2,11 +2,13 @@ import WebTorrent from "webtorrent";
 import os from "node:os";
 import { resolve } from "node:path";
 
+import { log } from "./log.js";
+
 // Onde os pedacos descarregados sao guardados (temporario do sistema).
 const DOWNLOAD_DIR = resolve(os.tmpdir(), "streamapp-torrents");
 
 const client = new WebTorrent();
-client.on("error", (e) => console.error("[webtorrent]", e.message));
+client.on("error", (e) => log.error("webtorrent", e.message));
 
 // infoHash -> magnet completo (com trackers), preenchido quando listamos torrents.
 const magnetCache = new Map();

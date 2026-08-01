@@ -227,7 +227,7 @@ export async function discoverManga(
   };
 
   const typeList = types.length ? types : [""];
-  let all = [];
+  const all = [];
   let hasMore = false;
   for (let i = 0; i < typeList.length; i++) {
     if (i > 0) await sleep(400); // respeita o rate limit do Jikan

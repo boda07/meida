@@ -19,6 +19,7 @@ import { requireAuth } from "../services/auth.js";
 import { getMeta, getGenreVocab, getLocalizedMeta, getLocalizedMetaCached } from "../services/tmdb.js";
 import { getAnimeRatingsBatch } from "../services/jikan.js";
 import { status as malStatus, getMeanScores, shouldAutoSync, markAutoSync, unmarkAutoSync, importMalList } from "../services/mal.js";
+import { status as anilistStatus, shouldAutoSync as shouldAutoSyncAni, markAutoSync as markAutoSyncAni, unmarkAutoSync as unmarkAutoSyncAni, importAnilistList, syncCrossWithMal, shouldAutoSyncCross, markAutoSyncCross, unmarkAutoSyncCross } from "../services/anilist.js";
 import { getCachedRating, getCachedRatings, getRatings as getLetterboxdRatings } from "../services/letterboxd.js";
 import { isOnline } from "../services/net.js";
 import { cacheGet, cacheSet } from "../services/cache.js";
@@ -109,6 +110,21 @@ libraryRouter.get("/library", async (req, res) => {
       // Sem sucesso (rede/MAL em baixo, conta invalida): desmarca para a
       // proxima abertura voltar a tentar, em vez de esperar as 6h.
       unmarkAutoSync(req.user.id);
+    });
+  } else if (online && !malStatus(req.user.id).linked && anilistStatus(req.user.id).linked && shouldAutoSyncAni(req.user.id)) {
+    // Sem MAL mas com AniList ligado: usa o AniList como fonte de verdade da lista.
+    markAutoSyncAni(req.user.id);
+    importAnilistList(req.user.id).catch(() => {
+      unmarkAutoSyncAni(req.user.id);
+    });
+  }
+
+  // Cross-sync MAL <-> AniList: se as duas estiverem ligadas, empurra o maior
+  // progresso para a conta atrasada (background, sem bloquear a resposta).
+  if (online && malStatus(req.user.id).linked && anilistStatus(req.user.id).linked && shouldAutoSyncCross(req.user.id)) {
+    markAutoSyncCross(req.user.id);
+    syncCrossWithMal(req.user.id).catch(() => {
+      unmarkAutoSyncCross(req.user.id);
     });
   }
 

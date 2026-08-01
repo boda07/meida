@@ -3,7 +3,7 @@ import { register, login, requireAuth, setAvatar } from "../services/auth.js";
 
 export const authRouter = Router();
 
-authRouter.post("/auth/register", (req, res, next) => {
+authRouter.post("/auth/register", (req, res) => {
   try {
     const { username, password } = req.body || {};
     res.json(register(username, password));
@@ -12,7 +12,7 @@ authRouter.post("/auth/register", (req, res, next) => {
   }
 });
 
-authRouter.post("/auth/login", (req, res, next) => {
+authRouter.post("/auth/login", (req, res) => {
   try {
     const { username, password } = req.body || {};
     res.json(login(username, password));

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { api, imageUrl } from "../api/client.js";
 import { useAuth } from "../auth/AuthContext.jsx";
@@ -57,7 +57,7 @@ export default function Library() {
   const [lists, setLists] = useState([]);
   const [selList, setSelList] = useState(null); // id da lista aberta (null = tudo)
   const [listItems, setListItems] = useState([]);
-  const [listError, setListError] = useState(null);
+  const [_listError, setListError] = useState(null);
   const [listModal, setListModal] = useState(null); // { action, id?, name? } | null
   const [listName, setListName] = useState("");
   const [listBusy, setListBusy] = useState(false);
@@ -101,7 +101,7 @@ export default function Library() {
 
   // Já re-fetched uma vez após resposta com `pending` (evita loop).
   const refetched = useRef(false);
-  function load() {
+  const load = useCallback(() => {
     return api
       .library()
       .then((d) => {
@@ -116,7 +116,7 @@ export default function Library() {
         }
       })
       .catch((e) => setError(e.message));
-  }
+  }, []);
 
   useEffect(() => {
     if (!user) {
@@ -124,7 +124,7 @@ export default function Library() {
       return;
     }
     Promise.all([load(), loadLists()]).finally(() => setLoading(false));
-  }, [user]);
+  }, [user, load]);
 
   async function clearWatchlist(type) {
     setClearing(true);

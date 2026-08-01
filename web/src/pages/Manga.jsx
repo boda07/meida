@@ -185,7 +185,6 @@ function ForYou() {
 
   useEffect(() => {
     loadFresh(new Set());
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function onToggle(id) {
@@ -296,7 +295,7 @@ function ToRead() {
     };
   }, []);
 
-  const all = data?.items || [];
+  const all = useMemo(() => data?.items || [], [data]);
 
   // Géneros que de facto aparecem na lista, por frequência (so estes interessam).
   const availGenres = useMemo(() => {

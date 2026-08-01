@@ -9,16 +9,24 @@ import { netFetch } from "./net.js";
 
 const JIKAN = "https://api.jikan.moe/v4";
 const JIKAN_MIRROR = "https://api.tenrai.org/v1"; // espelho do schema v4 do Jikan
+
+// 1-out-2026: inversao de ordem — o Tenrai passa a ser o primario (melhor rate
+// limit, sem chave) e o Jikan o backup. Se o Tenrai falhar, o Jikan salva.
+const PRIMARY_URL = JIKAN_MIRROR; // Tenrai
+const BACKUP_URL = JIKAN; // Jikan (fallback)
+
 const JIKAN_COOLDOWN_MS = 30 * 1000;
-// Com o espelho sempre à frente, no Jikan basta 1 tentativa (backoff 700ms) em
-// vez de 3 (4.2s) quando ele está em baixo — cai-se logo para o Tenrai.
-const JIKAN_RETRIES = 1;
-let jikanBlockedUntil = 0;
+// No Tenrai (primário) limita-se o nº de retries: com o Jikan à frente, desistir
+// cedo e cair para o backup é mais rápido que insistir no Tenrai.
+const PRIMARY_RETRIES = 1;
+let primaryBlockedUntil = 0;
 
-export const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+export async function sleep(ms) {
+  return new Promise((r) => setTimeout(r, ms));
+}
 
-function coolDownJikan() {
-  jikanBlockedUntil = Math.max(jikanBlockedUntil, Date.now() + JIKAN_COOLDOWN_MS);
+function cooldownPrimary() {
+  primaryBlockedUntil = Math.max(primaryBlockedUntil, Date.now() + JIKAN_COOLDOWN_MS);
 }
 
 // O Jikan limita a ~3 req/s (429 quando excede) e por vezes da 5xx.
@@ -40,17 +48,21 @@ async function jikanFetchBase(base, path, options, tries) {
       await sleep(700 * (tries + 1));
       return jikanFetchBase(base, path, options, tries + 1);
     }
-    if (err?.name === "AbortError") throw new Error("Jikan timeout");
+    if (err?.name === "AbortError") throw new Error("Jikan timeout", { cause: err });
     throw err;
   } finally {
     clearTimeout(timer);
   }
 
-  if ((res.status === 429 || res.status >= 500) && tries < retries) {
+  const retryHttp = (res.status === 429 || res.status >= 500) && tries < retries;
+  if (retryHttp) {
     await sleep(700 * (tries + 1));
     return jikanFetchBase(base, path, options, tries + 1);
   }
-  if (!res.ok) throw new Error(`Jikan ${res.status}`);
+  if (!res.ok) {
+    const who = base.includes("tenrai") ? "Tenrai" : "Jikan";
+    throw new Error(`${who} ${res.status}`);
+  }
   return res.json();
 }
 
@@ -64,39 +76,39 @@ async function jikanFetchBase(base, path, options, tries) {
 export async function jikanFetch(path, options = {}) {
   const opts = typeof options === "number" ? { tries: options } : options;
   const { tries = 0 } = opts;
-  // No Jikan (primário) limita-se o nº de retries: com o espelho à frente,
-  // desistir cedo e cair para o Tenrai é mais rápido que insistir no Jikan.
-  const jikanOpts = { ...opts, retries: Math.min(opts.retries ?? 3, JIKAN_RETRIES) };
-  if (tries === 0 && Date.now() < jikanBlockedUntil) {
+  // Tenrai (primário), limitando retries: com o Jikan à frente, desistir cedo e
+  // cair para o backup é mais rápido que insistir no Tenrai.
+  const primaryOpts = { ...opts, retries: Math.min(opts.retries ?? 3, PRIMARY_RETRIES) };
+  if (tries === 0 && Date.now() < primaryBlockedUntil) {
     const disk = cacheGet(path);
     if (disk) return disk;
     try {
-      const data = await jikanFetchBase(JIKAN_MIRROR, path, opts, 0);
+      const data = await jikanFetchBase(BACKUP_URL, path, opts, 0);
       cacheSet(path, data);
       return data;
     } catch {
-      coolDownJikan();
-      throw new Error("Jikan temporariamente indisponivel");
+      cooldownPrimary();
+      throw new Error("Tenrai temporariamente indisponivel");
     }
   }
   try {
-    const data = await jikanFetchBase(JIKAN, path, jikanOpts, 0);
+    const data = await jikanFetchBase(PRIMARY_URL, path, primaryOpts, 0);
     cacheSet(path, data);
     return data;
-  } catch (jikanErr) {
+  } catch (primaryErr) {
     try {
-      const data = await jikanFetchBase(JIKAN_MIRROR, path, opts, 0);
+      const data = await jikanFetchBase(BACKUP_URL, path, opts, 0);
       cacheSet(path, data);
-      coolDownJikan();
+      cooldownPrimary();
       return data;
     } catch {
       const disk = cacheGet(path);
       if (disk) {
-        coolDownJikan();
+        cooldownPrimary();
         return disk;
       }
-      coolDownJikan();
-      throw jikanErr;
+      cooldownPrimary();
+      throw primaryErr;
     }
   }
 }
@@ -303,7 +315,7 @@ export async function getAnimeCatalog(opts = {}) {
   // Sequencial (com pausa) para respeitar o rate limit do Jikan.
   const rows = [];
   for (const [id, title, path] of defs) {
-    let items = [];
+    let items;
     try {
       items = dedupe(clean(await jikanFetch(path), romaji));
     } catch {
@@ -716,6 +728,87 @@ export async function getAnimeDetails(malId, opts = {}) {
 const searchCache = new Map(); // q -> { at, items }
 const SEARCH_TTL = 5 * 60 * 1000;
 const SEARCH_FETCH_OPTS = { retries: 1, timeoutMs: 3500 };
+
+// ---- Episodios por temporada ------------------------------------------------
+
+// Agrupa episodios em "temporadas" (cours). O Jikan nao diz a que temporada
+// cada episodio pertence, mas os animes de TV japonesa saem em cours de ~12-13
+// episodios: quebramos a cada 13, e mais cedo se houver uma pausa longa (>=60
+// dias) no meio (split-cour). Sem datas, cai nos blocos de 13.
+export function groupEpisodesBySeason(episodes) {
+  const DAY = 24 * 60 * 60 * 1000;
+  const COUR_SIZE = 13;
+  const seasons = [];
+  let cur = [];
+  const pushCur = () => {
+    if (!cur.length) return;
+    seasons.push({
+      seasonNumber: seasons.length + 1,
+      label: `Temporada ${seasons.length + 1}`,
+      episodes: cur,
+    });
+    cur = [];
+  };
+  for (const ep of episodes) {
+    const last = cur[cur.length - 1];
+    const gapLong =
+      last?.aired && ep.aired && ep.aired - last.aired >= 60 * DAY;
+    if (cur.length >= COUR_SIZE || (cur.length >= 10 && gapLong)) pushCur();
+    cur.push(ep);
+  }
+  pushCur();
+  if (!seasons.length) {
+    return [{ seasonNumber: 1, label: "Temporada 1", episodes: [] }];
+  }
+  return seasons;
+}
+
+// Episodios reais de um anime (titulos, datas, filler/recap) via
+// /anime/{id}/episodes, paginado (100 por pagina). Agrupa por temporada.
+// Tolerante: se uma pagina falhar, usa o que ja tem (e a cache em disco do
+// jikanFetch torna as visitas seguintes instantaneas).
+export async function getAnimeEpisodes(malId) {
+  const first = await jikanFetch(`/anime/${malId}/episodes`);
+  const pages = [first];
+  const last = Math.min(
+    first?.pagination?.last_visible_page || 1,
+    // teto: animes com 1200+ eps (ex.: One Piece) — busca tudo.
+    12
+  );
+  for (let p = 2; p <= last; p++) {
+    await sleep(350); // respeita o rate limit do Jikan
+    try {
+      pages.push(await jikanFetch(`/anime/${malId}/episodes?page=${p}`));
+    } catch {
+      break; // parciais chegam (melhor que nada)
+    }
+  }
+  const episodes = pages
+    .flatMap((d) => d?.data || [])
+    // O Jikan devolve o numero em `episode`; o espelho Tenrai usa `mal_id`.
+    .filter((e) => e && (e.episode ?? e.mal_id) != null)
+    .sort((a, b) => (a.episode ?? a.mal_id) - (b.episode ?? b.mal_id))
+    .map((e) => {
+      const num = e.episode ?? e.mal_id;
+      return {
+        episodeNumber: num,
+        name: e.title?.trim() ? e.title : `Episódio ${num}`,
+        aired: e.aired ? new Date(e.aired).getTime() : null,
+        filler: Boolean(e.filler),
+        recap: Boolean(e.recap),
+      };
+    });
+  return groupEpisodesBySeason(episodes);
+}
+
+// "Se gostaste disto": recomendacoes do MAL para um anime (votos dos utilizadores).
+export async function getAnimeRecommendations(malId, opts = {}) {
+  const d = await jikanFetch(`/anime/${malId}/recommendations`);
+  return (d.data || [])
+    .map((r) => normalizeAnime(r?.entry, isRomaji(opts)))
+    .filter(Boolean)
+    .slice(0, 12);
+}
 
 export async function searchAnime(query, opts = {}) {
   const q = String(query || "").trim().toLowerCase();

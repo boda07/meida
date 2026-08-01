@@ -5,6 +5,7 @@ import {
   search,
   getDetails,
   getSeason,
+  getSimilar,
   getGenres,
   getGenreVocab,
   pickRandom,
@@ -13,13 +14,16 @@ import {
 import {
   getAnimeCatalog,
   getAnimeDetails,
+  getAnimeEpisodes,
   getAnimeMovies,
   searchAnime,
   getAnimeGenres,
+  getAnimeRecommendations,
   pickAnime,
   discoverAnime,
 } from "../services/jikan.js";
 import { getRating as getLetterboxdRating } from "../services/letterboxd.js";
+import { log } from "../services/log.js";
 
 export const catalogRouter = Router();
 
@@ -97,10 +101,10 @@ catalogRouter.get("/search", async (req, res, next) => {
     const media = mediaResult.status === "fulfilled" ? mediaResult.value : [];
     const anime = animeResult.status === "fulfilled" ? animeResult.value : [];
     if (mediaResult.status === "rejected") {
-      console.warn("[search] TMDB falhou:", mediaResult.reason?.message || mediaResult.reason);
+      log.warn("search", "TMDB falhou", { error: String(mediaResult.reason?.message || mediaResult.reason) });
     }
     if (animeResult.status === "rejected") {
-      console.warn("[search] Jikan falhou:", animeResult.reason?.message || animeResult.reason);
+      log.warn("search", "Jikan/Tenrai falhou", { error: String(animeResult.reason?.message || animeResult.reason) });
     }
     if (
       !media.length &&
@@ -112,6 +116,31 @@ catalogRouter.get("/search", async (req, res, next) => {
     }
 
     res.json({ results: [...media, ...anime] });
+  } catch (err) {
+    next(err);
+  }
+});
+
+catalogRouter.get("/anime/episodes", async (req, res, next) => {
+  try {
+    const mal = String(req.query.mal || "");
+    if (!mal) return res.status(400).json({ error: "falta mal" });
+    res.json({ seasons: await getAnimeEpisodes(mal) });
+  } catch (err) {
+    next(err);
+  }
+});
+
+catalogRouter.get("/recommendations", async (req, res, next) => {
+  try {
+    const { type, id } = req.query;
+    if (!type || !id) {
+      return res.status(400).json({ error: "faltam parametros type e id" });
+    }
+    if (type === "anime") {
+      return res.json({ items: await getAnimeRecommendations(String(id), langOpts(req)) });
+    }
+    res.json({ items: await getSimilar(String(type), String(id), langOpts(req)) });
   } catch (err) {
     next(err);
   }

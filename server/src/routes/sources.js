@@ -4,7 +4,7 @@ import {
   buildAnimeEmbedSources,
   PROVIDERS,
 } from "../services/providers.js";
-import { getProviderHealth } from "../services/providerHealth.js";
+import { getProviderHealth, refreshProviderHealth } from "../services/providerHealth.js";
 
 export const sourcesRouter = Router();
 
@@ -14,8 +14,16 @@ sourcesRouter.get("/providers", (req, res) => {
 });
 
 // Estado (vivo/morto) dos providers: health-check automatico 1x/dia.
-sourcesRouter.get("/providers/health", (req, res) => {
-  res.json(getProviderHealth());
+// ?refresh=1 força o check agora (usado pelo botao "Rever agora").
+sourcesRouter.get("/providers/health", async (req, res, next) => {
+  try {
+    if (req.query.refresh) {
+      return res.json(await refreshProviderHealth());
+    }
+    res.json(getProviderHealth());
+  } catch (err) {
+    next(err);
+  }
 });
 
 // Fontes de embed para um titulo especifico.

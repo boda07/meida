@@ -156,21 +156,43 @@ export async function getMeanScores(userId) {
   return out;
 }
 
+/* ===== Progresso por anime (para cross-sync MAL <-> AniList) ===== */
+
+// Mapa malId -> num_episodes_watched, paginado de 1000 em 1000. Apenas ints.
+export async function getAnimeProgress(userId) {
+  const token = await getValidToken(userId);
+  const out = new Map();
+  let url = "/users/@me/animelist?fields=list_status&limit=1000&nsfw=true";
+  for (let i = 0; i < 10; i++) {
+    const data = await apiGet(url, token);
+    for (const it of data.data || []) {
+      const id = it.node?.id;
+      const watched = it.list_status?.num_episodes_watched;
+      if (id && Number.isInteger(Number(watched))) out.set(Number(id), Number(watched));
+    }
+    const next = data.paging?.next;
+    if (!next) break;
+    url = next.replace(API, "");
+  }
+  return out;
+}
+
 // Marca/atualiza o progresso de um anime no MAL.
 export async function updateEpisode(userId, animeId, episode) {
   const token = await getValidToken(userId);
 
   // Le o estado atual para nao baixar o progresso nem o status.
   let current = null;
+  let totalEps = 0;
   try {
     const node = await apiGet(
       `/anime/${animeId}?fields=num_episodes,my_list_status`,
       token
     );
     current = node?.my_list_status || null;
-    var totalEps = node?.num_episodes || 0;
+    totalEps = node?.num_episodes || 0;
   } catch {
-    var totalEps = 0;
+    /* sem dados atuais: fica totalEps = 0 */
   }
 
   const watched = Math.max(Number(episode) || 0, current?.num_episodes_watched || 0);

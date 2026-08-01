@@ -17,7 +17,7 @@ export function subtitlesEnabled() {
 
 // Converte SRT em VTT (o <track> do browser so aceita VTT).
 export function toVtt(text) {
-  const clean = text.replace(/^﻿/, "").replace(/\r+/g, "");
+  const clean = text.replace(/^\uFEFF/, "").replace(/\r+/g, "");
   if (/^WEBVTT/.test(clean.trimStart())) return clean;
   const body = clean.replace(
     /(\d{2}:\d{2}:\d{2}),(\d{3})/g,

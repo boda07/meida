@@ -31,7 +31,7 @@ export default function HlsPlayer({ sources = [], subtitles = [], startAt, onPro
     }
 
     return () => hls?.destroy();
-  }, [src]);
+  }, [src, sources]);
 
   // Retoma a meio (posicao guardada do "continua a ver").
   useEffect(() => {

@@ -5,6 +5,7 @@
 // reinicios) e em memoria; o check corre em background, sem bloquear pedidos.
 import { PROVIDERS, ANIME_PROVIDERS } from "./providers.js";
 import { cacheGet, cacheSet } from "./cache.js";
+import { log } from "./log.js";
 
 // Titulos de teste: populares e presentes em todos os providers.
 const TEST_MOVIE = 550; // Fight Club
@@ -88,9 +89,29 @@ function runCheck() {
   return Promise.all(
     tests.map(async (t) => {
       const r = await probe(t.url, refererFor(t.url));
+      if (!r.ok) {
+        log.warn("provider", `${t.name} (${t.id}) falhou`, {
+          status: r.status,
+          error: r.error,
+          url: t.url,
+        });
+      }
       return { id: t.id, name: t.name, type: t.type, ok: r.ok, status: r.status, error: r.error };
     })
   );
+}
+
+// Força o health-check agora (usado pelo botão "Rever agora" no frontend).
+export async function refreshProviderHealth() {
+  memory = null;
+  checking = null;
+  const providers = await runCheck();
+  memory = { at: Date.now(), providers };
+  cacheSet(CACHE_KEY, memory);
+  const ok = providers.filter((p) => p.ok).length;
+  const fail = providers.length - ok;
+  log.info("provider:health", "check concluido", { ok, fail });
+  return { providers, stale: false };
 }
 
 // Devolve o estado dos providers. Se a cache/memoria estiver velha, dispara o
@@ -108,10 +129,14 @@ export function getProviderHealth() {
   }
 
   if (!checking) {
+    log.info("provider:health", "a verificar providers (background)");
     checking = runCheck()
       .then((providers) => {
         memory = { at: Date.now(), providers };
         cacheSet(CACHE_KEY, memory);
+        const ok = providers.filter((p) => p.ok).length;
+        const fail = providers.length - ok;
+        log.info("provider:health", "check concluido", { ok, fail });
       })
       .catch(() => {})
       .finally(() => {

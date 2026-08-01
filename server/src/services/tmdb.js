@@ -814,3 +814,11 @@ export async function getSeason(id, seasonNumber, opts = {}) {
     rating: e.vote_average ? Math.round(e.vote_average * 10) / 10 : null,
   }));
 }
+
+// "Se gostaste disto": titulos similares do TMDB (/movie/{id}/similar e
+// /tv/{id}/similar), normalizados como os cards do catalogo.
+export async function getSimilar(type, id, opts = {}) {
+  if (type !== "movie" && type !== "tv") return [];
+  const items = await tmdbList(`/${type}/${id}/similar`, {}, opts);
+  return items.slice(0, 12);
+}

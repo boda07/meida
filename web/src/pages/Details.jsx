@@ -14,6 +14,7 @@ import Torrents from "../components/Torrents.jsx";
 import Extract from "../components/Extract.jsx";
 import AnimeExtract from "../components/AnimeExtract.jsx";
 import LoadingStatus from "../components/LoadingStatus.jsx";
+import MediaRow from "../components/MediaRow.jsx";
 
 export default function Details() {
   const { type, id } = useParams();
@@ -49,6 +50,7 @@ export default function Details() {
   const [episodes, setEpisodes] = useState([]);
   const [episode, setEpisode] = useState(1);
   const [epStart, setEpStart] = useState(0); // inicio do bloco de 100 visivel
+  const [similar, setSimilar] = useState([]); // "Se gostaste disto"
 
   // Retomar a meio: posição guardada no servidor para este título (com o
   // episódio a que pertence, para só retomar no mesmo episódio).
@@ -175,18 +177,6 @@ export default function Details() {
 
   // Carregar episódios quando a temporada muda
   useEffect(() => {
-    // Anime (série): lista de episódios gerada a partir do total do MAL.
-    if (details?.isAnime && !details.isMovie) {
-      const n = details.episodeCount || 12;
-      setEpisodes(
-        Array.from({ length: n }, (_, i) => ({
-          episodeNumber: i + 1,
-          name: `Episódio ${i + 1}`,
-        }))
-      );
-      setEpisode(takeResumeEpisode());
-      return;
-    }
     if (details?.type !== "tv") return;
     api
       .season(details.id, season)
@@ -196,6 +186,53 @@ export default function Details() {
       })
       .catch((e) => setError(e.message));
   }, [details, season, settings.overviewLang]);
+
+  // "Se gostaste disto" (TMDB similar / recomendações do MAL). Uma vez por título.
+  useEffect(() => {
+    if (!details) return;
+    api
+      .recommendations(details.type === "anime" ? "anime" : details.type, details.id)
+      .then((d) => setSimilar(d.items || []))
+      .catch(() => setSimilar([]));
+  }, [details]);
+
+  // Anime: episódios reais do MAL agrupados por temporada (uma vez por título).
+  // Se a API falhar, cai na lista gerada a partir do total (como antes).
+  const animeEpsLoaded = useRef(null); // malId já carregado
+  const [animeSeasons, setAnimeSeasons] = useState([]);
+  useEffect(() => {
+    if (!details?.isAnime || details.isMovie) return;
+    if (animeEpsLoaded.current === details.malId) return;
+    const r = resumeRef.current;
+    const resumeEp = r.pending && r.episode ? r.episode : null;
+    const fallback = () => {
+      const n = details.episodeCount || 12;
+      setAnimeSeasons([]);
+      setEpisodes(
+        Array.from({ length: n }, (_, i) => ({
+          episodeNumber: i + 1,
+          name: `Episódio ${i + 1}`,
+        }))
+      );
+      setEpisode(takeResumeEpisode());
+    };
+    api
+      .animeEpisodes(details.malId)
+      .then((d) => {
+        const seasons = d.seasons || [];
+        if (!seasons.length) return fallback();
+        animeEpsLoaded.current = details.malId;
+        setAnimeSeasons(seasons);
+        const target = resumeEp
+          ? seasons.find((s) => s.episodes.some((e) => e.episodeNumber === resumeEp))
+          : null;
+        const s = target || seasons[0];
+        setSeason(s.seasonNumber);
+        setEpisodes(s.episodes);
+        setEpisode(resumeEp || takeResumeEpisode());
+      })
+      .catch(() => fallback());
+  }, [details]);
 
   // Carregar fontes quando temos contexto suficiente
   useEffect(() => {
@@ -264,7 +301,12 @@ export default function Details() {
   // Próxima posição (para avançar o "continua a ver" ao concluir um episódio).
   function nextEpisodePos() {
     if (details.type === "anime") {
-      return episode < episodes.length ? { season: null, episode: episode + 1 } : null;
+      // Os episódios são globais (1..N) através das temporadas agrupadas.
+      const lastSeason = animeSeasons[animeSeasons.length - 1];
+      const lastEp = lastSeason
+        ? lastSeason.episodes[lastSeason.episodes.length - 1]?.episodeNumber
+        : episodes.length;
+      return episode < lastEp ? { season: null, episode: episode + 1 } : null;
     }
     if (details.type === "tv") {
       if (episode < episodes.length) return { season, episode: episode + 1 };
@@ -316,6 +358,8 @@ export default function Details() {
         });
         if (details.isAnime && details.malId) {
           api.malScrobble(details.malId, episode).catch(() => {});
+          // Se o MAL nao esta ligado, marca no AniList (quando este estiver ligado).
+          api.anilistScrobble(details.malId, episode).catch(() => {});
         }
       }
       setFinishMsg("Guardado no diário.");
@@ -419,18 +463,34 @@ export default function Details() {
 
       {(details.type === "tv" || (details.isAnime && !details.isMovie)) && (
         <div className="episodes">
-          {details.type === "tv" && (
+          {(details.type === "tv"
+            ? details.seasons?.length
+            : animeSeasons.length > 1) && (
             <div className="season-picker">
               <label>Temporada:</label>
               <select
                 value={season}
-                onChange={(e) => setSeason(Number(e.target.value))}
+                onChange={(e) => {
+                  const n = Number(e.target.value);
+                  setSeason(n);
+                  // Anime: os episódios da temporada já estão em memória.
+                  if (details.isAnime) {
+                    const s = animeSeasons.find((x) => x.seasonNumber === n);
+                    if (s) setEpisodes(s.episodes);
+                  }
+                }}
               >
-                {details.seasons?.map((s) => (
-                  <option key={s.seasonNumber} value={s.seasonNumber}>
-                    {s.name} ({s.episodeCount} eps)
-                  </option>
-                ))}
+                {details.type === "tv"
+                  ? details.seasons?.map((s) => (
+                      <option key={s.seasonNumber} value={s.seasonNumber}>
+                        {s.name} ({s.episodeCount} eps)
+                      </option>
+                    ))
+                  : animeSeasons.map((s) => (
+                      <option key={s.seasonNumber} value={s.seasonNumber}>
+                        {s.label} ({s.episodes.length} eps)
+                      </option>
+                    ))}
               </select>
             </div>
           )}
@@ -612,6 +672,10 @@ export default function Details() {
           />
         )}
       </div>
+      )}
+
+      {similar.length > 0 && (
+        <MediaRow title="Se gostaste disto" items={similar} />
       )}
 
       {user && (

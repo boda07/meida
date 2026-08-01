@@ -48,7 +48,9 @@ export async function handleProxy(req, res) {
     headers.Referer = referer;
     try {
       headers.Origin = new URL(referer).origin;
-    } catch {}
+    } catch {
+      /* referer invalido: sem Origin e seguir */
+    }
   }
   if (req.headers.range) headers.Range = req.headers.range;
 

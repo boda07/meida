@@ -1,6 +1,6 @@
 {
   "name": "streamapp",
-  "version": "0.9.5",
+  "version": "0.9.6",
   "private": true,
   "description": "App pessoal tipo Stremio: catalogo TMDB + embed providers + torrents",
   "main": "electron/main.cjs",
@@ -13,14 +13,21 @@
     "app:dev": "concurrently -k -n server,web,electron -c blue,green,magenta \"npm:dev:server\" \"npm:dev:web\" \"npm:app:electron\"",
     "app:electron": "cross-env ELECTRON_DEV=1 electron .",
     "app": "npm run build && electron .",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "test": "npm --prefix server test",
     "app:pack": "npm run build && electron-builder",
     "app:publish": "npm run build && electron-builder --publish always && node scripts/prune-releases.mjs"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "concurrently": "^9.1.0",
     "cross-env": "^7.0.3",
     "electron": "^33.2.0",
-    "electron-builder": "^25.1.8"
+    "electron-builder": "^25.1.8",
+    "eslint": "^10.8.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "globals": "^17.8.0"
   },
   "build": {
     "appId": "com.boda.meida",
