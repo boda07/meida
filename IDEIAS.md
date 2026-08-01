@@ -3,6 +3,7 @@
 Lista de coisas que podemos alterar ou adicionar à MEIDA. Organizada por prioridade e categoria.
 
 ## Fiabilidade
+- [x] **PWA — app instalável no iPhone (grátis)** — webapp progressiva (manifest + workbox SW, cache offline parcial), `runtime-config.json` para apontar o backend, workflow GitHub Pages + `build:pwa`. *(feito: v0.9.7)*
 - [x] **Mangá também no Tenrai** — `manga.js` usa o mesmo `jikanFetch` (já fica coberto pelo mirror), mas `getMangaGenres` usa `Promise.all` (mesmo bug do anime que o `allSettled` resolveu) — vale corrigir. *(feito: `getMangaGenresRaw` em `server/src/services/manga.js` usa `allSettled` + cache em disco)*
 - [x] **Cache resiliente** — guardar respostas do Jikan/Tenrai em disco (pasta `data/`) para quando ambas as APIs estiverem em baixo o catálogo ainda abrir com dados em cache. *(feito: `server/src/services/cache.js` + `jikanFetch`)*
 - [x] **Health-check dos providers** — teste periódico automático (ex.: 1x/dia) de todos os providers e sinalizar os mortos na UI, em vez de descobrir por tentativa/erro quando um título não dá. *(feito: `server/src/services/providerHealth.js` + rota `/api/providers/health`; frontend `web/src/components/useProviderHealth.js` — mortos riscados no seletor e saltados na escolha automática)*
@@ -38,3 +39,6 @@ Lista de coisas que podemos alterar ou adicionar à MEIDA. Organizada por priori
 - [ ] **Watch Party a funcionar sem Supabase** — hoje está ligado ao Supabase; alternativa self-hosted.
 - [ ] **Extensão para o aniwatch-api local** — hoje o `ANIME_EXTRACTOR_BASE` aponta para um host; embeber no docker-compose.
 - [ ] **Escolhe algo para mim por mood** — escolher por "quero rir" / "quero algo relaxante" mapeando géneros.
+
+## Plataformas
+- [x] **App nativo iOS na App Store** — rejeitado (precisa conta Apple Developer paga + build RN nativo). Substituído pela **PWA instalável do iPhone (grátis)**: webapp progressiva com manifest + workbox (v0.9.7). Instalar no Safari → Share → "Adicionar à Tela de Início". Hospedagem: GitHub Pages (static) ou o server MEIDA (`SERVE_WEB=1`) num free host (Render/Railway/Fly) same-origin.

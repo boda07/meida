@@ -1,5 +1,12 @@
 // Helpers de fetch para a API do backend (proxy /api do Vite).
-
+// API_ORIGIN vem de public/runtime-config.json (vazio = same-origin, usado pelo
+// Electron e por hostings onde o server serve web+api juntos). Definir para
+// https://seu.backend para instalar a PWA num hosting estatico (ex.: gh-pages).
+// Carregado async em main.jsx antes do primeiro render; fallback seguro.
+const API_ORIGIN = (typeof window !== "undefined" && window.MEIDA_API_BASE) || "";
+function fullUrl(path) {
+  return API_ORIGIN ? `${API_ORIGIN}${path}` : `${window.location.origin}${path}`;
+}
 // O token de login fica em localStorage e e enviado em todos os pedidos.
 const TOKEN_KEY = "streamapp_token";
 export const tokenStore = {
@@ -82,7 +89,7 @@ async function handle(res) {
 }
 
 async function get(path, params = {}) {
-  const url = new URL(path, window.location.origin);
+  const url = new URL(fullUrl(path));
   for (const [k, v] of Object.entries(params)) {
     if (v !== undefined && v !== null && v !== "") url.searchParams.set(k, v);
   }
@@ -91,7 +98,7 @@ async function get(path, params = {}) {
 
 async function post(path, body) {
   return handle(
-    await fetch(path, {
+    await fetch(fullUrl(path), {
       method: "POST",
       headers: { "Content-Type": "application/json", ...authHeaders() },
       body: JSON.stringify(body),
@@ -101,7 +108,7 @@ async function post(path, body) {
 
 async function patch_(path, body) {
   return handle(
-    await fetch(path, {
+    await fetch(fullUrl(path), {
       method: "PATCH",
       headers: { "Content-Type": "application/json", ...authHeaders() },
       body: JSON.stringify(body),
@@ -110,7 +117,7 @@ async function patch_(path, body) {
 }
 
 async function del(path, params = {}) {
-  const url = new URL(path, window.location.origin);
+  const url = new URL(fullUrl(path));
   for (const [k, v] of Object.entries(params)) {
     if (v !== undefined && v !== null && v !== "") url.searchParams.set(k, v);
   }

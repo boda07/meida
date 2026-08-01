@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.9.7
+
+### PWA (instalar no iPhone — 100% grátis)
+- A app MEIDA passa a ser **instalável como webapp progressiva (PWA)** no iPhone e Android (menu Safari/Chrome → "Adicionar à Tela de Início").
+  - `manifest.json` (ícones 192/512, modo `standalone`).
+  - Service worker (`workbox`) com cache de assets + `/api` (NetworkFirst) e imagens (CacheFirst) — funciona **offline parcial** (listas, cartazes, notas já carregadas).
+  - Registo do SW em `main.jsx` (só na web, não no Electron).
+  - `public/runtime-config.json`: define `VITE_API_BASE` (vazio = same-origin; aponta para o teu backend se a PWA ficar noutro host).
+- GitHub Actions workflow `.github/workflows/pages.yml`: build + deploy contínuo do `web/dist` para GitHub Pages.
+- Novo script `npm run build:pwa` (alias a `vite build`, já com PWA embutida).
+- **Como instalar no iPhone (grátis):** hospeda o `web/dist` juntamente com o backend (o server MEIDA com `SERVE_WEB=1` serve web+api no mesmo URL) num hosting free (Render/Railway/Fly/Cloudflare) → abre no Safari → Share → "Adicionar à Tela de Início". Ou usa GitHub Pages e edita `runtime-config.json` para apontar para o teu backend.
+
+### Notas técnicas
+- `web/src/api/client.js`: chamadas `/api` agora usam `window.MEIDA_API_BASE` (fallback a `window.location.origin`) — same-origin no Electron e nos hostings onde o server serve web+api.
+
 ## 0.9.6
 
 ### AniList (ligado ao MyAnimeList)

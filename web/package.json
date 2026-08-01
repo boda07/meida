@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:pwa": "vite build && echo \"PWA pronto em web/dist (abrir /sw.js e /manifest.json)\"",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -17,6 +18,9 @@
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.4",
-    "vite": "^6.0.5"
+    "sharp": "^0.35.3",
+    "vite": "^6.0.5",
+    "vite-plugin-pwa": "^1.3.0",
+    "workbox-window": "^7.4.1"
   }
 }

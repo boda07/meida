@@ -1,0 +1,49 @@
+name: Pages
+
+# Deploy automatico da PWA do frontend para GitHub Pages (https://<user>.github.io/<repo>/).
+# Nota: esta workflow publica SO o web/dist (estatico). Os pedidos /api/* resolvem
+# contra a origin onde a PWA esta hospedada. Para usar uma app MEIDA ja correr num
+# server (web+api juntinhos, ex.: Render/Railway/Fly), serve este mesmo web/dist
+# atraves do MEIDA server (SERVE_WEB=1) e instala a PWA a partir da esse URL — ai
+# nao precisas de esta workflow nem de runtime-config.json.
+#
+# Se usares GitHub Pages (static so, sem backend na mesma origin), edita
+# web/public/runtime-config.json para apontar para o teu backend, ex.:
+# { "VITE_API_BASE": "https://meida-exemplo.onrender.com" } — e a PWA chama /api
+# a partir desse server.
+on:
+  push:
+    branches: [gh-pages]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      pages: write
+      id-token: write
+    environment:
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - name: Build
+        run: |
+          npm --prefix web install
+          npm --prefix web run build
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: web/dist
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
