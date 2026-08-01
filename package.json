@@ -1,6 +1,6 @@
 {
   "name": "streamapp",
-  "version": "0.9.7",
+  "version": "0.9.8",
   "private": true,
   "description": "App pessoal tipo Stremio: catalogo TMDB + embed providers + torrents",
   "main": "electron/main.cjs",
@@ -10,6 +10,7 @@
     "dev:web": "npm --prefix web run dev",
     "install:all": "npm install && npm --prefix server install && npm --prefix web install",
     "build": "npm --prefix web run build",
+    "start:pwa": "npm run build && cross-env SERVE_WEB=1 node server/src/index.js",
     "app:dev": "concurrently -k -n server,web,electron -c blue,green,magenta \"npm:dev:server\" \"npm:dev:web\" \"npm:app:electron\"",
     "app:electron": "cross-env ELECTRON_DEV=1 electron .",
     "app": "npm run build && electron .",

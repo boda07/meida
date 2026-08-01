@@ -7,6 +7,7 @@
   "scripts": {
     "dev": "node --watch --watch-path src src/index.js",
     "start": "node src/index.js",
+    "start:pwa": "cross-env SERVE_WEB=1 WEB_DIST=web/dist node src/index.js",
     "test": "node --test"
   },
   "dependencies": {

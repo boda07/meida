@@ -2,6 +2,18 @@
 // - Em dev (ELECTRON_DEV=1): carrega o Vite (http://localhost:5173), assumindo
 //   que `npm run dev` ja arrancou o server (5175) + web (5173).
 // - Em producao: arranca o backend (que tambem serve o web/dist) e carrega-o.
+// Este ficheiro so deve correr dentro do runtime Electron. Se o executas com
+// `node electron/main.cjs` fora do Electron (ex.: hosting web/PWA via Render),
+// o `app` de Electron e undefined e a app nao funciona — usa:
+//   npm run start:pwa   (ou: SERVE_WEB=1 node server/src/index.js)
+if (!process.versions?.electron) {
+  console.error(
+    "[meida] electron/main.cjs foi executado fora do runtime Electron (process.versions.electron indefinido).\n" +
+      "Isto acontece quando o hosting corre 'node electron/main.cjs' em vez do server.\n" +
+      "Corrige: usa 'npm run start:pwa' (ou 'node server/src/index.js' com SERVE_WEB=1) para correr a PWA/web+api."
+  );
+  process.exit(1);
+}
 const { app, BrowserWindow, shell, dialog, ipcMain } = require("electron");
 const path = require("path");
 const { spawn } = require("child_process");

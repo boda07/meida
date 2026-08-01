@@ -1,0 +1,31 @@
+# Configuracao opcional do Render para correr a MEIDA como server web (PWA/web+api
+# same-origin). Ignora o Electron (que é desktop). Se ja tens um servico Render,
+# em vez de usar este ficheiro, altera apenas o "Start Command" dele para:
+#   npm run start:pwa
+# e o Build Command para:
+#   npm install && npm run build
+services:
+  - type: web
+    name: meida-pwa
+    runtime: node
+    buildCommand: npm install && npm run build
+    startCommand: npm run start:pwa
+    envVars:
+      - key: SERVE_WEB
+        value: "1"
+      # API_KEYs opcionais do TMDB/AniList/MAL — deixa em branco se nao usares.
+      - key: TMDB_API_KEY
+        value: ""
+      - key: ANILIST_CLIENT_ID
+        value: ""
+      - key: ANILIST_CLIENT_SECRET
+        value: ""
+      - key: MAL_CLIENT_ID
+        value: ""
+      - key: MAL_CLIENT_SECRET
+        value: ""
+    disk:
+      name: meida-data
+      mountPath: /data
+      # A pasta data/ precisa de escrita (sqlite/json + logs + caches).
+envVarGroups: []
