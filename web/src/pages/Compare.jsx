@@ -85,10 +85,6 @@ function CenterControls({ it, label, busy, onScore, onAdjust }) {
           <span className="cmp-ico" aria-hidden="true">↓</span>
           <span>Baixar</span>
         </button>
-        <button className="cmp-btn cmp-keep" disabled={busy} onClick={() => onScore(it.score ?? 50)} title="Manter">
-          <span className="cmp-ico" aria-hidden="true">=</span>
-          <span>Manter</span>
-        </button>
         <button className="cmp-btn cmp-up" disabled={busy} onClick={() => onAdjust(1)} title="Subir 1">
           <span className="cmp-ico" aria-hidden="true">↑</span>
           <span>Aumentar</span>
@@ -123,12 +119,16 @@ export default function Compare() {
       .finally(() => setLoading(false));
   }, [user]);
 
-  // Par atual: dois itens vistos, um ao lado do outro.
+  // Par atual: dois títulos vistos escolhidos ao acaso, um ao lado do outro.
   const pair = useMemo(() => {
     if (seen.length < 2) return null;
-    const a = seen[idx % seen.length];
-    const b = seen[(idx + 1) % seen.length];
+    const a = seen[Math.floor(Math.random() * seen.length)];
+    let b = seen[Math.floor(Math.random() * seen.length)];
+    while (b.tmdbId === a.tmdbId && b.type === a.type) {
+      b = seen[Math.floor(Math.random() * seen.length)];
+    }
     return [a, b];
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [seen, idx]);
 
   async function saveScore(it, score) {
@@ -223,6 +223,16 @@ export default function Compare() {
                 onScore={(s) => saveScore(pair[0], s)}
                 onAdjust={(d) => adjust(pair[0], d)}
               />
+              <div className="cmp-divider">VS</div>
+              <button
+                className="cmp-btn cmp-keep cmp-keep-all"
+                disabled={busy}
+                onClick={next}
+                title="Estão bem assim — vai para o próximo par"
+              >
+                <span className="cmp-ico" aria-hidden="true">=</span>
+                <span>Manter e próximo</span>
+              </button>
               <div className="cmp-divider">VS</div>
               <CenterControls
                 it={pair[1]}

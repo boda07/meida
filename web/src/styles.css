@@ -3728,6 +3728,13 @@ h2 {
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5);
 }
 
+/* Botão "Manter e próximo": sozinho no meio, sem esticar na vertical. */
+.cmp-keep-all {
+  flex: 0 0 auto;
+  width: 100%;
+  padding: 10px 14px;
+}
+
 .compare-nav {
   margin-top: 18px;
   text-align: center;
