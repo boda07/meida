@@ -30,6 +30,8 @@ export default function Torrents({ type, imdb, season, episode, anime, defaultAu
   const [subs, setSubs] = useState([]);
   const [quality, setQuality] = useState("all");
   const [sortBy, setSortBy] = useState("seeders");
+  const [compat, setCompat] = useState("all"); // all | playable
+  const [codec, setCodec] = useState("all"); // all | x264 | x265
   const [audio, setAudio] = useState(
     anime ? (defaultAudio === "dub" ? "dub" : "sub") : "all"
   );
@@ -70,17 +72,25 @@ export default function Torrents({ type, imdb, season, episode, anime, defaultAu
     return QUALITY_ORDER.filter((q) => set.has(q));
   }, [list]);
 
-  // Aplica filtro de qualidade + audio (anime) + ordenação.
+  // Aplica filtro de qualidade + audio (anime) + compatibilidade + codec + ordenação.
   const shown = useMemo(() => {
     let arr = list || [];
     if (quality !== "all") arr = arr.filter((t) => t.quality === quality);
+    if (compat === "playable") arr = arr.filter((t) => t.playable);
+    if (codec !== "all") arr = arr.filter((t) => t.codec === codec);
     if (anime && audio !== "all") arr = arr.filter((t) => matchAudio(t, audio));
     const sorted = [...arr].sort((a, b) => {
+      if (sortBy === "sizeAsc") return sizeToBytes(a.size) - sizeToBytes(b.size);
       if (sortBy === "size") return sizeToBytes(b.size) - sizeToBytes(a.size);
+      if (sortBy === "quality") {
+        const ra = QUALITY_ORDER.indexOf(a.quality);
+        const rb = QUALITY_ORDER.indexOf(b.quality);
+        return (ra === -1 ? QUALITY_ORDER.length : ra) - (rb === -1 ? QUALITY_ORDER.length : rb);
+      }
       return (b.seeders ?? -1) - (a.seeders ?? -1); // seeders desc (default)
     });
     return sorted;
-  }, [list, quality, sortBy, anime, audio]);
+  }, [list, quality, sortBy, anime, audio, compat, codec]);
 
   if (!imdb)
     return <p className="muted">Este título não tem IMDB id — torrents indisponiveis.</p>;
@@ -103,6 +113,7 @@ export default function Torrents({ type, imdb, season, episode, anime, defaultAu
           subtitles={subs}
           startAt={startAt}
           onProgress={onProgress}
+          onRemoved={() => setSelected(null)}
         />
       )}
       <div className="torrent-filters">
@@ -144,9 +155,39 @@ export default function Torrents({ type, imdb, season, episode, anime, defaultAu
           Ordenar:
           <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
             <option value="seeders">Mais seeders</option>
+            <option value="quality">Qualidade</option>
             <option value="size">Maior tamanho</option>
+            <option value="sizeAsc">Menor tamanho</option>
           </select>
         </label>
+        <div className="tf-compat">
+          <button
+            className={`tf-chip ${compat === "all" ? "active" : ""}`}
+            onClick={() => setCompat("all")}
+          >
+            Todos
+          </button>
+          <button
+            className={`tf-chip ${compat === "playable" ? "active" : ""}`}
+            onClick={() => setCompat("playable")}
+          >
+            ✓ Reproduz no browser
+          </button>
+          <button
+            className={`tf-chip ${codec === "x264" ? "active" : ""}`}
+            onClick={() => setCodec(codec === "x264" ? "all" : "x264")}
+            title="Só torrents x264 (mais compatíveis com o browser)"
+          >
+            x264
+          </button>
+          <button
+            className={`tf-chip ${codec === "x265" ? "active" : ""}`}
+            onClick={() => setCodec(codec === "x265" ? "all" : "x265")}
+            title="Só torrents x265/HEVC (mais pequenos, mas o browser não reproduz)"
+          >
+            x265
+          </button>
+        </div>
       </div>
 
       <div className="torrent-list">
@@ -166,6 +207,16 @@ export default function Torrents({ type, imdb, season, episode, anime, defaultAu
               )}
             </span>
             <span className="tmeta">
+              {t.playable ? (
+                <span className="tplay" title="Reproduz nativamente no browser (mp4/webm)">✓ browser</span>
+              ) : (
+                <span
+                  className="tnoplay"
+                  title={t.codec === "x265" ? ".mkv x265 — o Chrome/Safari não reproduzem este codec. Prefere .mp4 x264." : `${t.ext || ""} ${t.codec || ""} — pode não reproduzir no browser. Prefere .mp4.`}
+                >
+                  ⚠ {t.ext ? t.ext.slice(1).toUpperCase() : "?"}
+                </span>
+              )}
               {t.size ? t.size : ""}
               {t.seeders != null ? ` · 👤 ${t.seeders}` : ""}
             </span>

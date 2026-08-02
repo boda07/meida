@@ -78,3 +78,27 @@ export function getStatus(infoHash) {
     ready: t.ready,
   };
 }
+
+// Torrents ativos (a descarregar/reproduzir), para a lista "a gerir".
+export function listActive() {
+  return client.torrents.map((t) => {
+    const name =
+      t.files.find((f) => VIDEO_RE.test(f.name))?.name || t.name || "?";
+    return {
+      infoHash: t.infoHash,
+      name,
+      progress: Math.round(t.progress * 1000) / 10,
+      downloadSpeed: t.downloadSpeed,
+      peers: t.numPeers,
+    };
+  });
+}
+
+// Para de descarregar e remove o torrent (limpa ficheiros do disco).
+export function removeTorrent(infoHash) {
+  const t = findTorrent(infoHash.toLowerCase());
+  if (!t) return false;
+  return new Promise((res) => {
+    t.destroy({ destroyStore: true }, () => res(true));
+  });
+}

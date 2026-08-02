@@ -84,7 +84,7 @@ test("normalizeAnilistEntry converte estado/progresso", () => {
   assert.equal(row.title, "Attack on Titan");
   assert.equal(row.poster, "https://img/a.jpg");
   assert.equal(row.rating, 9); // 876 -> 9 (0-10 scale)
-  assert.equal(row.score, 9); // score pessoal 87 -> 9 (87/10 = 8.7 -> 9)
+  assert.equal(row.score, 87); // score pessoal 87 fica 87 (escala 0-100)
   assert.equal(row.watched, 1);
   assert.equal(row.watchlist, 0);
   assert.deepEqual(row.genres, ["Action", "Drama"]);

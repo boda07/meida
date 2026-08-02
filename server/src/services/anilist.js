@@ -188,9 +188,9 @@ export function normalizeAnilistEntry(entry) {
   const en = media.title?.english || "";
   const romaji = media.title?.romaji || media.title?.native || "";
   const titleEn = en || romaji;
-  // Nota pessoal (0-100) ou media da comunidade (meanScore). Converte para 0-10.
+  // Nota pessoal (0-100) ou media da comunidade (meanScore). Já fica 0-100.
   const rawScore = entry?.score != null ? entry.score : media?.meanScore;
-  const score = rawScore == null ? null : Math.round(Number(rawScore) / 10);
+  const score = rawScore == null ? null : Math.round(Number(rawScore));
   return {
     tmdbId: Number(id), // a app trata anime por malId
     type: "anime",
@@ -229,7 +229,7 @@ export async function importAnilistList(userId) {
   for (const it of list) {
     const row = normalizeAnilistEntry(it);
     if (!row) continue;
-    // Nota pessoal ja convertida para 0-10 por normalizeAnilistEntry (score/10).
+    // Nota pessoal já 0-100 por normalizeAnilistEntry.
     upsertLibrary(row);
     count++;
 

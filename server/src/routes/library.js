@@ -241,8 +241,8 @@ libraryRouter.post("/library", (req, res) => {
   if (!tmdbId || (type !== "movie" && type !== "tv" && type !== "anime")) {
     return res.status(400).json({ error: "tmdbId e type (movie|tv|anime) sao obrigatorios" });
   }
-  if (score != null && (score < 1 || score > 10)) {
-    return res.status(400).json({ error: "score tem de estar entre 1 e 10" });
+  if (score != null && (score < 1 || score > 100)) {
+    return res.status(400).json({ error: "score tem de estar entre 1 e 100" });
   }
 
   const existing = getLibraryItem(req.user.id, Number(tmdbId), type);

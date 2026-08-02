@@ -577,7 +577,7 @@ export default function Library() {
                   <div className="card-noposter">{t}</div>
                 )}
                 <div className="card-scrim" />
-                {it.score ? <span className="card-rating">{it.score}/10</span> : null}
+                {it.score ? <span className="card-rating">{it.score}/100</span> : null}
                 {it.watched ? <span className="card-watched">✓</span> : null}
                 {it.watchlist && !it.watched ? (
                   <span className="card-watchlist">+</span>

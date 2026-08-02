@@ -15,7 +15,7 @@ export default function useProviderHealth() {
         .providersHealth()
         .then((d) => {
           if (cancelled) return;
-          if (d.checking && !d.providers && retries < 4) {
+          if (d.checking && !d.providers && retries < 6) {
             retries += 1;
             setTimeout(load, 3000); // ainda a testar pela 1ª vez: volta a perguntar
             return;

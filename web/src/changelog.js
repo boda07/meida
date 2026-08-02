@@ -2,11 +2,27 @@
 // "o que mudou" depois de o utilizador atualizar a app. Mais recente em cima.
 export const CHANGELOG = [
   {
+    version: "0.9.9",
+    items: [
+      "Corrigido: quando um site de filmes deixava de funcionar, o leitor ficava preso no \"a carregar\" com o ecrã vazio. Agora, se a fonte não responder em 15 segundos, a app muda sozinha para a próxima — sem precisares de fazer nada.",
+      "Melhorado: as fontes que estão em baixo aparecem riscadas na lista e a app já não as tenta usar por defeito.",
+      "Melhorado: a app verifica as fontes com mais frequência (6 em 6 horas em vez de 24 em 24), para estar mais atualizada.",
+      "Fontes de reprodução: removidas duas fontes que funcionavam mal — uma era muito lenta (e dava sempre o filme dobrado) e a outra mostrava a página mas o vídeo falhava. As restantes ficaram ordenadas das mais rápidas para as mais lentas.",
+      "Melhorado (torrents): cada download mostra agora se dá para ver logo no browser (✓) ou se é provável que não funcione (⚠ .mkv). Novo filtro para ver só os que funcionam, e a mensagem de erro explica-te isso.",
+      "Melhorado (torrents): novo botão para parar um download a meio (libera espaço e ligações). Mais formas de organizar a lista (por qualidade, por tamanho) e filtros.",
+      "Melhorado (legendas): menos falhas ao carregar as legendas quando se pedem várias ao mesmo tempo.",
+      "Corrigido: ao tocar em \"Continua a ver\", a série às vezes abria na temporada certa mas no episódio errado (no 1º em vez de onde ficaste) — agora retoma sempre no episódio certo.",
+      "Novo: \"Compara as tuas notas\" (menu do perfil) — vês dois títulos que já viste lado a lado e, no meio, podes ajustar a tua nota de cada um (escreves na caixa ou usas ↑/↓ para subir/baixar de 1 em 1). Serve para comparares as tuas notas com as da comunidade.",
+      "Novo: nas fichas dos títulos, o botão \"Comparar avaliação\" — abre uma janela em que o título atual fica de um lado e um que já viste do outro; sobes/baixas a nota do título atual com ↑/↓ e podes trocar a referência para continuares a comparar.",
+      "Corrigido: as Definições podiam ficar em branco enquanto a app ainda estava a arrancar — agora mostra \"A testar fontes...\" e, se algo correr mal, aparece uma mensagem com um botão para recarregar.",
+    ],
+  },
+  {
     version: "0.9.6",
     items: [
-      "Novo: liga a tua conta AniList nas Definições. A app passa a marcar episódios vistos no AniList automaticamente (quando o MyAnimeList não está ligado) e, se ligares **as duas**, faz uma sincronização bidireccional: compara o progresso entre MAL e AniList e empurra o maior para a conta atrasada — sempre sem perder o que já marcaste.",
+      "Novo: liga a tua conta AniList nas Definições. A app passa a marcar episódios vistos no AniList automaticamente (quando o MyAnimeList não está ligado) e, se ligares **as duas**, faz uma sincronização entre elas: compara o progresso entre as duas contas e usa sempre a mais avançada — nada do que já marcaste se perde.",
       "Importa a tua lista completa do AniList (o que já viste, a ver, watchlist, notas) com um botão, e podes sincronizar de novo a qualquer momento.",
-      "Melhorado: os catálogos, pesquisas e episódios de anime e séries agora têm cache resiliente em disco — se o servidor de origem (TMDB/AniList/etc.) estiver em baixo, a app usa os últimos dados conhecidos em vez de ficar sem resultados.",
+      "Melhorado: catálogos e pesquisas agora ficam guardados no computador — se um site de informação estiver em baixo, a app usa os últimos dados em vez de ficar sem resultados.",
     ],
   },
   {
@@ -38,16 +54,16 @@ export const CHANGELOG = [
       "Novas fontes de reprodução: SuperEmbed, VidAPI e MegaEmbed (filmes e séries).",
       "Novas fontes de reprodução: SMASHYStream (filmes e séries) — player com legendas em vários idiomas.",
       "Legendas: o português de Portugal (PT) passou a ser preferido em relação ao português do Brasil (PT-BR) — nos resultados do OpenSubtitles e na escolha automática da legenda.",
-      "Corrigido: no \"Escolhe algo para mim\" de anime, os géneros podiam não carregar e a escolha podia falhar quando o MyAnimeList/Jikan estava instável — agora carregam e a escolha usa a AniList como reserva.",
+      "Corrigido: no \"Escolhe algo para mim\" de anime, os géneros podiam não carregar e a escolha podia falhar quando o MyAnimeList estava instável — agora carregam e a escolha usa a AniList como reserva.",
       "Anime: nova fonte MegaVid (legendado/dobrado), agora também a fonte default do anime.",
       "Anime: removida a fonte MegaPlay, que deixou de funcionar (dava erro para todos os títulos).",
       "Anime: removida a fonte VidPlus, que deixou de funcionar e ficou redundante com o MegaVid.",
       "Anime: removida a fonte VidLink (no anime não devolvia stream; continua a funcionar em filmes e séries).",
-      "Corrigido: quando o MyAnimeList/Jikan falha, a app passa a usar automaticamente uma fonte alternativa de catálogo (Tenrai) antes de desistir — catálogo, pesquisa, géneros e episódios continuam a funcionar.",
+      "Corrigido: quando o MyAnimeList falha, a app passa a usar automaticamente uma fonte alternativa de catálogo (Tenrai) antes de desistir — catálogo, pesquisa, géneros e episódios continuam a funcionar.",
       "Melhorado: as fichas de anime (catálogo, pesquisa, detalhes e episódios) ficam agora guardadas no computador — se o MyAnimeList e a fonte alternativa estiverem ambos em baixo, a app usa os últimos dados conhecidos em vez de mostrar páginas vazias.",
-      "Novo: atalhos de teclado no player (torrents e HLS) — Espaço ou K para reproduzir/pausar, setas ←/→ para saltar 10 segundos, setas ↑/↓ para o volume, M para mudo e F para ecrã inteiro.",
-      "Corrigido: no manga, os géneros podiam não carregar quando o MyAnimeList/Jikan estava instável — agora usam a fonte alternativa e a cache, como o anime.",
-      "Melhorado: quando o MyAnimeList/Jikan está em baixo, a app demora agora muito menos a obter catálogo, géneros e episódios (passa logo para a fonte alternativa em vez de insistir várias vezes no Jikan).",
+      "Novo: atalhos de teclado no player — Espaço ou K para reproduzir/pausar, setas ←/→ para saltar 10 segundos, setas ↑/↓ para o volume, M para mudo e F para ecrã inteiro.",
+      "Corrigido: no manga, os géneros podiam não carregar quando o MyAnimeList estava instável — agora usam a fonte alternativa e o que ficou guardado, como o anime.",
+      "Melhorado: quando o MyAnimeList está em baixo, a app demora agora muito menos a obter catálogo, géneros e episódios (passa logo para a fonte alternativa em vez de insistir várias vezes).",
       "Novo: botão \"Trailer\" nas fichas de filmes, séries e anime — abre o trailer oficial (YouTube) sem sair da app.",
       "Novo: as fontes de reprodução são agora testadas automaticamente 1x por dia — as que estiverem em baixo aparecem sinalizadas na lista (riscadas, com \"em baixo\") e a app deixa de escolher por defeito uma fonte partida.",
       "Novo: listas personalizadas — podes criar as tuas listas (\"Para ver\", \"Favoritos\", listas temáticas), adicionar filmes/séries/anime com o botão \"+ Lista\" nas fichas, e vê-las na página \"A minha lista\" (criar, renomear, apagar e remover títulos).",
@@ -57,21 +73,21 @@ export const CHANGELOG = [
   {
     version: "0.9.1",
     items: [
-      "A aba Anime volta a carregar mesmo quando o MyAnimeList/Jikan esta em baixo: a app usa a AniList como reserva para manter catalogo, pesquisa e filtros a funcionar.",
-      "A pesquisa de anime ficou mais resistente a falhas temporarias dos providers.",
+      "A aba Anime volta a carregar mesmo quando o MyAnimeList está em baixo: a app usa a AniList como reserva para manter catálogo, pesquisa e filtros a funcionar.",
+      "A pesquisa de anime ficou mais resistente a falhas temporárias dos sites de onde vêm os dados.",
     ],
   },
   {
     version: "0.9.0",
     items: [
-      "Removidas as fontes que não funcionavam (VidSrc.cc, VidSrc, VidSrc.su e Embed.su): davam \"media unavailable\" e/ou eram bloqueadas por alguns operadores, obrigando a mexer no DNS. Ficam as que funcionam sem mexer em nada: VidFast, VidLink, MoviesAPI, 2Embed e 111Movies.",
-      "A aba \"Sem anúncios\" (filmes/séries) deixa de aparecer quando não está configurada (precisa de Docker/Consumet) — só confundia. Para legendas em português usa os Torrents: o leitor próprio liga a legenda PT automaticamente.",
+      "Removidas as fontes que não funcionavam (VidSrc.cc, VidSrc, VidSrc.su e Embed.su): davam erro de vídeo e/ou eram bloqueadas por alguns operadores, obrigando a mexer no DNS. Ficam as que funcionam sem mexer em nada: VidFast, VidLink, MoviesAPI, 2Embed e 111Movies.",
+      "A aba \"Sem anúncios\" (filmes/séries) deixa de aparecer quando não está configurada — só confundia. Para legendas em português usa os Torrents: o leitor próprio liga a legenda PT automaticamente.",
     ],
   },
   {
     version: "0.8.9",
     items: [
-      "Fontes (providers) atualizadas: removido o AutoEmbed (domínio morto), o VidSrc.vip passou a VidSrc.su e o MoviesAPI passou para o domínio novo (moviesapi.to).",
+      "Fontes atualizadas: removido o AutoEmbed (domínio morto), o VidSrc.vip passou a VidSrc.su e o MoviesAPI passou para o domínio novo (moviesapi.to).",
     ],
   },
   {
@@ -251,14 +267,14 @@ export const CHANGELOG = [
     items: [
       "Watch Party: o reproduzir/pausa/avançar passa a sincronizar de verdade — se um dá play, pausa ou salta à frente, o outro acompanha (nos separadores Sem anúncios e Torrents).",
       "Watch Party: quem entra a meio começa logo no ponto e no estado (a tocar ou em pausa) em que a sala está.",
-      "Watch Party: aviso claro de que nos Providers (páginas externas) o play/pausa não dá para sincronizar.",
+      "Watch Party: aviso claro de que nas fontes externas o play/pausa não dá para sincronizar.",
     ],
   },
   {
     version: "0.6.2",
     items: [
       "Watch Party: quem entra agora vai parar ao mesmo sítio onde está o anfitrião (antes, se já tinhas aberto o episódio, o convidado ficava na página inicial).",
-      "Watch Party: a fonte que o anfitrião escolhe passa a ser a mesma para todos — já não ficas num provider partido a ver um ecrã vazio.",
+      "Watch Party: a fonte que o anfitrião escolhe passa a ser a mesma para todos — já não ficas numa fonte partida a ver um ecrã vazio.",
       "Watch Party: o teu nome fica guardado e é mesmo o teu nome a aparecer ao entrares numa sala.",
     ],
   },

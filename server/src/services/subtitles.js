@@ -71,18 +71,38 @@ export async function searchSubtitles({ imdb, season, episode, languages }) {
 }
 
 // Obtem o ficheiro da legenda (pede link ao OpenSubtitles) e devolve em VTT.
+// O link so e valido ~15s e o CDN recusa conexoes sem User-Agent; por isso
+// usa retry e re-pede o link se a descarga do ficheiro falhar.
 export async function getSubtitleVtt(fileId) {
   if (!subtitlesEnabled()) throw new Error("OpenSubtitles nao configurado");
-  const res = await fetch(`${OS}/download`, {
-    method: "POST",
-    headers: headers({ "Content-Type": "application/json" }),
-    body: JSON.stringify({ file_id: Number(fileId) }),
-  });
-  if (!res.ok) throw new Error(`OpenSubtitles download ${res.status}`);
-  const data = await res.json();
-  if (!data.link) throw new Error("sem link de download (quota?)");
-  const sub = await fetch(data.link);
-  return toVtt(await sub.text());
+  let lastErr;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const res = await fetch(`${OS}/download`, {
+        method: "POST",
+        headers: headers({ "Content-Type": "application/json" }),
+        body: JSON.stringify({ file_id: Number(fileId) }),
+      });
+      if (!res.ok) throw new Error(`OpenSubtitles download ${res.status}`);
+      const data = await res.json();
+      if (!data.link) throw new Error("sem link de download (quota?)");
+      const sub = await fetch(data.link, {
+        headers: { "User-Agent": "StreamApp v0.1" },
+      });
+      if (!sub.ok) throw new Error(`legenda ${sub.status}`);
+      return toVtt(await sub.text());
+    } catch (err) {
+      lastErr = err;
+      if (err.message.includes("429")) {
+        await new Promise((r) => setTimeout(r, 1000 * (attempt + 1)));
+        continue;
+      }
+      // falha de rede/link expirado: tenta de novo (re-pede o link)
+      if (attempt < 2) await new Promise((r) => setTimeout(r, 800));
+      else break;
+    }
+  }
+  throw lastErr;
 }
 
 // Converte uma legenda de um URL qualquer (ex.: vinda do extractor) para VTT.
@@ -90,4 +110,44 @@ export async function fetchSubtitleAsVtt(url) {
   const res = await fetch(url);
   if (!res.ok) throw new Error(`legenda ${res.status}`);
   return toVtt(await res.text());
+}
+
+// Cache de legendas ja descarregadas (fileId -> VTT). O OpenSubtitles tem
+// rate-limit por hora; quando o player pede varios tracks seguidos, sem cache
+// arriscamos 500s em serie. Tamanho maximo simples (fifo).
+const subCache = new Map();
+const SUB_CACHE_MAX = 200;
+
+export function cachedSubtitle(fileId) {
+  return subCache.get(String(fileId)) ?? null;
+}
+
+function cacheSubtitle(fileId, vtt) {
+  subCache.set(String(fileId), vtt);
+  if (subCache.size > SUB_CACHE_MAX) {
+    subCache.delete(subCache.keys().next().value);
+  }
+}
+
+// Descarrega uma legenda do OpenSubtitles com cache e retry (rate-limit 429).
+export async function getSubtitleVttCached(fileId) {
+  const hit = cachedSubtitle(fileId);
+  if (hit != null) return hit;
+  let lastErr;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const vtt = await getSubtitleVtt(fileId);
+      cacheSubtitle(fileId, vtt);
+      return vtt;
+    } catch (err) {
+      lastErr = err;
+      if (err.message.includes("429")) {
+        // rate-limit: espera e tenta de novo
+        await new Promise((r) => setTimeout(r, 1000 * (attempt + 1)));
+        continue;
+      }
+      break;
+    }
+  }
+  throw lastErr;
 }

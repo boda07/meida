@@ -12,8 +12,12 @@ const TEST_MOVIE = 550; // Fight Club
 const TEST_ANIME = 21; // One Piece (mesmo id no MAL e no AniList)
 
 const TIMEOUT_MS = 8000;
-const TTL_MS = 24 * 60 * 60 * 1000; // 1x/dia
+const TTL_MS = 6 * 60 * 60 * 1000; // 1x de cada 6h (providers morrem/volatilizam-se no dia)
 const CACHE_KEY = "provider-health";
+// Providers que demoram mais que isto a responder sao marcados como "lentos"
+// (ok=false) — não porque estejam mortos, mas porque degradam a experiência.
+// Medidos: o MegaEmbed dava ~2.3s vs ~0.2s dos restantes.
+const SLOW_MS = 2500;
 
 // Marcadores fortes de pagina de erro (ignoram-se "not found"/"404" soltos:
 // muitos sites tem isso no JS para mostrar fora de iframe).
@@ -31,29 +35,35 @@ const DEAD_HINTS = [
 let memory = null; // { at, providers: [...] } com o ultimo resultado
 let checking = null; // Promise do check em curso
 
-// Testa um URL: devolve ok=false + motivo se falhar, true se responder bem.
+// Testa um URL: devolve ok=false + motivo se falhar ou for demasiado lento,
+// true se responder bem (e rapido).
 async function probe(url, referer) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+  const t0 = Date.now();
   try {
     const res = await fetch(url, {
       redirect: "follow",
       signal: controller.signal,
       headers: {
-        "user-agent": "Mozilla/5.0",
+        "user-agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36",
         ...(referer ? { referer, origin: referer } : {}),
       },
     });
-    if (res.status >= 400) return { ok: false, status: res.status, error: `HTTP ${res.status}` };
+    const ms = Date.now() - t0;
+    if (res.status >= 400) return { ok: false, status: res.status, error: `HTTP ${res.status}`, ms };
     const text = await res.text();
     const low = text.toLowerCase();
     for (const hint of DEAD_HINTS) {
-      if (low.includes(hint)) return { ok: false, status: res.status, error: hint };
+      if (low.includes(hint)) return { ok: false, status: res.status, error: hint, ms };
     }
-    return { ok: true, status: res.status };
+    if (ms > SLOW_MS) return { ok: false, status: res.status, error: `lento (${ms}ms)`, ms };
+    return { ok: true, status: res.status, ms };
   } catch (e) {
     return {
       ok: false,
+      ms: Date.now() - t0,
       error: e.cause?.code === "UND_ERR_ABORTED" ? "timeout" : e.cause?.code || e.message,
     };
   } finally {
@@ -96,7 +106,7 @@ function runCheck() {
           url: t.url,
         });
       }
-      return { id: t.id, name: t.name, type: t.type, ok: r.ok, status: r.status, error: r.error };
+      return { id: t.id, name: t.name, type: t.type, ok: r.ok, status: r.status, error: r.error, ms: r.ms };
     })
   );
 }

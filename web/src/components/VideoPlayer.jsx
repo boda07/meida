@@ -8,12 +8,13 @@ import { useSettings } from "../settings/SettingsContext.jsx";
 // Player HTML5 próprio para streams de torrent (sem anúncios).
 // `startAt` (s): retoma nessa posicao. `onProgress(p, d)`: chamado ~1x/5s com a
 // posicao e duracao atuais (para o "continua a ver" retomar a meio).
-export default function VideoPlayer({ src, infoHash, subtitles = [], startAt, onProgress }) {
+export default function VideoPlayer({ src, infoHash, subtitles = [], startAt, onProgress, onRemoved }) {
   const videoRef = useRef(null);
   const containerRef = useRef(null);
   const { settings } = useSettings();
   const [status, setStatus] = useState(null);
   const [err, setErr] = useState(false);
+  const [removing, setRemoving] = useState(false);
   useVideoSync(videoRef); // Watch Party: sincroniza play/pause/seek
   usePlayerShortcuts(videoRef, containerRef); // Atalhos de teclado
 
@@ -60,6 +61,18 @@ export default function VideoPlayer({ src, infoHash, subtitles = [], startAt, on
 
   const mb = (n) => (n / 1024 / 1024).toFixed(1);
 
+  const stop = () => {
+    if (removing || !infoHash) return;
+    setRemoving(true);
+    fetch(`/api/stream/${infoHash}`, { method: "DELETE" })
+      .catch(() => {})
+      .finally(() => {
+        setStatus(null);
+        setRemoving(false);
+        onRemoved?.();
+      });
+  };
+
   return (
     <div className="vplayer">
       <div className="player" ref={containerRef}>
@@ -79,7 +92,8 @@ export default function VideoPlayer({ src, infoHash, subtitles = [], startAt, on
       {err && (
         <p className="vhint">
           O browser não consegue reproduzir este ficheiro (provavelmente .mkv ou
-          codec x265). Experimenta um torrent <b>1080p em .mp4 / x264</b>.
+          codec x265). Usa o filtro <b>✓ Reproduz no browser</b> na lista de
+          torrents e escolhe um <b>.mp4 / x264</b>.
         </p>
       )}
       {status && (
@@ -88,6 +102,9 @@ export default function VideoPlayer({ src, infoHash, subtitles = [], startAt, on
             <span style={{ width: `${status.progress}%` }} />
           </span>
           {status.progress}% · 👤 {status.peers} peers · ⬇ {mb(status.downloadSpeed)} MB/s
+          <button className="vstop" onClick={stop} disabled={removing}>
+            {removing ? "A parar..." : "✕ Parar torrent"}
+          </button>
         </div>
       )}
     </div>

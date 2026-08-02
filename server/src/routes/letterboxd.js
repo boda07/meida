@@ -66,7 +66,7 @@ letterboxdRouter.post("/letterboxd/import", async (req, res, next) => {
         poster: f.poster,
         watched: 1,
         watchlist: 0,
-        score: f.rating != null ? f.rating : null, // a tua nota (1-10)
+        score: f.rating != null ? Math.round(f.rating * 10) : null, // a tua nota (1-10 -> 0-100)
       });
     }
 

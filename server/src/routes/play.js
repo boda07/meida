@@ -4,9 +4,9 @@ import { extractAnime, animeExtractorEnabled } from "../services/animeStream.js"
 import { handleProxy, buildProxyUrl } from "../services/proxy.js";
 import {
   searchSubtitles,
-  getSubtitleVtt,
   fetchSubtitleAsVtt,
   subtitlesEnabled,
+  getSubtitleVttCached,
 } from "../services/subtitles.js";
 
 export const playRouter = Router();
@@ -126,10 +126,10 @@ playRouter.get("/subtitles", async (req, res, next) => {
   }
 });
 
-// Descarrega uma legenda do OpenSubtitles (devolve VTT).
+// Descarrega uma legenda do OpenSubtitles (devolve VTT, com cache/retry).
 playRouter.get("/subtitles/download/:fileId", async (req, res) => {
   try {
-    const vtt = await getSubtitleVtt(req.params.fileId);
+    const vtt = await getSubtitleVttCached(req.params.fileId);
     res.setHeader("Content-Type", "text/vtt; charset=utf-8");
     res.send(vtt);
   } catch (err) {

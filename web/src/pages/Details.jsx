@@ -8,6 +8,7 @@ import Player from "../components/Player.jsx";
 import SourceSelector from "../components/SourceSelector.jsx";
 import useProviderHealth from "../components/useProviderHealth.js";
 import LibraryControls from "../components/LibraryControls.jsx";
+import CompareRating from "../components/CompareRating.jsx";
 import Trailer from "../components/Trailer.jsx";
 import AddToList from "../components/AddToList.jsx";
 import Torrents from "../components/Torrents.jsx";
@@ -26,6 +27,9 @@ export default function Details() {
   const [error, setError] = useState(null);
 
   // Retomar no episódio vindo do "Continua a ver" (?s=temporada&e=episódio&t=seg).
+  // A `pending` só é consumida quando a temporada de retoma carrega DE FACTO
+  // (guarda loadedSeasonRef); assim os efeitos que correm 2x em StrictMode (dev)
+  // não consomem a retoma duas vezes nem repõem o episódio a 1.
   const resumeRef = useRef({
     season: Number(searchParams.get("s")) || null,
     episode: Number(searchParams.get("e")) || null,
@@ -44,6 +48,9 @@ export default function Details() {
   // Posição (segundos) para retomar a meio, só quando voltamos ao mesmo
   // episódio vindo do "Continua a ver" (senão os players começam do 0).
   const resumeAtRef = useRef(resumeRef.current.position);
+  // Temporada cuja lista de episódios já foi aplicada — evita que re-invocações
+  // do efeito (StrictMode em dev, refetch de detalhes) reponham o episódio a 1.
+  const loadedSeasonRef = useRef(null);
 
   // Estado de séries
   const [season, setSeason] = useState(1);
@@ -115,6 +122,8 @@ export default function Details() {
   // Fontes / player
   const [embeds, setEmbeds] = useState([]);
   const [active, setActive] = useState(null);
+  // Indice activo do player (para o Player fazer fallback/timeout a partir dele).
+  const [playerIndex, setPlayerIndex] = useState(0);
   // Watch Party: fonte (provider) que o host escolheu, para os convidados verem a
   // mesma — senao cada um fica no 1o provider, que pode estar partido ("nao vejo nada").
   const wantedSourceRef = useRef(null);
@@ -182,7 +191,13 @@ export default function Details() {
       .season(details.id, season)
       .then((d) => {
         setEpisodes(d.episodes);
-        setEpisode(takeResumeEpisode());
+        // Aplica o episódio de retoma apenas na 1a carga efetiva desta temporada.
+        // Re-invocações do efeito (StrictMode/refetch) deixam o episódio atual
+        // intacto em vez de o repor a 1.
+        if (loadedSeasonRef.current !== season) {
+          loadedSeasonRef.current = season;
+          setEpisode(takeResumeEpisode());
+        }
       })
       .catch((e) => setError(e.message));
   }, [details, season, settings.overviewLang]);
@@ -214,7 +229,9 @@ export default function Details() {
           name: `Episódio ${i + 1}`,
         }))
       );
-      setEpisode(takeResumeEpisode());
+      // Usa o episódio de retoma capturado de forma síncrona (resistente a
+      // re-invocações do efeito em StrictMode) em vez de consumir takeResumeEpisode.
+      setEpisode(resumeEp || takeResumeEpisode());
     };
     api
       .animeEpisodes(details.malId)
@@ -320,6 +337,7 @@ export default function Details() {
   // Marca como acabado (filme) / conclui o episódio atual (série/anime).
   const [finishing, setFinishing] = useState(false);
   const [finishMsg, setFinishMsg] = useState(null);
+  const [compareOpen, setCompareOpen] = useState(false);
   const isMovieLike = details?.isMovie || details?.type === "movie";
   async function markFinished() {
     if (!details || finishing) return;
@@ -389,7 +407,10 @@ export default function Details() {
         // Guarda para aplicar quando as fontes carregarem; aplica ja se possivel.
         wantedSourceRef.current = d.provider;
         const match = embeds.find((e) => e.provider === d.provider);
-        if (match) setActive(match);
+        if (match) {
+          setActive(match);
+          setPlayerIndex(embeds.findIndex((e) => e.provider === d.provider));
+        }
       }
     });
   }, [party, season, episode, mode, embeds, active]);
@@ -457,6 +478,15 @@ export default function Details() {
             <Trailer src={details.trailer} />
             <AddToList details={details} />
             <LibraryControls details={details} />
+            {user && (
+              <button
+                type="button"
+                className="lib-trailer"
+                onClick={() => setCompareOpen(true)}
+              >
+                ⚖ Comparar avaliação
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -576,17 +606,27 @@ export default function Details() {
             />
           ) : (
             <>
-              <SourceSelector
+            <SourceSelector
+              embeds={embeds}
+              activeId={active?.provider}
+              onSelect={(e) => {
+                setActive(e);
+                // Posiciona o player no indice desta fonte para recomeçar o timeout.
+                const idx = embeds.findIndex((x) => x.provider === e?.provider);
+                setPlayerIndex(idx >= 0 ? idx : 0);
+              }}
+              deadIds={deadProviders}
+            />
+            {embeds.length ? (
+              <Player
                 embeds={embeds}
-                activeId={active?.provider}
-                onSelect={setActive}
                 deadIds={deadProviders}
+                title={details.title}
+                startIndex={playerIndex}
               />
-              {active ? (
-                <Player src={active.embedUrl} title={details.title} />
-              ) : (
-                <p className="muted">A carregar fontes...</p>
-              )}
+            ) : (
+              <p className="muted">A carregar fontes...</p>
+            )}
               <p className="muted" style={{ fontSize: 12, marginTop: 8 }}>
                 Fontes dedicadas de anime (sub/dub via MyAnimeList). Muda entre
                 legendado e dobrado nas Definições.
@@ -630,11 +670,20 @@ export default function Details() {
             <SourceSelector
               embeds={embeds}
               activeId={active?.provider}
-              onSelect={setActive}
+              onSelect={(e) => {
+                setActive(e);
+                const idx = embeds.findIndex((x) => x.provider === e?.provider);
+                setPlayerIndex(idx >= 0 ? idx : 0);
+              }}
               deadIds={deadProviders}
             />
-            {active ? (
-              <Player src={active.embedUrl} title={details.title} />
+            {embeds.length ? (
+              <Player
+                embeds={embeds}
+                deadIds={deadProviders}
+                title={details.title}
+                startIndex={playerIndex}
+              />
             ) : (
               <p className="muted">A carregar fontes...</p>
             )}
@@ -699,6 +748,10 @@ export default function Details() {
             </span>
           )}
         </div>
+      )}
+
+      {compareOpen && (
+        <CompareRating details={details} onClose={() => setCompareOpen(false)} />
       )}
     </div>
   );

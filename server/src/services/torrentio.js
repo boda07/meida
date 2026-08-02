@@ -46,6 +46,15 @@ function parseStream(s) {
   const dual = /\b(dual|multi)[\s._-]?audio\b/i.test(full);
   const dub = dual || /\bdub(bed)?\b/i.test(full); // tem faixa dobrada presente
 
+  // Nome real do ficheiro (o Torrentio coloca-o em behaviorHints.filename; cai
+  // para a 1a linha do titulo se nao estiver la). Usado para detetar o container.
+  const realFile = (s.behaviorHints?.filename || fileName || "").replace(/\.$/, "");
+  const ext = (realFile.match(/\.([a-z0-9]+)$/i) || [])[1]?.toLowerCase();
+
+  // Container reproduzivel nativamente no browser? (mp4/webm sim; mkv/avi etc nao)
+  const playable = ext === "mp4" || ext === "webm" || ext === "m4v";
+  const codec = /\bx?265\b|hevc/i.test(full) ? "x265" : /\bav1\b/i.test(full) ? "AV1" : /\bx?264\b|avc/i.test(full) ? "x264" : null;
+
   return {
     infoHash: s.infoHash,
     fileIdx: s.fileIdx ?? null,
@@ -55,6 +64,9 @@ function parseStream(s) {
     title: fileName || name,
     dub, // inclui dual audio (tem dobragem disponivel)
     dual, // tem ambas as faixas (legendada + dobrada)
+    ext, // .mkv, .mp4, ...
+    codec, // x264 | x265 | AV1 | null
+    playable, // true se o browser reproduz nativamente (mp4/webm)
     magnet: buildMagnet(s.infoHash, s.sources),
   };
 }

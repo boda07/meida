@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.9.9
+
+### Notas pessoais 1-10 → 0-100
+- As notas pessoais passam de escala 1-10 para **0-100** (mais precisa). As importações MAL (`score*10`), AniList (0-100 nativo) e Letterboxd (`score*10`) convertem automaticamente, e a base de dados existente é migrada uma única vez na arrancada (guarda `meta.scoreScale=100`).
+
+### Comparação de notas
+- **Jogo "Compara as tuas notas"** (`/compare`, menu do perfil): mostra dois títulos que já viste lado a lado com as notas da comunidade e as tuas; no meio ajustas a tua nota de cada um (escrever na caixa ou ↑/↓ de 1 em 1) e avanças para o próximo par.
+- **Botão "Comparar avaliação" nas fichas** (`CompareRating.jsx`): modal com o título atual de um lado e um título já visto (aleatório) do outro como referência — ↑/↓ ajustam a nota do título atual de 1 em 1 (guardada logo) e "Trocar referência ↻" muda o lado direito.
+
+### Players / providers
+- **Auto-fallback entre providers:** o leitor de iframe (providers externos) passa automaticamente para a próxima fonte quando a que está seleccionada não responde em 15s — acaba o "a carregar indefinidamente" quando um provider cai/bloqueia. Mostra o nome do provider activo a ser testado.
+- **Reordenação de providers (filmes/séries):** ordem passa a refletir velocidade/fiabilidade medida por probe (vidapi 128ms, moviesapi 123ms, 111movies 171ms, vidlink 203ms, vidcore 145-420ms, 2embed 210ms, superembed 229ms, smashystream 290ms). **Removidos:** MegaEmbed (mgeb.top — ~2280ms no filme, ~10x mais lento, e serve áudio PT-BR via Superflix sempre) e VidFast (SPA que resolve o vídeo só no browser; a health-check passa mas o stream falha). O default passa a ser o VidAPI.
+- **Novo provider VidCore** (`vidcore.org`): API de embed dedicada a developers — player HLS multi-servidor com failover e subtítulos, URLs por TMDB, sem Turnstile/XFO/COEP, ~145-420ms. Nota: o stream resolve-se via JS client-side (SPA), pelo que o health-check valida só a página; falhas de stream são cobertas pelo auto-fallback de 15s.
+- **Providers lentos marcados como mortos:** health-check agora sinaliza também quem demora >2.5s a responder (`SLOW_MS`), além dos que falham — entram na lista de "em baixo" (riscados) e são saltados na escolha automática.
+- **Torrents compatíveis com o browser:** cada torrent é etiquetado no servidor com o container/codec (`.mkv`/`x265`/`AV1`/`mp4`) — a lista mostra um selo "✓ browser" para os reproduzíveis nativamente (mp4/webm) e um aviso ⚠ para os `.mkv x265` que o Chrome/Safari não tocam. Novo filtro "✓ Reproduz no browser" e a mensagem de erro do player aponta para ele. (`torrentio.js` extrai `behaviorHints.filename`, `Torrents.jsx`+`styles.css`).
+- **Gerir torrents:** botão "✕ Parar torrent" no player para de descarregar e remove o torrent (libera disco e ligações — `DELETE /api/stream/:infoHash`, nova rota `GET /api/stream/active`).
+- **Filtros/ordenação de torrents:** filtros x264/x265 e opções novas de ordenação (Qualidade, Menor tamanho — útil para downloads mais rápidos).
+- **Legendas mais robustas:** cache + retry nos downloads do OpenSubtitles reduzem os erros 500 quando o player pede várias legendas de seguida (rate-limit).
+- **Health check de providers:** TTL de 24h→6h (reflete melhor o estado real ao longo do dia) e UA de browser real no probe (menos falsos positivos de "em baixo").
+- **UI de carregamento de providers:** o selector mostra estado `checking`/stale e o `useProviderHealth` aguenta refresh em background (6×3s) antes de usar a cache.
+- **Definições a ficarem em branco (fix):** crash de render quando `provHealth` ainda era `null` (acesso sem guarda) derrubava a app inteira por não haver error boundary. Corrigido com optional chaining + novo `ErrorBoundary` (`web/src/components/ErrorBoundary.jsx`) que mostra uma mensagem com "Recarregar" em vez de ecrã vazio.
+
 ## 0.9.8
 
 ### PWA / Deploy web

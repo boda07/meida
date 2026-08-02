@@ -926,9 +926,9 @@ export default function Settings() {
           Fontes de stream usadas no player (embeds). Quando um está morto fica
           riscado e é saltado na escolha automática.
         </p>
-        {provHealth.checking && !provHealth.providers ? (
+        {provHealth?.checking && !provHealth?.providers ? (
           <p className="muted">A testar providers...</p>
-        ) : !provHealth.providers ? (
+        ) : !provHealth?.providers ? (
           <p className="muted">Sem informação.</p>
         ) : (
           <div className="provider-health-list">
@@ -944,7 +944,7 @@ export default function Settings() {
             ))}
           </div>
         )}
-        {provHealth.stale && <span className="ph-stale">Atualizado há 24h+</span>}
+        {provHealth?.stale && <span className="ph-stale">Atualizado há 24h+</span>}
         <div className="set-row" style={{ marginTop: 8 }}>
           <button
             className="btn"

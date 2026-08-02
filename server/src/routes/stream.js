@@ -3,6 +3,8 @@ import { getTorrents } from "../services/torrentio.js";
 import {
   getTorrentFile,
   getStatus,
+  listActive,
+  removeTorrent,
   rememberMagnet,
 } from "../services/torrentEngine.js";
 
@@ -39,6 +41,22 @@ streamRouter.get("/torrents", async (req, res, next) => {
 // Estado de download de um torrent (para a barra de progresso).
 streamRouter.get("/stream/:infoHash/status", (req, res) => {
   res.json({ status: getStatus(req.params.infoHash) });
+});
+
+// Lista de torrents ativos (a descarregar/reproduzir agora).
+streamRouter.get("/stream/active", (_req, res) => {
+  res.json({ torrents: listActive() });
+});
+
+// Para de descarregar e remove um torrent (libera disco e ligacoes).
+streamRouter.delete("/stream/:infoHash", async (req, res, next) => {
+  try {
+    const removed = await removeTorrent(req.params.infoHash);
+    if (!removed) return res.status(404).json({ error: "torrent nao ativo" });
+    res.json({ ok: true });
+  } catch (err) {
+    next(err);
+  }
 });
 
 // Transmite o ficheiro de video com suporte a HTTP Range (seek/play progressivo).

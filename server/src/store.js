@@ -21,6 +21,16 @@ if (existsSync(FILE)) {
   }
 }
 
+// Migracao 0.9.9: a nota pessoal passou de 0-10 para 0-100. Multiplica os scores
+// antigos por 10 uma so vez (marcado em data.meta.scoreScale para nao repetir).
+if (data.meta?.scoreScale !== 100) {
+  for (const r of data.library) {
+    if (r.score != null) r.score = Math.round(Number(r.score) * 10);
+  }
+  data.meta = { ...(data.meta || {}), scoreScale: 100 };
+  save();
+}
+
 function save() {
   writeFileSync(FILE, JSON.stringify(data));
 }
@@ -111,7 +121,7 @@ function toApi(r) {
     poster: r.poster,
     watched: r.watched,
     watchlist: r.watchlist,
-    score: r.score, // nota pessoal (1-10)
+    score: r.score, // nota pessoal (1-100)
     rating: r.rating ?? null, // media da comunidade (MAL/TMDB)
     updatedAt: r.updated_at,
   };

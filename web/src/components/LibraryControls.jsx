@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { api, openExternal } from "../api/client.js";
 import { useAuth } from "../auth/AuthContext.jsx";
 
-// Controlos de biblioteca para a página de detalhe: marcar como visto e nota 1-10.
+// Controlos de biblioteca para a página de detalhe: marcar como visto e nota 1-100.
 export default function LibraryControls({ details }) {
   const { user } = useAuth();
   const [entry, setEntry] = useState(null);
@@ -73,7 +73,7 @@ export default function LibraryControls({ details }) {
           }
         >
           <option value="">—</option>
-          {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
+          {Array.from({ length: 100 }, (_, i) => i + 1).map((n) => (
             <option key={n} value={n}>
               {n}
             </option>

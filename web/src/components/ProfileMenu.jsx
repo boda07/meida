@@ -64,6 +64,9 @@ export default function ProfileMenu() {
           <Link to="/diary" onClick={() => setOpen(false)}>
             Diário
           </Link>
+          <Link to="/compare" onClick={() => setOpen(false)}>
+            Compara as tuas notas
+          </Link>
           <Link to="/settings" onClick={() => setOpen(false)}>
             Definições
           </Link>

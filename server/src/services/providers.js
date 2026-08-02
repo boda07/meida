@@ -8,11 +8,32 @@
  * Cada provider define `movie` e `tv`. Se nao suportar series, deixa `tv: null`.
  */
 export const PROVIDERS = [
+  // Ordem = preferência (a 1ª viva é a fonte default). Ordenado por velocidade e
+  // fiabilidade medida (2026-08-02, filme Inception + série Luke Cage):
+  //   vidapi 128ms, moviesapi 123ms, 111movies 171ms, vidlink 203ms,
+  //   2embed 210ms, superembed 229ms, smashystream 290ms.
+  // Removidos: megaembed (mgeb.top) — 2280ms no filme (~10x mais lento) e serve
+  // áudio PT-BR via Superflix; vidfast — SPA que resolve o vídeo só no browser
+  // (a health-check passa mas o stream falhava nos testes).
   {
-    id: "vidfast",
-    name: "VidFast",
-    movie: "https://vidfast.pro/movie/{tmdb}?autoPlay=true",
-    tv: "https://vidfast.pro/tv/{tmdb}/{season}/{episode}?autoPlay=true",
+    id: "vidapi",
+    name: "VidAPI",
+    movie: "https://vidapi.xyz/embed/movie/{tmdb}",
+    tv: "https://vidapi.xyz/embed/tv/{tmdb}/{season}/{episode}",
+  },
+  {
+    // moviesapi.club caiu (DNS morto) -> migrou para moviesapi.to.
+    id: "moviesapi",
+    name: "MoviesAPI",
+    movie: "https://moviesapi.to/movie/{tmdb}",
+    tv: "https://moviesapi.to/tv/{tmdb}-{season}-{episode}",
+  },
+  {
+    // 111Movies redireciona para player.vidlove.cc (servidor dedicado de vídeo).
+    id: "111movies",
+    name: "111Movies",
+    movie: "https://111movies.com/movie/{tmdb}",
+    tv: "https://111movies.com/tv/{tmdb}/{season}/{episode}",
   },
   {
     id: "vidlink",
@@ -21,15 +42,15 @@ export const PROVIDERS = [
     tv: "https://vidlink.pro/tv/{tmdb}/{season}/{episode}?autoplay=true",
   },
   {
-    // Removidos os providers da familia VidSrc (vidsrc.cc/.to/.su) e o embed.su:
-    // davam "media unavailable" e/ou eram bloqueados por DNS em alguns ISPs (PT),
-    // o que obrigava cada utilizador a trocar de DNS. Ficam so os que funcionam
-    // sem mexer em nada.
-    // moviesapi.club caiu (DNS morto) -> migrou para moviesapi.to.
-    id: "moviesapi",
-    name: "MoviesAPI",
-    movie: "https://moviesapi.to/movie/{tmdb}",
-    tv: "https://moviesapi.to/tv/{tmdb}-{season}-{episode}",
+    // VidCore: API de embed dedicada a developers (Next.js, docs oficiais),
+    // player HLS multi-servidor com failover e subtitulos. Adicionado a
+    // 2026-08-02 (probe: 145-420ms, sem Turnstile, sem XFO/COEP, formato TMDB).
+    // Nota: o stream resolve-se via JS client-side (SPA), o health-check valida
+    // só a página — o auto-fallback de 15s do player cobre falhas de stream.
+    id: "vidcore",
+    name: "VidCore",
+    movie: "https://vidcore.org/embed/movie/{tmdb}?autoPlay=true",
+    tv: "https://vidcore.org/embed/tv/{tmdb}/{season}/{episode}?autoPlay=true",
   },
   {
     id: "2embed",
@@ -38,31 +59,16 @@ export const PROVIDERS = [
     tv: "https://www.2embed.cc/embedtv/{tmdb}&s={season}&e={episode}",
   },
   {
-    id: "111movies",
-    name: "111Movies",
-    movie: "https://111movies.com/movie/{tmdb}",
-    tv: "https://111movies.com/tv/{tmdb}/{season}/{episode}",
-  },
-  {
-    // Adicionados a 2026-07-31 (testados: respondem com o player, formato TMDB).
+    // Removidos os providers da familia VidSrc (vidsrc.cc/.to/.su) e o embed.su:
+    // davam "media unavailable" e/ou eram bloqueados por DNS em alguns ISPs (PT),
+    // o que obrigava cada utilizador a trocar de DNS. Ficam so os que funcionam
+    // sem mexer em nada.
+    // Adicionado a 2026-07-31 (testado: responde com o player, formato TMDB).
     // SuperEmbed usa query string; os outros usam path igual aos restantes.
     id: "superembed",
     name: "SuperEmbed",
     movie: "https://multiembed.mov/?video_id={tmdb}&tmdb=1",
     tv: "https://multiembed.mov/?video_id={tmdb}&tmdb=1&s={season}&e={episode}",
-  },
-  {
-    id: "vidapi",
-    name: "VidAPI",
-    movie: "https://vidapi.xyz/embed/movie/{tmdb}",
-    tv: "https://vidapi.xyz/embed/tv/{tmdb}/{season}/{episode}",
-  },
-  {
-    // MegEmbed (mgeb.top) anuncia poucos anuncios e tem opcoes sub/dub.
-    id: "megaembed",
-    name: "MegaEmbed",
-    movie: "https://mgeb.top/embed/movie/{tmdb}",
-    tv: "https://mgeb.top/embed/tv/{tmdb}/{season}/{episode}",
   },
   {
     // SMASHYStream (embed.smashystream.com, player "AnyEmbed"): anuncia legendas

@@ -264,7 +264,7 @@ export async function importMalList(userId) {
       poster,
       watched: watched ? 1 : 0,
       watchlist: watchlist ? 1 : 0,
-      score: ls.score ? ls.score : null,
+      score: ls.score ? Math.round(Number(ls.score) * 10) : null, // nota pessoal 0-10 -> 0-100
     });
     count++;
 
