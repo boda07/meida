@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { api, imageUrl } from "../api/client.js";
 import { useAuth } from "../auth/AuthContext.jsx";
@@ -100,13 +100,43 @@ export default function Compare() {
   const [items, setItems] = useState([]);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [idx, setIdx] = useState(0);
+  const [pair, setPair] = useState(null);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState(null);
+  // Histórico curto de pares já mostrados, para não repetir o mesmo par.
+  const avoidRef = useRef(new Set());
 
   // Só itens marcados como vistos.
   const seen = useMemo(() => items.filter((i) => i.watched), [items]);
 
+  // Chave canónica de um par (independente da ordem esquerda/direita).
+  function pairKey(a, b) {
+    const ka = `${a.type}:${a.tmdbId}`;
+    const kb = `${b.type}:${b.tmdbId}`;
+    return ka < kb ? `${ka}|${kb}` : `${kb}|${ka}`;
+  }
+
+  // Escolhe um par aleatório que ainda não foi mostrado.
+  function pickPair(list) {
+    if (list.length < 2) return null;
+    const rand = () => list[Math.floor(Math.random() * list.length)];
+    let last = null;
+    for (let attempt = 0; attempt < 40; attempt++) {
+      const a = rand();
+      let b = rand();
+      while (b.tmdbId === a.tmdbId && b.type === a.type) {
+        b = rand();
+      }
+      const k = pairKey(a, b);
+      last = [a, b];
+      if (!avoidRef.current.has(k)) return [a, b];
+    }
+    // Todos os pares possíveis já foram vistos: limpa o histórico e devolve um.
+    avoidRef.current.clear();
+    return last;
+  }
+
+  // Carrega a biblioteca do utilizador (itens vistos).
   useEffect(() => {
     if (!user) {
       setLoading(false);
@@ -119,17 +149,11 @@ export default function Compare() {
       .finally(() => setLoading(false));
   }, [user]);
 
-  // Par atual: dois títulos vistos escolhidos ao acaso, um ao lado do outro.
-  const pair = useMemo(() => {
-    if (seen.length < 2) return null;
-    const a = seen[Math.floor(Math.random() * seen.length)];
-    let b = seen[Math.floor(Math.random() * seen.length)];
-    while (b.tmdbId === a.tmdbId && b.type === a.type) {
-      b = seen[Math.floor(Math.random() * seen.length)];
-    }
-    return [a, b];
+  // Assim que a lista de vistos carrega, gera o primeiro par aleatório.
+  useEffect(() => {
+    if (seen.length >= 2 && !pair) setPair(pickPair(seen));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [seen, idx]);
+  }, [seen.length, pair]);
 
   async function saveScore(it, score) {
     setBusy(true);
@@ -164,7 +188,17 @@ export default function Compare() {
   }
 
   function next() {
-    setIdx((i) => i + 1);
+    // Regista o par corrente no histórico (para não repetir) e avança para um
+    // novo par aleatório. Mantém só os 12 últimos para não bloquear definitivamente.
+    if (pair) {
+      const key = pairKey(pair[0], pair[1]);
+      avoidRef.current.add(key);
+      if (avoidRef.current.size > 12) {
+        const first = avoidRef.current.values().next().value;
+        avoidRef.current.delete(first);
+      }
+    }
+    setPair(pickPair(seen));
     setMsg(null);
   }
 
