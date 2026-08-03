@@ -91,7 +91,45 @@ export default function LibraryControls({ details }) {
         </button>
       )}
 
+      {/* Barra: a tua nota vs a média da comunidade (ambas em 0-100). */}
+      <CommunityRatingBar community={details.rating} user={entry?.score} />
+
       {error && <span className="auth-error">{error}</span>}
+    </div>
+  );
+}
+
+// Barra comparativa de notas: comunidade (detalhe) vs a tua nota (library).
+// Ambas convertdas para a mesma escala 0-100 para se sobrepor na mesma barra.
+function CommunityRatingBar({ community, user }) {
+  const comm = community != null ? Math.round(Number(community) * 10) : null; // 0-10 → 0-100
+  const me = user != null ? Number(user) : null;
+  if (comm == null && me == null) return null;
+
+  return (
+    <div className="lib-rating-bar">
+      <div className="lib-rating-head">
+        <span>Comparar com a comunidade</span>
+        <span className="lib-rating-values">
+          {comm != null && <span className="lib-rating-comm">Comunidade: {comm}</span>}
+          {me != null && <span className="lib-rating-mine">Tu: {me}</span>}
+        </span>
+      </div>
+      <div className="lib-rating-track">
+        {/* fundo cinzento da escala */}
+        <div className="lib-rating-scale" />
+        {/* marca da comunidade */}
+        {comm != null && <div className="lib-rating-mark comm" style={{ left: `${Math.min(100, Math.max(0, comm))}%` }} />}
+        {/* barra da tua nota (se não houver, não mostra) */}
+        {me != null && (
+          <div
+            className={`lib-rating-fill ${comm != null && me > comm ? "above" : ""}`}
+            style={{ width: `${Math.min(100, Math.max(0, me))}%` }}
+          />
+        )}
+        {/* marca da tua nota sobre a barra */}
+        {me != null && <div className="lib-rating-mark mine" style={{ left: `${Math.min(100, Math.max(0, me))}%` }} />}
+      </div>
     </div>
   );
 }

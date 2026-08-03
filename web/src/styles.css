@@ -2362,6 +2362,82 @@ h2 {
   cursor: pointer;
 }
 
+/* Barra: a tua nota (0-100) vs a media da comunidade (0-100, derivada de details.rating). */
+.lib-rating-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 220px;
+  flex: 1 1 260px;
+}
+.lib-rating-head {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+.lib-rating-values {
+  display: inline-flex;
+  gap: 10px;
+  font-weight: 700;
+  color: var(--text);
+}
+.lib-rating-comm {
+  color: var(--text-secondary);
+}
+.lib-rating-mine {
+  color: #c90303;
+  white-space: nowrap;
+}
+.lib-rating-track {
+  position: relative;
+  height: 10px;
+  border-radius: var(--radius-pill);
+  background: var(--bg-surface);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  overflow: visible;
+}
+.lib-rating-scale {
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius-pill);
+  background: linear-gradient(
+    90deg,
+    #2e7d32 0%,
+    #2e7d32 33%,
+    #8bc34a 33%,
+    #8bc34a 66%,
+    #c90303 66%,
+    #c90303 100%
+  );
+  opacity: 0.18;
+}
+.lib-rating-fill {
+  position: absolute;
+  inset-block-start: 0;
+  height: 100%;
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--accent) 45%, transparent);
+  border: 1px solid var(--accent);
+}
+.lib-rating-fill.above {
+  background: color-mix(in srgb, #fff 60%, var(--accent));
+}
+.lib-rating-mark {
+  position: absolute;
+  top: 50%;
+  width: 2px;
+  height: 140%;
+  transform: translateY(-50%) translateX(-50%);
+  pointer-events: none;
+}
+.lib-rating-mark.comm {
+  border-left: 2px dashed rgba(255, 255, 255, 0.55);
+}
+.lib-rating-mark.mine {
+  border-left: 2px solid var(--accent);
+}
+
 .lib-header {
   display: flex;
   flex-direction: column;

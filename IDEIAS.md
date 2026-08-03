@@ -41,4 +41,4 @@ para a secção "Feitas".
 ---
 
 ## Melhorias já feitas (para referência)
-- Compara as tuas notas (`/compare`), Comparar avaliação (`CompareRating`), Notas 0-100, export CSV/JSON.
+- Compara as tuas notas (`/compare`), Comparar avaliação (`CompareRating`), Notas 0-100, export CSV/JSON, gamificação (badges + streak), quick-add nos cartões, comparar com a comunidade.
