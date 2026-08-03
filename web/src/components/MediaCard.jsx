@@ -67,10 +67,24 @@ export default function MediaCard({ item, landscape = false }) {
             {item.title}
           </div>
         )}
-        <div className="card-scrim" />
-        {item.new && <div className="card-badge">NOVO</div>}
-        {watched && <div className="card-watched">✓</div>}
-        {watchlist && !watched && <div className="card-watchlist">+</div>}
+         <div className="card-scrim" />
+         {item.new && <div className="card-badge">NOVO</div>}
+         {watched && <div className="card-watched">✓</div>}
+         {watchlist && !watched && <div className="card-watchlist">+</div>}
+         {entry?.score != null && (
+           <div className="card-score" title="A tua nota">
+             <svg
+               aria-hidden="true"
+               width="12"
+               height="12"
+               viewBox="0 0 24 24"
+               fill="currentColor"
+             >
+               <polygon points="12 2l3 7h7l-5 4 2 7-6-4-6 4 2-7-5-4h7z" />
+             </svg>
+             {Math.round(entry.score)}
+           </div>
+         )}
         {/* Botão rápido: (+) para adicionar à lista; marca visto se já está na lista.
             Só aparece para utilizadores autenticados e só quando ainda não foi visto. */}
         {canQuickAdd && (

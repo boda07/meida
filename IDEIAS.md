@@ -8,6 +8,7 @@ para a secção "Feitas".
 - [ ] **Resumo anual/personalizado** ("o teu ano em revisão"): totais por mês, gráficos, top do ano — estilo Spotify Wrapped.
 
 ## Library / notas
+- [x] **Nota rápida no cartão**: mostra a tua nota (0-100) num badge no canto inferior-direito do cartão (SVG estrela) — usa o cache da library, sem pedidos extra.
 - [ ] **Barra de nota visual** nos cartões (gradiente colorido por nota).
 - [ ] **Marcar como visto ao dar nota** (uma ação única).
 - [ ] **Vista timeline**: ordenar por data em que viste, com linhas cronológicas.

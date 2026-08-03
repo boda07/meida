@@ -2438,6 +2438,27 @@ h2 {
   border-left: 2px solid var(--accent);
 }
 
+/* Badge da nota pessoal (0-100) no canto inferior-direito do cartao de poster. */
+.card-score {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  height: 22px;
+  min-width: 30px;
+  padding: 0 6px;
+  border-radius: 5px;
+  background: rgba(7, 7, 8, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  z-index: 3;
+  backdrop-filter: blur(2px);
+}
+
 .lib-header {
   display: flex;
   flex-direction: column;
