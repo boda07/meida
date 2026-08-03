@@ -163,7 +163,35 @@ export function upsertLibrary(entry) {
   save();
 }
 
-// Atualiza so a media da comunidade, sem mexer no updated_at (preserva a ordem
+// Versão "safe" de upsert para imports: só actualiza campos explicitamente
+// fornecidos (não apaga notas/visto que o ficheiro de export não traz). Usa a
+// data de atualização do ficheiro (se houver) para preservar a ordem original.
+export function upsertLibrarySafe(entry) {
+  let r = data.library.find(
+    (x) => x.user_id === entry.userId && x.tmdb_id === entry.tmdbId && x.media_type === entry.type
+  );
+  const existed = !!r;
+  if (!r) {
+    r = { user_id: entry.userId, tmdb_id: entry.tmdbId, media_type: entry.type };
+    data.library.push(r);
+  }
+  if (entry.title != null) r.title = entry.title;
+  if (entry.titleEn !== undefined && entry.titleEn != null) r.title_en = entry.titleEn;
+  if (entry.titleRomaji !== undefined && entry.titleRomaji != null) r.title_romaji = entry.titleRomaji;
+  if (Array.isArray(entry.genres)) r.genres = entry.genres;
+  if (entry.poster != null) r.poster = entry.poster;
+  // watched / watchlist: só actualiza se explicitamente boolean ou número.
+  if (entry.watched != null) r.watched = entry.watched ? 1 : 0;
+  if (entry.watchlist != null) r.watchlist = entry.watchlist ? 1 : 0;
+  // score: só actualiza se houver valor (não apaga a nota existente por import vazio).
+  if (entry.score != null) r.score = Number(entry.score);
+  if (entry.rating != null) r.rating = Number(entry.rating);
+  // Preserva updated_at do ficheiro (ordem original); se novo item, usa agora.
+  if (entry.updatedAt != null) r.updated_at = entry.updatedAt;
+  else if (!existed) r.updated_at = new Date().toISOString();
+  save();
+  return r;
+}
 // "adicionados recentemente"). Usado no backfill de itens antigos.
 export function setLibraryRating(userId, tmdbId, type, rating) {
   const r = data.library.find(

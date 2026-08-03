@@ -32,6 +32,7 @@ para a secção "Feitas".
 
 ## Importação / dados
 - [x] **Exportar a tua biblioteca/diário (CSV/JSON)** — botão nas Definições → "Os teus dados". JSON para backup, CSV para Excel/Sheets. Servidor entrega JSON em `GET /api/export`; o CSV é gerado no browser.
+- [x] **Importar o ficheiro exportado (JSON/CSV)** — secção "Importar dados" nas Definições. Merge conservador (`upsertLibrarySafe` + `importProgress`): não apaga notas/visto que o ficheiro não traga; parse CSV no backend (`parseCsv` com aspas/escapes).
 - [ ] **Filtrar Library por nota/estado/tipo** (mais filtros no `LibraryControls`).
 
 ## Gamificação
@@ -41,4 +42,4 @@ para a secção "Feitas".
 ---
 
 ## Melhorias já feitas (para referência)
-- Compara as tuas notas (`/compare`), Comparar avaliação (`CompareRating`), Notas 0-100, export CSV/JSON, gamificação (badges + streak), quick-add nos cartões, comparar com a comunidade.
+- Compara as tuas notas (`/compare`), Comparar avaliação (`CompareRating`), Notas 0-100, export + import (JSON/CSV), gamificação (badges + streak), quick-add nos cartões, comparar com a comunidade.

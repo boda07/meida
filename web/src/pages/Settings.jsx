@@ -483,6 +483,10 @@ export default function Settings() {
   const [provHealth, setProvHealth] = useState(null);
   const [exporting, setExporting] = useState(null); // "json" | "csv" | null
   const [exportMsg, setExportMsg] = useState(null);
+  const [importFile, setImportFile] = useState(null); // File ou null
+  const [importing, setImporting] = useState(false);
+  const [importMsg, setImportMsg] = useState(null);
+  const [importError, setImportError] = useState(false);
 
   // Estado (vivo/morto) dos providers: carregado ao início (refresh manual no botão).
   useEffect(() => {
@@ -583,6 +587,41 @@ export default function Settings() {
       setExportMsg(e.message || "Não foi possível exportar.");
     } finally {
       setExporting(null);
+    }
+  }
+
+  // Lê o ficheiro escolhido (JSON ou CSV) como texto para enviar ao backend.
+  function onImportPick(e) {
+    setImportMsg(null);
+    const f = e.target.files?.[0] || null;
+    setImportFile(f);
+    e.target.value = "";
+  }
+
+  // Envia o ficheiro para o backend fazer o merge da library + diário.
+  async function runImport() {
+    if (!importFile) return;
+    setImporting(true);
+    setImportMsg(null);
+    setImportError(false);
+    try {
+      const text = await importFile.text();
+      let payload;
+      const isCsv = importFile.name.toLowerCase().endsWith(".csv") || text.includes("# biblioteca");
+      if (isCsv) {
+        payload = { format: "csv", text };
+      } else {
+        const parsed = JSON.parse(text);
+        payload = { format: "json", library: parsed.library || [], diary: parsed.diary || [] };
+      }
+      const d = await api.importData(payload);
+      setImportMsg(`Importados ${d.imported.library} títulos e ${d.imported.diary} entradas do diário.`);
+      setImportFile(null);
+    } catch (e) {
+      setImportMsg(e.message || "Não foi possível importar.");
+      setImportError(true);
+    } finally {
+      setImporting(false);
     }
   }
 
@@ -935,6 +974,48 @@ export default function Settings() {
           </button>
         </div>
         {exportMsg && <span className="muted" style={{ display: "block", marginTop: 8 }}>{exportMsg}</span>}
+      </section>
+
+      {/* ===== Importar dados ===== */}
+      <section className="set-section">
+        <h3>Importar dados</h3>
+        <p className="muted">
+          Carrega um ficheiro JSON ou CSV exportado da MEIDA para voltar a
+          carregar a tua biblioteca e diário. É um merge: não apaga notas nem
+          visto que o ficheiro não traga.
+        </p>
+        <div className="set-row">
+          <label className="lib-watched" style={{ cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6 }}>
+            <svg
+              aria-hidden="true"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h6" />
+              <polyline points="18 1 11 8 13 8 13 22 18 22 18 8 21 8 18 1 18 1" />
+            </svg>
+            Escolher ficheiro
+            <input
+              type="file"
+              accept=".json,.csv,text/csv,text/anytext,.bak"
+              style={{ display: "none" }}
+              onChange={onImportPick}
+            />
+          </label>
+          <span className="muted" style={{ fontSize: 12 }}>
+            {importFile ? importFile.name : "Sem ficheiro"}
+          </span>
+        </div>
+        {importFile && (
+          <button className="btn" onClick={runImport} disabled={importing}>
+            {importing ? "A importar..." : "Importar"}
+          </button>
+        )}
+        {importMsg && <span className={`muted ${importError ? "auth-error" : ""}`}>{importMsg}</span>}
       </section>
 
       {/* ===== Letterboxd ===== */}

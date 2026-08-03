@@ -211,6 +211,10 @@ export const api = {
 
   // Gamificação (badges + streak)
   achievements: () => get("/api/achievements"),
+
+  // Importar dados exportados anteriormente (merge conservador)
+  importData: (payload) =>
+    post("/api/export/import", payload),
 };
 
 // Abre um URL no browser do sistema (Electron) ou numa nova aba (web).
