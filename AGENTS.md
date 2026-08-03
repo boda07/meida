@@ -23,9 +23,7 @@ Se for preciso uma release apenas textual (notas), usar `gh release create` **de
 ## Regras de edição
 
 - **Usar sempre a ferramenta `edit`** para alterar ficheiros. `Set-Content -replace` corrompe UTF-8 (partiu acentos/cedilhas no passado).
-- **Não fazer `git push`** a menos que o utilizador peça explicitamente.
-- Lint: `npm run lint` (ESLint, 0 erros esperado). Testes: `npm test` (backend, node:test). Build web: `npm run build` em `web/`.
-- Verificar sempre lint/typecheck/build após alterações.
+- **Nunca fazer `git push` sem o utilizador pedir primeiro.** Sempre que o utilizador autorizar push, é **obrigatório** atualizar a versão (`package.json` → `web/src/changelog.js` → `CHANGELOG.md`) **e** publicar a release do Git (tag + `gh release` com binários via `npm run app:publish`).**
 
 ## Bugs corrigidos (não repetir erros)
 
@@ -43,3 +41,4 @@ Se for preciso uma release apenas textual (notas), usar `gh release create` **de
 
 - Página de redesenho de UI: ver `design_handoff_meida_home/README.md` (estilo "NOW/Sky").
 - Sempre que terminar uma funcionalidade, perguntar se quer commit/push/release (ele costuma querer).
+- **NUNCA push sem autorização. Todo push ⇒ obrigatório bump de versão + tag + release no GitHub (com assets via `npm run app:publish`).**
