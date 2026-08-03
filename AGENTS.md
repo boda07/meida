@@ -15,7 +15,7 @@ Instruções e contexto duradouro para assistentes de IA que trabalhem neste rep
 2. Atualizar o changelog da app: `web/src/changelog.js` (linguagem simples, sem termos técnicos, mais recente em cima).
 3. Atualizar `CHANGELOG.md` (raiz) — changelog técnico, com secções e detalhes.
 4. Commit + push.
-5. **Publicar com binários**: `npm run app:publish` (usa `GH_TOKEN`; gera o instalador + `latest.yml` + `.blockmap` e faz upload para a release do GitHub; depois corre `scripts/prune-releases.mjs` que mantém só as 3 releases mais recentes).
+5. **Publicar com binários**: `npm run app:publish` (usa `GH_TOKEN` — `gh auth token` resolve-o com scope `repo`; gera o instalador + `latest.yml` + `.blockmap` e faz upload para a release do GitHub; depois corre `scripts/prune-releases.mjs` que mantém só as 3 releases mais recentes).
 6. O botão "Procurar atualização" da app depende dos **assets da release** (`latest.yml`). **NUNCA** criar a release só com `gh release create` sem binários — isso parte o auto-update (o electron-updater lê `https://github.com/boda07/meida/releases/latest/download/latest.yml`).
 
 Se for preciso uma release apenas textual (notas), usar `gh release create` **depois** do `app:publish` com `--notes-file`.
@@ -30,6 +30,7 @@ Se for preciso uma release apenas textual (notas), usar `gh release create` **de
 ## Bugs corrigidos (não repetir erros)
 
 - **"Continua a ver" abria no episódio 1**: causa = `<React.StrictMode>` (dev) consome `takeResumeEpisode()` 2x. Corrigido com `loadedSeasonRef` em `web/src/pages/Details.jsx` — a retoma só é aplicada na 1ª carga efetiva da temporada.
+- **"Procurar atualização" não funcionava**: as releases v0.9.6–0.9.9 foram criadas só com notas (`gh release create` sem binários), sem `latest.yml`/instalador → o `electron-updater` falha a comparar versões. Corrigido publicando a v0.9.9 via `npm run app:publish` (que gera `MEIDA-Setup-x.x.x.exe`, `.blockmap` e `latest.yml` e os anexa à release). **Regra:** uma release destino de upgrade **precisa** de assets — nunca usar `gh release create` puro para uma versão que deve ser atualizável.
 
 ## Funcionalidades recentes
 
