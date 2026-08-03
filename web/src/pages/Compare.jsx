@@ -103,11 +103,18 @@ export default function Compare() {
   const [pair, setPair] = useState(null);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState(null);
-  // Histórico curto de pares já mostrados, para não repetir o mesmo par.
+  const [typeFilter, setTypeFilter] = useState("all"); // all | movie | tv | anime
   const avoidRef = useRef(new Set());
 
-  // Só itens marcados como vistos.
-  const seen = useMemo(() => items.filter((i) => i.watched), [items]);
+  // Só itens marcados como vistos (filtrados pelo tipo escolhido).
+  const seen = useMemo(
+    () =>
+      items.filter(
+        (i) =>
+          i.watched && (typeFilter === "all" || i.type === typeFilter)
+      ),
+    [items, typeFilter]
+  );
 
   // Chave canónica de um par (independente da ordem esquerda/direita).
   function pairKey(a, b) {
@@ -149,11 +156,37 @@ export default function Compare() {
       .finally(() => setLoading(false));
   }, [user]);
 
-  // Assim que a lista de vistos carrega, gera o primeiro par aleatório.
+  // Gera o primeiro par e repõe-o sempre que a lib ou o filtro mudam.
   useEffect(() => {
-    if (seen.length >= 2 && !pair) setPair(pickPair(seen));
+    if (seen.length >= 2) {
+      avoidRef.current.clear();
+      setPair(pickPair(seen));
+    } else {
+      setPair(null);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [seen.length, pair]);
+  }, [seen.length, typeFilter]);
+
+  // Teclas de atalho: ↑ aumenta a nota da esquerda, ↓ diminui, Espaço = próximo par.
+  useEffect(() => {
+    if (!pair || busy) return;
+    function onKey(e) {
+      if (e.target.tagName === "INPUT") return; // não interrompe a escrever na caixa
+      if (e.key === "ArrowUp") {
+        e.preventDefault();
+        adjust(pair[0], 1);
+      } else if (e.key === "ArrowDown") {
+        e.preventDefault();
+        adjust(pair[0], -1);
+      } else if (e.key === " ") {
+        e.preventDefault();
+        next();
+      }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pair, busy]);
 
   async function saveScore(it, score) {
     setBusy(true);
@@ -236,9 +269,19 @@ export default function Compare() {
       <h2 className="row-title">Compara as tuas notas</h2>
       <p className="muted">
         Vês as notas da comunidade de 2 coisas que já viste. No meio podes ajustar a
-        tua nota de cada uma: nota exata na caixa, ou ↑/↓/=. Se não escolheres valor,
-        sobe/desce de 1 em 1.
+        tua nota de cada uma: nota exata na caixa, ou ↑/↓ (↑/↓ no teclado ajustam a
+        esquerda). Espaço ou "Manter e próximo" passa ao próximo par.
       </p>
+
+      <div className="compare-filters">
+        <span className="muted">Filtra por tipo:</span>
+        <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)}>
+          <option value="all">todos</option>
+          <option value="movie">filmes</option>
+          <option value="tv">séries</option>
+          <option value="anime">animes</option>
+        </select>
+      </div>
 
       {seen.length < 2 ? (
         <p className="muted" style={{ marginTop: 14 }}>

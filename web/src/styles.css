@@ -3095,6 +3095,30 @@ h2 {
   color: var(--text-secondary);
 }
 
+.compare-filters {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 6px 0 2px;
+  font-size: 13px;
+}
+
+.compare-filters select {
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--bg-surface);
+  color: var(--text);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.compare-filters select:hover {
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
 .season-picker select {
   padding: 9px 14px;
   border-radius: var(--radius-pill);
