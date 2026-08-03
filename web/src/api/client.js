@@ -205,6 +205,12 @@ export const api = {
   letterboxdLink: (username) => post("/api/letterboxd/link", { username }),
   letterboxdUnlink: () => post("/api/letterboxd/unlink", {}),
   letterboxdImport: (what = "all") => post("/api/letterboxd/import", { what }),
+
+  // Export dos teus dados (biblioteca + diário)
+  exportData: () => get("/api/export"),
+
+  // Gamificação (badges + streak)
+  achievements: () => get("/api/achievements"),
 };
 
 // Abre um URL no browser do sistema (Electron) ou numa nova aba (web).

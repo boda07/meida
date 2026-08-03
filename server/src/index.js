@@ -14,6 +14,8 @@ import { anilistRouter } from "./routes/anilist.js";
 import { mangaRouter } from "./routes/manga.js";
 import { letterboxdRouter } from "./routes/letterboxd.js";
 import { progressRouter } from "./routes/progress.js";
+import { exportRouter } from "./routes/export.js";
+import { achievementsRouter } from "./routes/achievements.js";
 import { log } from "./services/log.js";
 
 const app = express();
@@ -41,6 +43,8 @@ app.use("/api", anilistRouter);
 app.use("/api", mangaRouter);
 app.use("/api", letterboxdRouter);
 app.use("/api", progressRouter);
+app.use("/api", exportRouter);
+app.use("/api", achievementsRouter);
 app.use("/api", libraryRouter);
 
 // Em producao (app desktop), serve o frontend ja compilado (web/dist).

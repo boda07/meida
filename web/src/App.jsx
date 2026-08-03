@@ -10,6 +10,7 @@ import Search from "./pages/Search.jsx";
 import Details from "./pages/Details.jsx";
 import Library from "./pages/Library.jsx";
 import Diary from "./pages/Diary.jsx";
+import Achievements from "./pages/Achievements.jsx";
 import Login from "./pages/Login.jsx";
 import Settings from "./pages/Settings.jsx";
 import PickForMe from "./pages/PickForMe.jsx";
@@ -31,9 +32,10 @@ export default function App() {
             <Route path="/anime" element={<Category key="anime" category="anime" title="Anime" />} />
             <Route path="/search" element={<Search />} />
             <Route path="/details/:type/:id" element={<Details />} />
-            <Route path="/library" element={<Library />} />
-            <Route path="/diary" element={<Diary />} />
-            <Route path="/settings" element={<Settings />} />
+             <Route path="/library" element={<Library />} />
+             <Route path="/diary" element={<Diary />} />
+             <Route path="/achievements" element={<Achievements />} />
+             <Route path="/settings" element={<Settings />} />
             <Route path="/pick" element={<PickForMe />} />
             <Route path="/compare" element={<Compare />} />
             <Route path="/login" element={<Login mode="login" />} />

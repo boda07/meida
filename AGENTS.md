@@ -42,3 +42,4 @@ Se for preciso uma release apenas textual (notas), usar `gh release create` **de
 - Página de redesenho de UI: ver `design_handoff_meida_home/README.md` (estilo "NOW/Sky").
 - Sempre que terminar uma funcionalidade, perguntar se quer commit/push/release (ele costuma querer).
 - **NUNCA push sem autorização. Todo push ⇒ obrigatório bump de versão + tag + release no GitHub (com assets via `npm run app:publish`).**
+- **Ideias e melhorias vivem em `IDEIAS.md`** (raiz). Quando o utilizador pedir ideias, consultar esse ficheiro primeiro e adicionar novas ideias lá. Marcar `[x]` as que forem feitas e mover para "Feitas".

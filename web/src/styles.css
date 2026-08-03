@@ -2369,7 +2369,96 @@ h2 {
   margin-bottom: 16px;
 }
 
-/* Listas personalizadas: linha de chips abaixo do toolbar. */
+/* ===== Conquistas ===== */
+.achievements-page {
+  max-width: 960px;
+  margin-inline: auto;
+}
+
+.ach-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+
+.ach-streak {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+}
+
+.ach-streak-num {
+  font-weight: 700;
+  font-size: 20px;
+  color: #c90303;
+}
+
+.ach-streak-best {
+  color: #888;
+  font-size: 12px;
+}
+
+.ach-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 14px;
+  margin-top: 16px;
+}
+
+.ach-card {
+  background: #131316;
+  border: 1px solid #25252b;
+  border-radius: 12px;
+  padding: 14px;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  transition: transform 0.1s, border-color 0.1s;
+}
+
+.ach-card:hover {
+  border-color: #444;
+}
+
+.ach-card.unlocked {
+  border-color: #c90303;
+}
+
+.ach-card.locked {
+  opacity: 0.45;
+  border-color: #25252b;
+}
+
+.ach-icon {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  color: #c90303;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 2px;
+}
+
+.ach-card.locked .ach-icon {
+  color: #555;
+}
+
+.ach-body h3 {
+  margin: 0 0 4px;
+  font-size: 15px;
+}
+
+.ach-desc {
+  margin: 0;
+  font-size: 12px;
+}
+
+/* ===== Listas personalizadas: linha de chips abaixo do toolbar. ===== */
 .lib-lists {
   display: flex;
   align-items: center;
@@ -2702,6 +2791,35 @@ h2 {
   font-weight: 800;
   font-size: 18px;
   z-index: 2;
+}
+
+/* Botao rapido de quick-add nos cartoes (home/search/category).
+   Nao usa emojis: so um SVG + ou um olho. */
+.quick-add {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  background: rgba(7, 7, 8, 0.8);
+  border: 1px solid #25252b;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.9;
+  transition: opacity 0.1s, background 0.1s, color 0.1s;
+  z-index: 3;
+  cursor: pointer;
+}
+.quick-add:hover {
+  opacity: 1;
+  background: var(--accent);
+  color: var(--bg-main, #080809);
+}
+.quick-add.mark {
+  color: var(--accent);
 }
 
 /* ===== Auth ===== */

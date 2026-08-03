@@ -61,12 +61,15 @@ export default function ProfileMenu() {
           <Link to="/library" onClick={() => setOpen(false)}>
             A minha lista
           </Link>
-          <Link to="/diary" onClick={() => setOpen(false)}>
-            Diário
-          </Link>
-          <Link to="/compare" onClick={() => setOpen(false)}>
-            Compara as tuas notas
-          </Link>
+           <Link to="/diary" onClick={() => setOpen(false)}>
+             Diário
+           </Link>
+           <Link to="/achievements" onClick={() => setOpen(false)}>
+             Conquistas
+           </Link>
+           <Link to="/compare" onClick={() => setOpen(false)}>
+             Compara as tuas notas
+           </Link>
           <Link to="/settings" onClick={() => setOpen(false)}>
             Definições
           </Link>

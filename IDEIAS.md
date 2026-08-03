@@ -1,44 +1,44 @@
-# Ideias / próximos passos
+# IDEIAS — MEIDA
 
-Lista de coisas que podemos alterar ou adicionar à MEIDA. Organizada por prioridade e categoria.
+Lista viva de ideias para a app. Marca com `[x]` as que forem feitas e move-as
+para a secção "Feitas".
 
-## Fiabilidade
-- [x] **PWA — app instalável no iPhone (grátis)** — webapp progressiva (manifest + workbox SW, cache offline parcial), `runtime-config.json` para apontar o backend, workflow GitHub Pages + `build:pwa`. *(feito: v0.9.7)*
-- [x] **Mangá também no Tenrai** — `manga.js` usa o mesmo `jikanFetch` (já fica coberto pelo mirror), mas `getMangaGenres` usa `Promise.all` (mesmo bug do anime que o `allSettled` resolveu) — vale corrigir. *(feito: `getMangaGenresRaw` em `server/src/services/manga.js` usa `allSettled` + cache em disco)*
-- [x] **Cache resiliente** — guardar respostas do Jikan/Tenrai em disco (pasta `data/`) para quando ambas as APIs estiverem em baixo o catálogo ainda abrir com dados em cache. *(feito: `server/src/services/cache.js` + `jikanFetch`)*
-- [x] **Health-check dos providers** — teste periódico automático (ex.: 1x/dia) de todos os providers e sinalizar os mortos na UI, em vez de descobrir por tentativa/erro quando um título não dá. *(feito: `server/src/services/providerHealth.js` + rota `/api/providers/health`; frontend `web/src/components/useProviderHealth.js` — mortos riscados no seletor e saltados na escolha automática)*
-- [x] **Timeouts mais baixos no pick/épisódios** — os ~4.9s da 1ª chamada com Jikan em baixo podem ser reduzidos com `tries: 1` no Jikan quando o mirror está ativo. *(feito: `JIKAN_RETRIES = 1` em `server/src/services/jikan.js` — 704ms vs ~4.2s)*
+## Estatísticas / perfil
+- [ ] Página de **estatísticas** (`/stats`): distribuição das notas (histograma), nº de títulos visto/assistidos, tempo total gasto, género mais visto, "nota mais dada", década favorita.
+- [ ] **Resumo anual/personalizado** ("o teu ano em revisão"): totais por mês, gráficos, top do ano — estilo Spotify Wrapped.
 
-## Conteúdo / catálogo
-- [x] **Filmes/séries não-anime com fallback** — hoje filmes dependem 100% do TMDB; adicionar fallback de detalhes via TMDB alternativo ou IMDb. *(feito: `tmdbFetch` resiliente — cada resposta fica em disco e, se o TMDB falhar (rede/5xx/chave), serve a última conhecida; séries têm fallback extra via TVMaze (`server/src/services/tvmaze.js` — detalhes + episódios por temporada, procura por título+ano do índice `tvidx` alimentado pelo catálogo e pela library)*
-- [x] **Trailers** — no player ou nos detalhes, ligação ao trailer do TMDB (barato de implementar). *(feito: `web/src/components/Trailer.jsx` + `trailer` em `tmdb.js getDetails` e em `jikan.js getAnimeDetails` via `/anime/{id}/videos`)*
-- [x] **Temporadas do anime** — a página de detalhes de anime não mostra temporadas/episódios por temporada; o Jikan tem `/anime/{id}/episodes` e dá para agrupar por season. *(feito: `getAnimeEpisodes` em `server/src/services/jikan.js` — episódios reais do MAL (títulos, datas, filler/recap), paginado com cache em disco, agrupados por cour de 13 com quebra em pausas ≥60 dias (`groupEpisodesBySeason`, exportada para testes); rota `GET /api/anime/episodes?mal=`; `Details.jsx` mostra seletor de temporadas no anime (como nas séries), retoma na temporada certa e avança o "continua a ver" até ao fim; fallback para a lista gerada se a API falhar; teste do espelho Tenrai que usa `mal_id` em vez de `episode`)*
-- [x] **Recomendações relacionadas** — "Se gostaste disto" nos detalhes (o TMDB e o Jikan ambos têm `/similar`). *(feito: `getSimilar` em `tmdb.js` (`/movie|tv/{id}/similar`) e `getAnimeRecommendations` em `jikan.js` (`/anime/{id}/recommendations`); rota `GET /api/recommendations?type=&id=`; `Details.jsx` mostra uma secção "Se gostaste disto" (MediaRow) após os episódios; fallback silencioso se falhar; testes de getSimilar/getAnimeRecommendations)*
+## Library / notas
+- [ ] **Barra de nota visual** nos cartões (gradiente colorido por nota).
+- [ ] **Marcar como visto ao dar nota** (uma ação única).
+- [ ] **Vista timeline**: ordenar por data em que viste, com linhas cronológicas.
 
-## Experiência / UI
-- [x] **Continue Watching no player** — já existe `ContinueWatching.jsx`; verificar se retoma mesmo a meio de um episódio ou só marca visto. *(feito: posição guardada via `POST /api/progress/position` (`setProgressPosition` em `store.js`); `VideoPlayer`/`HlsPlayer` recebem `startAt` (retoma no `loadedmetadata`) e `onProgress` (reporta ~1x/5s); `Details.jsx` calcula o `startAt` só para o mesmo episódio; cards com barra de progresso; limpa ao mudar de episódio/acabar)*
-- [x] **Listas personalizadas** — criar listas próprias ("Para ver", "Favoritos", listas temáticas) além da Library. *(feito: `lists` no `server/src/store.js` + rotas `/api/lists...` em `routes/library.js`; frontend `web/src/components/AddToList.jsx` (botão "+ Lista" nos detalhes) + chips/gestão em `web/src/pages/Library.jsx`)*
-- [x] **Modo offline da Library** — abrir a Library e ver o que tens sem internet (com cache local). *(feito: `server/src/services/net.js` — deteção de rede (3 falhas → offline 60s, retry automático); `getMeta` do TMDB com cache em disco (30d); `/api/library` sem pedidos externos offline e devolve `online`; banner no frontend + posters quebrados caem no placeholder)*
-- [x] **Atalhos de teclado no player** (F para fullscreen, ←/→ para saltar 10s, M para mute) — confirmar o que o HlsPlayer já tem. *(feito: `web/src/components/usePlayerShortcuts.js` ligado ao VideoPlayer e HlsPlayer)*
-- [x] **Acessibilidade** — foco visível, contraste, aria-labels nos botões de ícones. *(feito: `:focus-visible` global em `styles.css`; aria-labels em botões de ícones (Library, nav-dice); `aria-hidden` em todos os SVGs decorativos; contraste das setas do hero)*
+## Recomendações / descoberta
+- [ ] **Notifica quando sai próximo episódio** dos teus em seguimento.
+- [ ] **Top semanal**: ranking da tua lista por trending ou nota.
+- [ ] **"Podias gostar"**: recomendações baseadas nas notas altas (similaridade de géneros/tags).
 
-## Integrações novas
-- [x] **MAL API v2 de verdade** — já há `mal.clientId/clientSecret` na config; a Library de anime hoje usa scraping do Jikan. Ligar a API oficial do MAL para listas/estado precisos. *(feito: OAuth2 PKCE + ligar/desligar em `server/src/routes/mal.js`; `importMalList` em `mal.js` (estado preciso: visto/ver/watchlist, nota pessoal, progresso, diário); `getMeanScores` usa a API oficial na Library; sync AUTOMATICO ao abrir a Library (máx. 6h, retry na falha) — AniList/Jikan ficam só como reserva para quem não liga o MAL)*
-- [x] **AniList sync bidireccional** — MAL ↔ AniList. *(feito: OAuth2 Authorization Code em `server/src/services/anilist.js`; `importAnilistList` traz a lista completa (estado/visto/ver/watchlist, nota pessoal 0-100→0-10, progresso, diário); scrobble via `incrementWatchProgress`; `computeCrossUpdates` + `syncCrossWithMal` reconcilia o MAX de eps vistos entre as duas contas (nunca regride), resolvendo `idMal→id` por anime; cooldown independente `anilistcrosssync:` (6h) + trigger POST `/anilist/sync` manual + sync automático na Library quando ambas as contas estão ligadas (retry na falha); UI na Settings — botão "Sincronizar com MAL" na secção AniList — e scrobble no Details marca ambas as contas)*
-- [ ] **Trakt** — scrobble do que vês (alternativa ao Letterboxd para séries).
-- [ ] **Telegram/notificações push** — avisar quando um título da lista sai um novo episódio.
+## Multi-utilizador / social
+- [ ] **Estadísticas comparadas com a média dos utilizadores** (rating global por título).
+- [ ] **Listas públicas/compartilháveis** (link para mostreres a tua biblioteca).
 
-## Operacional
-- [x] **Testes automatizados** — não há nenhum; pelo menos testes de integração do `jikanFetch` (mock do Jikan a falhar → Tenrai). *(feito: `server/test/jikan.test.js` com `node:test` nativo (zero dependências) + mock do `fetch` global — 7 cenários: Jikan ok, Jikan 500→Tenrai, 429 com retry→Tenrai, ambos em baixo (erro e cache em disco), falha de rede→Tenrai, cooldown direto ao Tenrai; cache isolada em pasta temporária; `npm test` na raiz)*
-- [x] **Lint** — não existe config de ESLint; adicionar para evitar regressões. *(feito: ESLint v10 flat config em `eslint.config.mjs` — regras de bugs (unused vars, prefer-const, no-var, react-hooks), zero erros; `npm run lint` / `npm run lint:fix`)*
-- [x] **README / self-hosting docs** — o README está vazio; documentar setup, .env, build, release. *(feito: `README.md` completo — arquitetura, dev, self-hosting com `SERVE_WEB=1`, tabela de config `.env`, Watch Party/Supabase, Consumet, app desktop/release; `server/.env.example` atualizado — falta `ANIME_EXTRACTOR_BASE`, `MAL_REDIRECT_URI`, Letterboxd e porta correta; fluxo self-host testado)*
-- [x] **Logs estruturados + página de estado** — ver no servidor qual provider falhou para quê. *(feito: logger estruturado `server/src/services/log.js` (JSONL em `server/data/logs/` + console em dev); migrados `jikan.js`/`index.js`/`catalog.js`/`torrentEngine.js`; health-check grava `ok/status/error/stale`; página "Estado dos providers" nas **Definições** com botão "Rever agora")*
-- [x] **Migração Jikan→Tenrai completa** — quando o Jikan morrer (1-out-2026), inverter a ordem (Tenrai primeiro, Jikan fallback) ou remover o Jikan. *(feito: inversão aplicada a 1-out-2026 adiantado — Tenrai primário (`PRIMARY_URL`), Jikan backup; cooldown do primário; `jikan.js` diz "Tenrai/Jikan" na mensagem de erro; 14 testes. Mantém Jikan como backup até 1-out.)*
+## Player / visual
+- [ ] **Modo cinema**: player em fullscreen com UI limpa e auto-hide dos controlos. **(Decidido: o fullscreen/auto-hide nativo do `<video>` chega — não fazer.)**
+- [ ] **Dark mode unificado** + tema custom por utilizador (a app já é maioritariamente escura; falta terminar).
+- [ ] **Bookmarks/timestamps por episódio** (notas de episódio, não só da série).
 
-## Ideias de produto (mais ambiciosas)
-- [ ] **Watch Party a funcionar sem Supabase** — hoje está ligado ao Supabase; alternativa self-hosted.
-- [ ] **Extensão para o aniwatch-api local** — hoje o `ANIME_EXTRACTOR_BASE` aponta para um host; embeber no docker-compose.
-- [ ] **Escolhe algo para mim por mood** — escolher por "quero rir" / "quero algo relaxante" mapeando géneros.
+## UX / fluxos rápidos
+- [x] **Quick add à library** dos cartões do catalogo (home/search/category): ícone `+` no canto — adiciona à watchlist ou marca como visto sem abrir a ficha, com optimistic update. (`LibraryContext`, `MediaCard.jsx`). Também mostra as badges de visto/watchlist em todos os cartões.
+- [ ] **Keyboard shortcut "o"** para marcar visto/nota na Library (como no /compare).
 
-## Plataformas
-- [x] **App nativo iOS na App Store** — rejeitado (precisa conta Apple Developer paga + build RN nativo). Substituído pela **PWA instalável do iPhone (grátis)**: webapp progressiva com manifest + workbox (v0.9.7). Instalar no Safari → Share → "Adicionar à Tela de Início". Hospedagem: GitHub Pages (static) ou o server MEIDA (`SERVE_WEB=1`) num free host (Render/Railway/Fly) same-origin.
+## Importação / dados
+- [x] **Exportar a tua biblioteca/diário (CSV/JSON)** — botão nas Definições → "Os teus dados". JSON para backup, CSV para Excel/Sheets. Servidor entrega JSON em `GET /api/export`; o CSV é gerado no browser.
+- [ ] **Filtrar Library por nota/estado/tipo** (mais filtros no `LibraryControls`).
+
+## Gamificação
+- [x] **Sistema de conquistas/badges** — página `/achievements` + link no menu. Badges calculados a partir da library/diário (Primeiro passo, Matiné, Cinéfilo, Maratonista, Otaku, Crítico, Biblioteca, Centenário, …) com ícones SVG (sem emojis).
+- [x] **Streak/racha diária** — dias consecutivos com atividade (baseado nas datas do diário/progresso e da library); racha atual + melhor racha.
+
+---
+
+## Melhorias já feitas (para referência)
+- Compara as tuas notas (`/compare`), Comparar avaliação (`CompareRating`), Notas 0-100, export CSV/JSON.

@@ -481,8 +481,10 @@ export default function Settings() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
   const [provHealth, setProvHealth] = useState(null);
+  const [exporting, setExporting] = useState(null); // "json" | "csv" | null
+  const [exportMsg, setExportMsg] = useState(null);
 
-  // Estado (vivo/morto) dos providers: carregado uma vez (refresh manual no botão).
+  // Estado (vivo/morto) dos providers: carregado ao início (refresh manual no botão).
   useEffect(() => {
     api.providersHealth().then(setProvHealth).catch(() => {});
   }, []);
@@ -507,6 +509,81 @@ export default function Settings() {
       patch.genreLang = settings.overviewLang;
     }
     update(patch);
+  }
+
+  // Descarrega a biblioteca + diário em JSON ou CSV. O CSV é gerado aqui no
+  // browser a partir do JSON da API (sem dependências extra no servidor).
+  async function exportData(format) {
+    setExportMsg(null);
+    setExporting(format);
+    try {
+      const { library, diary, exportedAt } = await api.exportData();
+      const stamp = (exportedAt || new Date().toISOString()).slice(0, 10);
+      let blob;
+      let filename;
+      if (format === "csv") {
+        const cell = (v) => {
+          if (v == null) return "";
+          const s = String(v);
+          return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+        };
+        const csv = (header, rows) =>
+          [header.join(","), ...rows.map((r) => r.map(cell).join(","))].join("\r\n");
+        const libCsv = csv(
+          ["type", "tmdbId", "title", "titleEn", "titleRomaji", "generos", "nota", "media_comunidade", "visto", "watchlist", "atualizado_em"],
+          library.map((i) => [
+            i.type,
+            i.tmdbId,
+            i.title,
+            i.titleEn,
+            i.titleRomaji,
+            (i.genres || []).join(" | "),
+            i.score,
+            i.rating,
+            i.watched ? "sim" : "",
+            i.watchlist ? "sim" : "",
+            i.updatedAt,
+          ])
+        );
+        const diaryCsv = csv(
+          ["type", "tmdbId", "title", "temporada", "episodio", "estado", "comecou", "acabou", "atualizado_em"],
+          diary.map((d) => [
+            d.type,
+            d.tmdbId,
+            d.title,
+            d.season,
+            d.episode,
+            d.status,
+            d.startedAt,
+            d.finishedAt,
+            d.updatedAt,
+          ])
+        );
+        blob = new Blob(
+          [`# biblioteca\r\n${libCsv}\r\n# diario\r\n${diaryCsv}`],
+          { type: "text/csv;charset=utf-8" }
+        );
+        filename = `meida-export-${stamp}.csv`;
+      } else {
+        blob = new Blob([JSON.stringify({ exportedAt, library, diary }, null, 2)], {
+          type: "application/json;charset=utf-8",
+        });
+        filename = `meida-export-${stamp}.json`;
+      }
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      setExportMsg("Ficheiro descarregado. Vai à pasta de downloads do teu sistema.");
+    } catch (e) {
+      setExportMsg(e.message || "Não foi possível exportar.");
+    } finally {
+      setExporting(null);
+    }
   }
 
   return (
@@ -832,6 +909,32 @@ export default function Settings() {
       <section className="set-section">
         <h3>AniList</h3>
         <AniListSection user={user} />
+      </section>
+
+      {/* ===== Os teus dados ===== */}
+      <section className="set-section">
+        <h3>Os teus dados</h3>
+        <p className="muted">
+          Descarrega a tua biblioteca e diário. Em JSON (para fazer backup ou
+          voltar a usar depois) ou CSV (para abrir no Excel/Sheets).
+        </p>
+        <div className="set-row">
+          <button
+            className="btn"
+            onClick={() => exportData("json")}
+            disabled={exporting !== null}
+          >
+            {exporting === "json" ? "A exportar..." : "Exportar JSON"}
+          </button>
+          <button
+            className="btn"
+            onClick={() => exportData("csv")}
+            disabled={exporting !== null}
+          >
+            {exporting === "csv" ? "A exportar..." : "Exportar CSV"}
+          </button>
+        </div>
+        {exportMsg && <span className="muted" style={{ display: "block", marginTop: 8 }}>{exportMsg}</span>}
       </section>
 
       {/* ===== Letterboxd ===== */}
