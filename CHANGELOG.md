@@ -1,5 +1,24 @@
 # Changelog
 
+## 1.0.0
+
+### Exportar / Importar dados
+- **Exportar a tua biblioteca e diário** (Definições → "Os teus dados"): novo botão "Exportar JSON" e "Exportar CSV". `GET /api/export` devolve tudo como JSON (client-side gera o CSV, sem dependências). CSV combina biblioteca + diário num ficheiro (`# biblioteca` / `# diario`). Útil para backup, análise no Excel/Sheets ou sair da app.
+- **Importar dados exportados** (Definições → "Importar dados"): carrega o ficheiro JSON ou CSV e faz merge conservador na tua conta (`POST /api/export/import` + `parseCsv` no backend). Não apaga notas/visto que o ficheiro não traga (`upsertLibrarySafe`/`importProgress`).
+
+### Gamificação
+- **Conquistas/badges + racha**: nova página `/achievements` (link no menu do perfil). 14 badges calculados a partir da library/diário (Primeiro passo, Matiné, Cinéfilo, Maratonista, Otaku, Crítico, Curador, Biblioteca, Centenário, Implacável, Lenda…) e o racha diário (dias consecutivos com atividade) com racha atual + melhor racha. Ícones SVG (sem emojis).
+
+### Quick-add + UI de cartões
+- **Quick-add nos cartões** (home/search/category): botão `+` no canto do cartão adiciona à watchlist ou marca como visto sem abrir a ficha (optimistic update). Usa um novo `LibraryProvider` (cache leve, carregado uma vez) que também faz aparecer as badges de visto/watchlist em todos os cartões do catálogo.
+- **Nota no cartão**: se já deste uma nota, ela aparece (0-100, com SVG de estrela) no canto inferior-direito do cartão.
+
+### Comparar com a comunidade
+- **Barra de comparação na ficha**: em `LibraryControls`, mostra a tua nota (0-100) vs a média da comunidade (Letterboxd/MAL/TMDB, escala 0-100 equivalente) como uma barra comparativa — vais vendo onde a tua nota fica em relação à média.
+
+### Infra / deploy
+- `render.yaml`: corrigir o `buildCommand` para instalar também `web/` (e `server/`), senão o `vite` não existe e a build falha com `vite: not found`. Usar `npm install && npm --prefix web install && npm --postfix server install && npm run build` (ou `npm run install:all && npm run build`), e `startCommand: npm run start:pwa`.
+
 ## 0.9.9
 
 ### Notas pessoais 1-10 → 0-100

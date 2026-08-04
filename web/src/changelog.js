@@ -2,6 +2,16 @@
 // "o que mudou" depois de o utilizador atualizar a app. Mais recente em cima.
 export const CHANGELOG = [
   {
+    version: "1.0.0",
+    items: [
+      "Novo: conquistas e racha diário! Abre o menu da conta e carrega em 'Conquistas' para ver as tuas medalhas (ex.: 'Primeiro passo', 'Otaku', 'Implacável') e quantos dias seguidos estás ativo.",
+      "Melhorado: podes agora guardar um backup da tua lista e diário. Nas Definições, em 'Os teus dados', carrega 'Exportar JSON' ou 'Exportar CSV' para descarregar tudo; e 'Importar dados' para voltar a carregar um ficheiro que exportaste antes.",
+      "Melhorado: nos cartões (home, pesquisa, categorias) aparece um botão '+' para adicionar rapidamente à watchlist ou marcar como visto, sem ter de abrir cada ficha. A tua nota também aparece directamente no cartão.",
+      "Melhorado: na ficha dos títulos, já vês a teu nota lado a lado com a média da comunidade numa barra, para comparares rapidamente.",
+      "Corrigido: a déploy na Render falhava por não instalar as dependências da web (vite). Build reconfigurada para instalar tudo antes de compilar.",
+    ],
+  },
+  {
     version: "0.9.9",
     items: [
       "Corrigido: quando um site de filmes deixava de funcionar, o leitor ficava preso no \"a carregar\" com o ecrã vazio. Agora, se a fonte não responder em 15 segundos, a app muda sozinha para a próxima — sem precisares de fazer nada.",
