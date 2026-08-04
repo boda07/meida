@@ -1,14 +1,15 @@
 # Configuracao opcional do Render para correr a MEIDA como server web (PWA/web+api
-# same-origin). Ignora o Electron (que é desktop). Se ja tens um servico Render,
+# same-origin). Ignora o Electron (que e desktop). Se ja tens um servico Render,
 # em vez de usar este ficheiro, altera apenas o "Start Command" dele para:
 #   npm run start:pwa
 # e o Build Command para:
-#   npm install && npm run build
+#   npm run install:all && npm run build
 services:
   - type: web
     name: meida-pwa
     runtime: node
-    buildCommand: npm install && npm run build
+    # instala tambem as dependencias de server/ e web/ (vite vive em web/).
+    buildCommand: npm install && npm --prefix server install && npm --prefix web install && npm run build
     startCommand: npm run start:pwa
     envVars:
       - key: SERVE_WEB
