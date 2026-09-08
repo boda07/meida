@@ -2,7 +2,7 @@
 // nativas nem node:sqlite — funciona em qualquer Node (sistema ou Electron).
 import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
-import { mkdirSync, readFileSync, writeFileSync, existsSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync, renameSync, copyFileSync, existsSync } from "node:fs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 // No app empacotado, DB_DIR aponta para uma pasta gravavel; em dev usa server/data.
@@ -11,13 +11,33 @@ const dataDir = process.env.DB_DIR
   : resolve(__dirname, "../data");
 mkdirSync(dataDir, { recursive: true });
 const FILE = resolve(dataDir, "data.json");
+const TMP = FILE + ".tmp"; // escrita atomica: grava neste e faz rename para FILE
+const BAK = FILE + ".bak"; // snapshot de arranque (recuperacao de corrupcao)
 
-let data = { users: [], library: [], progress: [], lists: [], seq: { users: 0 } };
-if (existsSync(FILE)) {
+const EMPTY = { users: [], library: [], progress: [], lists: [], seq: { users: 0 } };
+
+function loadFile(path) {
+  return { ...EMPTY, ...JSON.parse(readFileSync(path, "utf8")) };
+}
+
+// Snapshot do ultimo estado bom ao arrancar, para recuperar se o FILE corromper
+// em tempo de execucao. Se faltar FILE (primeira vez) nao faz nada. Se so existir
+// BAK (FILE corrompido), recupera a partir do BAK.
+let data = { ...EMPTY };
+try {
+  if (existsSync(FILE)) {
+    const parsed = loadFile(FILE); // valida antes de tirar o snapshot
+    copyFileSync(FILE, BAK); // snapshot do ultimo estado bom ao arranque
+    data = parsed;
+  } else if (existsSync(BAK)) {
+    data = loadFile(BAK);
+  }
+} catch {
+  // FILE corrompido -> tenta o BAK de um arranque anterior bom; senao, limpo.
   try {
-    data = { users: [], library: [], progress: [], lists: [], seq: { users: 0 }, ...JSON.parse(readFileSync(FILE, "utf8")) };
+    data = existsSync(BAK) ? loadFile(BAK) : { ...EMPTY };
   } catch {
-    // ficheiro corrompido -> comeca limpo
+    data = { ...EMPTY };
   }
 }
 
@@ -32,7 +52,17 @@ if (data.meta?.scoreScale !== 100) {
 }
 
 function save() {
-  writeFileSync(FILE, JSON.stringify(data));
+  // Escrita atomica: se o processo morrer a meio, o FILE antigo (inteiro) fica
+  // intacto — nunca fica truncado a meio. renameSync substitui atomicamente.
+  writeFileSync(TMP, JSON.stringify(data));
+  renameSync(TMP, FILE);
+  // Backup quase em tempo real: se o FILE se corromper mais tarde, o BAK tem o
+  // ultimo estado bom (a copy e barata — JSON pequeno, so em acoes do jogador).
+  try {
+    copyFileSync(FILE, BAK);
+  } catch {
+    // falha do backup nao pode bloquear a gravacao principal
+  }
 }
 
 /* ===== Utilizadores ===== */
@@ -107,6 +137,20 @@ export function setLetterboxd(id, lb) {
 export function getLetterboxd(id) {
   const u = data.users.find((x) => x.id === id);
   return u?.letterboxd || null;
+}
+
+/* ===== Real-Debrid (por utilizador) ===== */
+export function setDebrid(id, debrid) {
+  const u = data.users.find((x) => x.id === id);
+  if (u) {
+    u.debrid = debrid; // { token } ou null
+    save();
+  }
+}
+
+export function getDebrid(id) {
+  const u = data.users.find((x) => x.id === id);
+  return u?.debrid || null;
 }
 
 /* ===== Biblioteca ===== */

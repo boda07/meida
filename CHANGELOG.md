@@ -1,5 +1,32 @@
 # Changelog
 
+## 1.1.0
+
+### Real-Debrid (streaming instantâneo de torrents)
+- **Real-Debrid integrado**: o utilizador cola o token de `real-debrid.com/apitoken` nas Definições (`server/src/routes/debrid.js` + `server/src/services/debrid.js`). O servidor (nunca o browser) chama a API RD: `checkToken`, `instantAvailability` (torrents em cache → streaming imediato ✓), `addMagnet`/`selectFiles`/`torrentInfo`, `createDownload`/`streamingLink` (link m3u8 servido por proxy — o token não sai do server).
+- **UI de torrents RD** (`web/src/components/Torrents.jsx`, `web/src/pages/Settings.jsx`): selo de hastag quando já está na cache RD, ligar/desligar a conta nas Definições, torrents instant RD ordenados ao topo da lista.
+- **Multi-provider de torrents** (`server/src/services/providers/`, novo: `index.js` + `torrentio.js` + `yts.js`): torrentEngine agrega resultados de várias fontes (Torrentio, YTS, …) numa lista única.
+- **Atalhos para sites externos** (`web/src/components/SourceSelector.jsx`): lista `EXTERNAL_SITES` configurável; abre o título no site original sem sair da app.
+
+### Performance
+- **Code-splitting** (`web/src/App.jsx`): páginas (Home, Details, Library, Diary, Achievements, Login, Settings, PickForMe, Compare, Search, Category) passam a `React.lazy` + `<Suspense>` — o entry caiu de ~430 kB para ~218 kB (gzip ~72 kB); o Details mantém-se num chunk gordo (HLS+WebTorrent), aceite.
+
+### Segurança e robustez
+- **Guarda JWT fail-fast** (`server/src/config.js`): em produção, arranque falha com instruções se `JWT_SECRET` estiver vazio ou for o default de dev (evita deploy sem chave). Gerar com `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`.
+- **Escrita atómica dos dados** (`server/src/store.js`): grava em `data.json.tmp` + `renameSync` → `data.json`, e depois copia para `data.json.bak` (backup sempre presente). O load tenta o ficheiro principal e, se estiver corrompido, recupera do `.bak`; o snapshot de boot só copia se o JSON validar.
+
+### UI
+- **Swipe no slideshow** (`web/src/components/Hero.jsx`): gesto táctil (touchstart/touchend, threshold 50px, mais horizontal do que vertical) avança/recua o banner. `styles.css`: `touch-action: pan-y` no `.hero`.
+- **Responsividade** (`web/src/styles.css`): 3 breakpoints — `max-width:1024px` (nav só ícones, poster 240×360, hero menor), `max-width:700px` (fiche no topo em coluna, poster `min(240px,72vw)` com `aspect-ratio:2/3`, nav compacta) e `min-width:1600px` (conteúdo centrado com max-width em rows/catálogo/episódios/ficha).
+
+### Watch Party sem Supabase
+- O projeto Supabase foi **encerrado pela Supabase** — o Watch Party passa a correr **no próprio servidor Express** (`server/src/routes/watchparty.js`), sem dependências novas:
+  - Salas em memória num `Map`; `GET /api/wp/stream` (SSE) — a própria ligação é a presença (fechar = sair) e o heartbeat de 20s mantém a ligação viva (sobrevive a proxies).
+  - `POST /api/wp/send` faz broadcast de eventos (`{type:"event", kind, data, from}`) aos outros membros da sala.
+  - **Público** (como era no Supabase) — montado no `index.js` **antes** dos routers com `use(requireAuth)` global (library/debrid/progress/export/achievements/letterboxd), que bloqueavam `/api/wp/*` com 401.
+  - `web/src/watchparty/WatchPartyContext.jsx` reescrito: `EventSource` + `POST /api/wp/send`; `enabled: true` sempre (sem `VITE_SUPABASE_*`); reconnect automático do EventSource.
+  - Removidos `web/src/watchparty/supabase.js` e a dependência `@supabase/supabase-js` (também fora do `package-lock.json`).
+
 ## 1.0.0
 
 ### Exportar / Importar dados

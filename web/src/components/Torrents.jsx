@@ -13,35 +13,42 @@ function sizeToBytes(s) {
 }
 
 // Filtro de audio (anime): o backend ja marca cada torrent com `dub`/`dual`.
-// "Legendado" = sem qualquer dobragem (esconde dub e dual audio);
-// "Dobrado" = tem faixa dobrada (inclui dual audio).
 function matchAudio(t, mode) {
   if (mode === "all") return true;
   if (mode === "dub") return !!t.dub;
   return !t.dub; // "sub"
 }
 
-// Procura torrents (Torrentio) e reproduz o escolhido no nosso player.
-// `anime` ativa o filtro de audio (sub/dub); `defaultAudio` e a preferencia.
-export default function Torrents({ type, imdb, season, episode, anime, defaultAudio, startAt, onProgress }) {
+// Procura torrents (Torrentio + YTS...) e reproduz o escolhido no nosso player.
+// Se o Real-Debrid estiver ligado, os torrents em cache reproduzem logo (sem
+// esperar por peers); os outros caem para o WebTorrent local.
+export default function Torrents({ type, imdb, title, season, episode, anime, defaultAudio, startAt, onProgress }) {
   const [list, setList] = useState(null);
   const [error, setError] = useState(null);
   const [selected, setSelected] = useState(null);
   const [subs, setSubs] = useState([]);
   const [quality, setQuality] = useState("all");
   const [sortBy, setSortBy] = useState("seeders");
-  const [compat, setCompat] = useState("all"); // all | playable
-  const [codec, setCodec] = useState("all"); // all | x264 | x265
+  const [compat, setCompat] = useState("all");
+  const [codec, setCodec] = useState("all");
   const [audio, setAudio] = useState(
     anime ? (defaultAudio === "dub" ? "dub" : "sub") : "all"
   );
+  // Real-Debrid: { linked, instant: Map<infoHash, true> }
+  const [debrid, setDebrid] = useState(null);
+  // URL já resolvido (Debrid é async: primeiro resolve, depois toca).
+  const [videoSrc, setVideoSrc] = useState(null);
+  const [streaming, setStreaming] = useState(false);
+  const [streamErr, setStreamErr] = useState(null);
 
   useEffect(() => {
     setSelected(null);
+    setVideoSrc(null);
+    setStreamErr(null);
     if (!imdb) return;
     setList(null);
     setError(null);
-    const opts = { type, imdb };
+    const opts = { type, imdb, title };
     if (type === "tv") {
       opts.season = season;
       opts.episode = episode;
@@ -50,7 +57,28 @@ export default function Torrents({ type, imdb, season, episode, anime, defaultAu
       .torrents(opts)
       .then((d) => setList(d.torrents))
       .catch((e) => setError(e.message));
-  }, [type, imdb, season, episode]);
+  }, [type, imdb, title, season, episode]);
+
+  // Estado do Real-Debrid + disponibilidade instant dos torrents apresentados.
+  useEffect(() => {
+    if (!list?.length) return;
+    let alive = true;
+    const hashes = list.map((t) => t.infoHash);
+    api
+      .debridAvailability(hashes)
+      .then((d) => {
+        if (!alive) return;
+        const instant = new Map();
+        for (const [h, v] of Object.entries(d.instant || {})) {
+          if (v?.instant) instant.set(h, true);
+        }
+        setDebrid({ linked: !!d.linked, instant });
+      })
+      .catch(() => setDebrid((p) => p || { linked: false, instant: new Map() }));
+    return () => {
+      alive = false;
+    };
+  }, [list]);
 
   // Legendas (OpenSubtitles) para usar no player do torrent.
   useEffect(() => {
@@ -72,14 +100,20 @@ export default function Torrents({ type, imdb, season, episode, anime, defaultAu
     return QUALITY_ORDER.filter((q) => set.has(q));
   }, [list]);
 
-  // Aplica filtro de qualidade + audio (anime) + compatibilidade + codec + ordenação.
+  // Aplica filtros + ordenação.
   const shown = useMemo(() => {
     let arr = list || [];
     if (quality !== "all") arr = arr.filter((t) => t.quality === quality);
     if (compat === "playable") arr = arr.filter((t) => t.playable);
+    if (compat === "instant")
+      arr = arr.filter((t) => debrid?.instant?.has(t.infoHash));
     if (codec !== "all") arr = arr.filter((t) => t.codec === codec);
     if (anime && audio !== "all") arr = arr.filter((t) => matchAudio(t, audio));
     const sorted = [...arr].sort((a, b) => {
+      // Com Debrid ligado, os torrents em cache ficam no topo (começam logo).
+      const ai = debrid?.instant?.has(a.infoHash) ? 1 : 0;
+      const bi = debrid?.instant?.has(b.infoHash) ? 1 : 0;
+      if (ai !== bi) return bi - ai;
       if (sortBy === "sizeAsc") return sizeToBytes(a.size) - sizeToBytes(b.size);
       if (sortBy === "size") return sizeToBytes(b.size) - sizeToBytes(a.size);
       if (sortBy === "quality") {
@@ -90,7 +124,38 @@ export default function Torrents({ type, imdb, season, episode, anime, defaultAu
       return (b.seeders ?? -1) - (a.seeders ?? -1); // seeders desc (default)
     });
     return sorted;
-  }, [list, quality, sortBy, anime, audio, compat, codec]);
+  }, [list, quality, sortBy, anime, audio, compat, codec, debrid]);
+
+  // Ao escolher um torrent: se Debrid estiver ligado e o torrent estiver em
+  // cache, resolve o stream via Debrid (logo). Senão, usa WebTorrent local.
+  async function pick(t) {
+    setSelected(t);
+    setStreamErr(null);
+    setVideoSrc(null);
+    const tryDebrid = debrid?.linked && debrid?.instant?.has(t.infoHash);
+    if (tryDebrid) {
+      setStreaming(true);
+      try {
+        const d = await api.debridStream(t.infoHash, t.fileIdx);
+        setVideoSrc(d.url);
+      } catch (e) {
+        // Se o Debrid falhar, cai para o WebTorrent (stream local).
+        setStreamErr(e.message);
+        setVideoSrc(localStreamUrl(t));
+      } finally {
+        setStreaming(false);
+      }
+    } else {
+      setVideoSrc(localStreamUrl(t));
+    }
+  }
+
+  function localStreamUrl(t) {
+    return (
+      `/api/stream/${t.infoHash}` +
+      (t.fileIdx != null ? `?fileIdx=${t.fileIdx}` : "")
+    );
+  }
 
   if (!imdb)
     return <p className="muted">Este título não tem IMDB id — torrents indisponiveis.</p>;
@@ -98,23 +163,33 @@ export default function Torrents({ type, imdb, season, episode, anime, defaultAu
   if (!list) return <p className="muted">A procurar torrents...</p>;
   if (!list.length) return <p className="muted">Nenhum torrent encontrado.</p>;
 
-  const streamUrl = selected
-    ? `/api/stream/${selected.infoHash}` +
-      (selected.fileIdx != null ? `?fileIdx=${selected.fileIdx}` : "")
-    : null;
+  const haveInstant = debrid?.linked && [...(debrid.instant || [])].length > 0;
 
   return (
     <div className="torrents">
-      {selected && (
-        <VideoPlayer
-          key={streamUrl}
-          src={streamUrl}
-          infoHash={selected.infoHash}
-          subtitles={subs}
-          startAt={startAt}
-          onProgress={onProgress}
-          onRemoved={() => setSelected(null)}
-        />
+      {selected && (streaming || streamErr || videoSrc) && (
+        <>
+          {streaming && <p className="muted">A preparar stream no Real-Debrid...</p>}
+          {streamErr && (
+            <p className="muted" style={{ fontSize: 12 }}>
+              Debrid indisponível, a tocar via torrent local — {streamErr}
+            </p>
+          )}
+          {videoSrc && (
+            <VideoPlayer
+              key={selected.infoHash + (videoSrc || "")}
+              src={videoSrc}
+              infoHash={selected.infoHash}
+              subtitles={subs}
+              startAt={startAt}
+              onProgress={onProgress}
+              onRemoved={() => {
+                setSelected(null);
+                setVideoSrc(null);
+              }}
+            />
+          )}
+        </>
       )}
       <div className="torrent-filters">
         <div className="tf-qualities">
@@ -167,6 +242,15 @@ export default function Torrents({ type, imdb, season, episode, anime, defaultAu
           >
             Todos
           </button>
+          {haveInstant && (
+            <button
+              className={`tf-chip ${compat === "instant" ? "active" : ""}`}
+              onClick={() => setCompat(compat === "instant" ? "all" : "instant")}
+              title="Só torrents que já estão em cache no Real-Debrid (reproduzem logo)"
+            >
+              ⚡ Debrid
+            </button>
+          )}
           <button
             className={`tf-chip ${compat === "playable" ? "active" : ""}`}
             onClick={() => setCompat("playable")}
@@ -191,37 +275,48 @@ export default function Torrents({ type, imdb, season, episode, anime, defaultAu
       </div>
 
       <div className="torrent-list">
-        {shown.map((t, i) => (
-          <button
-            key={`${t.infoHash}-${i}`}
-            className={`torrent-item ${
-              selected?.infoHash === t.infoHash ? "active" : ""
-            }`}
-            onClick={() => setSelected(t)}
-          >
-            <span className="tq">{t.quality}</span>
-            <span className="tt">
-              {t.title}
-              {anime && t.dub && (
-                <span className="taudio">{t.dual ? "DUAL" : "DUB"}</span>
-              )}
-            </span>
-            <span className="tmeta">
-              {t.playable ? (
-                <span className="tplay" title="Reproduz nativamente no browser (mp4/webm)">✓ browser</span>
-              ) : (
-                <span
-                  className="tnoplay"
-                  title={t.codec === "x265" ? ".mkv x265 — o Chrome/Safari não reproduzem este codec. Prefere .mp4 x264." : `${t.ext || ""} ${t.codec || ""} — pode não reproduzir no browser. Prefere .mp4.`}
-                >
-                  ⚠ {t.ext ? t.ext.slice(1).toUpperCase() : "?"}
-                </span>
-              )}
-              {t.size ? t.size : ""}
-              {t.seeders != null ? ` · 👤 ${t.seeders}` : ""}
-            </span>
-          </button>
-        ))}
+        {shown.map((t, i) => {
+          const isInstant = debrid?.instant?.has(t.infoHash);
+          return (
+            <button
+              key={`${t.infoHash}-${i}`}
+              className={`torrent-item ${
+                selected?.infoHash === t.infoHash ? "active" : ""
+              }`}
+              onClick={() => pick(t)}
+            >
+              <span className="tq">{t.quality}</span>
+              <span className="tt">
+                {t.title}
+                {isInstant && (
+                  <span className="tinstant" title="Já está em cache no Real-Debrid — reproduz logo">⚡ Debrid</span>
+                )}
+                {t.provider && (
+                  <span className="tprovider" title={`Fonte: ${t.provider}`}>
+                    {t.provider}
+                  </span>
+                )}
+                {anime && t.dub && (
+                  <span className="taudio">{t.dual ? "DUAL" : "DUB"}</span>
+                )}
+              </span>
+              <span className="tmeta">
+                {t.playable ? (
+                  <span className="tplay" title="Reproduz nativamente no browser (mp4/webm)">✓ browser</span>
+                ) : (
+                  <span
+                    className="tnoplay"
+                    title={t.codec === "x265" ? ".mkv x265 — o Chrome/Safari não reproduzem este codec. Prefere .mp4 x264." : `${t.ext || ""} ${t.codec || ""} — pode não reproduzir no browser. Prefere .mp4.`}
+                  >
+                    ⚠ {t.ext ? t.ext.slice(1).toUpperCase() : "?"}
+                  </span>
+                )}
+                {t.size ? t.size : ""}
+                {t.seeders != null ? ` · 👤 ${t.seeders}` : ""}
+              </span>
+            </button>
+          );
+        })}
         {!shown.length && (
           <p className="muted">Nenhum torrent nesta qualidade.</p>
         )}

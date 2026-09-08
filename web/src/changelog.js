@@ -2,6 +2,19 @@
 // "o que mudou" depois de o utilizador atualizar a app. Mais recente em cima.
 export const CHANGELOG = [
   {
+    version: "1.1.0",
+    items: [
+      "Novo: Real-Debrid! Liga a tua conta nas Definições (pegando o teu token em real-debrid.com/apitoken). Os torrents que já estão na cache do Real-Debrid aparecem com um selo e dão para ver de imediato, sem descarregar nada no teu computador — o Real-Debrid descarrega e a app reproduz. Os que não estão na cache são adicionados e descarregam lá também.",
+      "Melhorado (torrents): agora vêm de várias fontes (Torrentio, YTS…) agrupadas na lista, por isso há mais opções e mais hipóteses de encontrar um que dê para ver logo.",
+      "Novo: nas fontes de reprodução aparece uma lista de atalhos para abrir o título em sites externos (ex.: no site original), sem sair da app.",
+      "Melhorado: a app abre mais depressa — as páginas só são carregadas quando as abres, em vez de tudo de uma vez.",
+      "Melhorado: os teus dados são guardados com mais segurança — a app faz uma cópia de segurança automática e, se alguma vez um ficheiro se corromper, recupera sozinha sem perderes nada.",
+      "Melhorado: o Watch Party deixou de depender de um serviço externo (Supabase) — agora funciona no próprio servidor da app, por isso continua a funcionar sempre e sem precisares de contas de terceiros.",
+      "Melhorado (telemóvel/tablet): em ecrãs pequenos o menu, as fichas e o slideshow adaptam-se automaticamente; e em ecrãs muito largos o conteúdo fica centrado, sem se esticar.",
+      "Novo: no slideshow podes passar para o título seguinte com um gesto (arrastar para o lado) no ecrã táctil.",
+    ],
+  },
+  {
     version: "1.0.0",
     items: [
       "Novo: conquistas e racha diário! Abre o menu da conta e carrega em 'Conquistas' para ver as tuas medalhas (ex.: 'Primeiro passo', 'Otaku', 'Implacável') e quantos dias seguidos estás ativo.",

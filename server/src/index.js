@@ -13,9 +13,11 @@ import { malRouter } from "./routes/mal.js";
 import { anilistRouter } from "./routes/anilist.js";
 import { mangaRouter } from "./routes/manga.js";
 import { letterboxdRouter } from "./routes/letterboxd.js";
+import { debridRouter } from "./routes/debrid.js";
 import { progressRouter } from "./routes/progress.js";
 import { exportRouter } from "./routes/export.js";
 import { achievementsRouter } from "./routes/achievements.js";
+import { watchPartyRouter } from "./routes/watchparty.js";
 import { log } from "./services/log.js";
 
 const app = express();
@@ -36,12 +38,16 @@ app.use("/api", sourcesRouter);
 app.use("/api", authRouter);
 app.use("/api", streamRouter);
 app.use("/api", playRouter);
+// watchPartyRouter publique e tem de vir ANTES de qualquer router com
+// use(requireAuth) global (library, debrid, ...), senao o /api/wp/* e bloqueado.
+app.use("/api", watchPartyRouter);
 // malRouter ANTES do libraryRouter: o library aplica requireAuth a tudo o que
 // passa por ele, e as rotas publicas do MAL (callback OAuth) nao podem ser bloqueadas.
 app.use("/api", malRouter);
 app.use("/api", anilistRouter);
 app.use("/api", mangaRouter);
 app.use("/api", letterboxdRouter);
+app.use("/api", debridRouter);
 app.use("/api", progressRouter);
 app.use("/api", exportRouter);
 app.use("/api", achievementsRouter);

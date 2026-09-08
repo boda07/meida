@@ -768,6 +768,8 @@ h2 {
    fundo do utilizador aparece a volta e nao ha mistura entre as duas imagens. */
 .hero {
   position: relative;
+  /* pan-y: o swipe horizontal muda de destaque (Hero.jsx); o vertical scrolleia. */
+  touch-action: pan-y;
   width: calc(100% - 2 * clamp(14px, 3.5vw, 46px));
   max-width: 1500px;
   margin: 84px auto 6px;
@@ -3141,6 +3143,35 @@ h2 {
   background: color-mix(in srgb, #d98a2b 28%, transparent);
 }
 
+.tprovider {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 1px 6px;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  vertical-align: middle;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
+  text-transform: uppercase;
+}
+
+.tinstant {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 1px 6px;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  vertical-align: middle;
+  color: #b7f0b7;
+  background: rgba(46, 160, 67, 0.15);
+  border: 1px solid rgba(46, 160, 67, 0.4);
+}
+
 .vplayer {
   margin-bottom: 14px;
 }
@@ -3467,12 +3498,42 @@ h2 {
   color: #0a0a0b;
 }
 
+.sources-container {
+  margin-bottom: 16px;
+}
+
 .sources {
   display: flex;
   align-items: center;
   gap: 12px;
   flex-wrap: wrap;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
+}
+
+.sources-external {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed rgba(255, 255, 255, 0.08);
+}
+
+.source-btn.external-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.15);
+  color: var(--text-secondary);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.source-btn.external-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.3);
 }
 
 .sources-label {
@@ -3740,9 +3801,74 @@ h2 {
   margin-top: 18px;
 }
 
+/* ===== Responsividade ===== */
+
+/* Ecrãs médios (tablets / portáteis pequenos): nav em ícones apenas, ficha e
+   hero mais compactos. Os links mantêm o title (tooltip) para os nomes. */
+@media (max-width: 1024px) {
+  .nav-links a span {
+    display: none;
+  }
+  .nav-links a {
+    padding: 9px 12px;
+  }
+  .details-poster {
+    width: 240px;
+    height: 360px;
+  }
+  .hero {
+    height: clamp(320px, 52vh, 520px);
+    margin-top: 74px;
+  }
+}
+
+/* Telemóveis: ficha em coluna (póster ao centro), hero mais baixo, nav apertada. */
 @media (max-width: 700px) {
   .compare-row {
     grid-template-columns: 1fr;
+  }
+  .details-head {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+  .details-poster {
+    width: min(240px, 72vw);
+    height: auto;
+    aspect-ratio: 2 / 3;
+  }
+  .hero {
+    height: clamp(280px, 44vh, 420px);
+    margin-top: 68px;
+  }
+  .nav-bar {
+    gap: 3px;
+    padding: 6px;
+  }
+  .nav-links a {
+    padding: 8px 10px;
+  }
+  .nav-right {
+    margin-left: 6px;
+  }
+}
+
+/* Ecrãs muito largos (≥1600px): centra e limita o conteúdo para não esticar. */
+@media (min-width: 1600px) {
+  .rows,
+  .catalog-page .grid,
+  .episodes {
+    max-width: 1760px;
+    margin-inline: auto;
+  }
+  .details-head {
+    max-width: 1560px;
+    margin-inline: auto;
+    width: 100%;
+  }
+  .card-landscape {
+    width: 340px;
+    height: 190px;
   }
 }
 

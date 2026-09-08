@@ -367,6 +367,104 @@ function LetterboxdSection({ user }) {
   );
 }
 
+// Seccao de ligacao ao Real-Debrid (streaming de torrents instantaneo).
+function DebridSection({ user }) {
+  const [status, setStatus] = useState(null);
+  const [input, setInput] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState(null);
+
+  function refresh() {
+    api
+      .debridStatus()
+      .then((d) => setStatus(d))
+      .catch(() => {});
+  }
+
+  useEffect(() => {
+    if (user) refresh();
+  }, [user]);
+
+  async function link() {
+    setBusy(true);
+    setMsg(null);
+    try {
+      const d = await api.debridLink(input.trim());
+      setStatus({ linked: true, account: d.account });
+      setInput("");
+      setMsg("Real-Debrid ligado. Os torrents em cache no DeBrid reproduzem logo.");
+    } catch (e) {
+      setMsg(e.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function unlink() {
+    await api.debridUnlink().catch(() => {});
+    setStatus({ linked: false, account: null });
+    setMsg(null);
+  }
+
+  if (!user) {
+    return (
+      <p className="muted">
+        <Link to="/login">Entra</Link> para ligares o Real-Debrid.
+      </p>
+    );
+  }
+
+  return (
+    <div>
+      {status?.linked ? (
+        <>
+          <p className="muted">
+            Ligado como <b>{status.account}</b>. Nos torrents, os que estiverem em
+            cache no Real-Debrid reproduzem <b>logo</b> (sem esperar por peers).
+          </p>
+          <div className="set-row" style={{ marginTop: 8 }}>
+            <button className="set-clear" onClick={unlink}>
+              Desligar
+            </button>
+          </div>
+        </>
+      ) : (
+        <>
+          <p className="muted">
+            Cola o teu token do Real-Debrid (obtém-no em{" "}
+            <a
+              href="https://real-debrid.com/apitoken"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              real-debrid.com/apitoken
+            </a>
+            ). É um serviço pago (mas barato) que guarda os torrents em cache —
+            por isso o stream começa imediatamente, como no Stremio.
+          </p>
+          <div className="set-img-url">
+            <input
+              type="password"
+              placeholder="token do Real-Debrid"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && input.trim() && link()}
+            />
+            <button
+              className="lib-watched"
+              onClick={link}
+              disabled={busy || !input.trim()}
+            >
+              {busy ? "A ligar..." : "Ligar"}
+            </button>
+          </div>
+        </>
+      )}
+      {msg && <p className="muted" style={{ marginTop: 10 }}>{msg}</p>}
+    </div>
+  );
+}
+
 // Le uma imagem do disco e devolve um data URL ja reduzido (cabe no localStorage,
 // que e onde as definicoes ficam guardadas). Reduz a largura maxima e exporta em
 // JPEG para nao ocupar megabytes.
@@ -1022,6 +1120,12 @@ export default function Settings() {
       <section className="set-section">
         <h3>Letterboxd</h3>
         <LetterboxdSection user={user} />
+      </section>
+
+      {/* ===== Real-Debrid ===== */}
+      <section className="set-section">
+        <h3>Real-Debrid</h3>
+        <DebridSection user={user} />
       </section>
 
       {/* ===== Avatar ===== */}

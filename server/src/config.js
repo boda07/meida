@@ -7,9 +7,21 @@ import { dirname, resolve } from "node:path";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: resolve(__dirname, "../.env") });
 
+const DEFAULT_JWT_SECRET = "dev-secret-muda-me-em-producao";
+const jwtSecret = process.env.JWT_SECRET?.trim() || "";
+
+// Em producao (Render/Electron com NODE_ENV=production) o segredo e obrigatorio:
+// um default publico deixaria qualquer pessoa forjar tokens e entrar noutras contas.
+if (process.env.NODE_ENV === "production" && (!jwtSecret || jwtSecret === DEFAULT_JWT_SECRET)) {
+  throw new Error(
+    "JWT_SECRET nao esta definido. Gera um com: node -e \"console.log(require('crypto').randomBytes(32).toString('hex'))\"\n" +
+      "e define-o nas env vars do Render (Dashboard -> Environment) OU no server/.env."
+  );
+}
+
 export const config = {
   port: Number(process.env.PORT) || 5175,
-  jwtSecret: process.env.JWT_SECRET?.trim() || "dev-secret-muda-me-em-producao",
+  jwtSecret: jwtSecret || DEFAULT_JWT_SECRET,
   // Se definido, usa um extractor externo compativel com Consumet (ex.: http://localhost:3000).
   extractorApiBase: process.env.EXTRACTOR_API_BASE?.trim().replace(/\/$/, "") || "",
   // Extrator de anime (aniwatch-api alojado): da player proprio ao anime

@@ -206,6 +206,15 @@ export const api = {
   letterboxdUnlink: () => post("/api/letterboxd/unlink", {}),
   letterboxdImport: (what = "all") => post("/api/letterboxd/import", { what }),
 
+  // Real-Debrid (streaming instantaneo de torrents)
+  debridStatus: () => get("/api/debrid/status"),
+  debridLink: (token) => post("/api/debrid/link", { token }),
+  debridUnlink: () => post("/api/debrid/unlink", {}),
+  debridAvailability: (hashes) => post("/api/debrid/availability", { hashes }),
+  debridStream: (infoHash, fileIdx) =>
+    get("/api/debrid/stream/" + infoHash, fileIdx != null ? { fileIdx } : {}),
+  debridActive: () => get("/api/debrid/active"),
+
   // Export dos teus dados (biblioteca + diário)
   exportData: () => get("/api/export"),
 

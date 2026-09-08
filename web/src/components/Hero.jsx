@@ -59,6 +59,7 @@ export default function Hero({ items, item }) {
 
   const [idx, setIdx] = useState(0);
   const lastIdxRef = useRef(0);
+  const touchStartRef = useRef(null);
 
   // Recomeca do inicio quando a lista muda (ex.: troca de idioma/pagina).
   const firstId = list[0]?.id;
@@ -87,8 +88,25 @@ export default function Hero({ items, item }) {
   const to = `/details/${current.type}/${current.id}`;
   const go = (n) => setIdx((i) => (i + n + list.length) % list.length);
 
+  // Swipe horizontal no telemovel (ignora taps e deslizes verticais).
+  const onTouchStart = (e) => {
+    if (list.length <= 1) return;
+    const t = e.touches[0];
+    touchStartRef.current = { x: t.clientX, y: t.clientY };
+  };
+  const onTouchEnd = (e) => {
+    const start = touchStartRef.current;
+    touchStartRef.current = null;
+    if (!start) return;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - start.x;
+    const dy = t.clientY - start.y;
+    if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy) * 1.2) return;
+    go(dx < 0 ? 1 : -1);
+  };
+
   return (
-    <div className="hero">
+    <div className="hero" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
       {/* Camadas de fundo (crossfade): a ativa por cima, a anterior opaca por baixo. */}
       {list.map((it, i) => (
         <div

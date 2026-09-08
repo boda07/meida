@@ -597,6 +597,7 @@ export default function Details() {
             <Torrents
               type={details.isMovie ? "movie" : "tv"}
               imdb={details.imdbId}
+              title={details.title}
               season={1}
               episode={details.isMovie ? 1 : episode}
               anime
@@ -616,6 +617,10 @@ export default function Details() {
                 setPlayerIndex(idx >= 0 ? idx : 0);
               }}
               deadIds={deadProviders}
+              title={details.title}
+              isMovie={details.isMovie}
+              season={season}
+              episode={episode}
             />
             {embeds.length ? (
               <Player
@@ -676,6 +681,10 @@ export default function Details() {
                 setPlayerIndex(idx >= 0 ? idx : 0);
               }}
               deadIds={deadProviders}
+              title={details.title}
+              isMovie={details.isMovie}
+              season={season}
+              episode={episode}
             />
             {embeds.length ? (
               <Player
@@ -714,6 +723,7 @@ export default function Details() {
           <Torrents
             type={details.type}
             imdb={details.imdbId}
+            title={details.title}
             season={season}
             episode={episode}
             startAt={startAt}

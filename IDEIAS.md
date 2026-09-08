@@ -23,6 +23,9 @@ para a secção "Feitas".
 - [ ] **Listas públicas/compartilháveis** (link para mostreres a tua biblioteca).
 
 ## Player / visual
+- [x] **Suporte Real-Debrid**: cola o token em Definições; os torrents em cache no RD reproduzem logo (o que faz o Stremio parecer "instantâneo"). Torrents sem cache caem para o WebTorrent local. Badge "⚡ Debrid" + filtro só cache + os instant ficam no topo. Rotas: `/api/debrid/*`.
+- [x] **Multi-provider de torrents**: framework agregador no backend (`server/src/services/providers/`) que junta resultados de vários indexadores (Torrentio + YTS). Adicionar um provider = criar um ficheiro na pasta `providers/` e registá-lo no `index.js`. Mostra o badge da fonte (ex.: YTS) em cada torrent.
+- [x] **Redirecionamento/links para sites externos**: botão para abrir diretamente no RidoMovies (com slug exato por série/época/episódio ou filme) e pesquisa no Google quando os providers internos falham ou a pedido do utilizador.
 - [ ] **Modo cinema**: player em fullscreen com UI limpa e auto-hide dos controlos. **(Decidido: o fullscreen/auto-hide nativo do `<video>` chega — não fazer.)**
 - [ ] **Dark mode unificado** + tema custom por utilizador (a app já é maioritariamente escura; falta terminar).
 - [ ] **Bookmarks/timestamps por episódio** (notas de episódio, não só da série).

@@ -18,6 +18,11 @@ export function rememberMagnet(infoHash, magnet) {
   magnetCache.set(infoHash.toLowerCase(), magnet);
 }
 
+export function getMagnet(infoHash) {
+  const m = magnetCache.get(infoHash.toLowerCase());
+  return m || `magnet:?xt=urn:btih:${infoHash}`;
+}
+
 function findTorrent(key) {
   return client.torrents.find((t) => t.infoHash?.toLowerCase() === key);
 }

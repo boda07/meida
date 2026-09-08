@@ -7,7 +7,6 @@ import {
   useState,
 } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { getSupabase, watchPartyEnabled } from "./supabase.js";
 
 const WatchPartyContext = createContext(null);
 
@@ -17,6 +16,12 @@ function makeCode() {
   let s = "";
   for (let i = 0; i < 5; i++) s += abc[Math.floor(Math.random() * abc.length)];
   return s;
+}
+
+// Mesma base de URL da API (runtime-config.json / same-origin).
+const API_ORIGIN = (typeof window !== "undefined" && window.MEIDA_API_BASE) || "";
+function fullUrl(path) {
+  return API_ORIGIN ? `${API_ORIGIN}${path}` : `${window.location.origin}${path}`;
 }
 
 export function WatchPartyProvider({ children }) {
@@ -29,25 +34,24 @@ export function WatchPartyProvider({ children }) {
   const [isHost, setIsHost] = useState(false);
   const [error, setError] = useState(null);
 
-  const channelRef = useRef(null);
+  const esRef = useRef(null); // EventSource da sala
+  const openedRef = useRef(false); // a ligacao chegou a abrir?
   const idRef = useRef(Math.random().toString(36).slice(2)); // id deste cliente
+  const roomRef = useRef(null); // codigo da sala sempre atualizado (para closures)
   const handlersRef = useRef(new Set()); // subscritores de eventos
   const suppressNavRef = useRef(false); // evita reenviar nav aplicada do remoto
-  // Caminho atual SEMPRE atualizado (o handler do canal e criado uma vez e nao
-  // veria as navegacoes seguintes). Usado para responder ao "hello" com a rota
-  // onde o host esta AGORA — senao um membro que entra depois vai parar a home.
   const pathRef = useRef(location.pathname + location.search);
   const hostRef = useRef(false); // se este cliente e o host (estavel no canal)
 
-  // Envia um evento para a sala.
+  // Envia um evento para a sala (POST ao servidor, que difunde aos outros).
   const send = useCallback((kind, data) => {
-    const ch = channelRef.current;
-    if (!ch) return;
-    ch.send({
-      type: "broadcast",
-      event: "msg",
-      payload: { kind, data, from: idRef.current },
-    });
+    const code = roomRef.current;
+    if (!code) return;
+    fetch(fullUrl("/api/wp/send"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ room: code, from: idRef.current, kind, data }),
+    }).catch(() => {});
   }, []);
 
   // Subscreve eventos recebidos. Devolve funcao para cancelar.
@@ -56,72 +60,81 @@ export function WatchPartyProvider({ children }) {
     return () => handlersRef.current.delete(handler);
   }, []);
 
-  // Sai da sala atual.
-  const leave = useCallback(() => {
-    const ch = channelRef.current;
-    if (ch) getSupabase()?.removeChannel(ch);
-    channelRef.current = null;
-    hostRef.current = false;
-    setRoom(null);
-    setMembers([]);
-    setIsHost(false);
-  }, []);
-
-  // Liga-se a um canal de sala (cria ou junta).
-  const connect = useCallback(
-    (code, nickname, host) => {
-      const supabase = getSupabase();
-      if (!supabase) {
-        setError("Watch Party não configurado neste app.");
+  // Evento "real" vindo de outro cliente (via SSE).
+  const handleRemote = useCallback(
+    (payload) => {
+      if (!payload || payload.from === idRef.current) return;
+      // Navegacao: o contexto trata da rota; o resto vai aos subscritores.
+      if (payload.kind === "nav") {
+        const path = payload.data?.path;
+        if (path && path !== pathRef.current) {
+          suppressNavRef.current = true;
+          navigate(path);
+        }
         return;
       }
+      if (payload.kind === "hello") {
+        // Um membro novo entrou: o host reenvia a rota ONDE ESTA AGORA.
+        if (hostRef.current) send("nav", { path: pathRef.current });
+        return;
+      }
+      for (const h of handlersRef.current) h(payload);
+    },
+    [navigate, send]
+  );
+
+  // Cada mensagem do SSE.
+  const handleStream = useCallback(
+    (msg) => {
+      if (msg.type === "members") setMembers(msg.members || []);
+      else handleRemote(msg);
+    },
+    [handleRemote]
+  );
+
+  // Liga-se a uma sala (cria ou junta) via EventSource. A presenca e o proprio
+  // stream: fechar = sair. O EventSource religa sozinho se cair.
+  const connect = useCallback(
+    (code, nickname, host) => {
       setError(null);
-      if (channelRef.current) supabase.removeChannel(channelRef.current);
       hostRef.current = host;
+      roomRef.current = code;
+      openedRef.current = false;
 
-      const ch = supabase.channel(`wp-${code}`, {
-        config: { broadcast: { self: false }, presence: { key: idRef.current } },
-      });
-
-      ch.on("broadcast", { event: "msg" }, ({ payload }) => {
-        if (!payload || payload.from === idRef.current) return;
-        // Navegacao: o contexto trata da rota; o resto vai aos subscritores.
-        if (payload.kind === "nav") {
-          const path = payload.data?.path;
-          if (path && path !== pathRef.current) {
-            suppressNavRef.current = true;
-            navigate(path);
-          }
-          return;
-        }
-        if (payload.kind === "hello") {
-          // Um membro novo entrou: o host reenvia a rota ONDE ESTA AGORA.
-          if (hostRef.current) send("nav", { path: pathRef.current });
-        }
-        for (const h of handlersRef.current) h(payload);
-      });
-
-      ch.on("presence", { event: "sync" }, () => {
-        const state = ch.presenceState();
-        const list = Object.values(state).flatMap((arr) =>
-          arr.map((m) => ({ nick: m.nick || "?" }))
-        );
-        setMembers(list);
-      });
-
-      ch.subscribe(async (st) => {
-        if (st === "SUBSCRIBED") {
-          await ch.track({ nick: nickname });
-          if (!host) send("hello", {});
-        }
-      });
-
-      channelRef.current = ch;
+      esRef.current?.close();
       setRoom(code);
       setNick(nickname);
       setIsHost(host);
+      setMembers([]);
+
+      const es = new EventSource(
+        fullUrl(
+          `/api/wp/stream?room=${encodeURIComponent(code)}&client=${encodeURIComponent(idRef.current)}&nick=${encodeURIComponent(nickname)}`
+        )
+      );
+      es.onopen = () => {
+        openedRef.current = true;
+      };
+      es.onmessage = (e) => {
+        try {
+          handleStream(JSON.parse(e.data));
+        } catch {
+          // mensagem malformada: ignora
+        }
+      };
+      es.onerror = () => {
+        // Se nunca chegou a ligar (server em baixo), avisa uma vez.
+        if (!openedRef.current) {
+          setTimeout(() => {
+            if (!openedRef.current) setError("Sem ligação ao Watch Party.");
+          }, 4000);
+        }
+      };
+      esRef.current = es;
+
+      if (!host) send("hello", {});
     },
-    [navigate, send]
+    [handleStream, send]
   );
 
   const createRoom = useCallback(
@@ -134,12 +147,23 @@ export function WatchPartyProvider({ children }) {
   );
 
   const joinRoom = useCallback(
-    (code, nickname) => connect(String(code).toUpperCase().trim(), nickname || "Convidado", false),
+    (code, nickname) =>
+      connect(String(code).toUpperCase().trim(), nickname || "Convidado", false),
     [connect]
   );
 
+  const leave = useCallback(() => {
+    esRef.current?.close();
+    esRef.current = null;
+    hostRef.current = false;
+    roomRef.current = null;
+    setRoom(null);
+    setMembers([]);
+    setIsHost(false);
+    setNick("");
+  }, []);
+
   // Propaga a navegacao local para a sala (a menos que tenha vindo do remoto).
-  // Mantem tambem o pathRef atualizado para o handler do canal e o "hello".
   useEffect(() => {
     pathRef.current = location.pathname + location.search;
     if (!room) return;
@@ -154,7 +178,7 @@ export function WatchPartyProvider({ children }) {
   useEffect(() => () => leave(), [leave]);
 
   const value = {
-    enabled: watchPartyEnabled(),
+    enabled: true, // agora usa o proprio servidor, sem Supabase
     active: Boolean(room),
     room,
     nick,

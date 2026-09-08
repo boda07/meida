@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getTorrents } from "../services/torrentio.js";
+import { searchAllTorrents } from "../services/providers/index.js";
 import {
   getTorrentFile,
   getStatus,
@@ -10,10 +10,10 @@ import {
 
 export const streamRouter = Router();
 
-// Lista de torrents para um titulo (via Torrentio).
+// Lista de torrents para um titulo (via vários providers: Torrentio, YTS, ...).
 streamRouter.get("/torrents", async (req, res, next) => {
   try {
-    const { type, imdb, season, episode } = req.query;
+    const { type, imdb, title, season, episode } = req.query;
     if (type !== "movie" && type !== "tv") {
       return res.status(400).json({ error: "type tem de ser 'movie' ou 'tv'" });
     }
@@ -24,9 +24,10 @@ streamRouter.get("/torrents", async (req, res, next) => {
       return res.status(400).json({ error: "series precisam de season e episode" });
     }
 
-    const list = await getTorrents({
+    const list = await searchAllTorrents({
       type,
       imdb,
+      title: typeof title === "string" ? title : undefined,
       season: Number(season),
       episode: Number(episode),
     });
