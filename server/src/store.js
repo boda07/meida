@@ -297,6 +297,7 @@ function toApiProgress(r) {
     episode: r.episode ?? null,
     position: r.position ?? null, // segundos a meio (para retomar)
     duration: r.duration ?? null, // duracao total em segundos
+    provider: r.provider ?? null, // fonte (provider) que o user usava
     startedAt: r.started_at ?? null,
     finishedAt: r.finished_at ?? null,
     status: r.status ?? "watching",
@@ -336,6 +337,7 @@ export function startProgress(e) {
   const r = findOrCreateProgress(e.userId, e.type, e.tmdbId);
   if (e.title != null) r.title = e.title;
   if (e.poster != null) r.poster = e.poster;
+  if (e.provider != null) r.provider = e.provider;
   const sameEpisode = r.season === (e.season ?? null) && r.episode === (e.episode ?? null);
   if (e.season != null) r.season = e.season;
   if (e.episode != null) r.episode = e.episode;
@@ -410,12 +412,13 @@ export function updateProgress(userId, type, tmdbId, patch) {
 
 // Guarda a posicao atual (segundos) para retomar a meio. Cria a entrada se nao
 // existir (ex.: utilizador saiu antes dos 5 min que o diario exige).
-export function setProgressPosition(userId, type, tmdbId, { position, duration, season, episode }) {
+export function setProgressPosition(userId, type, tmdbId, { position, duration, season, episode, provider }) {
   const r = findOrCreateProgress(userId, type, tmdbId);
   if (position != null) r.position = Math.max(0, Math.floor(position));
   if (duration != null) r.duration = Math.floor(duration);
   if (season != null) r.season = season;
   if (episode != null) r.episode = episode;
+  if (provider != null) r.provider = provider;
   if (!r.started_at) r.started_at = new Date().toISOString();
   if (!r.status || r.status === "finished") r.status = "watching";
   r.updated_at = new Date().toISOString();

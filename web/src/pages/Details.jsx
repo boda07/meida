@@ -63,6 +63,12 @@ export default function Details() {
   // episódio a que pertence, para só retomar no mesmo episódio).
   const [saved, setSaved] = useState(null); // { position, season, episode }
   const [startAt, setStartAt] = useState(null); // passado aos players (seg.)
+  // Restaura o provider guardado apenas na 1ª entrada do título (não volta a
+  // impor ao mudar de episódio/áudio durante a sessão — deixaria o user na mão).
+  const restoreProviderDone = useRef(null);
+  useEffect(() => {
+    restoreProviderDone.current = details ? `${details.type}:${details.id}` : null;
+  }, [details]);
   useEffect(() => {
     if (!user || !details) {
       setSaved(null);
@@ -82,9 +88,20 @@ export default function Details() {
               }
             : null
         );
+        // Restaura a fonte (provider) em que o user estava, para o "Continua a
+        // ver" abrir na mesma e não no 1º provider vivo. Só na 1ª entrada.
+        if (it?.provider && restoreProviderDone.current === `${details.type}:${details.id}`) {
+          restoreProviderDone.current = false;
+          wantedSourceRef.current = it.provider;
+          const match = embeds.find((e) => e.provider === it.provider);
+          if (match) {
+            setActive(match);
+            setPlayerIndex(embeds.findIndex((e) => e.provider === it.provider));
+          }
+        }
       })
       .catch(() => {});
-  }, [user, details]);
+  }, [user, details, embeds]);
 
   // startAt = posição do "Continua a ver" (?t=) ou a guardada, mas só quando o
   // episódio atual é o mesmo em que estivemos. Limpa ao trocar de episódio.
@@ -103,6 +120,7 @@ export default function Details() {
   }, [details, season, episode, saved]);
 
   // Player a reportar posição (nos players próprios: torrents/HLS/extratores).
+  const activeProviderRef = useRef(null); // último provider escolhido (ref, p/ não reiniciar timers)
   const reportPos = useCallback((position, duration) => {
     if (!user || !details) return;
     api
@@ -115,6 +133,7 @@ export default function Details() {
         episode: details.type === "anime" || details.type === "tv" ? episode : null,
         position,
         duration,
+        provider: activeProviderRef.current,
       })
       .catch(() => {});
   }, [user, details, season, episode]);
@@ -145,8 +164,17 @@ export default function Details() {
     );
   }
 
+// Mantém o ref do último provider escolhido a par do estado ativo.
+  useEffect(() => {
+    activeProviderRef.current = active?.provider ?? null;
+  }, [active]);
+
   // Separador inicial vindo das definições (providers/extract/torrents)
   const [mode, setMode] = useState(settings.defaultTab || "providers");
+  // Aúdio local do anime (só este título): null = segue as Definições,
+  // "sub"/"dub" = override só aqui (não muda as Definições globais).
+  const [localAudio, setLocalAudio] = useState(null);
+  const animeAudio = localAudio || settings.animeAudio;
   // O extrator de anime (player próprio) esta configurado no servidor?
   const [animeExtractorOn, setAnimeExtractorOn] = useState(false);
   // O "Sem anúncios" de filmes/series (Consumet) esta configurado? Se nao (sem
@@ -262,7 +290,7 @@ export default function Details() {
           mal: details.malId,
           anilist: details.anilistId,
           episode: details.isMovie ? 1 : episode,
-          audio: settings.animeAudio,
+          audio: animeAudio,
         })
         .then((d) => {
           setEmbeds(d.embeds);
@@ -286,7 +314,7 @@ export default function Details() {
       })
       .catch((e) => setError(e.message));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [details, season, episode, settings.animeAudio]);
+  }, [details, season, episode, animeAudio]);
 
   // Diário: só considera que estás a ver depois de 5 MINUTOS com uma fonte aberta
   // (assim abrir e fechar logo nao conta). 1x por episodio/sessao. O contador nao
@@ -301,12 +329,13 @@ export default function Details() {
     if (startedRef.current.has(key)) return;
     const t = setTimeout(() => {
       startedRef.current.add(key);
-      api
+api
         .progressStart({
           type: details.type,
           tmdbId: details.id,
           title: details.title,
           poster: details.poster,
+          provider: activeProviderRef.current,
           season: s,
           episode: ep,
         })
@@ -557,8 +586,27 @@ export default function Details() {
         </div>
       )}
 
-      {details.isAnime ? (
+{details.isAnime ? (
         <div className="watch">
+          <div className="anime-audio-bar">
+            <span className="muted" style={{ fontSize: 12 }}>
+              Áudio deste título:
+            </span>
+            <div className="mode-tabs" style={{ margin: 0 }}>
+              <button
+                className={animeAudio === "sub" ? "active" : ""}
+                onClick={() => setLocalAudio("sub")}
+              >
+                Legendado
+              </button>
+              <button
+                className={animeAudio === "dub" ? "active" : ""}
+                onClick={() => setLocalAudio("dub")}
+              >
+                Dobrado
+              </button>
+            </div>
+          </div>
           {(animeExtractorOn || details.imdbId) && (
             <div className="mode-tabs">
               <button
@@ -592,6 +640,7 @@ export default function Details() {
               episode={details.isMovie ? 1 : episode}
               startAt={startAt}
               onProgress={reportPos}
+              audio={animeAudio}
             />
           ) : mode === "torrents" && details.imdbId ? (
             <Torrents
@@ -601,7 +650,7 @@ export default function Details() {
               season={1}
               episode={details.isMovie ? 1 : episode}
               anime
-              defaultAudio={settings.animeAudio}
+              defaultAudio={animeAudio}
               startAt={startAt}
               onProgress={reportPos}
             />
@@ -632,9 +681,9 @@ export default function Details() {
             ) : (
               <p className="muted">A carregar fontes...</p>
             )}
-              <p className="muted" style={{ fontSize: 12, marginTop: 8 }}>
-                Fontes dedicadas de anime (sub/dub via MyAnimeList). Muda entre
-                legendado e dobrado nas Definições.
+<p className="muted" style={{ fontSize: 12, marginTop: 8 }}>
+                Fontes dedicadas de anime (sub/dub via MyAnimeList). O seletor de
+                áudio em cima só afeta este título.
               </p>
               {party?.active && (
                 <p className="muted" style={{ fontSize: 12, marginTop: 4 }}>

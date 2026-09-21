@@ -27,7 +27,7 @@ progressRouter.get("/progress/item", (req, res) => {
 
 // Comecou a ver (arranque + posicao atual).
 progressRouter.post("/progress/start", (req, res) => {
-  const { type, tmdbId, title, poster, season, episode } = req.body || {};
+  const { type, tmdbId, title, poster, season, episode, provider } = req.body || {};
   if (!type || !tmdbId) return res.status(400).json({ error: "faltam type e tmdbId" });
   res.json({
     item: startProgress({
@@ -36,6 +36,7 @@ progressRouter.post("/progress/start", (req, res) => {
       tmdbId: Number(tmdbId),
       title,
       poster,
+      provider: provider ?? null,
       season: season ?? null,
       episode: episode ?? null,
     }),
@@ -74,7 +75,7 @@ progressRouter.patch("/progress/item", (req, res) => {
 // Guarda a posicao atual (para retomar a meio de um episodio). Chamado com
 // frequencia pelo player; cria a entrada se ainda nao existir.
 progressRouter.post("/progress/position", (req, res) => {
-  const { type, tmdbId, position, duration, season, episode } = req.body || {};
+  const { type, tmdbId, position, duration, season, episode, provider } = req.body || {};
   if (!type || !tmdbId || position == null) {
     return res.status(400).json({ error: "faltam type, tmdbId e position" });
   }
@@ -84,6 +85,7 @@ progressRouter.post("/progress/position", (req, res) => {
       duration: duration != null ? Number(duration) : null,
       season: season != null ? Number(season) : null,
       episode: episode != null ? Number(episode) : null,
+      provider: provider ?? null,
     }),
   });
 });

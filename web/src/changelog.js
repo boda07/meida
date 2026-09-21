@@ -2,6 +2,14 @@
 // "o que mudou" depois de o utilizador atualizar a app. Mais recente em cima.
 export const CHANGELOG = [
   {
+    version: "1.1.1",
+    items: [
+      "Novo: nos animes, podes escolher entre \"Legendado\" e \"Dobrado\" logo na ficha do título (em cima, antes das fontes) — só para esse título, sem alterar as tuas Definições. Útil para veres um anime dobrado sem mudar o resto.",
+      "Corrigido: ao tocar em \"Continua a ver\", o título abria outra vez mas às vezes na fonte errada (a primeira disponível em vez da que estavas a usar). Agora a app lembra-se da fonte e abre a mesma.",
+      "Corrigido (telemóvel/tablet): os botões do seletor \"Legendado/Dobrado\" e das fontes ficavam todos juntos em ecrãs pequenos — agora quebram a linha e ficam bem espaçados.",
+    ],
+  },
+  {
     version: "1.1.0",
     items: [
       "Novo: Real-Debrid! Liga a tua conta nas Definições (pegando o teu token em real-debrid.com/apitoken). Os torrents que já estão na cache do Real-Debrid aparecem com um selo e dão para ver de imediato, sem descarregar nada no teu computador — o Real-Debrid descarrega e a app reproduz. Os que não estão na cache são adicionados e descarregam lá também.",

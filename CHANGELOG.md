@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.1.1
+
+### Anime: sub/dub por título
+- **Seletor local "Legendado"/"Dobrado"** (`web/src/pages/Details.jsx`): na ficha de anime, por cima das fontes. Estado local (`localAudio`) que faz override do `settings.animeAudio` **só para esse título** — as Definições ficam intactas. Aplica-se às Fontes em iframe (`audio=dub` na API), ao Torrents (`defaultAudio`) e ao "Sem anúncios" (`AnimeExtract.jsx` agora aceita prop `audio`). O `useEffect` de fontes depende de `animeAudio` para recarregar ao trocar.
+
+### "Continua a ver" restaura a fonte
+- **O provider é guardado no progresso** (`server/src/store.js` + `server/src/routes/progress.js`): `startProgress` e `setProgressPosition` aceitam `provider`, exposto em `toApiProgress` como `provider` (entradas antigas devolvem `null` — retrocompatível).
+- **Restauro na abertura** (`web/src/pages/Details.jsx`): ao entrar no título, `progressItem` devolve o provider guardado; `wantedSourceRef` + `setActive`/`setPlayerIndex` restauram a fonte (senão `pickDefault` caía no 1º provider vivo). Guardado só na 1ª entrada do título (`restoreProviderDone`) — não volta a impor ao mudar de episódio/áudio a meio da sessão.
+- `reportPos`/`progressStart` enviam `activeProviderRef.current` (ref do último provider escolhido, sem reiniciar o timer dos 5 min).
+
+### UI mobile
+- **`web/src/styles.css`**: no `@media (max-width:700px)`, `.anime-audio-bar` faz `flex-wrap` e os `.mode-tabs` (áudio + Fontes/Sem anúncios/Torrents) quebram linha com botões esticados a `flex: 1 1 auto` — deixam de ficar todos juntos.
+
 ## 1.1.0
 
 ### Real-Debrid (streaming instantâneo de torrents)

@@ -3474,6 +3474,22 @@ h2 {
   background: var(--bg-surface);
   border: 1px solid rgba(255, 255, 255, 0.07);
   margin-bottom: 18px;
+  align-items: center;
+}
+
+.anime-audio-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.anime-audio-bar .mode-tabs {
+  margin-bottom: 0;
+}
+
+.anime-audio-bar .mode-tabs button {
+  padding: 6px 16px;
 }
 
 .mode-tabs button {
@@ -3850,6 +3866,21 @@ h2 {
   }
   .nav-right {
     margin-left: 6px;
+  }
+  .anime-audio-bar {
+    flex-wrap: wrap;
+  }
+  .mode-tabs {
+    flex-wrap: wrap;
+    max-width: 100%;
+  }
+  .mode-tabs button {
+    flex: 1 1 auto;
+    padding: 8px 12px;
+  }
+  .anime-audio-bar .mode-tabs button {
+    flex: 1 1 auto;
+    padding: 8px 16px;
   }
 }
 
