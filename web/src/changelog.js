@@ -2,6 +2,12 @@
 // "o que mudou" depois de o utilizador atualizar a app. Mais recente em cima.
 export const CHANGELOG = [
   {
+    version: "1.1.3",
+    items: [
+      "Adicionado: no ecrã de erro \"Algo correu mal\", já tens um botão \"Voltar atrás\" para regressares à página anterior (ou ao início) — além do \"Recarregar\".",
+    ],
+  },
+  {
     version: "1.1.2",
     items: [
       "Corrigido: ao abrir a ficha de um título (série, filme ou anime), aparecia às vezes o ecrã de erro \"Algo correu mal — Recarrega para tentar de novo\" e nada carregava. Agora a ficha abre sempre correctamente.",

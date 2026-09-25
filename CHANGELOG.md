@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.1.3
+
+### Ecrã de erro mais útil
+- **`web/src/components/ErrorBoundary.jsx`**: além do "Recarregar", o ecrã "Algo correu mal" ganhou **"‹ Voltar atrás"** — usa `window.history.back()` quando há histórico, senão `location.assign("/")`.
+- **`web/src/styles.css`**: `.error-boundary-actions` (flex, wrap), botão "Voltar" com fundo subtil para se distinguir do "Recarregar" (accent).
+
+### Nota (não é código novo)
+- O crash "Algo correu mal" ao abrir títulos (incl. a nova temporada do Slime) era o `ReferenceError: Cannot access 'embeds' before initialization` da v1.1.1, já corrigido na v1.1.2. A 1.1.2 só precisa de reiniciar a app para aplicar.
+
 ## 1.1.2
 
 ### Corrigido: crash ao abrir a ficha de qualquer título

@@ -1431,6 +1431,19 @@ h2 {
   font-weight: 600;
   cursor: pointer;
 }
+.error-boundary-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.error-boundary-actions .btn {
+  margin-top: 0;
+}
+.error-boundary-actions .btn:first-child {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
 .error-boundary-detail {
   max-width: 90%;
   overflow: auto;

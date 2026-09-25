@@ -24,9 +24,28 @@ export default class ErrorBoundary extends Component {
           {this.props.dev && (
             <pre className="error-boundary-detail">{String(this.state.error)}</pre>
           )}
-          <button className="btn" onClick={() => window.location.reload()}>
-            Recarregar
-          </button>
+          <div className="error-boundary-actions">
+            <button
+              className="btn"
+              onClick={() => {
+                // Volta para a página anterior (ou para o início se nao houver).
+                if (
+                  typeof window !== "undefined" &&
+                  window.history &&
+                  window.history.length > 1
+                ) {
+                  window.history.back();
+                } else {
+                  window.location.assign("/");
+                }
+              }}
+            >
+              ‹ Voltar atrás
+            </button>
+            <button className="btn" onClick={() => window.location.reload()}>
+              Recarregar
+            </button>
+          </div>
         </div>
       );
     }
