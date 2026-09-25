@@ -2,6 +2,12 @@
 // "o que mudou" depois de o utilizador atualizar a app. Mais recente em cima.
 export const CHANGELOG = [
   {
+    version: "1.1.2",
+    items: [
+      "Corrigido: ao abrir a ficha de um título (série, filme ou anime), aparecia às vezes o ecrã de erro \"Algo correu mal — Recarrega para tentar de novo\" e nada carregava. Agora a ficha abre sempre correctamente.",
+    ],
+  },
+  {
     version: "1.1.1",
     items: [
       "Novo: nos animes, podes escolher entre \"Legendado\" e \"Dobrado\" logo na ficha do título (em cima, antes das fontes) — só para esse título, sem alterar as tuas Definições. Útil para veres um anime dobrado sem mudar o resto.",

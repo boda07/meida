@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.1.2
+
+### Corrigido: crash ao abrir a ficha de qualquer título
+- **Causa:** `ReferenceError: Cannot access 'embeds' before initialization` ao montar o `Details`. Na v1.1.1, o `useEffect` que restaura o provider do "Continua a ver" ficou **antes** das declarações `const [embeds, ...]` e `wantedSourceRef` — como o corpo e a lista de deps do efeito referenciam essas variáveis, o primeiro render lançava "temporal dead zone" e o `ErrorBoundary` mostrava "Algo correu mal" em **todas** as fichas (série, filme e anime).
+- **Fix** (`web/src/pages/Details.jsx`): o `useEffect` de `progressItem`/restauro do provider mudou para depois de `embeds`/`wantedSourceRef`/`activeProviderRef` estarem declarados. Comportamento inalterado (restaura a fonte na 1ª entrada do título, guardado por `restoreProviderDone`).
+- **Verificação:** reproduzido em headless (ErrorBoundary atingido para anime 223, 813, 30694, movie 603, tv 1399) → após o fix, `h2: "Se gostaste disto"` (conteúdo real) com build OK.
+
 ## 1.1.1
 
 ### Anime: sub/dub por título

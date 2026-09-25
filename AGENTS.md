@@ -24,6 +24,7 @@ Se for preciso uma release apenas textual (notas), usar `gh release create` **de
 
 - **Usar sempre a ferramenta `edit`** para alterar ficheiros. `Set-Content -replace` corrompe UTF-8 (partiu acentos/cedilhas no passado).
 - **Nunca fazer `git push` sem o utilizador pedir primeiro.** Sempre que o utilizador autorizar push, é **obrigatório** atualizar a versão (`package.json` → `web/src/changelog.js` → `CHANGELOG.md`) **e** publicar a release do Git (tag + `gh release` com binários via `npm run app:publish`).**
+- **A CHANGELOG DA APP (`web/src/changelog.js`) É OBRIGATÓRIA EM TODA A RELEASE.** Nunca fazer bump de versão / commit / release sem acrescentar a entrada dessa versão em `web/src/changelog.js` (linguagem simples, mais recente em cima) — é o que o utilizador vê no "o que mudou" dentro da app. Verificar SEMPRE que fica lá antes de qualquer push.
 
 ## Bugs corrigidos (não repetir erros)
 
@@ -42,4 +43,5 @@ Se for preciso uma release apenas textual (notas), usar `gh release create` **de
 - Redesenho de UI ("NOW/Sky") abandonado — `design_handoff_meida_home/` removido.
 - Sempre que terminar uma funcionalidade, perguntar se quer commit/push/release (ele costuma querer).
 - **NUNCA push sem autorização. Todo push ⇒ obrigatório bump de versão + tag + release no GitHub (com assets via `npm run app:publish`).**
+- **LEMBRAR SEMPRE:** em cada release, atualizar PRIMEIRO a changelog da app em `web/src/changelog.js` (ver "Regras de edição" acima — é obrigatório, não é opcional).
 - **Ideias e melhorias vivem em `IDEIAS.md`** (raiz). Quando o utilizador pedir ideias, consultar esse ficheiro primeiro e adicionar novas ideias lá. Marcar `[x]` as que forem feitas e mover para "Feitas".

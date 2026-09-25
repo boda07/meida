@@ -69,39 +69,8 @@ export default function Details() {
   useEffect(() => {
     restoreProviderDone.current = details ? `${details.type}:${details.id}` : null;
   }, [details]);
-  useEffect(() => {
-    if (!user || !details) {
-      setSaved(null);
-      return;
-    }
-    api
-      .progressItem(details.type, details.id)
-      .then((d) => {
-        const it = d.item;
-        setSaved(
-          it?.position
-            ? {
-                position: it.position,
-                duration: it.duration ?? null,
-                season: details.type === "tv" ? it.season : null,
-                episode: it.episode ?? null,
-              }
-            : null
-        );
-        // Restaura a fonte (provider) em que o user estava, para o "Continua a
-        // ver" abrir na mesma e não no 1º provider vivo. Só na 1ª entrada.
-        if (it?.provider && restoreProviderDone.current === `${details.type}:${details.id}`) {
-          restoreProviderDone.current = false;
-          wantedSourceRef.current = it.provider;
-          const match = embeds.find((e) => e.provider === it.provider);
-          if (match) {
-            setActive(match);
-            setPlayerIndex(embeds.findIndex((e) => e.provider === it.provider));
-          }
-        }
-      })
-      .catch(() => {});
-  }, [user, details, embeds]);
+  // (o useEffect do progressItem/provider está mais abaixo, depois de `embeds`
+  // e `wantedSourceRef` estarem declarados — antes lançava ReferenceError)
 
   // startAt = posição do "Continua a ver" (?t=) ou a guardada, mas só quando o
   // episódio atual é o mesmo em que estivemos. Limpa ao trocar de episódio.
@@ -168,6 +137,42 @@ export default function Details() {
   useEffect(() => {
     activeProviderRef.current = active?.provider ?? null;
   }, [active]);
+
+  // Lê o progresso guardado (posição + provider). Tem de correr depois de
+  // `embeds`/`wantedSourceRef` estarem declarados (usam-nos no corpo e nas deps).
+  useEffect(() => {
+    if (!user || !details) {
+      setSaved(null);
+      return;
+    }
+    api
+      .progressItem(details.type, details.id)
+      .then((d) => {
+        const it = d.item;
+        setSaved(
+          it?.position
+            ? {
+                position: it.position,
+                duration: it.duration ?? null,
+                season: details.type === "tv" ? it.season : null,
+                episode: it.episode ?? null,
+              }
+            : null
+        );
+        // Restaura a fonte (provider) em que o user estava, para o "Continua a
+        // ver" abrir na mesma e não no 1º provider vivo. Só na 1ª entrada.
+        if (it?.provider && restoreProviderDone.current === `${details.type}:${details.id}`) {
+          restoreProviderDone.current = false;
+          wantedSourceRef.current = it.provider;
+          const match = embeds.find((e) => e.provider === it.provider);
+          if (match) {
+            setActive(match);
+            setPlayerIndex(embeds.findIndex((e) => e.provider === it.provider));
+          }
+        }
+      })
+      .catch(() => {});
+  }, [user, details, embeds]);
 
   // Separador inicial vindo das definições (providers/extract/torrents)
   const [mode, setMode] = useState(settings.defaultTab || "providers");
