@@ -151,6 +151,24 @@ export const api = {
   me: () => get("/api/auth/me"),
   updateProfile: (patch) => patch_("/api/auth/profile", patch),
 
+  // Perfis e seguir utilizadores
+  userProfile: (username) => get(`/api/users/${encodeURIComponent(username)}`),
+  userLibrary: (username) => get(`/api/users/${encodeURIComponent(username)}/library`),
+  userLists: (username) => get(`/api/users/${encodeURIComponent(username)}/lists`),
+  userList: (username, id) => get(`/api/users/${encodeURIComponent(username)}/lists/${id}`),
+  userFollowers: (username) => get(`/api/users/${encodeURIComponent(username)}/followers`),
+  userFollowing: (username) => get(`/api/users/${encodeURIComponent(username)}/following`),
+  searchUsers: (q) => get("/api/users", { q }),
+  follow: (id) => post(`/api/users/${id}/follow`, {}),
+  unfollow: (id) => del(`/api/users/${id}/follow`),
+
+  // Comentarios por episodio
+  comments: (opts) => get("/api/comments", opts),
+  addComment: (entry) => post("/api/comments", entry),
+  deleteComment: (id) => del(`/api/comments/${id}`),
+  likeComment: (id) => post(`/api/comments/${id}/like`, {}),
+  unlikeComment: (id) => del(`/api/comments/${id}/like`),
+
   // Biblioteca pessoal
   library: () => get("/api/library", langParams()),
   libraryItem: (type, tmdb) => get("/api/library/item", { type, tmdb }),

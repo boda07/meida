@@ -21,9 +21,13 @@ const GRAPHQL = "https://graphql.anilist.co";
 const TOKEN_URL = "https://anilist.co/api/v1/oauth/token";
 
 let userId;
+// A base e' SQLite e o username tem UNIQUE: cada teste precisa do seu. A antiga
+// versao em JSON permitia duplicados (empurrava o utilizador para o array sem
+// olhar) e por isso o mesmo nome servia para todos.
+let seq = 0;
 beforeEach(() => {
   // Cria um utilizador real (setAnilistTokens precisa que o user existe).
-  const created = store.createUser("anilisttester", "hash");
+  const created = store.createUser(`anilisttester${++seq}`, "hash");
   userId = created.id;
   // Simula um user com refresh_token valido (access expirado -> forca refresh).
   store.setAnilistTokens(userId, {

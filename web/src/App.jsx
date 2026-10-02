@@ -18,6 +18,8 @@ const Login = lazy(() => import("./pages/Login.jsx"));
 const Settings = lazy(() => import("./pages/Settings.jsx"));
 const PickForMe = lazy(() => import("./pages/PickForMe.jsx"));
 const Compare = lazy(() => import("./pages/Compare.jsx"));
+const Users = lazy(() => import("./pages/Users.jsx"));
+const UserProfile = lazy(() => import("./pages/UserProfile.jsx"));
 
 export default function App() {
   return (
@@ -42,6 +44,8 @@ export default function App() {
               <Route path="/settings" element={<Settings />} />
               <Route path="/pick" element={<PickForMe />} />
               <Route path="/compare" element={<Compare />} />
+              <Route path="/users" element={<Users />} />
+              <Route path="/u/:username" element={<UserProfile />} />
               <Route path="/login" element={<Login mode="login" />} />
               <Route path="/register" element={<Login mode="register" />} />
             </Routes>

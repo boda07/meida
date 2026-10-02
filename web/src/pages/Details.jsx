@@ -16,6 +16,7 @@ import Extract from "../components/Extract.jsx";
 import AnimeExtract from "../components/AnimeExtract.jsx";
 import LoadingStatus from "../components/LoadingStatus.jsx";
 import MediaRow from "../components/MediaRow.jsx";
+import Comments from "../components/Comments.jsx";
 
 export default function Details() {
   const { type, id } = useParams();
@@ -813,6 +814,13 @@ api
           )}
         </div>
       )}
+
+      <Comments
+        type={details.type}
+        tmdbId={details.id}
+        season={details.type === "tv" ? season : null}
+        episode={details.type === "anime" || details.type === "tv" ? episode : null}
+      />
 
       {compareOpen && (
         <CompareRating details={details} onClose={() => setCompareOpen(false)} />

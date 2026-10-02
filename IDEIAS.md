@@ -20,7 +20,7 @@ para a secção "Feitas".
 
 ## Multi-utilizador / social
 - [ ] **Estadísticas comparadas com a média dos utilizadores** (rating global por título).
-- [ ] **Listas públicas/compartilháveis** (link para mostreres a tua biblioteca).
+- [x] **Listas públicas/compartilháveis** (link para mostreres a tua biblioteca) — perfis em `/u/:username` com biblioteca e listas, privacidade à escolha (público/privado), seguir utilizadores e pesquisa de pessoas (`/users`). Ver "Melhorias já feitas".
 
 ## Player / visual
 - [x] **Suporte Real-Debrid**: cola o token em Definições; os torrents em cache no RD reproduzem logo (o que faz o Stremio parecer "instantâneo"). Torrents sem cache caem para o WebTorrent local. Badge "⚡ Debrid" + filtro só cache + os instant ficam no topo. Rotas: `/api/debrid/*`.
@@ -47,3 +47,4 @@ para a secção "Feitas".
 
 ## Melhorias já feitas (para referência)
 - Compara as tuas notas (`/compare`), Comparar avaliação (`CompareRating`), Notas 0-100, export + import (JSON/CSV), gamificação (badges + streak), quick-add nos cartões, comparar com a comunidade.
+- Base de dados em **SQLite** (`node:sqlite`, zero dependências) com migrações; **perfis** (`/u/:username`), seguir utilizadores, pesquisa de pessoas (`/users`), **comentários por episódio** (respostas, gostos, minuto no vídeo), e **servidor remoto no desktop** (Electron 44, `node:sqlite` no Node 24).

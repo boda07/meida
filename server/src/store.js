@@ -1,296 +1,333 @@
-// Armazenamento simples em JSON (utilizadores + biblioteca). Sem dependencias
-// nativas nem node:sqlite — funciona em qualquer Node (sistema ou Electron).
-import { fileURLToPath } from "node:url";
-import { dirname, resolve } from "node:path";
-import { mkdirSync, readFileSync, writeFileSync, renameSync, copyFileSync, existsSync } from "node:fs";
+// Camada de dados (SQLite via node:sqlite, sem dependencias nativas).
+//
+// Este modulo expoe EXACTAMENTE as mesmas funcoes que a antiga versao em JSON,
+// com os mesmos nomes e os mesmos argumentos. E' deliberado: as rotas e os
+// servicos que importam daqui (auth, mal, anilist, letterboxd, debrid, progress,
+// library, achievements, export) nao mudaram uma linha.
+//
+// A unica diferenca de fundo: antes cada `save()` reescrevia o `data.json`
+// inteiro e a memoria era a fonte de verdade. Agora cada escrita e um INSERT ou
+// UPDATE indexado, o que permite varios utilizadores a escrever ao mesmo tempo
+// sem se sobrescreerem.
+import { db, tx } from "./db/index.js";
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-// No app empacotado, DB_DIR aponta para uma pasta gravavel; em dev usa server/data.
-const dataDir = process.env.DB_DIR
-  ? resolve(process.env.DB_DIR)
-  : resolve(__dirname, "../data");
-mkdirSync(dataDir, { recursive: true });
-const FILE = resolve(dataDir, "data.json");
-const TMP = FILE + ".tmp"; // escrita atomica: grava neste e faz rename para FILE
-const BAK = FILE + ".bak"; // snapshot de arranque (recuperacao de corrupcao)
-
-const EMPTY = { users: [], library: [], progress: [], lists: [], seq: { users: 0 } };
-
-function loadFile(path) {
-  return { ...EMPTY, ...JSON.parse(readFileSync(path, "utf8")) };
-}
-
-// Snapshot do ultimo estado bom ao arrancar, para recuperar se o FILE corromper
-// em tempo de execucao. Se faltar FILE (primeira vez) nao faz nada. Se so existir
-// BAK (FILE corrompido), recupera a partir do BAK.
-let data = { ...EMPTY };
-try {
-  if (existsSync(FILE)) {
-    const parsed = loadFile(FILE); // valida antes de tirar o snapshot
-    copyFileSync(FILE, BAK); // snapshot do ultimo estado bom ao arranque
-    data = parsed;
-  } else if (existsSync(BAK)) {
-    data = loadFile(BAK);
-  }
-} catch {
-  // FILE corrompido -> tenta o BAK de um arranque anterior bom; senao, limpo.
-  try {
-    data = existsSync(BAK) ? loadFile(BAK) : { ...EMPTY };
-  } catch {
-    data = { ...EMPTY };
-  }
-}
-
-// Migracao 0.9.9: a nota pessoal passou de 0-10 para 0-100. Multiplica os scores
-// antigos por 10 uma so vez (marcado em data.meta.scoreScale para nao repetir).
-if (data.meta?.scoreScale !== 100) {
-  for (const r of data.library) {
-    if (r.score != null) r.score = Math.round(Number(r.score) * 10);
-  }
-  data.meta = { ...(data.meta || {}), scoreScale: 100 };
-  save();
-}
-
-function save() {
-  // Escrita atomica: se o processo morrer a meio, o FILE antigo (inteiro) fica
-  // intacto — nunca fica truncado a meio. renameSync substitui atomicamente.
-  writeFileSync(TMP, JSON.stringify(data));
-  renameSync(TMP, FILE);
-  // Backup quase em tempo real: se o FILE se corromper mais tarde, o BAK tem o
-  // ultimo estado bom (a copy e barata — JSON pequeno, so em acoes do jogador).
-  try {
-    copyFileSync(FILE, BAK);
-  } catch {
-    // falha do backup nao pode bloquear a gravacao principal
-  }
-}
+const now = () => new Date().toISOString();
 
 /* ===== Utilizadores ===== */
 export function createUser(username, passwordHash) {
-  const id = ++data.seq.users;
-  data.users.push({
-    id,
+  const created = now();
+  const r = db
+    .prepare("INSERT INTO users (username, password_hash, created_at) VALUES (?, ?, ?)")
+    .run(username, passwordHash, created);
+  return {
+    id: Number(r.lastInsertRowid),
     username,
-    password_hash: passwordHash,
     avatar: null,
-    created_at: new Date().toISOString(),
-  });
-  save();
-  return { id, username, avatar: null };
+    bio: null,
+    isPublic: true,
+    createdAt: created,
+  };
 }
 
+// Devolve a linha crua (com password_hash) — e' o que o login usa para
+// comparar o bcrypt. Nao usar fora do auth.
 export function getUserByUsername(username) {
-  return data.users.find((u) => u.username === username) || null;
+  const r = db.prepare("SELECT * FROM users WHERE username = ?").get(username);
+  return r ? { ...r } : null;
+}
+
+// Perfil publico (sem password_hash): vai para o token, para /auth/me e para a
+// area social. Inclui a privacidade porque e' o proprio utilizador que a define.
+function toProfile(r) {
+  return {
+    id: r.id,
+    username: r.username,
+    avatar: r.avatar ?? null,
+    bio: r.bio ?? null,
+    isPublic: Boolean(r.is_public),
+    createdAt: r.created_at,
+  };
 }
 
 export function getUserById(id) {
-  const u = data.users.find((x) => x.id === id);
-  return u ? { id: u.id, username: u.username, avatar: u.avatar ?? null } : null;
+  const r = db
+    .prepare("SELECT id, username, avatar, bio, is_public, created_at FROM users WHERE id = ?")
+    .get(id);
+  return r ? toProfile(r) : null;
+}
+
+export function getProfileByUsername(username) {
+  const r = db
+    .prepare("SELECT id, username, avatar, bio, is_public, created_at FROM users WHERE username = ?")
+    .get(username);
+  return r ? toProfile(r) : null;
 }
 
 export function setUserAvatar(id, avatar) {
-  const u = data.users.find((x) => x.id === id);
-  if (u) {
-    u.avatar = avatar;
-    save();
-  }
+  db.prepare("UPDATE users SET avatar = ? WHERE id = ?").run(avatar ?? null, id);
   return getUserById(id);
 }
 
-/* ===== Tokens do MyAnimeList (por utilizador) ===== */
-export function setMalTokens(id, tokens) {
-  const u = data.users.find((x) => x.id === id);
-  if (u) {
-    u.mal = tokens; // { accessToken, refreshToken, expiresAt, username } ou null
-    save();
+// Actualiza o perfil. So mexe nos campos presentes (undefined = nao mexer);
+// null limpa. `isPublic` decide se os outros podem ver a biblioteca.
+export function setUserProfile(id, patch) {
+  const cur = getUserById(id);
+  if (!cur) return null;
+  const avatar = patch.avatar !== undefined ? patch.avatar ?? null : cur.avatar;
+  const bio =
+    patch.bio !== undefined
+      ? patch.bio == null
+        ? null
+        : String(patch.bio).trim().slice(0, 300) || null
+      : cur.bio;
+  const isPublic = patch.isPublic !== undefined ? (patch.isPublic ? 1 : 0) : cur.isPublic ? 1 : 0;
+  db.prepare("UPDATE users SET avatar = ?, bio = ?, is_public = ? WHERE id = ?").run(
+    avatar,
+    bio,
+    isPublic,
+    id
+  );
+  return getUserById(id);
+}
+
+/* ===== Tokens de servicos externos ===== */
+// Antes cada um era uma funcao a parte repetida quatro vezes. Agora e' uma
+// tabela so; as funcoes ContinuAM separadas para os importadores nao mudarem.
+function setToken(id, provider, payload) {
+  db.prepare(
+    `INSERT INTO user_tokens (user_id, provider, payload, updated_at) VALUES (?, ?, ?, ?)
+     ON CONFLICT(user_id, provider) DO UPDATE SET
+       payload = excluded.payload, updated_at = excluded.updated_at`
+  ).run(id, provider, payload == null ? null : JSON.stringify(payload), now());
+}
+
+function getToken(id, provider) {
+  const r = db
+    .prepare("SELECT payload FROM user_tokens WHERE user_id = ? AND provider = ?")
+    .get(id, provider);
+  if (!r?.payload) return null;
+  try {
+    return JSON.parse(r.payload);
+  } catch {
+    return null;
   }
 }
 
+/* ===== Tokens do MyAnimeList (por utilizador) ===== */
+// { accessToken, refreshToken, expiresAt, username }
+export function setMalTokens(id, tokens) {
+  setToken(id, "mal", tokens);
+}
 export function getMalTokens(id) {
-  const u = data.users.find((x) => x.id === id);
-  return u?.mal || null;
+  return getToken(id, "mal");
 }
 
 /* ===== Tokens do AniList (por utilizador) ===== */
 export function setAnilistTokens(id, tokens) {
-  const u = data.users.find((x) => x.id === id);
-  if (u) {
-    u.anilist = tokens; // { accessToken, refreshToken, expiresAt, username } ou null
-    save();
-  }
+  setToken(id, "anilist", tokens);
 }
-
 export function getAnilistTokens(id) {
-  const u = data.users.find((x) => x.id === id);
-  return u?.anilist || null;
+  return getToken(id, "anilist");
 }
 
 /* ===== Letterboxd (por utilizador) ===== */
+// { username }
 export function setLetterboxd(id, lb) {
-  const u = data.users.find((x) => x.id === id);
-  if (u) {
-    u.letterboxd = lb; // { username } ou null
-    save();
-  }
+  setToken(id, "letterboxd", lb);
 }
-
 export function getLetterboxd(id) {
-  const u = data.users.find((x) => x.id === id);
-  return u?.letterboxd || null;
+  return getToken(id, "letterboxd");
 }
 
 /* ===== Real-Debrid (por utilizador) ===== */
+// { token }
 export function setDebrid(id, debrid) {
-  const u = data.users.find((x) => x.id === id);
-  if (u) {
-    u.debrid = debrid; // { token } ou null
-    save();
-  }
+  setToken(id, "debrid", debrid);
 }
-
 export function getDebrid(id) {
-  const u = data.users.find((x) => x.id === id);
-  return u?.debrid || null;
+  return getToken(id, "debrid");
 }
 
 /* ===== Biblioteca ===== */
+// `external_id` = id do TMDB para movie/tv, id do MAL para anime. A API
+// continua a expor isto como `tmdbId` (nome historico, usado em todo o lado).
+// `genres` e' um array guardado como JSON — o driver inclui a extensao json1,
+// por isso dava para indexar cada genero se um dia fizermos "titulos de acao".
+function parseGenres(g) {
+  if (!g) return [];
+  try {
+    const v = JSON.parse(g);
+    return Array.isArray(v) ? v : [];
+  } catch {
+    return [];
+  }
+}
+
 function toApi(r) {
   return {
-    tmdbId: r.tmdb_id,
+    tmdbId: r.external_id,
     type: r.media_type,
     title: r.title,
     titleEn: r.title_en ?? null, // anime: titulo em ingles
     titleRomaji: r.title_romaji ?? null, // anime: titulo em romaji
-    genres: r.genres ?? [], // generos/temas (para filtrar a lista)
+    genres: parseGenres(r.genres), // generos/temas (para filtrar a lista)
     poster: r.poster,
     watched: r.watched,
     watchlist: r.watchlist,
-    score: r.score, // nota pessoal (1-100)
+    score: r.score, // nota pessoal (0-100)
     rating: r.rating ?? null, // media da comunidade (MAL/TMDB)
     updatedAt: r.updated_at,
   };
 }
 
 export function listLibrary(userId) {
-  return data.library
-    .filter((r) => r.user_id === userId)
-    .sort((a, b) => (a.updated_at < b.updated_at ? 1 : -1))
-    .map(toApi);
+  return db
+    .prepare("SELECT * FROM library WHERE user_id = ? ORDER BY updated_at DESC")
+    .all(userId)
+    .map((r) => toApi(r));
 }
 
 export function getLibraryItem(userId, tmdbId, type) {
-  const r = data.library.find(
-    (x) => x.user_id === userId && x.tmdb_id === tmdbId && x.media_type === type
-  );
+  const r = db
+    .prepare("SELECT * FROM library WHERE user_id = ? AND external_id = ? AND media_type = ?")
+    .get(userId, tmdbId, type);
   return r ? toApi(r) : null;
 }
 
 // entry: { userId, tmdbId, type, title, poster, watched, watchlist, score }
+// Os campos opcionais so mexem quando vem um valor: sem o COALESCE, gravar so
+// a nota apagava o genero que ja la estava.
+// Todos os `?? null` sao obrigatorios: o driver do SQLite recusa `undefined`
+// (so aceita null, numero, string, bigint e Uint8Array), e o `poster`/`title`
+// podem nao vir em chamadas que so actualizam a nota.
 export function upsertLibrary(entry) {
-  let r = data.library.find(
-    (x) => x.user_id === entry.userId && x.tmdb_id === entry.tmdbId && x.media_type === entry.type
+  db.prepare(
+    `INSERT INTO library
+       (user_id, media_type, external_id, title, title_en, title_romaji, poster,
+        genres, watched, watchlist, score, rating, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+     ON CONFLICT(user_id, media_type, external_id) DO UPDATE SET
+       title        = excluded.title,
+       title_en     = COALESCE(excluded.title_en, library.title_en),
+       title_romaji = COALESCE(excluded.title_romaji, library.title_romaji),
+       poster       = excluded.poster,
+       genres       = COALESCE(excluded.genres, library.genres),
+       watched      = excluded.watched,
+       watchlist    = excluded.watchlist,
+       score        = excluded.score,
+       rating       = COALESCE(excluded.rating, library.rating),
+       updated_at   = excluded.updated_at`
+  ).run(
+    entry.userId,
+    entry.type,
+    entry.tmdbId,
+    entry.title ?? null,
+    entry.titleEn ?? null,
+    entry.titleRomaji ?? null,
+    entry.poster ?? null,
+    entry.genres === undefined ? null : JSON.stringify(entry.genres),
+    (entry.watched ? 1 : 0),
+    (entry.watchlist ? 1 : 0),
+    entry.score ?? null,
+    entry.rating ?? null,
+    now()
   );
-  if (!r) {
-    r = { user_id: entry.userId, tmdb_id: entry.tmdbId, media_type: entry.type };
-    data.library.push(r);
-  }
-  r.title = entry.title;
-  if (entry.titleEn !== undefined) r.title_en = entry.titleEn;
-  if (entry.titleRomaji !== undefined) r.title_romaji = entry.titleRomaji;
-  if (entry.genres !== undefined) r.genres = entry.genres;
-  if (entry.rating !== undefined) r.rating = entry.rating;
-  r.poster = entry.poster;
-  r.watched = entry.watched;
-  r.watchlist = entry.watchlist;
-  r.score = entry.score;
-  r.updated_at = new Date().toISOString();
-  save();
 }
 
 // Versão "safe" de upsert para imports: só actualiza campos explicitamente
-// fornecidos (não apaga notas/visto que o ficheiro de export não traz). Usa a
-// data de atualização do ficheiro (se houver) para preservar a ordem original.
+// fornecidos (não apaga notas/visto que o ficheiro de export não traz). Preserva
+// a data de atualização do ficheiro (se houver) para manter a ordem original.
 export function upsertLibrarySafe(entry) {
-  let r = data.library.find(
-    (x) => x.user_id === entry.userId && x.tmdb_id === entry.tmdbId && x.media_type === entry.type
+  // watched/watchlist sao NOT NULL e o SQLite valida isso ANTES de resolver o
+  // conflito do ON CONFLICT, portanto nao se pode mandar NULL aqui. Quando o
+  // import nao traz a flag, escreve-se o valor que ja estava em vez de null
+  // (num item novo e 0). O mesmo vale para o updated_at de um item que ja
+  // existe: fica o antigo, para a ordem do import nao se desfazer.
+  const ex = db
+    .prepare("SELECT watched, watchlist, updated_at FROM library WHERE user_id = ? AND media_type = ? AND external_id = ?")
+    .get(entry.userId, entry.type, entry.tmdbId);
+  const flag = (v, atual) => (v != null ? (v ? 1 : 0) : atual ?? 0);
+  const updatedAt = entry.updatedAt != null ? entry.updatedAt : ex?.updated_at ?? now();
+
+  db.prepare(
+    `INSERT INTO library
+       (user_id, media_type, external_id, title, title_en, title_romaji, poster,
+        genres, watched, watchlist, score, rating, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+     ON CONFLICT(user_id, media_type, external_id) DO UPDATE SET
+       title        = COALESCE(excluded.title, library.title),
+       title_en     = COALESCE(excluded.title_en, library.title_en),
+       title_romaji = COALESCE(excluded.title_romaji, library.title_romaji),
+       poster       = COALESCE(excluded.poster, library.poster),
+       genres       = COALESCE(excluded.genres, library.genres),
+       watched      = excluded.watched,
+       watchlist    = excluded.watchlist,
+       score        = COALESCE(excluded.score, library.score),
+       rating       = COALESCE(excluded.rating, library.rating),
+       updated_at   = excluded.updated_at`
+  ).run(
+    entry.userId,
+    entry.type,
+    entry.tmdbId,
+    entry.title ?? null,
+    entry.titleEn ?? null,
+    entry.titleRomaji ?? null,
+    entry.poster ?? null,
+    Array.isArray(entry.genres) ? JSON.stringify(entry.genres) : null,
+    flag(entry.watched, ex?.watched),
+    flag(entry.watchlist, ex?.watchlist),
+    entry.score != null ? Number(entry.score) : null,
+    entry.rating != null ? Number(entry.rating) : null,
+    updatedAt
   );
-  const existed = !!r;
-  if (!r) {
-    r = { user_id: entry.userId, tmdb_id: entry.tmdbId, media_type: entry.type };
-    data.library.push(r);
-  }
-  if (entry.title != null) r.title = entry.title;
-  if (entry.titleEn !== undefined && entry.titleEn != null) r.title_en = entry.titleEn;
-  if (entry.titleRomaji !== undefined && entry.titleRomaji != null) r.title_romaji = entry.titleRomaji;
-  if (Array.isArray(entry.genres)) r.genres = entry.genres;
-  if (entry.poster != null) r.poster = entry.poster;
-  // watched / watchlist: só actualiza se explicitamente boolean ou número.
-  if (entry.watched != null) r.watched = entry.watched ? 1 : 0;
-  if (entry.watchlist != null) r.watchlist = entry.watchlist ? 1 : 0;
-  // score: só actualiza se houver valor (não apaga a nota existente por import vazio).
-  if (entry.score != null) r.score = Number(entry.score);
-  if (entry.rating != null) r.rating = Number(entry.rating);
-  // Preserva updated_at do ficheiro (ordem original); se novo item, usa agora.
-  if (entry.updatedAt != null) r.updated_at = entry.updatedAt;
-  else if (!existed) r.updated_at = new Date().toISOString();
-  save();
-  return r;
+  return true;
 }
-// "adicionados recentemente"). Usado no backfill de itens antigos.
+
+// Atualiza so a media da comunidade, sem mexer no updated_at. Usado no
+// backfill de itens antigos.
 export function setLibraryRating(userId, tmdbId, type, rating) {
-  const r = data.library.find(
-    (x) => x.user_id === userId && x.tmdb_id === tmdbId && x.media_type === type
-  );
-  if (r) {
-    r.rating = rating;
-    save();
-  }
+  db.prepare(
+    "UPDATE library SET rating = ? WHERE user_id = ? AND external_id = ? AND media_type = ?"
+  ).run(rating ?? null, userId, tmdbId, type);
 }
 
 // Atualiza so os generos, sem mexer no updated_at. Usado no backfill de itens
 // antigos (ex.: filmes importados do Letterboxd que vieram sem generos).
 export function setLibraryGenres(userId, tmdbId, type, genres) {
-  const r = data.library.find(
-    (x) => x.user_id === userId && x.tmdb_id === tmdbId && x.media_type === type
-  );
-  if (r && Array.isArray(genres) && genres.length) {
-    r.genres = genres;
-    save();
-  }
+  if (!Array.isArray(genres) || !genres.length) return;
+  db.prepare(
+    "UPDATE library SET genres = ? WHERE user_id = ? AND external_id = ? AND media_type = ?"
+  ).run(JSON.stringify(genres), userId, tmdbId, type);
 }
 
 export function deleteLibrary(userId, tmdbId, type) {
-  data.library = data.library.filter(
-    (x) => !(x.user_id === userId && x.tmdb_id === tmdbId && x.media_type === type)
-  );
-  save();
+  db.prepare(
+    "DELETE FROM library WHERE user_id = ? AND external_id = ? AND media_type = ?"
+  ).run(userId, tmdbId, type);
 }
 
 // Limpa a watchlist (flag) por tipo ("movie"|"tv"|"anime"|"all"). Itens que
 // fiquem sem nada (sem visto/nota) sao removidos; os vistos/avaliados ficam.
 export function clearWatchlist(userId, type) {
-  let cleared = 0;
-  for (const r of data.library) {
-    if (r.user_id !== userId) continue;
-    if (type !== "all" && r.media_type !== type) continue;
-    if (!r.watchlist) continue;
-    r.watchlist = 0;
-    cleared++;
-  }
-  data.library = data.library.filter(
-    (r) => !(r.user_id === userId && !r.watched && !r.watchlist && r.score == null)
-  );
-  save();
-  return cleared;
+  return tx(() => {
+    const where = type === "all" ? "user_id = ?" : "user_id = ? AND media_type = ?";
+    const params = type === "all" ? [userId] : [userId, type];
+    const cleared = db
+      .prepare(`UPDATE library SET watchlist = 0 WHERE ${where} AND watchlist = 1`)
+      .run(...params).changes;
+    db.prepare(
+      `DELETE FROM library
+       WHERE user_id = ? AND watched = 0 AND watchlist = 0 AND score IS NULL`
+    ).run(userId);
+    return cleared;
+  });
 }
 
-/* ===== Progresso / Diario =====
-   Uma linha por titulo (movie/tv/anime). Guarda quando comecou e quando acabou
-   de ver, e a posicao atual (temporada/episodio) para o "Continua a ver". */
+/* ===== Progresso / Diario ===== */
 function toApiProgress(r) {
   return {
-    type: r.type,
-    tmdbId: r.tmdb_id,
+    type: r.media_type,
+    tmdbId: r.external_id,
     title: r.title ?? null,
     poster: r.poster ?? null,
     season: r.season ?? null,
@@ -306,220 +343,473 @@ function toApiProgress(r) {
 }
 
 export function listProgress(userId) {
-  return data.progress
-    .filter((r) => r.user_id === userId)
-    .sort((a, b) => (a.updated_at < b.updated_at ? 1 : -1))
-    .map(toApiProgress);
+  return db
+    .prepare("SELECT * FROM progress WHERE user_id = ? ORDER BY updated_at DESC")
+    .all(userId)
+    .map((r) => toApiProgress(r));
 }
 
 export function getProgress(userId, type, tmdbId) {
-  const r = data.progress.find(
-    (x) => x.user_id === userId && x.type === type && x.tmdb_id === tmdbId
-  );
+  const r = db
+    .prepare("SELECT * FROM progress WHERE user_id = ? AND media_type = ? AND external_id = ?")
+    .get(userId, type, tmdbId);
   return r ? toApiProgress(r) : null;
 }
 
-function findOrCreateProgress(userId, type, tmdbId) {
-  let r = data.progress.find(
-    (x) => x.user_id === userId && x.type === type && x.tmdb_id === tmdbId
-  );
-  if (!r) {
-    r = { user_id: userId, type, tmdb_id: tmdbId };
-    data.progress.push(r);
+// Garante que a linha existe. Chamar dentro de uma transaccao.
+function ensureProgressRow(userId, type, tmdbId) {
+  db.prepare(
+    `INSERT INTO progress (user_id, media_type, external_id, updated_at)
+     VALUES (?, ?, ?, ?)
+     ON CONFLICT(user_id, media_type, external_id) DO NOTHING`
+  ).run(userId, type, tmdbId, now());
+}
+
+function readProgress(userId, type, tmdbId) {
+  const r = db
+    .prepare("SELECT * FROM progress WHERE user_id = ? AND media_type = ? AND external_id = ?")
+    .get(userId, type, tmdbId);
+  return toApiProgress(r);
+}
+
+// Monta um UPDATE com as colunas que o patch traz, saltando valores undefined.
+// E' o que permite distinguir as tres situations:
+//   campo ausente / undefined -> nao mexe
+//   campo a null              -> limpa
+//   campo com valor           -> escreve
+function patchProgress(userId, type, tmdbId, patch) {
+  const COLS = [
+    ["title", "title"],
+    ["poster", "poster"],
+    ["provider", "provider"],
+    ["season", "season"],
+    ["episode", "episode"],
+    ["position", "position"],
+    ["duration", "duration"],
+    ["startedAt", "started_at"],
+    ["finishedAt", "finished_at"],
+    ["status", "status"],
+  ];
+  const cols = [];
+  const params = [];
+  for (const [key, col] of COLS) {
+    if (patch[key] !== undefined) {
+      cols.push(`${col} = ?`);
+      params.push(patch[key]);
+    }
   }
-  return r;
+  if (!cols.length) return;
+  cols.push("updated_at = ?");
+  params.push(now(), userId, type, tmdbId);
+  db.prepare(
+    `UPDATE progress SET ${cols.join(", ")}
+     WHERE user_id = ? AND media_type = ? AND external_id = ?`
+  ).run(...params);
 }
 
 // Inicio: regista o arranque (so a 1a vez ou num recomeco) e a posicao atual.
 // Ao mudar de episodio, limpa a posicao guardada (para nao retomar no meio do
 // episodio anterior); se for o mesmo episodio, mantem-na (retoma a meio).
 export function startProgress(e) {
-  const r = findOrCreateProgress(e.userId, e.type, e.tmdbId);
-  if (e.title != null) r.title = e.title;
-  if (e.poster != null) r.poster = e.poster;
-  if (e.provider != null) r.provider = e.provider;
-  const sameEpisode = r.season === (e.season ?? null) && r.episode === (e.episode ?? null);
-  if (e.season != null) r.season = e.season;
-  if (e.episode != null) r.episode = e.episode;
-  if (!sameEpisode) r.position = null;
-  if (!r.started_at || r.status === "finished") {
-    r.started_at = new Date().toISOString();
-    r.finished_at = null;
-  }
-  r.status = "watching";
-  r.updated_at = new Date().toISOString();
-  save();
-  return toApiProgress(r);
+  return tx(() => {
+    // Garante a linha ANTES de ler: o ON CONFLICT DO NOTHING nao sobrescreve
+    // nada, por isso o estado antigo (season/episode/position) fica intacto.
+    ensureProgressRow(e.userId, e.type, e.tmdbId);
+    const cur = readProgress(e.userId, e.type, e.tmdbId);
+    const sameEpisode = cur.season === (e.season ?? null) && cur.episode === (e.episode ?? null);
+    const startedAt = !cur.startedAt || cur.status === "finished" ? now() : cur.startedAt;
+
+    patchProgress(e.userId, e.type, e.tmdbId, {
+      title: e.title,
+      poster: e.poster,
+      provider: e.provider,
+      season: e.season,
+      episode: e.episode,
+      // A posicao so se mantem se continuamos no mesmo episodio.
+      position: sameEpisode ? cur.position : null,
+      startedAt,
+      finishedAt: null,
+      status: "watching",
+    });
+    return readProgress(e.userId, e.type, e.tmdbId);
+  });
 }
 
 // Fim: marca acabado. Para episodicos com proximo episodio, avanca a posicao e
 // mantem "a ver" (para continuar no episodio seguinte).
 export function finishProgress(e) {
-  const r = findOrCreateProgress(e.userId, e.type, e.tmdbId);
-  if (e.title != null) r.title = e.title;
-  if (e.poster != null) r.poster = e.poster;
-  if (!r.started_at) r.started_at = new Date().toISOString();
-  r.finished_at = new Date().toISOString();
-  r.position = null; // episodio acabado: nada para retomar
-  if (e.nextSeason != null && e.nextEpisode != null) {
-    r.season = e.nextSeason;
-    r.episode = e.nextEpisode;
-    r.status = "watching";
-  } else {
-    if (e.season != null) r.season = e.season;
-    if (e.episode != null) r.episode = e.episode;
-    r.status = "finished";
-  }
-  r.updated_at = new Date().toISOString();
-  save();
-  return toApiProgress(r);
+  return tx(() => {
+    ensureProgressRow(e.userId, e.type, e.tmdbId);
+    const cur = readProgress(e.userId, e.type, e.tmdbId);
+    const hasNext = e.nextSeason != null && e.nextEpisode != null;
+    patchProgress(e.userId, e.type, e.tmdbId, {
+      title: e.title,
+      poster: e.poster,
+      startedAt: cur.startedAt ?? now(),
+      finishedAt: now(),
+      position: null,
+      season: hasNext ? e.nextSeason : e.season,
+      episode: hasNext ? e.nextEpisode : e.episode,
+      status: hasNext ? "watching" : "finished",
+    });
+    return readProgress(e.userId, e.type, e.tmdbId);
+  });
 }
 
 // Importa uma entrada do diario com datas explicitas (MAL / Letterboxd). Usa a
 // data de fim (ou inicio) como updated_at para o diario ficar por ordem de visto.
 export function importProgress(e) {
-  const r = findOrCreateProgress(e.userId, e.type, e.tmdbId);
-  if (e.title != null) r.title = e.title;
-  if (e.poster != null) r.poster = e.poster;
-  if (e.season != null) r.season = e.season;
-  if (e.episode != null) r.episode = e.episode;
-  // `!== undefined` (em vez de truthy): permite limpar uma data passando null
-  // explicito — ex.: reimportar do MAL um fim sem dia exato corrige o que antes
-  // ficou com o dia 1 inventado. (O Letterboxd nunca passa startedAt, fica intacto.)
-  if (e.startedAt !== undefined) r.started_at = e.startedAt;
-  if (e.finishedAt !== undefined) r.finished_at = e.finishedAt;
-  r.status = e.status || (e.finishedAt ? "finished" : "watching");
-  r.updated_at = e.finishedAt || e.startedAt || r.updated_at || new Date().toISOString();
-  save();
-  return toApiProgress(r);
+  return tx(() => {
+    ensureProgressRow(e.userId, e.type, e.tmdbId);
+    // startedAt/finishedAt so entram se vierem no import. Passar null limpa a
+    // data (ex.: reimportar do MAL um fim sem dia exato corrige o dia 1 que
+    // antes ficou inventado). O Letterboxd nunca passa startedAt: fica intacto.
+    patchProgress(e.userId, e.type, e.tmdbId, {
+      title: e.title,
+      poster: e.poster,
+      season: e.season,
+      episode: e.episode,
+      startedAt: e.startedAt,
+      finishedAt: e.finishedAt,
+      status: e.status || (e.finishedAt ? "finished" : "watching"),
+    });
+    db.prepare(
+      `UPDATE progress SET updated_at = ?
+       WHERE user_id = ? AND media_type = ? AND external_id = ?`
+    ).run(e.finishedAt || e.startedAt || now(), e.userId, e.type, e.tmdbId);
+    return readProgress(e.userId, e.type, e.tmdbId);
+  });
 }
 
 // Edicao manual de uma entrada do diario (estado, datas, posicao).
 export function updateProgress(userId, type, tmdbId, patch) {
-  const r = data.progress.find(
-    (x) => x.user_id === userId && x.type === type && x.tmdb_id === tmdbId
-  );
-  if (!r) return null;
-  if (patch.status !== undefined) r.status = patch.status;
-  if (patch.startedAt !== undefined) r.started_at = patch.startedAt;
-  if (patch.finishedAt !== undefined) r.finished_at = patch.finishedAt;
-  if (patch.season !== undefined) r.season = patch.season;
-  if (patch.episode !== undefined) r.episode = patch.episode;
-  r.updated_at = new Date().toISOString();
-  save();
-  return toApiProgress(r);
+  return tx(() => {
+    ensureProgressRow(userId, type, tmdbId);
+    patchProgress(userId, type, tmdbId, patch);
+    return readProgress(userId, type, tmdbId);
+  });
 }
 
 // Guarda a posicao atual (segundos) para retomar a meio. Cria a entrada se nao
 // existir (ex.: utilizador saiu antes dos 5 min que o diario exige).
 export function setProgressPosition(userId, type, tmdbId, { position, duration, season, episode, provider }) {
-  const r = findOrCreateProgress(userId, type, tmdbId);
-  if (position != null) r.position = Math.max(0, Math.floor(position));
-  if (duration != null) r.duration = Math.floor(duration);
-  if (season != null) r.season = season;
-  if (episode != null) r.episode = episode;
-  if (provider != null) r.provider = provider;
-  if (!r.started_at) r.started_at = new Date().toISOString();
-  if (!r.status || r.status === "finished") r.status = "watching";
-  r.updated_at = new Date().toISOString();
-  save();
-  return toApiProgress(r);
+  return tx(() => {
+    ensureProgressRow(userId, type, tmdbId);
+    const cur = readProgress(userId, type, tmdbId);
+    patchProgress(userId, type, tmdbId, {
+      season,
+      episode,
+      provider,
+      // `position`/`duration` so mexem quando vem valor (como no JSON antigo,
+      // onde um undefined nao apagava nada).
+      position: position != null ? Math.max(0, Math.floor(position)) : undefined,
+      duration: duration != null ? Math.floor(duration) : undefined,
+      startedAt: cur.startedAt ?? now(),
+      status: !cur.status || cur.status === "finished" ? "watching" : cur.status,
+    });
+    return readProgress(userId, type, tmdbId);
+  });
 }
 
 export function deleteProgress(userId, type, tmdbId) {
-  data.progress = data.progress.filter(
-    (x) => !(x.user_id === userId && x.type === type && x.tmdb_id === tmdbId)
-  );
-  save();
+  db.prepare(
+    "DELETE FROM progress WHERE user_id = ? AND media_type = ? AND external_id = ?"
+  ).run(userId, type, tmdbId);
 }
 
 /* ===== Listas personalizadas =====
-   Uma lista por utilizador: { id, name, items: [{ tmdbId, type, title, poster,
-   addedAt }] }. As listas guardam titulo/cartaz no momento em que o titulo foi
-   adicionado (nao precisa de re-pedir ao TMDB para mostrar a lista). */
-function toApiList(l) {
-  return {
-    id: l.id,
-    name: l.name,
-    createdAt: l.created_at,
-    count: (l.items || []).length,
-  };
+   Uma lista por utilizador. Os itens guardam titulo/cartaz no momento em que
+   foram adicionados (nao precisa de re-pedir ao TMDB para mostrar a lista). */
+function toApiList(l, count) {
+  return { id: l.id, name: l.name, createdAt: l.created_at, count };
 }
 
 export function listLists(userId) {
-  return data.lists
-    .filter((l) => l.user_id === userId)
-    .sort((a, b) => (a.created_at < b.created_at ? 1 : -1))
-    .map(toApiList);
+  return db
+    .prepare(
+      `SELECT l.*, (SELECT COUNT(*) FROM list_items WHERE list_id = l.id) AS n
+       FROM lists l WHERE l.user_id = ? ORDER BY l.created_at DESC`
+    )
+    .all(userId)
+    .map((l) => toApiList(l, l.n));
 }
 
 export function getList(userId, id) {
-  const l = data.lists.find((x) => x.user_id === userId && x.id === id);
+  const l = db.prepare("SELECT * FROM lists WHERE user_id = ? AND id = ?").get(userId, id);
   if (!l) return null;
-  return {
-    id: l.id,
-    name: l.name,
-    createdAt: l.created_at,
-    items: (l.items || [])
-      .map((i) => ({
-        tmdbId: i.tmdb_id,
-        type: i.type,
-        title: i.title ?? null,
-        poster: i.poster ?? null,
-        addedAt: i.added_at ?? null,
-      }))
-      .sort((a, b) => (a.addedAt < b.addedAt ? 1 : -1)),
-  };
+  const items = db
+    .prepare("SELECT * FROM list_items WHERE list_id = ? ORDER BY added_at DESC")
+    .all(id)
+    .map((i) => ({
+      tmdbId: i.external_id,
+      type: i.media_type,
+      title: i.title ?? null,
+      poster: i.poster ?? null,
+      addedAt: i.added_at ?? null,
+    }));
+  return { id: l.id, name: l.name, createdAt: l.created_at, items };
 }
 
 export function createList(userId, name) {
-  data.seq.lists = (data.seq.lists || 0) + 1;
-  const id = data.seq.lists;
-  const l = { id, user_id: userId, name, created_at: new Date().toISOString(), items: [] };
-  data.lists.push(l);
-  save();
-  return toApiList(l);
+  const r = db
+    .prepare("INSERT INTO lists (user_id, name, created_at) VALUES (?, ?, ?)")
+    .run(userId, name, now());
+  return toApiList({ id: Number(r.lastInsertRowid), name, created_at: now() }, 0);
 }
 
 export function renameList(userId, id, name) {
-  const l = data.lists.find((x) => x.user_id === userId && x.id === id);
+  const l = db.prepare("SELECT * FROM lists WHERE user_id = ? AND id = ?").get(userId, id);
   if (!l) return null;
-  l.name = name;
-  save();
-  return toApiList(l);
+  db.prepare("UPDATE lists SET name = ? WHERE id = ?").run(name, id);
+  const n = db.prepare("SELECT COUNT(*) c FROM list_items WHERE list_id = ?").get(id).c;
+  return toApiList({ ...l, name }, n);
 }
 
 export function deleteList(userId, id) {
-  const before = data.lists.length;
-  data.lists = data.lists.filter((x) => !(x.user_id === userId && x.id === id));
-  save();
-  return data.lists.length < before;
+  const r = db.prepare("DELETE FROM lists WHERE user_id = ? AND id = ?").run(userId, id);
+  return r.changes > 0;
 }
 
 export function addListTitle(userId, listId, { tmdbId, type, title, poster }) {
-  const l = data.lists.find((x) => x.user_id === userId && x.id === listId);
+  const l = db.prepare("SELECT id FROM lists WHERE user_id = ? AND id = ?").get(userId, listId);
   if (!l) return null;
-  l.items = l.items || [];
-  if (!l.items.some((i) => i.tmdb_id === tmdbId && i.type === type)) {
-    l.items.push({
-      tmdb_id: tmdbId,
-      type,
-      title: title ?? null,
-      poster: poster ?? null,
-      added_at: new Date().toISOString(),
-    });
-    save();
-  }
+  db.prepare(
+    `INSERT INTO list_items (list_id, media_type, external_id, title, poster, added_at)
+     VALUES (?, ?, ?, ?, ?, ?)
+     ON CONFLICT(list_id, media_type, external_id) DO NOTHING`
+  ).run(listId, type, tmdbId, title ?? null, poster ?? null, now());
   return getList(userId, listId);
 }
 
 export function removeListTitle(userId, listId, tmdbId, type) {
-  const l = data.lists.find((x) => x.user_id === userId && x.id === listId);
+  const l = db.prepare("SELECT id FROM lists WHERE user_id = ? AND id = ?").get(userId, listId);
   if (!l) return false;
-  const before = (l.items || []).length;
-  l.items = (l.items || []).filter(
-    (i) => !(i.tmdb_id === tmdbId && i.type === type)
-  );
-  save();
-  return (l.items || []).length < before;
+  const r = db
+    .prepare("DELETE FROM list_items WHERE list_id = ? AND external_id = ? AND media_type = ?")
+    .run(listId, tmdbId, type);
+  return r.changes > 0;
+}
+
+/* ===== Seguir utilizadores / perfis =====
+   Cada linha de `follows` e' uma ligacao. O CHECK da tabela impede seguir-se a
+   si proprio; aqui voltamos a validar para devolver um erro claro em vez de
+   deixar o SQLite explodir. */
+
+function toUserCard(u) {
+  return { id: u.id, username: u.username, avatar: u.avatar ?? null };
+}
+
+export function followUser(followerId, followeeId) {
+  if (Number(followerId) === Number(followeeId)) return { ok: false, error: "self" };
+  if (!getUserById(followeeId)) return { ok: false, error: "notfound" };
+  db.prepare(
+    `INSERT INTO follows (follower_id, followee_id, created_at) VALUES (?, ?, ?)
+     ON CONFLICT(follower_id, followee_id) DO NOTHING`
+  ).run(followerId, followeeId, now());
+  return { ok: true };
+}
+
+export function unfollowUser(followerId, followeeId) {
+  const r = db
+    .prepare("DELETE FROM follows WHERE follower_id = ? AND followee_id = ?")
+    .run(followerId, followeeId);
+  return { ok: true, removed: r.changes > 0 };
+}
+
+export function isFollowing(followerId, followeeId) {
+  if (!followerId) return false;
+  const r = db
+    .prepare("SELECT 1 FROM follows WHERE follower_id = ? AND followee_id = ?")
+    .get(followerId, followeeId);
+  return Boolean(r);
+}
+
+export function followCounts(userId) {
+  return {
+    followers: db.prepare("SELECT COUNT(*) c FROM follows WHERE followee_id = ?").get(userId).c,
+    following: db.prepare("SELECT COUNT(*) c FROM follows WHERE follower_id = ?").get(userId).c,
+  };
+}
+
+export function listFollowers(userId) {
+  return db
+    .prepare(
+      `SELECT u.id, u.username, u.avatar FROM follows f
+       JOIN users u ON u.id = f.follower_id
+       WHERE f.followee_id = ? ORDER BY f.created_at DESC`
+    )
+    .all(userId)
+    .map(toUserCard);
+}
+
+export function listFollowing(userId) {
+  return db
+    .prepare(
+      `SELECT u.id, u.username, u.avatar FROM follows f
+       JOIN users u ON u.id = f.followee_id
+       WHERE f.follower_id = ? ORDER BY f.created_at DESC`
+    )
+    .all(userId)
+    .map(toUserCard);
+}
+
+export function searchUsers(query, limit = 20) {
+  const q = String(query || "").trim();
+  if (!q) return [];
+  return db
+    .prepare("SELECT id, username, avatar FROM users WHERE username LIKE ? ORDER BY username LIMIT ?")
+    .all(`%${q}%`, Math.max(1, Math.min(50, Number(limit) || 20)))
+    .map(toUserCard);
+}
+
+// Regra de privacidade: perfil publico -> todos veem; privado -> so o proprio.
+// (Seguir nao da' acesso; quem quer partilhar poem o perfil publico.)
+export function canViewProfile(viewerId, profile) {
+  if (!profile) return false;
+  return Boolean(profile.isPublic) || Number(viewerId) === Number(profile.id);
+}
+
+/* ===== Comentarios por episodio =====
+   Chave: (media_type, external_id, season, episode). Para filmes e comentarios
+   do titulo inteiro, season e episode sao NULL. As respostas (parent_id) ficam
+   a um so' nivel: responder a uma resposta pendura no comentario raiz. */
+
+function commentLikes(id) {
+  return db.prepare("SELECT COUNT(*) c FROM comment_likes WHERE comment_id = ?").get(id).c;
+}
+
+function toApiComment(r, viewerId) {
+  return {
+    id: r.id,
+    tmdbId: r.external_id,
+    type: r.media_type,
+    season: r.season ?? null,
+    episode: r.episode ?? null,
+    parentId: r.parent_id ?? null,
+    body: r.deleted_at ? null : r.body,
+    atSeconds: r.at_seconds ?? null,
+    deleted: Boolean(r.deleted_at),
+    createdAt: r.created_at,
+    updatedAt: r.updated_at ?? null,
+    author: { id: r.user_id, username: r.username, avatar: r.avatar ?? null },
+    likes: commentLikes(r.id),
+    likedByMe: Boolean(
+      viewerId &&
+        db
+          .prepare("SELECT 1 FROM comment_likes WHERE comment_id = ? AND user_id = ?")
+          .get(r.id, viewerId)
+    ),
+    replies: [],
+  };
+}
+
+// entry: { userId, type, tmdbId, season, episode, parentId, body, atSeconds }
+// Devolve o comentario criado, ou { error } quando o corpo e' vazio / o parent
+// nao existe.
+export function addComment(entry) {
+  const body = String(entry.body || "").trim();
+  if (!body) return { error: "empty" };
+  if (body.length > 2000) return { error: "long" };
+
+  let parentId = null;
+  if (entry.parentId != null) {
+    const p = db
+      .prepare("SELECT id, parent_id FROM comments WHERE id = ? AND deleted_at IS NULL")
+      .get(entry.parentId);
+    if (!p) return { error: "parent" };
+    // Aninhamento a um nivel: responder a uma resposta cola na raiz.
+    parentId = p.parent_id ?? p.id;
+  }
+
+  const r = db
+    .prepare(
+      `INSERT INTO comments
+         (user_id, media_type, external_id, season, episode, parent_id, body, at_seconds, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    )
+    .run(
+      entry.userId,
+      entry.type,
+      entry.tmdbId,
+      entry.season ?? null,
+      entry.episode ?? null,
+      parentId,
+      body,
+      entry.atSeconds != null ? Math.max(0, Math.floor(entry.atSeconds)) : null,
+      now()
+    );
+
+  const row = db
+    .prepare(
+      `SELECT c.*, u.username, u.avatar FROM comments c
+       JOIN users u ON u.id = c.user_id WHERE c.id = ?`
+    )
+    .get(Number(r.lastInsertRowid));
+  return toApiComment(row, entry.userId);
+}
+
+// Lista a thread: comentarios raiz por ordem cronologica, cada um com as suas
+// respostas. Uma so' consulta; a arvore e' montada em memoria.
+export function listComments({ type, tmdbId, season, episode, viewerId }) {
+  const rows = db
+    .prepare(
+      `SELECT c.*, u.username, u.avatar FROM comments c
+       JOIN users u ON u.id = c.user_id
+       WHERE c.media_type = ? AND c.external_id = ? AND c.season IS ? AND c.episode IS ?
+       ORDER BY c.created_at ASC`
+    )
+    .all(type, tmdbId, season ?? null, episode ?? null);
+
+  const byId = new Map();
+  for (const r of rows) byId.set(r.id, toApiComment(r, viewerId));
+  const roots = [];
+  for (const c of byId.values()) {
+    if (c.parentId && byId.has(c.parentId)) byId.get(c.parentId).replies.push(c);
+    else roots.push(c);
+  }
+  return roots;
+}
+
+export function getComment(id, viewerId) {
+  const r = db
+    .prepare(
+      `SELECT c.*, u.username, u.avatar FROM comments c
+       JOIN users u ON u.id = c.user_id WHERE c.id = ?`
+    )
+    .get(id);
+  return r ? toApiComment(r, viewerId) : null;
+}
+
+// So o autor apaga. Se tiver respostas, apaga-se o texto mas a linha fica
+// (para a thread nao perder as respostas); se nao tiver, sai de vez.
+export function deleteComment(userId, id) {
+  const r = db.prepare("SELECT user_id FROM comments WHERE id = ?").get(id);
+  if (!r) return { ok: false, error: "notfound" };
+  if (Number(r.user_id) !== Number(userId)) return { ok: false, error: "forbidden" };
+  const replies = db.prepare("SELECT COUNT(*) c FROM comments WHERE parent_id = ?").get(id).c;
+  if (replies === 0) {
+    db.prepare("DELETE FROM comments WHERE id = ?").run(id);
+  } else {
+    db.prepare("UPDATE comments SET deleted_at = ?, updated_at = ?, body = '' WHERE id = ?").run(
+      now(),
+      now(),
+      id
+    );
+  }
+  return { ok: true };
+}
+
+export function likeComment(userId, id) {
+  const r = db.prepare("SELECT id FROM comments WHERE id = ? AND deleted_at IS NULL").get(id);
+  if (!r) return { ok: false, error: "notfound" };
+  db.prepare(
+    `INSERT INTO comment_likes (comment_id, user_id, created_at) VALUES (?, ?, ?)
+     ON CONFLICT(comment_id, user_id) DO NOTHING`
+  ).run(id, userId, now());
+  return { ok: true, likes: commentLikes(id) };
+}
+
+export function unlikeComment(userId, id) {
+  db.prepare("DELETE FROM comment_likes WHERE comment_id = ? AND user_id = ?").run(id, userId);
+  return { ok: true, likes: commentLikes(id) };
 }

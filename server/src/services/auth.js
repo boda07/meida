@@ -5,6 +5,7 @@ import {
   getUserByUsername,
   getUserById,
   setUserAvatar,
+  setUserProfile,
 } from "../store.js";
 import { config } from "../config.js";
 
@@ -32,15 +33,22 @@ export function login(username, password) {
   if (!row || !bcrypt.compareSync(String(password || ""), row.password_hash)) {
     throw httpError(401, "Utilizador ou password invalidos.");
   }
-  const user = { id: row.id, username: row.username, avatar: row.avatar || null };
+  const user = {
+    id: row.id,
+    username: row.username,
+    avatar: row.avatar || null,
+    bio: row.bio || null,
+    isPublic: Boolean(row.is_public),
+  };
   return { token: signToken(user), user };
 }
 
-// Atualiza o avatar. Aceita: emoji predefinido ("emoji:🦊"), URL http(s) de
-// imagem, ou uma imagem do PC como data URL ("data:image/...;base64,...").
-export function setAvatar(userId, avatar) {
+// Valida e normaliza um avatar. Aceita: emoji predefinido ("emoji:🦊"), URL
+// http(s) de imagem, ou uma imagem do PC como data URL ("data:image/...;base64,").
+// Devolve null para remover.
+function normalizeAvatar(avatar) {
   let value = String(avatar || "").trim();
-  if (!value) return setUserAvatar(userId, null); // remover avatar
+  if (!value) return null;
 
   if (/^data:image\/(png|jpe?g|webp|gif);base64,/i.test(value)) {
     // Imagem do computador. Sem cortar (data URLs sao longos); so um teto de
@@ -59,7 +67,24 @@ export function setAvatar(userId, avatar) {
       "Avatar inválido: usa um emoji predefinido, um link de imagem (https://...) ou uma imagem do teu computador."
     );
   }
-  return setUserAvatar(userId, value);
+  return value;
+}
+
+// Mantida para os chamadores antigos.
+export function setAvatar(userId, avatar) {
+  return setUserAvatar(userId, normalizeAvatar(avatar));
+}
+
+// Actualiza o perfil: avatar, bio e privacidade (isPublic). So mexe nos campos
+// que vierem no patch — mandar so a bio nao apaga o avatar.
+export function updateProfile(userId, patch) {
+  const { avatar, bio, isPublic } = patch || {};
+  const update = {};
+  if (avatar !== undefined) update.avatar = normalizeAvatar(avatar);
+  if (bio !== undefined) update.bio = String(bio || "").trim().slice(0, 300) || null;
+  if (isPublic !== undefined) update.isPublic = Boolean(isPublic);
+  if (!Object.keys(update).length) return getUserById(userId);
+  return setUserProfile(userId, update);
 }
 
 export function userFromToken(token) {
@@ -84,5 +109,15 @@ export function requireAuth(req, res, next) {
   const user = token ? userFromToken(token) : null;
   if (!user) return res.status(401).json({ error: "Nao autenticado." });
   req.user = user;
+  next();
+}
+
+// Middleware de autenticacao opcional: se vier um token valido, define req.user;
+// se nao vier (ou for invalido), segue como anonimo. Usado nos perfis publicos
+// e na leitura de comentarios, que nao obrigam a login.
+export function optionalAuth(req, _res, next) {
+  const header = req.headers.authorization || "";
+  const token = header.startsWith("Bearer ") ? header.slice(7) : null;
+  req.user = token ? userFromToken(token) : null;
   next();
 }

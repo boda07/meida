@@ -7,4 +7,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
   uninstall: () => ipcRenderer.invoke("uninstall-app"),
   appVersion: () => ipcRenderer.invoke("app-version"),
   checkForUpdates: () => ipcRenderer.invoke("check-update"),
+  getServerConfig: () => ipcRenderer.invoke("get-server-config"),
+  setServerConfig: (cfg) => ipcRenderer.invoke("set-server-config", cfg),
+  restartApp: () => ipcRenderer.invoke("restart-app"),
 });

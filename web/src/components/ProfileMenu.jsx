@@ -70,6 +70,12 @@ export default function ProfileMenu() {
            <Link to="/compare" onClick={() => setOpen(false)}>
              Compara as tuas notas
            </Link>
+           <Link to={`/u/${encodeURIComponent(user.username)}`} onClick={() => setOpen(false)}>
+             O meu perfil
+           </Link>
+           <Link to="/users" onClick={() => setOpen(false)}>
+             Encontrar pessoas
+           </Link>
           <Link to="/settings" onClick={() => setOpen(false)}>
             Definições
           </Link>

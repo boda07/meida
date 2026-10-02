@@ -17,6 +17,8 @@ import { debridRouter } from "./routes/debrid.js";
 import { progressRouter } from "./routes/progress.js";
 import { exportRouter } from "./routes/export.js";
 import { achievementsRouter } from "./routes/achievements.js";
+import { socialRouter } from "./routes/social.js";
+import { commentsRouter } from "./routes/comments.js";
 import { watchPartyRouter } from "./routes/watchparty.js";
 import { log } from "./services/log.js";
 
@@ -36,6 +38,11 @@ app.get("/api/health", (req, res) => {
 app.use("/api", catalogRouter);
 app.use("/api", sourcesRouter);
 app.use("/api", authRouter);
+// social/comments ANTES dos routers com requireAuth global (letterboxd, debrid,
+// progress, export, achievements, library): esses aplicam o login a TUDO o que
+// lhes chega, e os perfis publicos e a leitura de comentarios sao anonimos.
+app.use("/api", socialRouter);
+app.use("/api", commentsRouter);
 app.use("/api", streamRouter);
 app.use("/api", playRouter);
 // watchPartyRouter publique e tem de vir ANTES de qualquer router com

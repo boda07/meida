@@ -42,9 +42,16 @@ export function AuthProvider({ children }) {
     setUser(d.user);
   }
 
+  // Actualiza o perfil (avatar, bio, privacidade) e devolve o utilizador novo.
+  async function updateProfile(patch) {
+    const d = await api.updateProfile(patch);
+    setUser(d.user);
+    return d.user;
+  }
+
   return (
     <AuthContext.Provider
-      value={{ user, ready, login, register, logout, updateAvatar }}
+      value={{ user, ready, login, register, logout, updateAvatar, updateProfile }}
     >
       {children}
     </AuthContext.Provider>

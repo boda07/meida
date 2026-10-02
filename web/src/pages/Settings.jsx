@@ -574,8 +574,20 @@ function Choice({ value, current, onPick, children }) {
 
 export default function Settings() {
   const { settings, update } = useSettings();
-  const { user, updateAvatar } = useAuth();
+  const { user, updateAvatar, updateProfile } = useAuth();
   const [imgUrl, setImgUrl] = useState("");
+  const [bio, setBio] = useState("");
+  const [isPublic, setIsPublic] = useState(true);
+  const [profileSaving, setProfileSaving] = useState(false);
+  const [profileMsg, setProfileMsg] = useState(null);
+  // Servidor (so no desktop Electron): local vs remoto.
+  const desktop = typeof window !== "undefined" ? window.electronAPI : null;
+  const [srv, setSrv] = useState(null);
+  const [srvMode, setSrvMode] = useState("local");
+  const [srvUrl, setSrvUrl] = useState("");
+  const [srvBusy, setSrvBusy] = useState(false);
+  const [srvMsg, setSrvMsg] = useState(null);
+  const [srvErr, setSrvErr] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
   const [provHealth, setProvHealth] = useState(null);
@@ -601,6 +613,61 @@ export default function Settings() {
     } finally {
       setSaving(false);
     }
+  }
+
+  // Bio/privacidade locais, sincronizadas com o utilizador (ex.: após login).
+  useEffect(() => {
+    setBio(user?.bio || "");
+    setIsPublic(user?.isPublic !== false);
+  }, [user]);
+
+  async function saveProfile() {
+    setProfileSaving(true);
+    setProfileMsg(null);
+    try {
+      await updateProfile({ bio, isPublic });
+      setProfileMsg("Perfil atualizado. ✓");
+    } catch (e) {
+      setProfileMsg(e.message);
+    } finally {
+      setProfileSaving(false);
+    }
+  }
+
+  // Servidor: ler a configuracao atual (so no desktop Electron).
+  useEffect(() => {
+    if (!desktop?.getServerConfig) return;
+    desktop
+      .getServerConfig()
+      .then((c) => {
+        setSrv(c);
+        setSrvMode(c?.mode === "remote" ? "remote" : "local");
+        setSrvUrl(c?.url || "");
+      })
+      .catch(() => {});
+  }, [desktop]);
+
+  async function saveServer() {
+    if (!desktop?.setServerConfig) return;
+    setSrvMsg(null);
+    setSrvErr(false);
+    setSrvBusy(true);
+    let r;
+    try {
+      r = await desktop.setServerConfig({ mode: srvMode, url: srvUrl });
+    } catch {
+      r = null;
+    }
+    if (!r || r.ok === false) {
+      setSrvErr(true);
+      setSrvMsg(r?.error || "Não foi possível guardar.");
+      setSrvBusy(false);
+      return;
+    }
+    setSrv(r.config);
+    setSrvMsg("Guardado. A reiniciar...");
+    // Deixa a mensagem aparecer antes de reiniciar.
+    setTimeout(() => desktop.restartApp?.(), 600);
   }
 
   // Mudar as sinopses nao deve arrastar os generos: se estes estao a seguir as
@@ -726,6 +793,68 @@ export default function Settings() {
   return (
     <div className="sub-page settings-page">
       <h2 className="row-title">Definições</h2>
+
+      {/* ===== Servidor (so no desktop Electron) ===== */}
+      {desktop?.getServerConfig && (
+        <section className="set-section">
+          <h3>Servidor</h3>
+          <p className="muted">
+            Onde ficam os teus dados. <strong>Este computador</strong> guarda tudo localmente.{" "}
+            <strong>Servidor remoto</strong> liga a app a um MEIDA alojado noutro sítio, para
+            partilhares conta, biblioteca, seguidores e comentários entre dispositivos.
+          </p>
+          {srv && !srv.packaged && (
+            <p className="muted">
+              Estás em desenvolvimento — esta opção só se aplica à app instalada.
+            </p>
+          )}
+          <div className="set-row set-server-row">
+            <button
+              className={`set-server-choice ${srvMode === "local" ? "active" : ""}`}
+              onClick={() => setSrvMode("local")}
+            >
+              Este computador
+            </button>
+            <button
+              className={`set-server-choice ${srvMode === "remote" ? "active" : ""}`}
+              onClick={() => setSrvMode("remote")}
+            >
+              Servidor remoto
+            </button>
+          </div>
+          {srvMode === "remote" && (
+            <label className="set-field">
+              <span>Endereço do servidor</span>
+              <input
+                className="set-text"
+                type="url"
+                inputMode="url"
+                placeholder="https://meida.exemplo.com"
+                value={srvUrl}
+                onChange={(e) => setSrvUrl(e.target.value)}
+                spellCheck={false}
+                autoCapitalize="none"
+                autoCorrect="off"
+              />
+            </label>
+          )}
+          <button className="lib-watched" onClick={saveServer} disabled={srvBusy}>
+            {srvBusy ? "A guardar..." : "Guardar e reiniciar"}
+          </button>
+          {srv && (
+            <p className="muted">
+              A ligar a:{" "}
+              <strong>
+                {srv.mode === "remote" && srv.url ? srv.url : "servidor local deste computador"}
+              </strong>
+            </p>
+          )}
+          {srvMsg && <p className={srvErr ? "status error" : "muted"}>{srvMsg}</p>}
+          <p className="muted">
+            O servidor remoto tem de correr o MEIDA com a web incluída (ex.: <code>npm run start:pwa</code>).
+          </p>
+        </section>
+      )}
 
       {/* ===== Idiomas ===== */}
       <section className="set-section">
@@ -1126,6 +1255,53 @@ export default function Settings() {
       <section className="set-section">
         <h3>Real-Debrid</h3>
         <DebridSection user={user} />
+      </section>
+
+      {/* ===== Perfil público ===== */}
+      <section className="set-section">
+        <h3>Perfil</h3>
+        {!user ? (
+          <p className="muted">
+            <Link to="/login">Entra</Link> para editares o teu perfil.
+          </p>
+        ) : (
+          <>
+            <p className="muted">
+              É o que os outros veem quando visitam o teu perfil. A biblioteca e as
+              listas só aparecem se o perfil estiver público.
+            </p>
+            <label className="set-field">
+              <span>Bio</span>
+              <textarea
+                className="set-bio"
+                value={bio}
+                maxLength={300}
+                rows={3}
+                placeholder="Uma frase sobre os teus gostos..."
+                onChange={(e) => setBio(e.target.value)}
+              />
+            </label>
+            <label className="set-toggle">
+              <input
+                type="checkbox"
+                checked={isPublic}
+                onChange={(e) => setIsPublic(e.target.checked)}
+              />
+              <span>
+                Perfil público — qualquer pessoa pode ver a tua biblioteca e listas.
+                {!isPublic && " (agora está privado: só tu vês)"}
+              </span>
+            </label>
+            <button
+              className="lib-watched"
+              onClick={saveProfile}
+              disabled={profileSaving}
+            >
+              {profileSaving ? "A guardar..." : "Guardar perfil"}
+            </button>
+            {profileMsg && <p className="muted">{profileMsg}</p>}
+          </>
+        )}
       </section>
 
       {/* ===== Avatar ===== */}
