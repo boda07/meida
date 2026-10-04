@@ -123,3 +123,25 @@ automática (electron-updater) está ligada às releases do GitHub.
 - O anime usa o Jikan como fonte primária com mirror Tenrai; séries/filmes usam
   TMDB com fallback para TVMaze quando o TMDB falha.
 - ESLint: `npm run lint` (config em `eslint.config.mjs`).
+
+### Windows: aviso do "Windows protegeu o teu PC"
+
+O instalador **não tem assinatura digital** (falta certificado), por isso o
+Windows 11 pode mostrar o aviso azul do SmartScreen. É esperado: clica em
+**Mais informações → Executar mesmo assim**.
+
+Há um caso mais chato: o **Smart App Control** (Windows 11) chega a bloquear
+executáveis sem assinatura sem sequer mostrar o aviso, e a instalação fica a
+meio — aparece a pasta
+`%LOCALAPPDATA%\Programs\streamapp` quase vazia e o atalho do Menu Iniciar
+aponta para um `MEIDA.exe` que não existe. Se isso acontecer:
+
+- **Definições → Privacidade e segurança → Segurança do Windows → Controlo de
+  aplicações e browser → Controlo de Aplicações Inteligente → Desligar.**
+  (Desligar é definitivo: para voltar a ligar é preciso reinstalar o Windows.)
+- Ou correr `scripts/reparar-instalacao.ps1`, que apaga a instalação partida,
+  volta a descarregar o instalador **confirmando o sha512**, e instala.
+
+## Licença
+
+[MIT](LICENSE) — Copyright (c) 2026 Boda.
