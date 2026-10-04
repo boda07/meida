@@ -1,5 +1,58 @@
 # Changelog
 
+## 1.2.1
+
+### Novo: Discord Rich Presence (grátis, local)
+- **`electron/discord-presence.cjs`** (novo): escreve directamente no servidor RPC
+  local do Discord (`\\?\pipe\discord-ipc-0..9` no Windows, sockets Unix nos
+  restantes) para mostrar o que está a ver, como o Stremio e o Crunchyroll.
+  **Zero dependências** — implementa o protocolo RPC do Discord à mão (frames
+  `[opcode LE32][len LE32][JSON]`, opcodes HANDSHAKE/FRAME/CLOSE/PING/PONG)
+  em vez de usar o `discord-rpc` do npm, abandonado desde 2021, ou as
+  alternativas recentes, que exigem Node >= 24.13.
+  Faz handshake com o `client_id`, responde aos `PING` do Discord (sem isso
+  corta a ligação), reenvia a atividade no `READY`, e ao fechar o socket
+  (Discord restarted) volta a tentar de minuto a minuto **em silêncio**.
+  `MIN_UPDATE_MS = 15000` porque o Discord penaliza updates a mais.
+  `clear()` mantém o socket (como o Stremio) para não reconectar a cada episódio;
+  só `shutdown()` fecha. `electron/main.cjs` chama-o em `before-quit` para a
+  presença não ficar "A ver ..." para sempre.
+- **Activity**: `type: 3` (Watching), `details` = título, `state` =
+  `S1E2 · 12:34 / 45:00`, `large_image` = URL do cartaz (TMDB/Jikan/MAL),
+  `timestamps.start` só reinicia quando muda de título.
+- **`electron/main.cjs`**: handlers `set-presence` / `clear-presence`, ambos
+  com `isTrustedSender` (o preload também fica exposto à página servida pelo
+  servidor remoto, por isso a validação de origem é necessária).
+- **`electron/preload.cjs`**: expõe `setPresence` / `clearPresence`.
+- **`web/src/discord.js`** (novo): formata a linha `S1E2 · 12:34 / 45:00`,
+  resolve o URL do cartaz, e é **no-op silencioso** sem Electron (PWA/web) ou
+  com a definição desligada — a presença nunca pode partir a app.
+- **`web/src/pages/Details.jsx`: presence quando escolhes uma fonte
+  (`active`), progresso ligado ao `reportPos` que já existia (os players
+  próprios reportam de 5 em 5 s; os providers com iframe não dizem se estão a
+  tocar — o Stremio também não sabe), e `clearPresence()` ao sair da ficha.
+- **`web/src/pages/Settings.jsx`**: secção "Discord" com o interruptor
+  (definição local em `localStorage`, `discordPresence`, default ligado) e nota
+  de que só funciona na app de computador.
+- **Custo zero**: sem servidor, sem bot, sem API paga. A app escreve só no
+  Named Pipe local do Discord; nada sai do computador. A única coisa que foi
+  preciso registar foi a aplicação no Discord Developers (grátis), cujo
+  `client_id` ficou em `electron/discord-presence.cjs` (overridable por
+  `MEIDA_DISCORD_CLIENT_ID`).
+
+### Corrigido
+- **Botões das Definições sem estilo**: "Exportar JSON", "Exportar CSV",
+  "Importar" e "Rever agora" usavam `className="btn"`, e **não existe nenhuma
+  regra `.btn` no CSS** (a única está dentro de `.error-boundary`) — saíam com o
+  aspecto por defeito do browser, contra o resto das Definições. Passam a
+  `set-choice`, o mesmo estilo pill usado nas outras acções da página.
+- **Cabeçalho dos comentários mostrava "T?E6"**: em `Comments.jsx` a etiqueta era
+  `· T${season ?? "?"}E${episode ?? "?"}`, e nos animes (ou antes de a temporada
+  estar definida) `season`/`episode` chegam `null` → `T?E6`. O cabeçalho passou
+  a ser só "Comentários".
+- **Changelog da 1.2.0 reescrito**: tinha texto de developer (SQLite, nota sobre
+  o servidor local) em vez de novidades para quem usa a app.
+
 ## 1.2.0
 
 Release grande: a app passa a suportar **dados partilhados na nuvem** (vídeo

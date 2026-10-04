@@ -19,6 +19,7 @@ const path = require("path");
 const fs = require("fs");
 const { spawn } = require("child_process");
 const { autoUpdater } = require("electron-updater");
+const discordPresence = require("./discord-presence.cjs");
 
 // ===== Servidor: local (video) + remoto (dados) =====
 // A app corre SEMPRE localmente (serve o UI e o video/streaming). Em modo "dados
@@ -179,6 +180,28 @@ ipcMain.handle("restart-app", (event) => {
   if (!isTrustedSender(event)) return { ok: false, error: "Origem nao autorizada." };
   app.relaunch();
   app.quit();
+  return { ok: true };
+});
+
+// ===== Discord Rich Presence (mostrar no Discord o que se esta a ver) =====
+// Tudo gratis e local: o frontend avisa quando escolhe uma fonte/comeca a ver e
+// manda actualizacoes do progresso. Se o Discord nao estiver aberto, nao ha erro
+// nenhum — a ligacao fica a tentar de minuto a minuto, em silencio.
+ipcMain.handle("set-presence", (event, data) => {
+  if (!isTrustedSender(event)) return { ok: false, error: "Origem nao autorizada." };
+  if (!discordPresence.isConnected() && !data) return { ok: false };
+  discordPresence.setPresence({
+    details: data?.details,
+    state: data?.state,
+    largeImage: data?.largeImage,
+    largeText: data?.largeText,
+  });
+  return { ok: true, connected: discordPresence.isConnected(), clientId: discordPresence.CLIENT_ID };
+});
+
+ipcMain.handle("clear-presence", (event) => {
+  if (!isTrustedSender(event)) return { ok: false, error: "Origem nao autorizada." };
+  discordPresence.clear();
   return { ok: true };
 });
 
@@ -404,6 +427,10 @@ function stopServer() {
     serverProc = null;
   }
 }
+
+// Antes de sair: esconder a presenca no Discord (senao fica "A ver" para sempre)
+// e fechar o socket para nao prender o processo.
+app.on("before-quit", () => discordPresence.shutdown());
 
 app.on("window-all-closed", () => {
   stopServer();

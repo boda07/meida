@@ -17,6 +17,7 @@ import AnimeExtract from "../components/AnimeExtract.jsx";
 import LoadingStatus from "../components/LoadingStatus.jsx";
 import MediaRow from "../components/MediaRow.jsx";
 import Comments from "../components/Comments.jsx";
+import { clearPresence, showPresence } from "../discord.js";
 
 export default function Details() {
   const { type, id } = useParams();
@@ -106,6 +107,17 @@ export default function Details() {
         provider: activeProviderRef.current,
       })
       .catch(() => {});
+    // Presença no Discord: aproveita o mesmo callback do progresso para mostrar
+    // "12:34 / 45:00" enquanto se vê (o Discord filtra os updates a mais).
+    showPresence({
+      title: details.title,
+      type: details.type,
+      season: details.type === "tv" ? season : null,
+      episode: details.type === "anime" || details.type === "tv" ? episode : null,
+      poster: details.poster,
+      position,
+      duration,
+    });
   }, [user, details, season, episode]);
 
   // Fontes / player
@@ -138,6 +150,27 @@ export default function Details() {
   useEffect(() => {
     activeProviderRef.current = active?.provider ?? null;
   }, [active]);
+
+  // Presença no Discord (grátis): aparece assim que escolhes uma fonte e
+  // desaparece se tirares a fonte ou saíres da ficha. Nos providers com iframe
+  // não dá para saber se estão a tocar (o Stremio também não sabe) — por isso
+  // mostramos a partir da fonte escolhida.
+  useEffect(() => {
+    if (!details?.title || !active) {
+      clearPresence();
+      return;
+    }
+    showPresence({
+      title: details.title,
+      type: details.type,
+      season: details.type === "tv" ? season : null,
+      episode: details.type === "anime" || details.type === "tv" ? episode : null,
+      poster: details.poster,
+    });
+  }, [details, active, season, episode]);
+
+  // Saiu da ficha -> esconde a presença (senão ficava "A ver ..." para sempre).
+  useEffect(() => () => clearPresence(), []);
 
   // Lê o progresso guardado (posição + provider). Tem de correr depois de
   // `embeds`/`wantedSourceRef` estarem declarados (usam-nos no corpo e nas deps).

@@ -4,6 +4,7 @@ import { useSettings } from "../settings/SettingsContext.jsx";
 import { useAuth } from "../auth/AuthContext.jsx";
 import { api, openExternal } from "../api/client.js";
 import Avatar, { AVATAR_EMOJIS } from "../components/Avatar.jsx";
+import { clearPresence, presenceSupported } from "../discord.js";
 
 // Seccao de ligacao ao MyAnimeList.
 function MalSection({ user }) {
@@ -1186,14 +1187,14 @@ export default function Settings() {
         </p>
         <div className="set-row">
           <button
-            className="btn"
+            className="set-choice"
             onClick={() => exportData("json")}
             disabled={exporting !== null}
           >
             {exporting === "json" ? "A exportar..." : "Exportar JSON"}
           </button>
           <button
-            className="btn"
+            className="set-choice"
             onClick={() => exportData("csv")}
             disabled={exporting !== null}
           >
@@ -1201,6 +1202,35 @@ export default function Settings() {
           </button>
         </div>
         {exportMsg && <span className="muted" style={{ display: "block", marginTop: 8 }}>{exportMsg}</span>}
+      </section>
+
+      {/* ===== Discord ===== */}
+      <section className="set-section">
+        <h3>Discord</h3>
+        <p className="muted">
+          Aparece ao lado do teu nome no Discord o que estás a ver, como no
+          Stremio. Só funciona com a app do Discord aberta neste computador, e
+          nada é enviado para a internet — a MEIDA escreve directamente no
+          Discord do teu PC.
+        </p>
+        {presenceSupported() ? (
+          <label className="set-toggle">
+            <input
+              type="checkbox"
+              checked={settings.discordPresence !== false}
+              onChange={(e) => {
+                update({ discordPresence: e.target.checked });
+                // Desligar deve esconder o que já estava a aparecer.
+                if (!e.target.checked) clearPresence();
+              }}
+            />
+            <span>Mostrar no Discord o que estou a ver</span>
+          </label>
+        ) : (
+          <p className="muted">
+            Isto só funciona na app de computador (Electron), não na versão web.
+          </p>
+        )}
       </section>
 
       {/* ===== Importar dados ===== */}
@@ -1238,7 +1268,7 @@ export default function Settings() {
           </span>
         </div>
         {importFile && (
-          <button className="btn" onClick={runImport} disabled={importing}>
+          <button className="set-choice" onClick={runImport} disabled={importing}>
             {importing ? "A importar..." : "Importar"}
           </button>
         )}
@@ -1411,7 +1441,7 @@ export default function Settings() {
         {provHealth?.stale && <span className="ph-stale">Atualizado há 24h+</span>}
         <div className="set-row" style={{ marginTop: 8 }}>
           <button
-            className="btn"
+            className="set-choice"
             onClick={async () => {
               setProvHealth({ checking: true, providers: null, stale: false });
               try {

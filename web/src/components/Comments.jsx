@@ -151,13 +151,9 @@ export default function Comments({ type, tmdbId, season = null, episode = null }
     }
   }
 
-  const label = type === "movie" ? "do filme" : `· T${season ?? "?"}E${episode ?? "?"}`;
-
   return (
     <section className="comments">
-      <h3 className="comments-title">
-        Comentários <span className="muted">{label}</span>
-      </h3>
+      <h3 className="comments-title">Comentários</h3>
 
       {user ? (
         <form className="comment-form" onSubmit={submit}>

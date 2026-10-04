@@ -88,6 +88,7 @@ export const DEFAULT_SETTINGS = {
   cardH: 272, // altura dos cartazes (px)
   autoplay: true, // reproduzir automaticamente ao abrir uma fonte
   autoskip: false, // tentar saltar intro/genericos automaticamente
+  discordPresence: true, // mostrar no Discord o que se está a ver (grátis, local)
 };
 export const settingsStore = {
   get() {

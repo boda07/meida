@@ -10,4 +10,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
   getServerConfig: () => ipcRenderer.invoke("get-server-config"),
   setServerConfig: (cfg) => ipcRenderer.invoke("set-server-config", cfg),
   restartApp: () => ipcRenderer.invoke("restart-app"),
+  // Discord Rich Presence: mostrar no Discord o que se esta a ver.
+  setPresence: (data) => ipcRenderer.invoke("set-presence", data),
+  clearPresence: () => ipcRenderer.invoke("clear-presence"),
 });

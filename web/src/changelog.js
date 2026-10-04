@@ -2,14 +2,21 @@
 // "o que mudou" depois de o utilizador atualizar a app. Mais recente em cima.
 export const CHANGELOG = [
   {
+    version: "1.2.1",
+    items: [
+      "Novo: o Discord passa a mostrar o que estás a ver, como no Stremio — o nome do título, o episódio e o progresso. Só funciona com a app do Discord aberta no computador e não custa nada. Podes desligar quando quiseres em Definições → Discord.",
+      "Corrigido: os botões de exportar e importar dados tinham um aspecto diferente do resto dos Definições.",
+    ],
+  },
+  {
     version: "1.2.0",
     items: [
-      "Novo: a biblioteca, o diário, os perfis, os seguidores e os comentários passam a ficar guardados na nuvem. Assim a tua conta é a mesma em qualquer computador — se instalares esta versão noutro PC, entras com o mesmo nome e já tens tudo lá dentro.",
-      "Novo: cada pessoa tem uma página de perfil, com avatar, descrição e a biblioteca pública. Vê o que os outros viram e segue-os.",
-      "Novo: comentários nos títulos. Escreves o que achaste, podes marcar o minuto do vídeo a que te referes, responder a outra pessoa e dar \"gosto\".",
-      "Melhorado: o vídeo NÃO vai para a nuvem. Continua a correr no teu próprio computador, por isso não fica mais lento nem depende do servidor para ver.",
-      "Melhorado: tudo o que a app guarda passou a uma base de dados SQLite (em vez de um ficheiro de texto). Fica mais rápido e mais difícil de corromper.",
-      "Nota: se alguma vez escolheste \"servidor local\" nas Definições, a app continua como estava. Para ligares a biblioteca partilhada vai a Definições → Servidor e escolhe o servidor na nuvem.",
+      "Novo: a tua biblioteca, o teu diário e os teus comentários passam a ficar guardados na nuvem. Assim a tua conta é a mesma em qualquer computador — se instalares esta versão noutro PC, entras com o mesmo nome e já tens tudo lá dentro.",
+      "Novo: cada pessoa tem uma página de perfil, com foto, descrição e a lista do que viu. Podes ver o que os outros viram e segui-los.",
+      "Novo: uma página para procurar as pessoas que usam a MEIDA.",
+      "Novo: comentários nos títulos e nos episódios. Escreves o que achaste, podes marcar o minuto do vídeo a que te referes, responder a outra pessoa e dar \"gosto\".",
+      "Melhorado: o vídeo NÃO vai para a nuvem. Continua a correr no teu próprio computador, por isso não fica mais lento nem depende de mais nada para ver.",
+      "Melhorado: a app está mais rápida e já não se atrapalha quando fica tempo sem ser usada.",
     ],
   },
   {

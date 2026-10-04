@@ -9,9 +9,23 @@ Instruções e contexto duradouro para assistentes de IA que trabalhem neste rep
 - `electron/` — app desktop (Electron) que arranca o backend com o Node embutido.
 - UI em português (pt-PT). `#c90303` é a cor de destaque.
 
+## Numeração das versões (NUNCA saltar números)
+
+A escala é **1–10**, não semver. O último número é um contador que vai de 0 a 9:
+
+```
+0.9.7 → 0.9.8 → 0.9.9 → 1.0.0 → 1.1.0 → 1.1.1 → ... → 1.1.9 → 1.2.0 → ... → 1.2.9 → 1.3.0
+```
+
+- **Cada release incrementa exatamente 1.** A próxima versão é quase sempre `MAIOR.MENOR + 1` (o patch).
+- **Ao chegar a `.9`, o próximo é `.0` do minor seguinte** (`1.1.9` → `1.2.0`, `1.2.9` → `1.3.0`). É o que aconteceu em `0.9.9` → `1.0.0`.
+- **Proibido saltar** (ex.: `1.1.3` → `1.2.0` saltou `1.1.4` a `1.1.9`). Mesmo para uma release grande: a partir de `1.1.3` a próxima era `1.1.4`, e só depois de `1.1.9` é que se sobe para `1.2.0`.
+- Antes de bumpar, confirmar a última versão publicada: `gh api repos/boda07/meida/releases | ConvertFrom-Json | Select-Object -First 1 tag_name`, ou `node -p "require('./package.json').version"`.
+- Excepção já consumida: a **1.2.0** foi publicada com este salto (6 versões em diante) e o utilizador mandou deixá-la assim. Não voltar a acontecer.
+
 ## Processo de release (importante)
 
-1. Bump da versão em `package.json` (raiz) — ex.: `0.9.9`.
+1. Bump da versão em `package.json` (raiz) — **+1 segundo a regra de numeração acima** (ex.: `0.9.9`).
 2. Atualizar o changelog da app: `web/src/changelog.js` (linguagem simples, sem termos técnicos, mais recente em cima).
 3. Atualizar `CHANGELOG.md` (raiz) — changelog técnico, com secções e detalhes.
 4. Commit + push.
@@ -26,8 +40,18 @@ Se for preciso uma release apenas textual (notas), usar `gh release create` **de
 - **Nunca fazer `git push` sem o utilizador pedir primeiro.** Sempre que o utilizador autorizar push, é **obrigatório** atualizar a versão (`package.json` → `web/src/changelog.js` → `CHANGELOG.md`) **e** publicar a release do Git (tag + `gh release` com binários via `npm run app:publish`).**
 - **A CHANGELOG DA APP (`web/src/changelog.js`) É OBRIGATÓRIA EM TODA A RELEASE.** Nunca fazer bump de versão / commit / release sem acrescentar a entrada dessa versão em `web/src/changelog.js` (linguagem simples, mais recente em cima) — é o que o utilizador vê no "o que mudou" dentro da app. Verificar SEMPRE que fica lá antes de qualquer push.
 
+## Servidor partilhado (nuvem)
+
+- Endereço: **`https://meida.fadehost.app`** (grátis, sem cartão, `/data` persistente, hiberna quando parado). Só dados — **vídeo é sempre local**.
+- Está embutido no build em `electron/default-server.txt` (só o URL, uma linha). Precedência no `electron/main.cjs`: env `MEIDA_DEFAULT_SERVER` > ficheiro > "".
+- Guardar: `JWT_SECRET`, `ADMIN_TOKEN` (rota `/api/admin/seed`), `TMDB_*`, `MAL_*`. Ver `deploy/SERVIDOR-PARTILHADO.md`.
+- **`MAL_REDIRECT_URI` tem de ser `https://meida.fadehost.app/api/mal/callback`** no FadeHost **e** em myanimelist.net/apiconfig. Sem isto o OAuth do MAL volta para `localhost:5175` e falha.
+- Migração de dados: `npm --prefix server run export:json -- saida.json` e depois `POST /api/admin/seed` com `x-admin-token`. O export **inclui** `user_tokens` (MAL/AniList/Letterboxd) mas **não** sessões JWT — é o certo, o remoto tem outro `JWT_SECRET`, por isso o utilizador entra uma vez com a senha normal.
+
 ## Bugs corrigidos (não repetir erros)
 
+- **Release publicada sem `latest.yml` (auto-update partido)**: ao correr `npm run app:publish`, o GitHub devolveu `422 "Published releases must have a valid tag"` ao criar a release `v1.2.0`. Ficou a release publicada **só com o instalador** (1 asset em vez de 3) — sem `latest.yml` o botão "Procurar atualização" não funciona (o mesmo sintoma das v0.9.6–0.9.9). **Corrigido** correndo `npm run app:publish` outra vez: com a release já existente o electron-builder faz *update* em vez de *create* e envia os 3 assets. **Regra:** depois de publicar, confirmar `gh api repos/boda07/meida/releases` → a release nova tem de ter **3 assets** (`latest.yml`, `MEIDA-Setup-x.y.z.exe`, `MEIDA-Setup-x.y.z.exe.blockmap`), e `curl -sL https://github.com/boda07/meida/releases/latest/download/latest.yml` tem de devolver `version: <a que publicaste>`.
+- **`gh` (GitHub CLI) não estava instalado** nesta máquina (`C:\Program Files\GitHub CLI`), logo `gh auth token` falhava e o `electron-builder --publish` não tinha `GH_TOKEN`. Instalado com `winget install --id GitHub.cli -e`; o login do utilizador é preciso **uma vez** (`gh auth login --web --git-protocol https`) e pode ser feito noutro terminal — o token fica no keyring do Windows.
 - **"Continua a ver" abria no episódio 1**: causa = `<React.StrictMode>` (dev) consome `takeResumeEpisode()` 2x. Corrigido com `loadedSeasonRef` em `web/src/pages/Details.jsx` — a retoma só é aplicada na 1ª carga efetiva da temporada.
 - **"Procurar atualização" não funcionava**: as releases v0.9.6–0.9.9 foram criadas só com notas (`gh release create` sem binários), sem `latest.yml`/instalador → o `electron-updater` falha a comparar versões. Corrigido publicando a v0.9.9 via `npm run app:publish` (que gera `MEIDA-Setup-x.x.x.exe`, `.blockmap` e `latest.yml` e os anexa à release). **Regra:** uma release destino de upgrade **precisa** de assets — nunca usar `gh release create` puro para uma versão que deve ser atualizável.
 
