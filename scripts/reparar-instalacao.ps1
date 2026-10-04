@@ -253,6 +253,23 @@ if ($NaoInstalar) {
 Secao "6. INSTALAR"
 Aviso "Vai aparecer o instalador. Deixa-o terminar; NAO feches a janela."
 
+# O instalador cria um atalho no ambiente de trabalho. Se a pasta Desktop nao
+# existir (acontece com o OneDrive, que a pode mover), o atalho nao se cria e
+# o instalador da um erro a meio e volta atras - deixando o Uninstall MEIDA.exe
+# e a entrada no Painel de Control, mas sem a app. E o que se viu.
+try {
+  $desk = [Environment]::GetFolderPath("Desktop")
+  if (-not (Test-Path $desk)) {
+    Aviso ("a pasta do ambiente de trabalho nao existe: " + $desk)
+    New-Item -ItemType Directory -Path $desk -Force -ErrorAction Stop | Out-Null
+    Info "pasta criada. Sem isto o instalador aborta a meio."
+  } else {
+    Info ("ambiente de trabalho : " + $desk + "  (existe, ok)")
+  }
+} catch {
+  Erro ("nao consegui criar a pasta do ambiente de trabalho: " + $_.Exception.Message)
+}
+
 # Se a app estiver a correr, o instalador recusa-se a instalar. Vale a pena
 # dizer, porque o erro que aparece nao explica nada.
 try {
