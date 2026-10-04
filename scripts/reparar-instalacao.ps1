@@ -73,6 +73,19 @@ Info ("espaco suficiente (sao preciso ~" + $minimo + " MB)")
 
 # ------------------------------------------------- 1. ver o estado actual
 Secao "2. ESTADO ACTUAL DA INSTALACAO"
+# Ambiente: importa saber a build, porque o Controlo de Aplicacoes Inteligente
+# so existe a partir da build 22567 e nao existe em Windows Home sem WDAC.
+try {
+  $os = Get-CimInstance Win32_OperatingSystem -ErrorAction Stop
+  Info ("Windows : " + $os.Caption + "  build " + $os.BuildNumber)
+} catch { Info "Windows : nao foi possivel ler a versao." }
+$sac = "nao existe nesta build"
+$k = Get-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Control\CI\Policy" -ErrorAction SilentlyContinue
+if ($k -and $null -ne $k.VerifiedAndReputablePolicyState) {
+  if ([int]$k.VerifiedAndReputablePolicyState -eq 1) { $sac = "LIGADO" }
+  else { $sac = "desligado" }
+}
+Info ("Controlo de Aplicacoes Inteligente : " + $sac)
 $instalada = $null
 foreach ($c in $caminhos) {
   if (Test-Path $c) {
@@ -244,9 +257,27 @@ if ($ficou) {
 } else {
   Problema "O instalador acabou mas o MEIDA.exe continua a nao estar la."
   Problema "Guarda este relatorio: e a prova de que o instalador correu e falhou a meio."
-  Problema "Causas provaveis: espaco em disco insuficiente, ou um antivirus de terceiros"
-  Problema "que bloqueia a instalacao. No Painel de Control > Programas, confirma que"
-  Problema "so ha uma entrada da MEIDA e tenta desinstala-la antes de repetir."
+  Problema "Porque? O registo do Windows responde:"
+  try {
+    $crash = Get-WinEvent -FilterHashtable @{ LogName = 'Application'; StartTime = (Get-Date).AddMinutes(-45) } `
+             -MaxEvents 120 -ErrorAction Stop |
+             Where-Object { $_.Message -match 'MEIDA|Setup|nsis|Uninstall' }
+    if ($crash) {
+      Problema "O registo do Windows registou isto:"
+      $crash | Select-Object -First 4 | ForEach-Object {
+        Info ("  " + $_.TimeCreated.ToString("yyyy-MM-dd HH:mm") + "  " + $_.ProviderName + "  id=" + $_.Id)
+        Info ("     " + ((($_.Message -split "`r?`n") | Where-Object { $_.Trim() } | Select-Object -First 2) -join " | "))
+      }
+    } else {
+      Info "O registo do Windows nao mostra nenhuma falha do instalador."
+      Info "Se o espaco estava certo e o sha512 bateu certo, a causa mais provavel e"
+      Info "o Windows estar demasiado antigo - atualiza-o (Definicoes > Windows Update)."
+    }
+  } catch {
+    Info "Nao foi possivel ler o registo do Windows (pode exigir administrador)."
+  }
+  Problema "Confirma tambem que so ha uma entrada da MEIDA no Painel de Control >"
+  Problema "Programas, e desinstala-a se houver mais do que uma."
   Info ("O instalador ficou guardado em: " + $destino)
 }
 
