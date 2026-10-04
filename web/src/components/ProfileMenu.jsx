@@ -37,7 +37,9 @@ export default function ProfileMenu() {
     return () => document.removeEventListener("mousedown", onClick);
   }, []);
 
-  // Sem sessao: icone que leva ao login.
+  // Sem sessao: icone que leva ao login. O menu completo (e portanto o
+  // "Procurar atualizacao") fica para quem tem conta; quem nao tem usa
+  // Definis > Avancado, que tambem tem o botao e nao pede login.
   if (!user) {
     return (
       <Link to="/login" className="icon-btn" title="Entrar" aria-label="Entrar">

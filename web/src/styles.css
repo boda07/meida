@@ -2987,6 +2987,41 @@ h2 {
   background: #b30202;
 }
 
+/* Enquanto o login espera pela resposta do servidor, o botao mostra o anel
+   de carregamento. Sem isto o botao fica com o texto "..." e nao se percebe se
+   a app continua a funcionar ou se a password esta errada. */
+.auth-card button[type="submit"]:disabled {
+  cursor: wait;
+  opacity: 0.92;
+}
+
+.auth-card button[type="submit"] .loading-status {
+  padding: 0;
+  background: none;
+  color: white;
+}
+
+.auth-card button[type="submit"] .loading-ring {
+  width: 15px;
+  height: 15px;
+  animation-duration: 0.85s;
+}
+
+.auth-card button[type="submit"] .loading-ring span {
+  width: 3px;
+  height: 3px;
+  opacity: 0.35;
+  transform-origin: 50% 7.5px;
+  background: white;
+}
+
+/* O anel gira, por isso os pontos ficam sobre a linha de base do texto. */
+.auth-card button[type="submit"] .loading-copy {
+  min-width: 0;
+  font-size: 0.95rem;
+  align-items: center;
+}
+
 .auth-error {
   color: #ff6b6b;
   font-size: 13px;

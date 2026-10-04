@@ -612,6 +612,28 @@ export default function Settings() {
   });
   // Servidor (so no desktop Electron): local vs remoto.
   const desktop = typeof window !== "undefined" ? window.electronAPI : null;
+  // Procurar actualizacao. Fica aqui, e nao so no menu da conta, porque esse
+  // menu so aparece com sessao iniciada - e quem ainda nao fez login e
+  // precisamente quem mais precisa de actualizar a app.
+  const [updMsg, setUpdMsg] = useState(null);
+  const [updBusy, setUpdBusy] = useState(false);
+  async function checkUpdate() {
+    if (updBusy) return;
+    setUpdBusy(true);
+    setUpdMsg("A procurar...");
+    try {
+      const r = await window.electronAPI.checkForUpdates();
+      if (r?.status === "available")
+        setUpdMsg(`Nova versão ${r.version} — a descarregar...`);
+      else if (r?.status === "latest") setUpdMsg("Já tens a versão mais recente. ✓");
+      else if (r?.status === "dev") setUpdMsg("Indisponível em desenvolvimento.");
+      else setUpdMsg("Não foi possível verificar agora.");
+    } catch {
+      setUpdMsg("Não foi possível verificar agora.");
+    } finally {
+      setUpdBusy(false);
+    }
+  }
   const [srv, setSrv] = useState(null);
   const [srvMode, setSrvMode] = useState("local");
   const [srvUrl, setSrvUrl] = useState("");
@@ -1513,7 +1535,15 @@ export default function Settings() {
       {/* ===== App (só na app instalada) ===== */}
       {typeof window !== "undefined" && window.electronAPI?.uninstall && (
         <section className="set-section" data-tab="avancado">
-          <h3>App</h3>
+          <h3>Atualizações</h3>
+          <p className="muted">
+            Procura uma versão nova da MEIDA. Não precisas de ter conta.
+          </p>
+          <button onClick={checkUpdate} disabled={updBusy}>
+            {updBusy ? "A procurar..." : "Procurar atualização"}
+          </button>
+          {updMsg && <p className="muted">{updMsg}</p>}
+          <h3 style={{ marginTop: 22 }}>Desinstalar</h3>
           <p className="muted">
             Remove a MEIDA do computador. A app fecha e o desinstalador abre.
           </p>

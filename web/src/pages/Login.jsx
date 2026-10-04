@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext.jsx";
+import LoadingStatus from "../components/LoadingStatus.jsx";
 
 export default function Login({ mode = "login" }) {
   const isRegister = mode === "register";
@@ -49,7 +50,15 @@ export default function Login({ mode = "login" }) {
           />
         </label>
         <button type="submit" disabled={busy}>
-          {busy ? "..." : isRegister ? "Criar conta" : "Entrar"}
+          {busy ? (
+            <LoadingStatus compact muted>
+              A entrar
+            </LoadingStatus>
+          ) : isRegister ? (
+            "Criar conta"
+          ) : (
+            "Entrar"
+          )}
         </button>
         <p className="auth-switch">
           {isRegister ? (
