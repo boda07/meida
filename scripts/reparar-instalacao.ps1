@@ -6,11 +6,17 @@
 #
 # O que faz:
 #   1. ve se ha espaco em disco
-#   2. ve o estado da instalacao
-#   3. apaga a pasta partida e o atalho partido
+#   2. ve o estado da instalacao e o tipo de processador deste PC
+#   3. apaga a pasta partida, o atalho partido e a entrada do Painel de Control
 #   4. descarrega o instalador mais recente do GitHub
 #   5. CONFIRMA o sha512 antes de correr (download cortado = nao instala)
 #   6. corre o instalador e confirma que o MEIDA.exe ficou la
+#   7. confirma que o MEIDA.exe instalado e do tipo certo (x64 ou ARM64)
+#
+# O passo 7 e novo. As versoes 1.2.0 a 1.2.2 vieram com um instalador feito so
+# para ARM64, que em PC normal nao extraia ficheiro nenhum e acabava com codigo
+# 0. Dizer o tipo do processador e o do executable instalado da para ver isso de
+# relance.
 #
 # Como executar:
 #   iwr -useb https://raw.githubusercontent.com/boda07/meida/main/scripts/reparar-instalacao.ps1 | iex | Out-File -Encoding utf8 "$env:USERPROFILE\meida-reparar.ps1"; powershell -NoProfile -ExecutionPolicy Bypass -File "$env:USERPROFILE\meida-reparar.ps1"
@@ -50,6 +56,28 @@ function Aviso($t) { Write-Output ("  >> " + $t) }
 function Problema($t) { Write-Output ("  !! " + $t) }
 function Erro($t) { Write-Output ("  XX " + $t) }
 
+# Le o tipo de arquitectura de um executavel a partir do cabecalho PE.
+# E o unico jeito de confirmar, sem instalar, que o MEIDA.exe e do tipo certo -
+# foi exactamente o que falhou nas versoes 1.2.0 a 1.2.2, que vinham com um
+# executavel ARM64 num instalador destinado a toda a gente.
+function Get-TipoExe($caminho) {
+  try {
+    $fs = [System.IO.File]::OpenRead($caminho)
+    $br = New-Object System.IO.BinaryReader($fs)
+    $br.ReadBytes(2) | Out-Null
+    $fs.Seek(0x3C, [System.IO.SeekOrigin]::Begin) | Out-Null
+    $pe = $br.ReadInt32()
+    $fs.Seek($pe + 4, [System.IO.SeekOrigin]::Begin) | Out-Null
+    $m = $br.ReadUInt16()
+    $br.Close(); $fs.Close()
+    if ($m -eq 0x8664) { return "x64" }
+    if ($m -eq 0xAA64) { return "ARM64" }
+    if ($m -eq 0x014C) { return "x86" }
+    if ($m -eq 0x01C4) { return "ARM" }
+    return ("desconhecido (0x" + $m.ToString("X") + ")")
+  } catch { return "nao foi possivel ler" }
+}
+
 # O PowerShell 5.1 devolve o .Content como array de bytes, por issoisto tem de
 # ser sempre convertido para texto antes de se fazer um regex.
 function Get-Texto($url) {
@@ -67,8 +95,10 @@ if (-not $unidadeTemp) { $unidadeTemp = "C:" }
 $drive = New-Object System.IO.DriveInfo($unidadeTemp)
 Info ("unidade de trabalho : " + $drive.Name)
 Info ("livre agora        : " + [math]::Round($drive.AvailableFreeSpace / 1MB) + " MB")
-# O instalador tem de ser descarregado E descompactado (~2x).
-$minimo = 500
+# O instalador tem de ser descarregado E descompactado (~2x). O instalador
+# tem dentro as duas arquitecturas (x64 e ARM64), por isso e grande: ~210 MB
+# o ficheiro e ~700 MB depois de descompactado. Da a margem.
+$minimo = 1000
 if ($drive.AvailableFreeSpace -lt ($minimo * 1MB)) {
   Erro ("Pouco espaco. Sao precisos pelo menos " + $minimo + " MB livres em " + $drive.Name + ".")
   Erro "Liberta espaco e volta a correr isto. Nao foi feito mais nada."
@@ -91,6 +121,20 @@ if ($k -and $null -ne $k.VerifiedAndReputablePolicyState) {
   else { $sac = "desligado" }
 }
 Info ("Controlo de Aplicacoes Inteligente : " + $sac)
+
+# O tipo de processador deste PC. Importa porque o instalador tem de trazer a
+# versao certa: um instalador so com ARM64 (como o das 1.2.0 a 1.2.2) nao extrai
+# nada num PC x64 e acaba com codigo 0, sem decir nada.
+# Numa maquina ARM com emulacao x64, o PROCESSOR_ARCHITECTURE diz "AMD64" que
+# e MENTIRA - e era por ai que se escondia o erro. O que nao mente e o
+# PROCESSOR_IDENTIFIER, que vem do processador de verdade.
+$ident = $env:PROCESSOR_IDENTIFIER
+$armPC = ($ident -match "ARM")
+if ($armPC) { $processador = "ARM64" }
+elseif ($env:PROCESSOR_ARCHITECTURE) { $processador = $env:PROCESSOR_ARCHITECTURE }
+else { $processador = "desconhecido" }
+Info ("processador       : " + $processador + $(if ($armPC) { "  (emulacao x64 activada, mas o CPU e ARM)" } else { "" }))
+if ($ident) { Info ("identificador     : " + $ident) }
 $instalada = $null
 foreach ($c in $caminhos) {
   if (Test-Path $c) {
@@ -253,16 +297,16 @@ if ($NaoInstalar) {
 Secao "6. INSTALAR"
 Aviso "Vai aparecer o instalador. Deixa-o terminar; NAO feches a janela."
 
-# O instalador cria um atalho no ambiente de trabalho. Se a pasta Desktop nao
-# existir (acontece com o OneDrive, que a pode mover), o atalho nao se cria e
-# o instalador da um erro a meio e volta atras - deixando o Uninstall MEIDA.exe
-# e a entrada no Painel de Control, mas sem a app. E o que se viu.
+# O instalador cria um atalho no ambiente de trabalho. Se essa pasta nao
+# existir (o OneDrive pode move-la), o atalho nao se cria. Nao era a causa do
+# que se viu - a pasta existia - mas criar a pasta e barato e evita que a
+# instalacao fique a meio, por isso fica.
 try {
   $desk = [Environment]::GetFolderPath("Desktop")
   if (-not (Test-Path $desk)) {
     Aviso ("a pasta do ambiente de trabalho nao existe: " + $desk)
     New-Item -ItemType Directory -Path $desk -Force -ErrorAction Stop | Out-Null
-    Info "pasta criada. Sem isto o instalador aborta a meio."
+    Info "pasta criada."
   } else {
     Info ("ambiente de trabalho : " + $desk + "  (existe, ok)")
   }
@@ -311,17 +355,31 @@ if ($codigo -eq 1) {
 # ------------------------------------------------- 5. confirmar
 Secao "7. CONFIRMAR"
 $ficou = $false
+$tipoErrado = $null
 foreach ($c in $caminhos) {
-  if (Test-Path (Join-Path $c $exeNome)) {
+  $exeC = Join-Path $c $exeNome
+  if (Test-Path $exeC) {
     $ficou = $true
-    $ver = (Get-Item (Join-Path $c $exeNome)).VersionInfo.ProductVersion
-    Info ("OK: " + (Join-Path $c $exeNome) + "   versao " + $ver)
+    $ver = (Get-Item $exeC).VersionInfo.ProductVersion
+    Info ("OK: " + $exeC + "   versao " + $ver)
+    $tipo = Get-TipoExe $exeC
+    Info ("   tipo do executavel: " + $tipo + "   (este PC e " + $processador + ")")
+    # Num PC normal tem de ser x64; num PC ARM tem de ser ARM64. Um executavel
+    # do tipo errado nao arranca - e e assim que se descobre o erro cedo.
+    if ($armPC -and $tipo -ne "ARM64") { $tipoErrado = $tipo }
+    if ((-not $armPC) -and $tipo -ne "x64") { $tipoErrado = $tipo }
   }
 }
 
 Secao "VEREDITO"
-if ($ficou) {
-  Info "A MEIDA esta instalada e completa."
+if ($tipoErrado) {
+  Problema ("A MEIDA esta instalada, mas o executavel e do tipo ERRADO (" + $tipoErrado + ")")
+  Problema ("Este PC e " + $processador + ". O ficheiro instalado e de outro tipo,")
+  Problema "por isso a app nao vai arrancar. Nao foi o teu PC que fez nada de errado."
+  Problema "Desinstala-a no Painel de Control > Programas e corre isto outra vez."
+  Problema "Se acontecer outra vez, diz a quem te deu o script: e um erro nosso."
+} elseif ($ficou) {
+  Info "A MEIDA esta instalada, completa, e do tipo certo para este PC."
   Info "Abre a app pelo icone do Menu Iniciar."
   Remove-Item $destino -Force -ErrorAction SilentlyContinue
 } else {
@@ -329,14 +387,15 @@ if ($ficou) {
   if ($null -ne $codigo) {
     if ($codigo -eq 0) {
       Problema "O instalador devolveu 0, ou seja, ELE ACHA QUE CORREU BEM."
-      Problema "Isso deixa uma hipotese forte: a janela foi fechada a meio, ou"
-      Problema "o Windows interrompeu a extracao sem registar nada."
+      Problema "Foi assim que o problema passou despercebido ate hoje: o Windows"
+      Problema "aceitou o instalador, criou o atalho e o Painel de Control, e"
+      Problema "nao pos a app. Nao foi nada do teu PC."
     } else {
       Problema ("O instalador devolveu o codigo " + $codigo + " - ou seja, NAO foi bem-sucedido.")
     }
   }
   Problema "Guarda este relatorio e manda-o a quem te deu o script."
-  Problema "Vai tambem ao Painel de Control > Programas: se a MEIDA 1.2.2 la"
+  Problema ("Vai tambem ao Painel de Control > Programas: se a MEIDA " + $versao + " la")
   Problema "estiver, o instalador criou a entrada mas nao extraiu a app - nesse"
   Problema "caso desinstala-a e corre isto outra vez."
   Problema "Porque? Estes sao os registos que respondem:"
