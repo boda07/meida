@@ -10,6 +10,7 @@ import { useAuth } from "../auth/AuthContext.jsx";
 import { useSettings } from "../settings/SettingsContext.jsx";
 import Avatar from "../components/Avatar.jsx";
 import LoadingStatus from "../components/LoadingStatus.jsx";
+import { CheckIcon } from "../components/icons.jsx";
 
 // Título a mostrar: para anime respeita a opção ingles/romaji guardada no servidor.
 function displayTitle(it, romaji) {
@@ -40,7 +41,11 @@ function PosterGrid({ items, empty, romaji }) {
               )}
               <div className="card-scrim" />
               {it.score ? <span className="card-rating">{it.score}/100</span> : null}
-              {it.watched ? <span className="card-watched">✓</span> : null}
+              {it.watched ? (
+                <span className="card-watched" title="Visto">
+                  <CheckIcon />
+                </span>
+              ) : null}
               {it.watchlist && !it.watched ? <span className="card-watchlist">+</span> : null}
               <div className="card-footer">
                 <h3 className="card-title">{t}</h3>

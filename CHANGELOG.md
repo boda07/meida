@@ -1,5 +1,89 @@
 # Changelog
 
+## 1.2.2
+
+### Corrigido: a atualização da app ficava a meio (atalho do Menu Iniciar partido)
+- **Causa**: `electron/main.cjs` lançava o backend com
+  `spawn(process.execPath, [serverEntry], { env: { ELECTRON_RUN_AS_NODE: "1" } })`,
+  ou seja o backend é **outro processo do próprio `MEIDA.exe`**. `stopServer()` só
+  fazia `kill()` sem esperar, e `quitAndInstall()` arrancava de seguida — o
+  instalador do NSIS tentava substituir `MEIDA.exe` e `resources/` com dois
+  processos do mesmo ficheiro vivos. O `.exe` antigo desaparecia, o novo não
+  ficava, e o atalho do Menu Iniciar passava a apontar para nada
+  (*"este atalho foi alterado ou removido"*).
+- **Correção**: `stopServer(waitForExit)` devolve uma Promise e, com
+  `waitForExit`, espera pelo evento `exit` (com `SIGKILL` aos 5 s se Resistir).
+  O handler de `update-downloaded` faz `await stopServer(true)` antes de
+  `quitAndInstall(false, true)`.
+- **Nota**: isto resolve a causa de ficheiros trancados. Se num PC específico o
+  sintoma se repetir, a hipótese a seguir é o Windows Defender a pôr a app em
+  quarentena (instaladores sem assinatura digital + WebTorrent). Para isso ficou
+  `scripts/diag-instalacao.ps1`, que reporta onde a app está instalada, para onde
+  apuntan os atalhos, deteções do Defender e o que ficou a meio no cache do
+  updater.
+
+### Provider de anime novo: MegaPlay (`megaplay.buzz`), agora o principal
+- `server/src/services/providers.js`: `ANIME_PROVIDERS` passa a
+  `megaplay-anime` → `vidnest-anime`.
+  URL: `https://megaplay.buzz/stream/ani/{anilist}/{ep}/{audio}`.
+- **Legendas completas e ligadas.** O `/stream/getSources?id={data-id}` devolve
+  `tracks[].file` em claro (o `.vtt` do ep 1 do One Piece tem 285 blocos), ao
+  contrário do MegaVid removido, cujas legendas só existiam para cópias em
+  cache. O JW Player do MegaPlay traz a legenda ligada por omissão; o do VidNest
+  nasce com `mode="disabled"`.
+- **O mais limpo dos providers de anime medidos**: em 12 s de reprodução, e mesmo
+  a clicar (que é o que dispara popunders), só pediu segmentos de vídeo. O único
+  pedido de terceiros é `statlytic.net` (estatísticas).
+- **Exige header `Referer`** (sem ele devolve "Error - MegaPlay"), mas não valida
+  o valor — e um iframe envia sempre. A health-check passou a mandá-lo
+  (`refererFor()` em `providerHealth.js`).
+- **Só a rota `/ani/`** entra na app. A `/mal/` resolve quase sempre o mesmo
+  episódio que a `/ani/` (embora cada uma falhe em títulos que a outra resolve —
+  Dandadan só na `/mal/`, Solo Leveling só na `/ani/`), por isso listar as duas
+  voltaria a mostrar o mesmo episódio duas vezes: o bug do "MegaVid 1 e 2".
+- **Descartados na mesma procura**: `supaplay.fun` (passou a premium),
+  `ani.megaplay.su` (página de erro), `ninjasheild.stream` (não responde),
+  `myapi-psi-wheat.vercel.app` (AnimePahe, 503), `api.ani.zip` (404).
+
+### Novo: bloqueador de anúncios local (`electron/adblock.cjs`)
+- Cancela os pedidos de anúncios na sessão do Electron
+  (`session.webRequest.onBeforeRequest`) **antes de saírem para a rede** — o vídeo
+  continua a passar, os anúncios nunca chegam a existir. Vale para todos os
+  providers, é grátis e não precisa de listas externas.
+- 41 domínios: as redes de anúncios mais comuns, mais o que foi **medido** no
+  megavid.buzz (Teniacites, Histats), no vidnest.fun (MintAds, bounceExchange,
+  bdpcmd, click-catcher do popunder) e no megaplay.buzz (statlytic.net).
+- `NEVER_BLOCK` como rede de segurança com os hosts que servem vídeo e legendas
+  (CDNs do MegaPlay, `vidnest.fun`, proxy das legendas, `127.0.0.1`). Se o vídeo
+  deixar de passar, é aí que se acrescenta o domínio que aparecer no log.
+- `MEIDA_ADBLOCK_DEBUG=1` faz log de cada bloqueio; `MEIDA_BLOCK_ALL_ADS=1`
+  bloqueia tudo (para testes). Não faz `require("electron")` — recebe a sessão
+  como parâmetro, para ser carregável num script Node normal.
+
+### Anime sem fontes quando só há o id do MyAnimeList
+- `server/src/routes/sources.js`: a rota `/sources` passou a `async` e resolve o
+  id do AniList via `malToAnilist()` quando o catálogo só traz o do MAL. Sem isto,
+  um anime com `anilistId: null` ficava **sem fonte nenhuma** (e o novo MegaPlay,
+  tal como o VidNest, só aceita id do AniList).
+
+### Melhorado: Definições em abas
+- `web/src/pages/Settings.jsx`: as 21 secções deixaram de ser um scroll só. Cada
+  `<section>` declara `data-tab="..."` e o CSS esconde as das outras abas
+  (`.settings-page[data-active-tab]` em `web/src/styles.css`) — não foi preciso
+  mexer no envelope nem na ordem dos blocos. Aba guardada em `localStorage`
+  (`meida:settings-tab`), com `aria-selected`/`role="tablist"`.
+
+### Melhorado: marca de "visto" nos cartazes
+- `web/src/components/icons.jsx`: novo `CheckIcon` (SVG preenchido, como os
+  outros ícones). Substitui o carácter `✓`, que o Windows desenhava com o Segoe
+  UI Symbol como um traço fino e torto, e o "olhinho" desenhado à mão no botão
+  de acção rápida de `MediaCard.jsx` (agora um tick).
+
+### Housekeeping
+- `AGENTS.md` / `IDEIAS.md`: registo do que foi medido nos providers de anime
+  (incluindo por que um provider removido em Julho voltou em Outubro, e o que
+  ainda não compensa fazer).
+
 ## 1.2.1
 
 ### Novo: Discord Rich Presence (grátis, local)

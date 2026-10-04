@@ -84,41 +84,79 @@ export const PROVIDERS = [
 ];
 
 /**
- * Providers DEDICADOS a anime, por id do MyAnimeList ({mal}) + episodio ({ep})
- * + audio ({audio} = "sub" ou "dub"). Permitem escolher legendado vs dobrado,
- * o que os providers normais (via TMDB) nao permitem.
+ * Providers DEDICADOS a anime, por id do MyAnimeList ({mal}) ou do AniList
+ * ({anilist}, ver `idType`) + episodio ({ep}) + audio ({audio} = "sub" ou "dub").
+ * Permitem escolher legendado vs dobrado, o que os providers normais (via TMDB)
+ * nao permitem.
+ *
+ * A ordem e preferencia: o 1º que responde e a fonte default do anime.
  */
 export const ANIME_PROVIDERS = [
-  // MegaPlay (o mesmo backend do anisuge.tv) removido: os endpoints /stream/...
-  // devolviam erro 410 para todos os titulos (megaplay.buzz a 2026-07-31).
-  // VidPlus (player.vidplus.to) removido a 2026-07-31: devolvia 403 mesmo na raiz
-  // e era redundante com o MegaVid (ambos usam ids do AniList).
-  // VidLink (anime) removido a 2026-07-31: nao devolvia fontes (resolucao de
-  // stream no cliente devolvia url=undefined). Fica so para filmes/series.
+  // Historico dos removidos (nao voltar a adicionar sem verificar):
+  //  - MegaPlay: removido em 2026-07-31 porque os endpoints /stream/... devolviam
+  //    erro 410 para todos os titulos. VOLTOU a 2026-10-04 (ver entrada abaixo) —
+  //    o que ensina a nao dar um provider como morto sem voltar a testar.
+  //  - VidPlus (player.vidplus.to): 403 mesmo na raiz e redundante com o
+  //    MegaVid (ambos usam ids do AniList) (2026-07-31).
+  //  - VidLink (anime): nao devolvia fontes (resolucao de stream no cliente
+  //    devolvia url=undefined). Fica so para filmes/series (2026-07-31).
+  //  - MegaVid (megavid.buzz), as DUAS entradas "MegaVid (anime)" e "MegaVid 2
+  //    (anime)": removidas a 2026-10-04. O /mal/ e o /ani/ passaram a devolver
+  //    a MESMA pagina byte a byte (31253 bytes, titulo "KissKH Player"), ou
+  //    seja as duas fontes eram o mesmo player em duplicado. Esse player e
+  //    servido pelo CDN do Teniacites e so traz legendas para copias em cache
+  //    (o proprio player diz "subtitle tracks ... only for OUR cached copies"),
+  //    pelo que os episodios mais recentes ficavam sem legendas, e vinha com
+  //    anuncios/tracking (Histats). Ficou so o VidNest, que passou para 2.a
+  //    posicao quando o MegaPlay voltou (ver entrada abaixo).
+  //  - VidSrc.cc (anime): removido junto com a familia VidSrc (ver PROVIDERS).
   {
-    // MegaVid: player embed com formatos /mal/ e /ani/ (sub/dub). Testado a
-    // 2026-07-31: responde 200 em contexto de iframe (bloqueia acesso direto sem
-    // referer, por isso pede o header de origem ao embutir). Primeiro na lista
-    // para ser a fonte default do anime.
-    id: "megavid-mal",
-    name: "MegaVid (anime)",
-    idType: "mal",
-    url: "https://megavid.buzz/mal/{mal}/{ep}/{audio}",
-  },
-  {
-    id: "megavid-ani",
-    name: "MegaVid 2 (anime)",
+    // MegaPlay (megaplay.buzz), a fonte principal de anime. Verificada a
+    // 2026-10-04 no browser: o video carrega e reproduz a 1920x1080, no sub E no
+    // dub, e traz legendas COMPLETAS (o .vtt do ep 1 do One Piece tem 285 blocos
+    // de texto) — que era exactamente a queixa sobre o MegaVid, cujas legendas
+    // so existiam para copias em cache.
+    //
+    // E o mais limpo de todos os providers de anime medidos: em 12 s de
+    // reproducao e com cliques (que e o que dispara popunders) so pediu
+    // segmentos de video. O unico pedido de terceiros e "statlytic.net"
+    // (estatisticas), que esta no electron/adblock.cjs.
+    //
+    // Avisos:
+    //  - EXIGE um header Referer (sem ele devolve a pagina "Error - MegaPlay").
+    //    Qualquer iframe envia, por isso na app funciona sempre; a health-check
+    //    manda o referer do proprio site (ver probe() em providerHealth.js).
+    //  - A rota /ani/ (AniList) e a /mal/ (MAL) nao sao iguais: cada uma falha
+    //    em titulos que a outra resolve (o Solo Leveling so na /ani/, o Dandadan
+    //    so na /mal/). Usamos so a /ani/ para nao voltar a mostrar o mesmo
+    //    episodio duas vezes na lista, como aconteceu com o "MegaVid 1 e 2".
+    //  - As legendas vem emingles.
+    id: "megaplay-anime",
+    name: "MegaPlay (anime)",
     idType: "anilist",
-    url: "https://megavid.buzz/ani/{anilist}/{ep}/{audio}",
+    url: "https://megaplay.buzz/stream/ani/{anilist}/{ep}/{audio}",
   },
   {
-    // VidNest tambem usa AniList id.
+    // VidNest: player embed no formato /anime/{anilist}/{ep}/{audio} (sub/dub).
+    // Verificado a 2026-10-04 no browser: o video carrega e reproduz, mas a faixa
+    // de legendas vem DESLIGADA (track kind="captions" com mode="disabled"), ao
+    // contrario do MegaPlay — e o utilizador tem de a ligar a mao. Fica como
+    // segunda opcao porque o MegaPlay nem sempre tem o episodio.
+    //
+    // ATENCAO: NAO e' um provider "limpo". Carrega ads por JS em runtime (popunder
+    // + mintads/bounceExchange/bdpcmd), so que nao aparecem no HTML inicial e o
+    // health-check nao os ve. Sao barrados pelo electron/adblock.cjs. Nao ha
+    // provider de anime gratis sem ads — o MegaVid era exatamente o mesmo
+    // problema, mas pior (o player ERA o site de anuncios) e sem legendas.
+    //
+    // So aceita o caminho /anime/ com id do AniList (/mal/ e /ani/ devolvem 404),
+    // por isso o id do AniList e obrigatorio; ver sources.js, que o resolve via
+    // malToAnilist quando o catalogo so tem o id do MAL.
     id: "vidnest-anime",
     name: "VidNest (anime)",
     idType: "anilist",
     url: "https://vidnest.fun/anime/{anilist}/{ep}/{audio}",
   },
-  // VidSrc.cc (anime) removido junto com a familia VidSrc (ver PROVIDERS acima).
 ];
 
 function fill(template, vars) {

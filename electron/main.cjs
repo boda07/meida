@@ -20,6 +20,7 @@ const fs = require("fs");
 const { spawn } = require("child_process");
 const { autoUpdater } = require("electron-updater");
 const discordPresence = require("./discord-presence.cjs");
+const { installAdBlock } = require("./adblock.cjs");
 
 // ===== Servidor: local (video) + remoto (dados) =====
 // A app corre SEMPRE localmente (serve o UI e o video/streaming). Em modo "dados
@@ -347,6 +348,18 @@ function createWindow() {
   // Bloqueia popups (ex.: anuncios dos providers) em vez de abrir novas janelas.
   win.webContents.setWindowOpenHandler(() => ({ action: "deny" }));
 
+  // Bloqueia tambem os PEDIDOS de anuncios dos players (redes de anuncios,
+  // popunder, tracking). Vale para todos os providers e e' gratis/local: o video
+  // continua a passar, os anuncios nunca chegam a sair. Ver electron/adblock.cjs.
+  if (process.env.MEIDA_ADBLOCK_DEBUG === "1") {
+    const quantos = installAdBlock(win.webContents.session, (host, url, ref) =>
+      console.log("[adblock] bloqueado", host, "|", url, "| de:", ref || "?")
+    );
+    console.log(`[adblock] ativo (${quantos} dominios)`);
+  } else {
+    installAdBlock(win.webContents.session);
+  }
+
   // Quando a app estiver carregada, mostra a janela e fecha a splash.
   const reveal = () => {
     if (win && !win.isVisible()) win.show();
@@ -382,7 +395,14 @@ function setupAutoUpdate() {
       message: `Nova versao ${info.version} pronta a instalar.`,
       detail: "A app reinicia para aplicar a atualizacao.",
     });
-    if (response === 0) autoUpdater.quitAndInstall();
+    if (response === 0) {
+      // Mata o backend e espera que ele desapareca antes de chamar o instalador:
+      // o backend e outro processo do MESMO MEIDA.exe, e se ainda estiver vivo o
+      // NSIS nao consegue substituir os ficheiros (update a meio = atalho
+      // partido). Ver stopServer().
+      await stopServer(true);
+      autoUpdater.quitAndInstall(false, true);
+    }
   });
 
   autoUpdater.on("error", (e) => console.error("[update]", e?.message || e));
@@ -421,11 +441,38 @@ app.whenReady().then(() => {
   });
 });
 
-function stopServer() {
-  if (serverProc) {
-    serverProc.kill();
-    serverProc = null;
+// Fecha o backend, ESPERANDO que ele saia de facto. E' preciso para a
+// atualizacao: o backend tambem e um processo do proprio MEIDA.exe (spawn de
+// process.execPath com ELECTRON_RUN_AS_NODE), portanto enquanto ele estiver vivo
+// o .exe e a pasta resources/ estao trancados e o instalador do NSIS falha a meio
+// — o .exe antigo desaparece, o novo nao fica, e o atalho do Menu Iniciar passa
+// a apontar para um ficheiro que nao existe ("este atalho foi alterado ou
+// removido").
+function stopServer(waitForExit = false) {
+  const proc = serverProc;
+  serverProc = null;
+  if (!proc) return Promise.resolve();
+  const exited = new Promise((resolve) => {
+    proc.once("exit", () => resolve("exit"));
+    proc.once("error", () => resolve("error"));
+  });
+  try {
+    proc.kill();
+  } catch {
+    /* ja estava morto */
   }
+  if (!waitForExit) return exited;
+  return Promise.race([exited, new Promise((r) => setTimeout(r, 5000))]).then(() => {
+    // 5 s e ainda esta vivo: forcamos o fim.
+    if (proc.exitCode === null && proc.signalCode === null) {
+      try {
+        proc.kill("SIGKILL");
+      } catch {
+        /* nada a fazer */
+      }
+    }
+    return exited;
+  });
 }
 
 // Antes de sair: esconder a presenca no Discord (senao fica "A ver" para sempre)

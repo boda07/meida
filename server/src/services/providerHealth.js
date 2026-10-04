@@ -1,8 +1,9 @@
 // Health-check dos providers: testa 1x/dia cada provider de filmes/series e de
 // anime com um titulo conhecido, e sinaliza os que estao mortos (DNS, timeout,
-// 4xx/5xx ou pagina de erro) para o frontend mostrar sem depender de tentar
-// um titulo a serio. Resultado guardado em cache em disco (sobrevive a
-// reinicios) e em memoria; o check corre em background, sem bloquear pedidos.
+// 4xx/5xx ou pagina de erro), os que enchem o ecra de anuncios e os que sao
+// demasiado lentos, para o frontend mostrar sem depender de tentar um titulo a
+// serio. Resultado guardado em cache em disco (sobrevive a reinicios) e em
+// memoria; o check corre em background, sem bloquear pedidos.
 import { PROVIDERS, ANIME_PROVIDERS } from "./providers.js";
 import { cacheGet, cacheSet } from "./cache.js";
 import { log } from "./log.js";
@@ -32,12 +33,54 @@ const DEAD_HINTS = [
   "this video is not available",
 ];
 
+// Redes de anuncios / scripts de popunder que aparecem no HTML do player. Um
+// provider que os traz e' pior que nao ter provider: enche o ecra de anuncios.
+// Medido a 2026-10-04: o megavid.buzz trazia "teniacites" + "histats"; o
+// vidnest.fun e o vidapi.xyz nao traziam nenhum.
+//
+// De proposito NAO entram ferramentas de analise (googletagmanager,
+// google-analytics, etc.): aparecem em players perfeitamente decentes e nao
+// dizem nada sobre anuncios. Exige-se 2 marcadores DISTINTOS para marcar como
+// nao-ok, para nao cair em falsos positivos.
+const AD_MARKERS = [
+  "teniacites",
+  "histats",
+  "adsbygoogle",
+  "doubleclick.net",
+  "googlesyndication.com/pagead",
+  "onclickpopunder",
+  "propellerads",
+  "adsterra",
+  "popcash",
+  "exoclick",
+  "adcash",
+  "mgid.com",
+  "taboola",
+  "outbrain",
+  "trafficjunky",
+  "juicyads",
+];
+const AD_MIN_HITS = 2;
+
 let memory = null; // { at, providers: [...] } com o ultimo resultado
 let checking = null; // Promise do check em curso
 
-// Testa um URL: devolve ok=false + motivo se falhar ou for demasiado lento,
-// true se responder bem (e rapido).
-async function probe(url, referer) {
+// Alguns providers exigem um header Referer para responder com o player em vez
+// de uma pagina de erro: o megaplay.buzz devolve "Error - MegaPlay" sem ele
+// (medido a 2026-10-04). Nao validam o valor, so exigem que exista — e um iframe
+// envia sempre, por isso na app funciona. Aqui mandamos a raiz do proprio site,
+// que e o que o browser faria ao navegar para la.
+function refererFor(url) {
+  try {
+    return new URL(url).origin + "/";
+  } catch {
+    return undefined;
+  }
+}
+
+// Testa um URL: devolve ok=false + motivo se falhar, vier com anuncios ou for
+// demasiado lento, true se responder bem (rapido e limpo).
+async function probe(url) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
   const t0 = Date.now();
@@ -48,7 +91,8 @@ async function probe(url, referer) {
       headers: {
         "user-agent":
           "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36",
-        ...(referer ? { referer, origin: referer } : {}),
+        "accept-language": "pt-PT,pt;q=0.9,en;q=0.8",
+        referer: refererFor(url),
       },
     });
     const ms = Date.now() - t0;
@@ -57,6 +101,10 @@ async function probe(url, referer) {
     const low = text.toLowerCase();
     for (const hint of DEAD_HINTS) {
       if (low.includes(hint)) return { ok: false, status: res.status, error: hint, ms };
+    }
+    const ads = AD_MARKERS.filter((m) => low.includes(m));
+    if (ads.length >= AD_MIN_HITS) {
+      return { ok: false, status: res.status, error: `anuncios (${ads.join(", ")})`, ms };
     }
     if (ms > SLOW_MS) return { ok: false, status: res.status, error: `lento (${ms}ms)`, ms };
     return { ok: true, status: res.status, ms };
@@ -71,18 +119,12 @@ async function probe(url, referer) {
   }
 }
 
-// O Megavid (anime) bloqueia pedidos sem referer/origin (usa o header ao embutir).
-function refererFor(url) {
-  if (!url.includes("megavid.buzz")) return null;
-  return "https://megavid.buzz/";
-}
-
 function runCheck() {
   const tests = [
     ...PROVIDERS.filter((p) => p.movie).map((p) => ({
       id: p.id,
       name: p.name,
-      type: p.id.startsWith("megavid") ? "anime" : "movie",
+      type: "movie",
       url: p.movie.replace("{tmdb}", String(TEST_MOVIE)),
     })),
     ...ANIME_PROVIDERS.map((p) => ({
@@ -98,7 +140,7 @@ function runCheck() {
   ];
   return Promise.all(
     tests.map(async (t) => {
-      const r = await probe(t.url, refererFor(t.url));
+      const r = await probe(t.url);
       if (!r.ok) {
         log.warn("provider", `${t.name} (${t.id}) falhou`, {
           status: r.status,

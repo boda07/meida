@@ -34,6 +34,17 @@ export function InfoIcon({ size = 20 }) {
   );
 }
 
+// Marca de "visto" (badge dos cartazes). Antes era o caractere "✓", que o
+// Windows desenhava com o Segoe UI Symbol: saía um traço fino e torto, quase um
+// rabisco. SVG preenchido, como os outros ícones.
+export function CheckIcon({ size = 14 }) {
+  return (
+    <svg aria-hidden="true" width={size} height={size} viewBox="0 0 24 24" fill="currentColor">
+      <path d="M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
+    </svg>
+  );
+}
+
 // Ícones das conquistas (sem emojis, SVG inline). Um por tipo de badge.
 export function BadgeIcon({ id, size = 28 }) {
   const common = {

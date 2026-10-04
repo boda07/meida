@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { imageUrl } from "../api/client.js";
 import { useAuth } from "../auth/AuthContext.jsx";
 import { useLibrary } from "../library/LibraryContext.jsx";
+import { CheckIcon } from "./icons.jsx";
 
 export default function MediaCard({ item, landscape = false }) {
   const { user } = useAuth();
@@ -69,7 +70,11 @@ export default function MediaCard({ item, landscape = false }) {
         )}
          <div className="card-scrim" />
          {item.new && <div className="card-badge">NOVO</div>}
-         {watched && <div className="card-watched">✓</div>}
+         {watched && (
+            <div className="card-watched" title="Visto">
+              <CheckIcon />
+            </div>
+          )}
          {watchlist && !watched && <div className="card-watchlist">+</div>}
          {entry?.score != null && (
            <div className="card-score" title="A tua nota">
@@ -106,8 +111,9 @@ export default function MediaCard({ item, landscape = false }) {
               strokeLinejoin="round"
             >
               {watchlist && !watched ? (
-                // olhinho a confirmar que foi visto
-                <path d="M1 12s6 6 11 11 11-5 11-11S17 1 12 1 1 12z" />
+                // visto (antes era um "olhinho" desenhado à mão, que saía
+                // como um rabisco — um tick é mais claro para esta acção)
+                <path d="M20 6 9 17l-5-5" />
               ) : (
                 // cruz +
                 <>

@@ -573,6 +573,25 @@ function Choice({ value, current, onPick, children }) {
   );
 }
 
+// ============================================================================
+// Abas das Definições
+// ============================================================================
+// Eram 21 secções num scroll só. Agora cada <section className="set-section">
+// diz a que aba pertence (`data-tab="..."`) e o CSS esconde as das outras abas
+// (ver `.settings-page[data-active-tab]` em styles.css) — assim não foi preciso
+// mexer no envelope nem na ordem dos blocos. O `id` de cada aba é o mesmo
+// string nos dois lados, por isso convém não os escrever à mão.
+const TABS = [
+  { id: "perfil", label: "Perfil" },
+  { id: "aparencia", label: "Aparência" },
+  { id: "reproducao", label: "Reprodução" },
+  { id: "conteudo", label: "Conteúdo" },
+  { id: "contas", label: "Contas" },
+  { id: "dados", label: "Dados" },
+  { id: "avancado", label: "Avançado" },
+];
+const TAB_KEY = "meida:settings-tab";
+
 export default function Settings() {
   const { settings, update } = useSettings();
   const { user, updateAvatar, updateProfile } = useAuth();
@@ -581,6 +600,16 @@ export default function Settings() {
   const [isPublic, setIsPublic] = useState(true);
   const [profileSaving, setProfileSaving] = useState(false);
   const [profileMsg, setProfileMsg] = useState(null);
+  // Aba activa. Guardada no browser para não voltar ao "Perfil" a cada visita
+  // (e para não perder o scroll de quem só anda a ver as contas linked).
+  const [tab, setTab] = useState(() => {
+    try {
+      const saved = localStorage.getItem(TAB_KEY);
+      return TABS.some((t) => t.id === saved) ? saved : "perfil";
+    } catch {
+      return "perfil";
+    }
+  });
   // Servidor (so no desktop Electron): local vs remoto.
   const desktop = typeof window !== "undefined" ? window.electronAPI : null;
   const [srv, setSrv] = useState(null);
@@ -603,6 +632,15 @@ export default function Settings() {
   useEffect(() => {
     api.providersHealth().then(setProvHealth).catch(() => {});
   }, []);
+
+  // Persiste a aba activa.
+  useEffect(() => {
+    try {
+      localStorage.setItem(TAB_KEY, tab);
+    } catch {
+      /* modo privado sem localStorage: só não fica guardado */
+    }
+  }, [tab]);
 
   async function pickAvatar(value) {
     setError(null);
@@ -792,12 +830,28 @@ export default function Settings() {
   }
 
   return (
-    <div className="sub-page settings-page">
+    <div className="sub-page settings-page" data-active-tab={tab}>
       <h2 className="row-title">Definições</h2>
+
+      {/* Abas: uma secção de cada vez, para não teres de rolar a página toda. */}
+      <nav className="mode-tabs settings-tabs" role="tablist" aria-label="Secções das definições">
+        {TABS.map((t) => (
+          <button
+            key={t.id}
+            type="button"
+            role="tab"
+            aria-selected={tab === t.id}
+            className={tab === t.id ? "active" : ""}
+            onClick={() => setTab(t.id)}
+          >
+            {t.label}
+          </button>
+        ))}
+      </nav>
 
       {/* ===== Servidor (so no desktop Electron) ===== */}
       {desktop?.getServerConfig && (
-        <section className="set-section">
+        <section className="set-section" data-tab="dados">
           <h3>Servidor</h3>
           <p className="muted">
             Onde ficam os teus dados. <strong>Este computador</strong> guarda tudo localmente.{" "}
@@ -858,7 +912,7 @@ export default function Settings() {
       )}
 
       {/* ===== Idiomas ===== */}
-      <section className="set-section">
+      <section className="set-section" data-tab="conteudo">
         <h3>Títulos</h3>
         <p className="muted">Idioma dos nomes de filmes, séries e anime.</p>
         <div className="set-row">
@@ -871,7 +925,7 @@ export default function Settings() {
         </div>
       </section>
 
-      <section className="set-section">
+      <section className="set-section" data-tab="conteudo">
         <h3>Sinopses</h3>
         <p className="muted">Idioma das descrições/sinopses.</p>
         <div className="set-row">
@@ -884,7 +938,7 @@ export default function Settings() {
         </div>
       </section>
 
-      <section className="set-section">
+      <section className="set-section" data-tab="conteudo">
         <h3>Géneros</h3>
         <p className="muted">Idioma dos géneros e temas (na tua lista, filtros e detalhes).</p>
         <div className="set-row">
@@ -905,7 +959,7 @@ export default function Settings() {
         </div>
       </section>
 
-      <section className="set-section">
+      <section className="set-section" data-tab="reproducao">
         <h3>Legendas</h3>
         <p className="muted">
           Legenda preferida (ativada automaticamente nos players sem anúncios e
@@ -924,7 +978,7 @@ export default function Settings() {
         </div>
       </section>
 
-      <section className="set-section">
+      <section className="set-section" data-tab="reproducao">
         <h3>Anime: áudio</h3>
         <p className="muted">
           Legendado (sub) ou dobrado (dub). Aplica-se às fontes dedicadas de anime
@@ -940,7 +994,7 @@ export default function Settings() {
         </div>
       </section>
 
-      <section className="set-section">
+      <section className="set-section" data-tab="conteudo">
         <h3>Anime: títulos</h3>
         <p className="muted">
           Como mostrar os nomes dos animes (catálogo, pesquisa e a tua lista).
@@ -955,7 +1009,7 @@ export default function Settings() {
         </div>
       </section>
 
-      <section className="set-section">
+      <section className="set-section" data-tab="conteudo">
         <h3>Conteúdo adulto (anime)</h3>
         <p className="muted">
           Mostrar anime adulto (NSFW/hentai) na pesquisa, nos filtros de género e no
@@ -971,7 +1025,7 @@ export default function Settings() {
         </div>
       </section>
 
-      <section className="set-section">
+      <section className="set-section" data-tab="reproducao">
         <h3>Separador inicial</h3>
         <p className="muted">Onde abrir por defeito ao ver um título.</p>
         <div className="set-row">
@@ -988,7 +1042,7 @@ export default function Settings() {
       </section>
 
       {/* ===== Reprodução ===== */}
-      <section className="set-section">
+      <section className="set-section" data-tab="reproducao">
         <h3>Reprodução</h3>
         <p className="muted">
           Autoplay liga/desliga o arranque automático. Autoskip tenta saltar a
@@ -1014,7 +1068,7 @@ export default function Settings() {
       </section>
 
       {/* ===== Tamanho dos cartazes ===== */}
-      <section className="set-section">
+      <section className="set-section" data-tab="aparencia">
         <h3>Tamanho dos cartazes</h3>
         <p className="muted">
           Ajusta a largura e a altura dos posters (útil em ecrãs pequenos).
@@ -1056,7 +1110,7 @@ export default function Settings() {
       </section>
 
       {/* ===== Cor da UI ===== */}
-      <section className="set-section">
+      <section className="set-section" data-tab="aparencia">
         <h3>Cor de destaque</h3>
         <p className="muted">
           Cor dos botões e realces. Predefinidas, as tuas últimas escolhas, ou o
@@ -1073,7 +1127,7 @@ export default function Settings() {
       </section>
 
       {/* ===== Cor de fundo ===== */}
-      <section className="set-section">
+      <section className="set-section" data-tab="aparencia">
         <h3>Cor de fundo</h3>
         <p className="muted">
           Fundo da app. Predefinidas (escuras, texto legível), as tuas últimas
@@ -1090,7 +1144,7 @@ export default function Settings() {
       </section>
 
       {/* ===== Estilo de fundo ===== */}
-      <section className="set-section">
+      <section className="set-section" data-tab="aparencia">
         <h3>Estilo de fundo</h3>
         <p className="muted">
           Simples (só a cor), um padrão por cima, ou uma imagem tua (como o fundo
@@ -1167,19 +1221,19 @@ export default function Settings() {
       </section>
 
       {/* ===== MyAnimeList ===== */}
-      <section className="set-section">
+      <section className="set-section" data-tab="contas">
         <h3>MyAnimeList</h3>
         <MalSection user={user} />
       </section>
 
       {/* ===== AniList ===== */}
-      <section className="set-section">
+      <section className="set-section" data-tab="contas">
         <h3>AniList</h3>
         <AniListSection user={user} />
       </section>
 
       {/* ===== Os teus dados ===== */}
-      <section className="set-section">
+      <section className="set-section" data-tab="dados">
         <h3>Os teus dados</h3>
         <p className="muted">
           Descarrega a tua biblioteca e diário. Em JSON (para fazer backup ou
@@ -1205,7 +1259,7 @@ export default function Settings() {
       </section>
 
       {/* ===== Discord ===== */}
-      <section className="set-section">
+      <section className="set-section" data-tab="dados">
         <h3>Discord</h3>
         <p className="muted">
           Aparece ao lado do teu nome no Discord o que estás a ver, como no
@@ -1234,7 +1288,7 @@ export default function Settings() {
       </section>
 
       {/* ===== Importar dados ===== */}
-      <section className="set-section">
+      <section className="set-section" data-tab="dados">
         <h3>Importar dados</h3>
         <p className="muted">
           Carrega um ficheiro JSON ou CSV exportado da MEIDA para voltar a
@@ -1276,19 +1330,19 @@ export default function Settings() {
       </section>
 
       {/* ===== Letterboxd ===== */}
-      <section className="set-section">
+      <section className="set-section" data-tab="contas">
         <h3>Letterboxd</h3>
         <LetterboxdSection user={user} />
       </section>
 
       {/* ===== Real-Debrid ===== */}
-      <section className="set-section">
+      <section className="set-section" data-tab="contas">
         <h3>Real-Debrid</h3>
         <DebridSection user={user} />
       </section>
 
       {/* ===== Perfil público ===== */}
-      <section className="set-section">
+      <section className="set-section" data-tab="perfil">
         <h3>Perfil</h3>
         {!user ? (
           <p className="muted">
@@ -1335,7 +1389,7 @@ export default function Settings() {
       </section>
 
       {/* ===== Avatar ===== */}
-      <section className="set-section">
+      <section className="set-section" data-tab="perfil">
         <h3>Avatar</h3>
         {!user ? (
           <p className="muted">
@@ -1414,7 +1468,7 @@ export default function Settings() {
       </section>
 
       {/* ===== Estado dos providers ===== */}
-      <section className="set-section">
+      <section className="set-section" data-tab="avancado">
         <h3>Estado dos providers</h3>
         <p className="muted">
           Fontes de stream usadas no player (embeds). Quando um está morto fica
@@ -1458,7 +1512,7 @@ export default function Settings() {
 
       {/* ===== App (só na app instalada) ===== */}
       {typeof window !== "undefined" && window.electronAPI?.uninstall && (
-        <section className="set-section">
+        <section className="set-section" data-tab="avancado">
           <h3>App</h3>
           <p className="muted">
             Remove a MEIDA do computador. A app fecha e o desinstalador abre.

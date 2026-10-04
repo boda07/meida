@@ -4,6 +4,7 @@ import { api, imageUrl } from "../api/client.js";
 import { useAuth } from "../auth/AuthContext.jsx";
 import { useSettings } from "../settings/SettingsContext.jsx";
 import LoadingStatus from "../components/LoadingStatus.jsx";
+import { CheckIcon } from "../components/icons.jsx";
 
 const FILTERS = [
   { id: "all", label: "Tudo" },
@@ -578,7 +579,11 @@ export default function Library() {
                 )}
                 <div className="card-scrim" />
                 {it.score ? <span className="card-rating">{it.score}/100</span> : null}
-                {it.watched ? <span className="card-watched">✓</span> : null}
+                {it.watched ? (
+                  <span className="card-watched" title="Visto">
+                    <CheckIcon />
+                  </span>
+                ) : null}
                 {it.watchlist && !it.watched ? (
                   <span className="card-watchlist">+</span>
                 ) : null}

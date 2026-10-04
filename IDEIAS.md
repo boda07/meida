@@ -19,6 +19,7 @@ para a secção "Feitas".
 - [ ] **"Podias gostar"**: recomendações baseadas nas notas altas (similaridade de géneros/tags).
 
 ## Multi-utilizador / social
+- [x] **Discord Rich Presence** — mostrar no perfil do Discord o que se está a ver (título, `S1E2`, `12:34 / 45:00` + cartaz), como no Stremio/Crunchyroll. 100% grátis e local: protocolo RPC do Discord implementado à mão em `electron/discord-presence.cjs` (zero dependências), sem servidor e sem API paga. Interruptor em Definições → Discord. Só na app de computador (Electron); nos providers com iframe só se sabe que a fonte foi escolhida.
 - [ ] **Estadísticas comparadas com a média dos utilizadores** (rating global por título).
 - [x] **Listas públicas/compartilháveis** (link para mostreres a tua biblioteca) — perfis em `/u/:username` com biblioteca e listas, privacidade à escolha (público/privado), seguir utilizadores e pesquisa de pessoas (`/users`). Ver "Melhorias já feitas".
 
@@ -38,6 +39,10 @@ para a secção "Feitas".
 - [x] **Exportar a tua biblioteca/diário (CSV/JSON)** — botão nas Definições → "Os teus dados". JSON para backup, CSV para Excel/Sheets. Servidor entrega JSON em `GET /api/export`; o CSV é gerado no browser.
 - [x] **Importar o ficheiro exportado (JSON/CSV)** — secção "Importar dados" nas Definições. Merge conservador (`upsertLibrarySafe` + `importProgress`): não apaga notas/visto que o ficheiro não traga; parse CSV no backend (`parseCsv` com aspas/escapes).
 - [ ] **Filtrar Library por nota/estado/tipo** (mais filtros no `LibraryControls`).
+
+## Providers de anime
+- [ ] **Resolver as séries pelo catálogo do Anikoto** (`anikotoapi.site`) para apanhar episódios que o MegaPlay não tem na rota `/ani/`. A API devolve 9044 títulos com `mal_id`/`ani_id`, e os `embed_url` são do próprio MegaPlay (rota `/stream/s-2/{id}`). **Só entra se for preciso**: a API não tem pesquisa, só paginação por data de estreia (91 páginas) e limita a 60 requests/2 min por IP. Ao testar (2026-10-04), varrendo 1 em cada 3 páginas não apareceu nenhum dos 3 títulos experimentais, e muitas entradas têm `ani_id` vazio — o ganho pode ser menor do que o esperado. Rastear o catálogo para o disco (mapeamento MAL/AniList → `series.id`) só compensa se o MegaPlay falhar com frequência. Serviria também para usar a rota `/mal/` sem mostrar o mesmo episódio duas vezes na lista.
+- [ ] **Reprodução nativa do MegaPlay, sem iframe**: o `/stream/getSources?id=` devolve as legendas em claro (`tracks[].file`) e os tempos de intro/outro, mas o vídeo vem encriptado no campo `enc` (é o JS do player que o descripta). Só vale a pena se se conseguir o m3u8 — e aí as legendas passavam a ser as nossas, com escolha de idioma. Requer engenharia reversa do player: **não fazer** sem tempo para isso.
 
 ## Gamificação
 - [x] **Sistema de conquistas/badges** — página `/achievements` + link no menu. Badges calculados a partir da library/diário (Primeiro passo, Matiné, Cinéfilo, Maratonista, Otaku, Crítico, Biblioteca, Centenário, …) com ícones SVG (sem emojis).

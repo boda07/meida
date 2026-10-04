@@ -2,6 +2,17 @@
 // "o que mudou" depois de o utilizador atualizar a app. Mais recente em cima.
 export const CHANGELOG = [
   {
+    version: "1.2.2",
+    items: [
+      "Novo: os animes ganharam uma fonte de reprodução nova, que é a primeira da lista. Traz as legendas já ligadas, vai a 1080p e, ao contrário das outras, não enche o ecrã de anúncios.",
+      "Novo: a app bloqueia os anúncios dos sites de vídeo. Não tens de instalar nada — funciona dentro da app e vale para todos os sites, e o vídeo continua a passar.",
+      "Corrigido: na lista de fontes de anime já não aparecem duas entradas iguais do mesmo site.",
+      "Melhorado: as Definições deixaram de ser uma parede comprida para rolar. Agora estão divididas em abas (Perfil, Aparência, Reprodução, Conteúdo, Contas, Dados, Avançado) e a app lembra em qual ficaste da última vez.",
+      "Melhorado: a marca de \"visto\" nos cartazes passou a ser um visto bem desenhado, em vez do rabisco que o Windows desenhava.",
+      "Corrigido: às vezes a atualização não chegava a instalar e o ícone do Menu Iniciar ficava a apontar para o sítio errado, sem a app abrir. Agora a app espera pelo servidor interno antes de se atualizar.",
+    ],
+  },
+  {
     version: "1.2.1",
     items: [
       "Novo: o Discord passa a mostrar o que estás a ver, como no Stremio — o nome do título, o episódio e o progresso. Só funciona com a app do Discord aberta no computador e não custa nada. Podes desligar quando quiseres em Definições → Discord.",

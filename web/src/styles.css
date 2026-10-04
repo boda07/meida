@@ -3660,6 +3660,64 @@ h2 {
   max-width: 720px;
 }
 
+/* ===== Abas das definicoes =====
+   A pagina tinha 21 seccoes todas num scroll unico. Cada <section
+   class="set-section"> declara a que aba pertence (data-tab="perfil",
+   "aparencia", ...) e o id da aba activa esta em data-active-tab no wrapper
+   (.settings-page). Escondemos as restantes por CSS em vez de as envolver em
+   {cond && (...)} — assim nao foi preciso mexer no envelope de cada bloco, e o
+   conteudo escondido continua montado (pickers, campos de texto, etc. não
+   perdem o estado ao mudar de aba). */
+/* A barra de abas das definições ocupa a largura toda da coluna, por isso não
+   pode ser uma pílula como a das outras barras da app: com `border-radius: 999px`
+   e o conteúdo a passar para 2 linhas, o canto esquerdo afundava para dentro e as
+   abas (incluindo a branca da aba activa) ficavam a "sair para fora" do bordo.
+   Aqui é um rectângulo arredondado, com `overflow: hidden` para nenhum realce
+   ultrapassar a forma. */
+.settings-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+  padding: 6px;
+  border-radius: var(--radius-modal);
+  overflow: hidden;
+}
+/* `flex: 1 1 auto` preenche a largura toda e fica numa linha só (7 abas não
+   cabiam a 20px de padding: a barra quebrava para 2 linhas). Se ainda assim não
+   couber (ecrã estreito), o `flex-wrap` deixa-as ir para baixo em vez de
+   espremer o texto. */
+.settings-tabs button {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 9px 12px;
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* A pílula branca é a aba activa; as restantes só mudam de cor, o que não
+   chegava para se perceive que se pode clicar. */
+.settings-tabs button:hover:not(.active) {
+  background: rgba(255, 255, 255, 0.08);
+}
+.settings-page[data-active-tab] > .set-section {
+  display: none;
+}
+.settings-page[data-active-tab="perfil"] > .set-section[data-tab~="perfil"],
+.settings-page[data-active-tab="aparencia"] > .set-section[data-tab~="aparencia"],
+.settings-page[data-active-tab="reproducao"] > .set-section[data-tab~="reproducao"],
+.settings-page[data-active-tab="conteudo"] > .set-section[data-tab~="conteudo"],
+.settings-page[data-active-tab="contas"] > .set-section[data-tab~="contas"],
+.settings-page[data-active-tab="dados"] > .set-section[data-tab~="dados"],
+.settings-page[data-active-tab="avancado"] > .set-section[data-tab~="avancado"] {
+  display: block;
+}
+/* A ultima seccao da aba nao leva a linha divisoria (a de "App" e a ultima do
+   DOM; nas outras abas fica uma linha fina no fim, inofensiva). */
+.settings-page[data-active-tab] > .set-section:last-of-type {
+  border-bottom: none;
+}
+
 .set-section {
   padding: 22px 0;
   border-bottom: 1px solid rgba(255, 255, 255, 0.07);
