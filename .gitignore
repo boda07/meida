@@ -10,3 +10,7 @@ torrent-data/
 server/data/
 server/dev.out
 server/dev.err
+
+# Nunca commitar dumps/base de dados antiga (pode conter dados pessoais/tokens)
+/data.json
+/data.json.bak

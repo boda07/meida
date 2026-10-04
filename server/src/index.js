@@ -20,10 +20,16 @@ import { achievementsRouter } from "./routes/achievements.js";
 import { socialRouter } from "./routes/social.js";
 import { commentsRouter } from "./routes/comments.js";
 import { watchPartyRouter } from "./routes/watchparty.js";
+import { adminRouter } from "./routes/admin.js";
 import { log } from "./services/log.js";
 
 const app = express();
-app.use(cors());
+// CORS so e preciso quando o servidor NAO serve o frontend (hosting so-API: a
+// app chama-o de outro dominio, ex.: Electron local -> servidor partilhado, ou
+// PWA num hosting estatico). Quando e o proprio servidor que serve o web/dist,
+// tudo e same-origin — e desligar o CORS fecha a porta a sitios maliciosos que
+// tentem falar com o servidor local atraves do browser.
+if (process.env.SERVE_WEB !== "1") app.use(cors());
 // Limite generoso para o body: o avatar pode vir como imagem (data URL).
 app.use(express.json({ limit: "4mb" }));
 
@@ -34,6 +40,9 @@ app.get("/api/health", (req, res) => {
     tmdbConfigured: Boolean(config.tmdb.apiKey || config.tmdb.accessToken),
   });
 });
+
+// Semeia a base remota (migracao inicial). Sem ADMIN_TOKEN responde 404.
+app.use("/api", adminRouter);
 
 app.use("/api", catalogRouter);
 app.use("/api", sourcesRouter);
@@ -80,8 +89,8 @@ app.use((err, req, res, _next) => {
   res.status(err.status || 500).json({ error: err.message });
 });
 
-app.listen(config.port, () => {
-  log.info("backend", `Backend a correr em http://localhost:${config.port}`);
+app.listen(config.port, config.host, () => {
+  log.info("backend", `Backend a correr em http://${config.host}:${config.port}`);
   // Force reload
   if (!config.tmdb.apiKey && !config.tmdb.accessToken) {
     log.warn("backend", "TMDB nao configurado. Cria server/.env a partir de server/.env.example.");

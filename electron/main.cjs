@@ -20,10 +20,12 @@ const fs = require("fs");
 const { spawn } = require("child_process");
 const { autoUpdater } = require("electron-updater");
 
-// ===== Servidor: local (embutido) ou remoto =====
-// A app pode apontar para um servidor MEIDA remoto (o mesmo backend com
-// SERVE_WEB=1) para partilhar conta, biblioteca e funcionalidades sociais entre
-// dispositivos. A escolha fica guardada em userData/desktop-config.json.
+// ===== Servidor: local (video) + remoto (dados) =====
+// A app corre SEMPRE localmente (serve o UI e o video/streaming). Em modo "dados
+// na nuvem" aponta as rotas de dados (conta, biblioteca, diario, social,
+// comentarios, MAL/AniList) para um servidor MEIDA remoto partilhado, para os
+// utilizadores terem a mesma biblioteca em computadores diferentes. A escolha
+// fica guardada em userData/desktop-config.json.
 const CONFIG_FILE = () => path.join(app.getPath("userData"), "desktop-config.json");
 
 function readConfig() {
@@ -61,6 +63,27 @@ function normalizeServerUrl(raw) {
     return "";
   }
 }
+
+// URL do servidor partilhado, lido de `electron/default-server.txt` (embutido no
+// build). E assim que uma instalacao nova fica logo ligada a nuvem sem o amigo
+// configurar nada — basta a release trazer esse ficheiro preenchido.
+function readBundledDefaultServer() {
+  try {
+    return fs.readFileSync(path.join(__dirname, "default-server.txt"), "utf8").trim();
+  } catch {
+    return "";
+  }
+}
+
+// Servidor partilhado por defeito (ex.: "https://meida-xxxx.fadehost.app").
+// Numa instalacao nova (sem desktop-config.json) a app liga-se logo aqui, para
+// os amigos só precisarem de instalar/atualizar a app — sem configurar nada.
+// Deixa "" para o modo local continuar a ser o padrao. Precedencia:
+//   1. env MEIDA_DEFAULT_SERVER (dev/testes:  MEIDA_DEFAULT_SERVER=... npm run app:dev)
+//   2. electron/default-server.txt (preenchido na release)
+const DEFAULT_REMOTE_URL = normalizeServerUrl(
+  process.env.MEIDA_DEFAULT_SERVER || readBundledDefaultServer() || ""
+);
 
 // Abrir URLs externos (ex.: login do MyAnimeList) no browser do sistema.
 ipcMain.handle("open-external", (_e, url) => {
@@ -168,7 +191,6 @@ let win = null;
 let splash = null;
 let serverMode = "local"; // "local" | "remote"
 let remoteUrl = "";
-let remoteFailed = false;
 
 // Tela de carregamento (cobre o ecra preto enquanto o backend e o web arrancam).
 function createSplash() {
@@ -211,6 +233,15 @@ function startServer() {
       WEB_DIST: webDist,
       // A DB tem de gravar numa pasta com escrita (resources e so-leitura).
       DB_DIR: app.getPath("userData"),
+      // O servidor local nunca precisa de estar exposto a rede.
+      HOST: "127.0.0.1",
+      // Modo "dados na nuvem": a app serve o UI e o video localmente, mas as
+      // rotas de dados (conta, biblioteca, social) vao diretas para o servidor
+      // partilhado; as rotas de video locais (Real-Debrid) aceitam o token
+      // emitido por esse servidor.
+      ...(serverMode === "remote" && remoteUrl
+        ? { MEIDA_REMOTE_DATA_URL: remoteUrl }
+        : {}),
     },
     stdio: "inherit",
   });
@@ -221,38 +252,6 @@ function loadWithRetry(url, tries = 0) {
   win.loadURL(url).catch(() => {
     if (tries < 80) setTimeout(() => loadWithRetry(url, tries + 1), 500);
   });
-}
-
-// Servidor remoto: carrega o URL remoto (que serve a app + a API). Se falhar,
-// oferece voltar ao servidor local deste computador.
-function loadRemote(url) {
-  remoteFailed = false;
-  win.webContents.on("did-fail-load", (_e, code, _desc, _validatedURL, isMainFrame) => {
-    // -3 = ERR_ABORTED (navegacao cancelada); ignora.
-    if (isMainFrame && code !== -3) handleRemoteFail(url);
-  });
-  win.loadURL(url).catch(() => handleRemoteFail(url));
-}
-
-async function handleRemoteFail(url) {
-  if (remoteFailed) return;
-  remoteFailed = true;
-  const { response } = await dialog.showMessageBox(win, {
-    type: "warning",
-    buttons: ["Voltar ao servidor local", "Tentar de novo", "Manter"],
-    defaultId: 0,
-    cancelId: 2,
-    title: "Servidor remoto indisponivel",
-    message: `Nao consegui ligar a ${url}.`,
-    detail:
-      "Podes voltar ao servidor deste computador (e reconfigurar o endereco nas Definicoes) ou tentar outra vez.",
-  });
-  if (response === 0) {
-    useLocalServer();
-  } else if (response === 1) {
-    remoteFailed = false;
-    loadRemote(url);
-  }
 }
 
 // Volta ao backend embutido. Guarda o URL remoto para se poder trocar depois.
@@ -333,10 +332,11 @@ function createWindow() {
   win.once("ready-to-show", reveal);
   win.webContents.on("did-finish-load", reveal);
 
+  // A app e servida SEMPRE pelo servidor local deste computador: e ele que corre
+  // o video/streaming. Em modo "dados na nuvem" o frontend encaminha as rotas de
+  // dados (conta, biblioteca, social) para o servidor remoto partilhado.
   if (isDev) {
     loadWithRetry(DEV_URL);
-  } else if (serverMode === "remote" && remoteUrl) {
-    loadRemote(remoteUrl);
   } else {
     loadWithRetry(PROD_URL);
   }
@@ -372,8 +372,23 @@ function setupAutoUpdate() {
 app.whenReady().then(() => {
   const cfg = readConfig();
   remoteUrl = normalizeServerUrl(cfg.url);
-  serverMode = cfg.mode === "remote" && remoteUrl ? "remote" : "local";
+  if (cfg.mode === "remote") {
+    // Escolha explicita nas Definicoes.
+    serverMode = remoteUrl ? "remote" : "local";
+  } else if (cfg.mode === "local") {
+    // O utilizador escolheu ficar local (ou caiu aqui pelo aviso de falha).
+    serverMode = "local";
+  } else if (DEFAULT_REMOTE_URL) {
+    // Instalacao nova sem escolha guardada: usa o servidor partilhado.
+    remoteUrl = DEFAULT_REMOTE_URL;
+    serverMode = "remote";
+  } else {
+    serverMode = "local";
+  }
   createSplash();
+  // O servidor local arranca SEMPRE (serve a app + o video). Em modo "dados na
+  // nuvem" as rotas de dados vao para o servidor remoto partilhado, mas o UI e o
+  // streaming continuam a correr neste computador.
   if (!isDev) startServer();
   createWindow();
   setupMenu();

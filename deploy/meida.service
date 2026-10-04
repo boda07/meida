@@ -1,0 +1,29 @@
+[Unit]
+Description=MEIDA (servidor web + API)
+Documentation=https://github.com/boda07/meida
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=meida
+Group=meida
+WorkingDirectory=/opt/meida/server
+
+# NODE_ENV=production obriga a definir JWT_SECRET no server/.env.
+Environment=NODE_ENV=production
+Environment=SERVE_WEB=1
+Environment=PORT=5175
+Environment=WEB_DIST=/opt/meida/web/dist
+Environment=DB_DIR=/opt/meida/server/data
+
+ExecStart=/usr/bin/node /opt/meida/server/src/index.js
+Restart=always
+RestartSec=5
+
+# Endurecimento simples (não impede o servidor de escrever em server/data).
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

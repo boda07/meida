@@ -10,18 +10,31 @@ import "./styles.css";
 
 async function loadRuntimeConfig() {
   // public/runtime-config.json define VITE_API_BASE (vazio = same-origin, que
-  // e o default do Electron e de hostings onde o server serve web+api juntos).
+  // e o default do Electron e de hostings onde o server serve web+api juntos)
+  // e VITE_REMOTE_DATA_BASE (modo "dados na nuvem" fora do Electron).
   // Falha silenciosa: se o ficheiro nao existir, fica same-origin.
+  window.MEIDA_API_BASE = "";
+  window.MEIDA_REMOTE_DATA_BASE = "";
   try {
     const res = await fetch("/runtime-config.json", { cache: "no-store" });
     if (res.ok) {
       const cfg = await res.json().catch(() => ({}));
       window.MEIDA_API_BASE = cfg.VITE_API_BASE || "";
-    } else {
-      window.MEIDA_API_BASE = "";
+      window.MEIDA_REMOTE_DATA_BASE = cfg.VITE_REMOTE_DATA_BASE || "";
     }
   } catch {
-    window.MEIDA_API_BASE = "";
+    /* sem runtime-config: same-origin */
+  }
+
+  // No Electron o processo principal manda: em modo "dados na nuvem" diz qual e
+  // o servidor partilhado. Tem prioridade sobre o runtime-config.
+  try {
+    const cfg = await window.electronAPI?.getServerConfig?.();
+    if (cfg && cfg.mode === "remote" && cfg.url) {
+      window.MEIDA_REMOTE_DATA_BASE = String(cfg.url).replace(/\/+$/, "");
+    }
+  } catch {
+    /* sem Electron: mantem o runtime-config */
   }
 }
 

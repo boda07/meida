@@ -4,6 +4,7 @@ import {
   createUser,
   getUserByUsername,
   getUserById,
+  ensureUserStub,
   setUserAvatar,
   setUserProfile,
 } from "../store.js";
@@ -102,11 +103,32 @@ function httpError(status, message) {
   return e;
 }
 
+// Token emitido pelo servidor remoto partilhado (modo "dados na nuvem"). O
+// servidor local tem outro JWT_SECRET, por isso nao consegue verificar a
+// assinatura. Como as rotas de dados correm no servidor remoto, aqui so
+// precisamos do id para as rotas locais (Real-Debrid) — descodificamos o
+// payload e garantimos um utilizador-stub local. A superficie de ataque e
+// pequena: em modo local o CORS esta desligado e o servidor so escuta 127.0.0.1.
+function localUserFromToken(token) {
+  try {
+    const part = token.split(".")[1];
+    if (!part) return null;
+    const b64 = part.replace(/-/g, "+").replace(/_/g, "/");
+    const payload = JSON.parse(Buffer.from(b64, "base64").toString("utf8"));
+    const id = Number(payload?.id);
+    if (!Number.isInteger(id) || id <= 0) return null;
+    return ensureUserStub(id);
+  } catch {
+    return null;
+  }
+}
+
 // Middleware: exige token valido no header Authorization: Bearer <token>.
 export function requireAuth(req, res, next) {
   const header = req.headers.authorization || "";
   const token = header.startsWith("Bearer ") ? header.slice(7) : null;
-  const user = token ? userFromToken(token) : null;
+  let user = token ? userFromToken(token) : null;
+  if (!user && token && config.remoteDataUrl) user = localUserFromToken(token);
   if (!user) return res.status(401).json({ error: "Nao autenticado." });
   req.user = user;
   next();

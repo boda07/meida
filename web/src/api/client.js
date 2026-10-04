@@ -1,11 +1,63 @@
 // Helpers de fetch para a API do backend (proxy /api do Vite).
-// API_ORIGIN vem de public/runtime-config.json (vazio = same-origin, usado pelo
-// Electron e por hostings onde o server serve web+api juntos). Definir para
-// https://seu.backend para instalar a PWA num hosting estatico (ex.: gh-pages).
-// Carregado async em main.jsx antes do primeiro render; fallback seguro.
-const API_ORIGIN = (typeof window !== "undefined" && window.MEIDA_API_BASE) || "";
+//
+// Ha dois servidores possiveis:
+//  - LOCAL (same-origin, ou window.MEIDA_API_BASE): serve o video/streaming,
+//    o catalogo (TMDB/Jikan) e o Real-Debrid. E onde a app corre.
+//  - REMOTO (window.MEIDA_REMOTE_DATA_BASE, so no Electron em modo
+//    "dados na nuvem"): guarda as contas, a biblioteca, o diario, as listas, os
+//    perfis, os comentarios e as ligacoes MAL/AniList/Letterboxd — o que e
+//    partilhado entre pessoas.
+//
+// `baseFor(path)` decide para onde vai cada pedido: as rotas de `LOCAL_API_PREFIXES`
+// ficam sempre locais; TODAS as outras /api/* vao para o servidor remoto (quando
+// existe). Assim, se uma rota nova esquecer de ser classificada, cai no remoto
+// (o lado com os dados), em vez de falhar em silencio no servidor local.
+//
+// As bases sao lidas em cada pedido (e nao no import) porque o `main.jsx` so as
+// define depois de ler o runtime-config.json / falar com o processo Electron.
+const LOCAL_API_PREFIXES = [
+  "/api/health",
+  "/api/catalog",
+  "/api/discover",
+  "/api/search",
+  "/api/details",
+  "/api/recommendations",
+  "/api/season",
+  "/api/anime",
+  "/api/genres",
+  "/api/pick",
+  "/api/sources",
+  "/api/providers",
+  "/api/torrents",
+  "/api/extract",
+  "/api/subtitles",
+  "/api/stream",
+  "/api/play",
+  "/api/proxy",
+  "/api/debrid",
+  "/api/wp",
+];
+
+function isLocalApiPath(path) {
+  return LOCAL_API_PREFIXES.some((prefix) => {
+    if (!path.startsWith(prefix)) return false;
+    const next = path[prefix.length];
+    return next === undefined || next === "/" || next === "?" || next === "#";
+  });
+}
+
+function baseFor(path) {
+  const remote =
+    (typeof window !== "undefined" && window.MEIDA_REMOTE_DATA_BASE) || "";
+  if (remote && path.startsWith("/api/") && !isLocalApiPath(path)) {
+    return remote.replace(/\/+$/, "");
+  }
+  const base = (typeof window !== "undefined" && window.MEIDA_API_BASE) || "";
+  return base ? base.replace(/\/+$/, "") : window.location.origin;
+}
+
 function fullUrl(path) {
-  return API_ORIGIN ? `${API_ORIGIN}${path}` : `${window.location.origin}${path}`;
+  return `${baseFor(path)}${path}`;
 }
 // O token de login fica em localStorage e e enviado em todos os pedidos.
 const TOKEN_KEY = "streamapp_token";

@@ -63,6 +63,24 @@ export function getProfileByUsername(username) {
   return r ? toProfile(r) : null;
 }
 
+// Utilizador-stub local. Em modo "dados na nuvem" o servidor local guarda apenas
+// dados locais (ex.: token do Real-Debrid) referenciando o id do utilizador
+// remoto. Como user_tokens tem uma FK para users, criamos uma linha minima para
+// esse id (sem password — nunca faz login por aqui).
+export function ensureUserStub(id) {
+  const existing = db
+    .prepare("SELECT id, username, avatar, bio, is_public, created_at FROM users WHERE id = ?")
+    .get(id);
+  if (existing) return toProfile(existing);
+  db.prepare(
+    "INSERT OR IGNORE INTO users (id, username, password_hash, created_at) VALUES (?, ?, '!', ?)"
+  ).run(id, `local:${id}`, now());
+  const r = db
+    .prepare("SELECT id, username, avatar, bio, is_public, created_at FROM users WHERE id = ?")
+    .get(id);
+  return r ? toProfile(r) : null;
+}
+
 export function setUserAvatar(id, avatar) {
   db.prepare("UPDATE users SET avatar = ? WHERE id = ?").run(avatar ?? null, id);
   return getUserById(id);

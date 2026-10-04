@@ -1,5 +1,82 @@
 # Changelog
 
+## 1.2.0
+
+Release grande: a app passa a suportar **dados partilhados na nuvem** (vídeo
+continua local), sobre a base SQLite e as camadas sociais do commit `5cb3e7f`
+(aquele ainda não tinha versão nem changelog — entra agora como 1.2.0).
+
+### Modo "dados na nuvem" (híbrido)
+- **Cliente com duas bases** (`web/src/api/client.js`): `LOCAL_API_PREFIXES`
+  (catálogo, detalhes, fontes, stream/play, torrents, proxy, Real-Debrid,
+  watch-party) fica sempre no servidor **local**; **todas** as outras `/api/*`
+  (auth, biblioteca, progresso, listas, social, comentários, MAL/AniList,
+  Letterboxd, export, conquistas) vão para o servidor **remoto**. Default
+  seguro = remoto (o lado que tem os dados), para uma rota nova não falhar em
+  silêncio. `fullUrl()` lê `window.MEIDA_REMOTE_DATA_BASE`/`MEIDA_API_BASE` **em
+  tempo de chamada** (o `main.jsx` só os define depois do runtime-config/IPC — a
+  leitura no import era um bug latente).
+- **`web/src/main.jsx`**: `loadRuntimeConfig()` passou a definir também
+  `MEIDA_REMOTE_DATA_BASE` (de `VITE_REMOTE_DATA_BASE` no `runtime-config.json`
+  e, no Electron, com prioridade sobre o IPC `get-server-config`).
+- **`server/src/config.js`**: novos `host` (`HOST`, default `0.0.0.0`) e
+  `remoteDataUrl` (`MEIDA_REMOTE_DATA_URL`).
+- **`server/src/index.js`**: o CORS só liga quando `SERVE_WEB !== "1"` (o
+  servidor local do Electron fica same-origin e não expõe rotas); `listen` passa
+  a usar `config.host`.
+- **`server/src/store.js`**: `ensureUserStub(id)` cria a linha mínima em `users`
+  (FK de `user_tokens`).
+- **`server/src/services/auth.js`**: `localUserFromToken()` + fallback em
+  `requireAuth` — o servidor local tem outro `JWT_SECRET`, por isso descodifica
+  (sem verificar) o token emitido pelo remoto para as rotas locais
+  (Real-Debrid) saberem quem é o utilizador. Só fica ativo com
+  `MEIDA_REMOTE_DATA_URL` definido; superfície reduzida por o CORS desligado e o
+  `HOST=127.0.0.1` do servidor local.
+- **`electron/main.cjs`**: o servidor local **arranca sempre** (é ele que serve o
+  UI e o vídeo); em modo nuvem só ganha `MEIDA_REMOTE_DATA_URL`. A janela carrega
+  sempre o URL local. `DEFAULT_REMOTE_URL` passa a ler
+  `electron/default-server.txt` (embutido no build), com `MEIDA_DEFAULT_SERVER`
+  como override para dev — assim uma release nova aponta os amigos para a nuvem
+  sem configurarem nada.
+- **Limitação conhecida:** o watch-party entre PCs diferentes deixa de funcionar
+  (é uma rota local por desenho; as fontes são locais a cada servidor).
+
+### Migrar os dados para o servidor partilhado
+- **`POST /api/admin/seed`** (`server/src/routes/admin.js`): semeia a base a
+  partir de um `data.json`. Protegido por `ADMIN_TOKEN` (header `x-admin-token`);
+  sem token definido **ou** token errado responde `404` (não revela a rota).
+  `?force=1` para reimportar por cima (upsert = *merge*).
+- **`server/src/db/seed.js`**: a lógica de importação saiu do CLI e passou a uma
+  função reutilizável (`seedFromJson`). Passou a importar também
+  `follows`/`comments`/`comment_likes` (que só existem em exports recentes), a
+  subir os comentários por `id` para respeitar a FK pai→resposta.
+- **`server/src/db/export-json.js`** + `npm --prefix server run export:json`:
+  exporta a base atual para o formato do `data.json` (inclui tokens, seguir e
+  comentários), para enviar ao servidor partilhado sem se registar de novo.
+- **`server/src/db/import-json.js`**: ficou um wrapper fino do CLI em torno do
+  `seed.js`.
+
+### Deploy
+- **`deploy/SERVIDOR-PARTILHADO.md`** (novo): guia do servidor de dados grátis e
+  **sem cartão** (FadeHost: `/data` persistente, Node 24, hiberna e acorda).
+  Inclui variáveis de ambiente, seed e como publicar com o endereço embutido.
+- `deploy/README.md`: aviso de que o guia Oracle pede cartão só para
+  verificação; Passo 9 actualizado para o `default-server.txt`.
+- `package.json` (raiz e `server/`): `"engines": { "node": ">=24" }` — o
+  servidor usa o `node:sqlite`, que precisa de Node 24.
+- `server/.env.example`: secções para `HOST`, `ADMIN_TOKEN` e
+  `MEIDA_REMOTE_DATA_URL`.
+
+### SQLite + social (vinha do commit `5cb3e7f`, sem versão até agora)
+- Base de dados SQLite com migrações numeradas (`server/src/db/schema.js`),
+  store reescrito sobre `node:sqlite`, importação do `data.json` antigo.
+- **Perfis** (`/u/:username`): avatar, bio, visibilidade, biblioteca/listas
+  públicas; **seguir** e listar seguidores/seguindo; página de utilizadores.
+- **Comentários** por título **e por episódio**: escrever, responder, apagar
+  (thread sobrevive), gosto, e marcação do minuto do vídeo (`at_seconds`).
+- **Definições → Servidor**: escolher entre "Este computador" e um servidor
+  MEIDA remoto (grava em `userData/desktop-config.json`).
+
 ## 1.1.3
 
 ### Ecrã de erro mais útil

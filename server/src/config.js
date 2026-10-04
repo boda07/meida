@@ -21,7 +21,14 @@ if (process.env.NODE_ENV === "production" && (!jwtSecret || jwtSecret === DEFAUL
 
 export const config = {
   port: Number(process.env.PORT) || 5175,
+  // Interface onde escutar. O servidor local do Electron liga-se so a 127.0.0.1
+  // (nao expoe a app ao resto da rede); nos hostings fica 0.0.0.0.
+  host: process.env.HOST?.trim() || "0.0.0.0",
   jwtSecret: jwtSecret || DEFAULT_JWT_SECRET,
+  // URL do servidor remoto partilhado (modo "dados na nuvem"). So e definido no
+  // servidor LOCAL do Electron: as rotas de video (Real-Debrid) precisam de
+  // aceitar o token emitido pelo servidor remoto, que tem outro JWT_SECRET.
+  remoteDataUrl: process.env.MEIDA_REMOTE_DATA_URL?.trim().replace(/\/$/, "") || "",
   // Se definido, usa um extractor externo compativel com Consumet (ex.: http://localhost:3000).
   extractorApiBase: process.env.EXTRACTOR_API_BASE?.trim().replace(/\/$/, "") || "",
   // Extrator de anime (aniwatch-api alojado): da player proprio ao anime

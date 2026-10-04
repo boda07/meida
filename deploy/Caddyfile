@@ -1,0 +1,12 @@
+# Caddy — HTTPS automático (Let's Encrypt) + reverse proxy para o MEIDA.
+#
+# 1) Substitui SEU-SUBDOMINIO pelo teu subdomínio DuckDNS (sem o ".duckdns.org").
+# 2) O Caddy trata sozinho do certificado e renova-o. Não precisas de mais nada.
+# 3) O backend do MEIDA fica em 127.0.0.1:5175 (não exposto diretamente).
+#
+# Depois de editar:  sudo systemctl reload caddy
+
+SEU-SUBDOMINIO.duckdns.org {
+	encode gzip
+	reverse_proxy 127.0.0.1:5175
+}
