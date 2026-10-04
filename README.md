@@ -137,12 +137,17 @@ meio — aparece a pasta
 aponta para um `MEIDA.exe` que não existe. Se isso acontecer:
 
 - **Definições → Privacidade e segurança → Segurança do Windows → Controlo de
-  aplicações e browser → Controlo de Aplicações Inteligente → Desligar.**
-  Instala, e depois **volta a ligar**. É reversível: as atualizações recentes do
-  Windows deixam repor a definição sem reinstalar o Windows.
-  (Em Builds mais antigos era preciso reinstalar o Windows para repor.)
+  aplicações e browser → Controlo de Aplicações Inteligente → Desligar.** É a
+  única forma de instalar sem certificado. Repor a definição é possível nas
+  atualizações recentes do Windows (sem reinstalar), **mas a app deixa de
+  abrir** assim que o voltar a ligar, porque continua sem assinatura e não há
+  forma de dar um aval só a uma aplicação.
 - Ou correr `scripts/reparar-instalacao.ps1`, que apaga a instalação partida,
   volta a descarregar o instalador **confirmando o sha512**, e instala.
+
+Ou seja: enquanto a MEIDA não for assinada, no Windows 11 com Smart App Control
+ligado ela não instala. Num PC com o Controlo de Aplicações Inteligente desligado
+instala e funciona — mas o PC fica menos protegido.
 
 ## Licença
 
