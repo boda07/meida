@@ -151,33 +151,39 @@ instala e funciona — mas o PC fica menos protegido.
 
 ### Se não conseguires instalar: usa no browser
 
-A MEIDA também corre como aplicação web, sem instalador nenhum. O backend
-compila e serve o frontend na mesma porta (`SERVE_WEB=1`), por isso a app
-desktop e a versão web são o mesmo código.
+A MEIDA também corre como aplicação web, sem instalador nenhum, e **já está
+publicada**:
 
-**A instalação é tua.** Não há uma instância pública: para teres um endereço
-tens de arrancar uma tu. Com Node e o repo clonado:
+## <https://meida.onrender.com>
+
+Abre no Chrome, Edge ou Brave, entra com a tua conta e está feito. Não há
+instalador, não há assinatura, não se mexe no PC — é a via mais segura se o
+Windows te estiver a bloquear a app de desktop.
+
+> O Render free hiberna quando ninguém usa. O primeiro pedido depois de um
+> tempo parado pode demorar **uns 50 segundos** a acordar. Depois disso responde
+> normal. Não é erro, é só o servidor a acordar.
+
+O que a versão web **não** tem: Discord Presence (precisa do Electron) e
+players externos. O WebTorrent depende de WebRTC — Chrome, Edge e Brave
+suportam. Os dados ficam no servidor, não no PC.
+
+### Correr a versão web tu mesmo
+
+É o mesmo código da app desktop — o backend compila e serve o frontend na
+mesma porta (`SERVE_WEB=1`). Com Node e o repo clonado:
 
 ```bash
 npm run install:all
 npm run start:pwa        # compila o frontend e serve em http://localhost:5175
 ```
 
-`start:pwa` é `npm run build` seguido do backend com `SERVE_WEB=1` — compila
-tudo e levanta o servidor na mesma porta da app desktop.
+`start:pwa` é `npm run build` seguido do backend com `SERVE_WEB=1`.
 
-Para teres um endereço público (grátis), há configuração pronta para três
-destinos — ver `deploy/README.md`:
-
-| Destino | Ficheiro | Notas |
-|---|---|---|
-| VPS com systemd | `deploy/meida.service` | `SERVE_WEB=1` já lá está |
-| Render (PWA) | `render.yaml` | partido pronto; hiberna quando não há uso |
-| Servidor partilhado | `deploy/SERVIDOR-PARTILHADO.md` | **só API**, não serve a interface |
-
-O que a versão web **não** tem: Discord Presence (precisa do Electron) e
-players externos. O WebTorrent depende de WebRTC — Chrome, Edge e Brave
-suportam. Os dados ficam no servidor, não no PC.
+Para pôr uma instância tua no ar, o `render.yaml` é o_blueprint_ pronto
+(`SERVE_WEB=1` e `npm run start:pwa` já lá estão). O servidor partilhado de
+dados é outra coisa e **não** serve a interface — ver
+[`deploy/SERVIDOR-PARTILHADO.md`](deploy/SERVIDOR-PARTILHADO.md).
 
 ## Licença
 
