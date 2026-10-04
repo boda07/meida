@@ -251,15 +251,44 @@ if ($NaoInstalar) {
 }
 
 Secao "6. INSTALAR"
-Aviso "Vai aparecer o instalador. Deixa-o terminar; nao o canceles."
+Aviso "Vai aparecer o instalador. Deixa-o terminar; NAO feches a janela."
+
+# Se a app estiver a correr, o instalador recusa-se a instalar. Vale a pena
+# dizer, porque o erro que aparece nao explica nada.
 try {
-  Start-Process -FilePath $destino -Wait -ErrorAction Stop
-  Info "o instalador terminou."
+  $aCorrer = @(Get-Process -Name "MEIDA" -ErrorAction SilentlyContinue)
+  if ($aCorrer.Count) {
+    Erro "A MEIDA esta aberta neste momento. O instalador nao a vai substituir."
+    Erro "Fecha a app (e o icone ao lado do relogio) e volta a correr isto."
+    exit 1
+  }
+} catch {}
+
+# O CODIGO DE SAIDA e a informacao mais importante de todas. O NSIS usa:
+#   0 = sucesso   1 = cancelado   2 = erro grave na instalacao
+# A versao anterior deste script deitava este codigo fora, e sem ele nao se
+# sabe se o instalador chegou a fazer alguma coisa.
+$codigo = $null
+try {
+  $proc = Start-Process -FilePath $destino -Wait -PassThru -ErrorAction Stop
+  $codigo = $proc.ExitCode
+  Info ("o instalador terminou. codigo de saida: " + $codigo)
 } catch {
   Erro ("o instalador deu erro: " + $_.Exception.Message)
   Erro "Se aparecer o aviso azul do Windows, clica em Mais informacoes > Executar mesmo assim."
   Erro "Se abrir uma janela de administrador e nao aceitar, clica em Executar como administrador."
   exit 1
+}
+if ($codigo -eq 1) {
+  Erro "O INSTALADOR FOI CANCELADO."
+  Erro "Isto explica o que se viu: cancelado, o Windows desfaz mas deixa o"
+  Erro "Uninstall MEIDA.exe e a entrada no Painel de Control, sem a app."
+  Erro "Corre outra vez e espera que a barra de progresso chegue ao fim."
+} elseif ($codigo -eq 2) {
+  Erro "O instalador deu um erro grave (codigo 2) e desistiu."
+  Erro "Causas correntes: a app estava aberta, ou ja ha outra versao instalada."
+} elseif ($codigo -ne 0 -and $null -ne $codigo) {
+  Erro ("o instalador devolveu o codigo " + $codigo + " (que nao e sucesso).")
 }
 
 # ------------------------------------------------- 5. confirmar
@@ -280,28 +309,59 @@ if ($ficou) {
   Remove-Item $destino -Force -ErrorAction SilentlyContinue
 } else {
   Problema "O instalador acabou mas o MEIDA.exe continua a nao estar la."
-  Problema "Guarda este relatorio: e a prova de que o instalador correu e falhou a meio."
-  Problema "Porque? O registo do Windows responde:"
+  if ($null -ne $codigo) {
+    if ($codigo -eq 0) {
+      Problema "O instalador devolveu 0, ou seja, ELE ACHA QUE CORREU BEM."
+      Problema "Isso deixa uma hipotese forte: a janela foi fechada a meio, ou"
+      Problema "o Windows interrompeu a extracao sem registar nada."
+    } else {
+      Problema ("O instalador devolveu o codigo " + $codigo + " - ou seja, NAO foi bem-sucedido.")
+    }
+  }
+  Problema "Guarda este relatorio e manda-o a quem te deu o script."
+  Problema "Vai tambem ao Painel de Control > Programas: se a MEIDA 1.2.2 la"
+  Problema "estiver, o instalador criou a entrada mas nao extraiu a app - nesse"
+  Problema "caso desinstala-a e corre isto outra vez."
+  Problema "Porque? Estes sao os registos que respondem:"
   try {
     $crash = Get-WinEvent -FilterHashtable @{ LogName = 'Application'; StartTime = (Get-Date).AddMinutes(-45) } `
              -MaxEvents 120 -ErrorAction Stop |
              Where-Object { $_.Message -match 'MEIDA|Setup|nsis|Uninstall' }
     if ($crash) {
-      Problema "O registo do Windows registou isto:"
+      Problema "O registo de Aplicacoes registou isto:"
       $crash | Select-Object -First 4 | ForEach-Object {
-        Info ("  " + $_.TimeCreated.ToString("yyyy-MM-dd HH:mm") + "  " + $_.ProviderName + "  id=" + $_.Id)
+        Info ("  " + $_.TimeCreated.ToString("HH:mm") + "  " + $_.ProviderName + "  id=" + $_.Id)
         Info ("     " + ((($_.Message -split "`r?`n") | Where-Object { $_.Trim() } | Select-Object -First 2) -join " | "))
       }
-    } else {
-      Info "O registo do Windows nao mostra nenhuma falha do instalador."
-      Info "Se o espaco estava certo e o sha512 bateu certo, a causa mais provavel e"
-      Info "o Windows estar demasiado antigo - atualiza-o (Definicoes > Windows Update)."
-    }
-  } catch {
-    Info "Nao foi possivel ler o registo do Windows (pode exigir administrador)."
-  }
-  Problema "Confirma tambem que so ha uma entrada da MEIDA no Painel de Control >"
-  Problema "Programas, e desinstala-a se houver mais do que uma."
+    } else { Info "registo de Aplicacoes: nada." }
+  } catch { Info "Nao foi possivel ler o registo de Aplicacoes." }
+
+  # O registo de Aplicacoes nunca regista ficheiros bloqueados. Esse registo
+  # e o CodeIntegrity, e e o unico que serve quando o Windows recusa um
+  # executavel sem assinatura.
+  try {
+    $ci = Get-WinEvent -FilterHashtable @{ LogName = 'Microsoft-Windows-CodeIntegrity/Operational'; StartTime = (Get-Date).AddMinutes(-45) } `
+           -MaxEvents 200 -ErrorAction Stop |
+           Where-Object { $_.Message -match 'MEIDA|streamapp' }
+    if ($ci) {
+      Problema "O CodeIntegrity BLOQUEOU alguma coisa:"
+      $ci | Select-Object -First 4 | ForEach-Object {
+        Info ("  " + $_.TimeCreated.ToString("HH:mm") + "  id=" + $_.Id)
+        Info ("     " + ($_.Message.Split("`n")[0]))
+      }
+    } else { Info "CodeIntegrity: nada bloqueou a MEIDA." }
+  } catch { Info "CodeIntegrity: sem registo." }
+
+  try {
+    $det = Get-MpThreatDetection -ErrorAction Stop | Where-Object { $_.InitialDetectionTime -gt (Get-Date).AddHours(-3) }
+    if ($det) {
+      Problema "O Defender DETECTOU alguma coisa:"
+      $det | Select-Object -First 3 | ForEach-Object {
+        Info ("  " + $_.InitialDetectionTime + "  " + $_.ThreatName)
+        Info ("     " + $_.Resources)
+      }
+    } else { Info "Defender: nenhuma deteccao nas ultimas 3 horas." }
+  } catch { Info "Defender: nao consegui ler o historico." }
   Info ("O instalador ficou guardado em: " + $destino)
 }
 
