@@ -138,21 +138,40 @@ try {
 } catch { }
 
 # ------------------------------------------------- 2. limpar o que estiver partido
-if ($instalada -and -not (Test-Path (Join-Path $instalada $exeNome))) {
-  Secao "3. A LIMPAR A INSTALACAO PARTIDA"
-  Aviso ("a apagar: " + $instalada)
-  try {
-    Remove-Item $instalada -Recurse -Force -ErrorAction Stop
-    Info "pasta apagada."
-  } catch {
-    Erro ("nao consegui apagar a pasta: " + $_.Exception.Message)
-    Erro "Fecha a app (se estiver aberta) e volta a correr. Ou apaga a pasta a mao no Explorador."
-  }
-  if ($lnks.Count) {
-    foreach ($l in $lnks) {
-      try { Remove-Item $l -Force -ErrorAction Stop; Info ("atalho apagado: " + $l) }
-      catch { Aviso ("nao consegui apagar o atalho: " + $l) }
+$partida = [bool]$instalada -and -not (Test-Path (Join-Path $instalada $exeNome))
+if ($partida -or $lnks.Count) {
+  Secao "3. A LIMPAR O QUE ESTA PARTIDO"
+
+  if ($partida) {
+    Aviso ("a apagar a pasta: " + $instalada)
+    try {
+      Remove-Item $instalada -Recurse -Force -ErrorAction Stop
+      Info "pasta apagada."
+    } catch {
+      Erro ("nao consegui apagar a pasta: " + $_.Exception.Message)
+      Erro "Fecha a app (se estiver aberta) e volta a correr. Ou apaga a pasta a mao no Explorador."
     }
+
+    # Ao apagar a pasta, a entrada do Painel de Control > Programas fica a
+    # apontar para o Uninstall MEIDA.exe que acabamos de apagar. Se ficar, o
+    # instalador novo acha que ja existe uma instalacao antiga e tenta correr
+    # um desinstalador que ja nao existe - que e como a instalacao falha a meio.
+    try {
+      $base = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall"
+      foreach ($chave in (Get-ChildItem $base -ErrorAction SilentlyContinue)) {
+        $pr = Get-ItemProperty $chave.PSPath -ErrorAction SilentlyContinue
+        if ($pr -and ($pr.DisplayName -match "MEIDA")) {
+          Info ("a remover a entrada do Painel de Control: " + $pr.DisplayName)
+          Remove-Item $chave.PSPath -Recurse -Force -ErrorAction Stop
+        }
+      }
+    } catch { Aviso "nao consegui limpar o Painel de Control (pode exigir administrador)." }
+  }
+
+  # Atalhos partidos: apaga sempre, mesmo que a pasta principal tenha ficado intacta.
+  foreach ($l in $lnks) {
+    try { Remove-Item $l -Force -ErrorAction Stop; Info ("atalho apagado: " + $l) }
+    catch { Aviso ("nao consegui apagar o atalho: " + $l) }
   }
 }
 
