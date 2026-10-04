@@ -138,7 +138,9 @@ aponta para um `MEIDA.exe` que não existe. Se isso acontecer:
 
 - **Definições → Privacidade e segurança → Segurança do Windows → Controlo de
   aplicações e browser → Controlo de Aplicações Inteligente → Desligar.**
-  (Desligar é definitivo: para voltar a ligar é preciso reinstalar o Windows.)
+  Instala, e depois **volta a ligar**. É reversível: as atualizações recentes do
+  Windows deixam repor a definição sem reinstalar o Windows.
+  (Em Builds mais antigos era preciso reinstalar o Windows para repor.)
 - Ou correr `scripts/reparar-instalacao.ps1`, que apaga a instalação partida,
   volta a descarregar o instalador **confirmando o sha512**, e instala.
 

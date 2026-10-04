@@ -228,9 +228,10 @@ Secao "VEREDITO"
 if ($sac -eq "LIGADO") {
   Problema "PROBLEMA ENCONTRADO: o Smart App Control esta ligado."
   Info "Bloqueia o instalador porque a MEIDA ainda nao tem assinatura digital."
-  Info "Desligar o Smart App Control e DEFINITIVO (para repor e preciso reinstalar"
-  Info "o Windows), por isso nao o recommends a quem nao quer isso no PC."
-  Info "A solucao que nao toca no PC e assinar o instalador."
+  Info "SOLUCAO: desligar o Smart App Control, instalar, e VOLTA A LIGAR. Isto e"
+  Info "reversivel - as atualizacoes recentes do Windows deixam repor a definicao"
+  Info "sem reinstalar o Windows (confirmado no Windows 11 deste PC)."
+  Info "Para quem nao quer mexer em nada no PC, a solucao e assinar o instalador."
 } elseif ($instaladas.Count -eq 0) {
   Write-Output "  A app NAO esta instalada neste PC."
   if ($partidos -gt 0) {
