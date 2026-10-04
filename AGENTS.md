@@ -36,6 +36,11 @@ Se for preciso uma release apenas textual (notas), usar `gh release create` **de
 
 ## Regras de edição
 
+- **NUNCA escrever caracteres chineses.** Nem nas mensagens ao utilizador, nem em ficheiros, nem em commits. O utilizador já reclamou várias vezes (2026-10-04). CJK = U+2E80–U+9FFF (mais U+3000–U+303F e U+FF00–U+FFEF). **Antes de mostrar texto, revê-lo.** Em ficheiros, verificar sempre com:
+  ```
+  node -e "const s=require('fs').readFileSync('FICHEIRO','utf8');const l=s.split(/\r?\n/);const m=l.map((x,i)=>[\u2E80-\u9FFF].some(c=>x.includes(c))?i+1:0).filter(Boolean);console.log(m.length?('CJK nas linhas '+m):'OK')"
+  ```
+  Ver também `\uFFFD` (carácter inválido) — sinal de UTF-8 partido.
 - **Usar sempre a ferramenta `edit`** para alterar ficheiros. `Set-Content -replace` corrompe UTF-8 (partiu acentos/cedilhas no passado).
 - **Nunca fazer `git push` sem o utilizador pedir primeiro.** Sempre que o utilizador autorizar push, é **obrigatório** atualizar a versão (`package.json` → `web/src/changelog.js` → `CHANGELOG.md`) **e** publicar a release do Git (tag + `gh release` com binários via `npm run app:publish`).**
 - **A CHANGELOG DA APP (`web/src/changelog.js`) É OBRIGATÓRIA EM TODA A RELEASE.** Nunca fazer bump de versão / commit / release sem acrescentar a entrada dessa versão em `web/src/changelog.js` (linguagem simples, mais recente em cima) — é o que o utilizador vê no "o que mudou" dentro da app. Verificar SEMPRE que fica lá antes de qualquer push.
