@@ -25,6 +25,8 @@ A escala é **1–10**, não semver. O último número é um contador que vai de
 
 ## Processo de release (importante)
 
+> **A maquina de desenvolvimento e Windows sobre ARM** (`PROCESSOR_IDENTIFIER = ARMv8 ... Qualcomm`). Sem `--x64`, o `electron-builder` compila **arm64** e o instalador **nao instala em nenhum PC x86/x64 normal** — e falha em silencio: escreve o registo, cria o desinstalador e os atalhos, extrai zero ficheiros da app e sai com codigo 0. **Foi assim que 1.2.0, 1.2.1 e 1.2.2 ficaram partidas** (ver "Instaladores arm64" mais abaixo). Os scripts `app:pack`, `app:pack:zip` e `app:publish` ja leva `--x64`. **Nao os tirar.** Antes de publicar, confirmar em `release/builder-debug.yml` que a unica chave de topo e `x64:`.
+
 1. Bump da versão em `package.json` (raiz) — **+1 segundo a regra de numeração acima** (ex.: `0.9.9`).
 2. Atualizar o changelog da app: `web/src/changelog.js` (linguagem simples, sem termos técnicos, mais recente em cima).
 3. Atualizar `CHANGELOG.md` (raiz) — changelog técnico, com secções e detalhes.
@@ -93,43 +95,57 @@ Se for preciso uma release apenas textual (notas), usar `gh release create` **de
   - **A `anikotoapi.site` dá exatamente os URLs do MegaPlay** (rota `s-2`), com 9044 títulos e `mal_id`/`ani_id` — mas **não tem pesquisa**, só paginação por data (91 páginas) e 60 requests/2 min por IP. Cobrir um título antigo exigiria rastear o catálogo todo; para já não compensa (ver `IDEIAS.md`).
 
 
-## Investigacao: instalacao partida no PC de um utilizador (2026-10-04)
+## Instaladores arm64: 1.2.0 ate 1.2.2 nao instalam em PC x64 (2026-10-04)
 
-Sintoma: `%LOCALAPPDATA%\Programs\streamapp` com **so** `Uninstall MEIDA.exe`
-(0,5 MB), **sem** `MEIDA.exe` e **sem** `app-update.yml`, e o atalho do Menu
-Iniciar a apontar para um ficheiro inexistente. O utilizador disse que
-"funcionava antes".
+**CAUSA RAIZ, confirmada.** Esta maquina de desenvolvimento e **Windows sobre
+ARM** (Snapdragon; `PROCESSOR_IDENTIFIER = ARMv8 (64-bit) ... Qualcomm`). O
+`electron-builder` sem `--x64` compila **arm64**. Confirmado em
+`release/builder-debug.yml`, cuja unica chave de topo era `arm64:`.
 
-**Descartado com evidencia:**
+**Como falha, em silencio.** `extractAppPackage.nsh` do electron-builder:
 
-- **Controlo de Aplicacoes Inteligentes**: o Windows do utilizador e a **build
-  22000** (primeiro Windows 11, de 2021). A feature so existe a partir da build
-  **22567**. Nao esta presente, e nao ha nenhum bloqueio no registo do Windows.
-- **Defender**: zero deteccoes. **AppLocker**: inexistente na edicao Home.
-- **Config de build do electron-builder**: comparada commit a commit desde
-  1.1.0 ate HEAD, **zero chaves alteradas** — `nsis` (`oneClick`, `perMachine`,
-  `allowToChangeInstallationDirectory`), `artifactName`, `appId`
-  (`com.boda.meida`, estavel). **O empacotamento nao mudou.**
-- **Electron 44**: saltou de `^33.2.0` para `^44.5.1` no commit `5cb3e7f`
-  (1.2.0). Parece suspeito, mas o README do Electron v44.5.1 diz *"Windows
-  (Windows 10 and up)"* — corre no build 22000. **Nao e a causa.**
+```nsis
+!macro identify_package
+  !ifdef APP_64
+    ${if} ${RunningX64} ${orIf} ${IsNativeARM64}     ; so define $packageArch se for ARM64
+      StrCpy $packageArch "64"
+  !endif
+  !ifdef APP_ARM64
+    ${if} ${IsNativeARM64}                          ; idem para ARM64
+      StrCpy $packageArch "ARM64"
+```
 
-**Causa mais provavel: a corrida do update automatico, ja corrigida na 1.2.2.**
-O backend e um segundo processo do **proprio `MEIDA.exe`** (`spawn` de
-`process.execPath` com `ELECTRON_RUN_AS_NODE`). Ate 1.2.1 chamava-se
-`autoUpdater.quitAndInstall()` sem esperar pelo backend; esse `.exe` trancado
-fazia o NSIS falhar a meio — o payload nao ficava e sobrava so o `Uninstall`.
-A 1.2.2 passou a `await stopServer(true)` antes de `quitAndInstall(false, true)`.
+Num PC x64 normal, `${IsNativeARM64}` e falso e `APP_64`/`APP_32` nao estao
+definidos, porque so foi empacotado arm64. Logo `$packageArch` fica **vazio** e
+`compute_files_for_current_arch` **nao extrai um unico ficheiro**. O instalador
+continua: escreve o registo, deixa o `Uninstall MEIDA.exe`, cria os atalhos
+(apontando para um `MEIDA.exe` inexistente, o que faz o Windows mostrar *"o
+Windows esta a procurar MEIDA.exe"*), e sai com **codigo 0**. Sem registo no
+CodeIntegrity, sem evento de 논 Defender, sem aviso nenhum.
 
-**Isto explica o "funcionava antes":** o utilizador estava na **1.1.3**
-(Electron 33) e a atualizacao para 1.2.0/1.2.1 partiu-lhe a instalacao. A
-correcao **nao cura o estado actual**, so impede que volte a acontecer nas
-proximas atualizacoes. Uma instalacao limpa de 1.2.2 ou posterior deve
-funcionar.
+**Afeta as tres ultimas releases** (1.2.0, 1.2.1, 1.2.2) e a toda a gente em
+x64 — nao e so ao PC do utilizador. Como o `prune-releases` so mantem 3, todas
+as releases visiveis estavam partidas.
 
-Como nao ha prova directa, `scripts/reparar-instalacao.ps1` passou a ler o
-registo **Application** do Windows apos uma falha, para o proximo caso ser
-diagnosticado numa execucao so.
+**Isto e tambem a verdadeira causa da instalacao partida original**, e nao a
+"corrida do auto-update": ao passar de 1.1.x para 1.2.0, o electron-updater
+descarregou o payload arm64 e o instalador falhou exactamente assim. A espera
+pelo backend em 1.2.2 (`await stopServer(true)` antes de `quitAndInstall`) foi
+uma correcao para um problema que nao existia — inofensiva, mas nao a causa.
+
+**Correccao:** `--x64` em `app:pack`, `app:pack:zip` e `app:publish`. Confirmar
+sempre `release/builder-debug.yml` antes de publicar.
+
+**Diagnostico que vale a pena reter:** um instalador que "acaba com sucesso",
+escreve no registo e deixa o desinstalador, mas **nao extrai a app**, e a
+primeira coisa a verificar e a **arquitectura** (`builder-debug.yml`,
+`PROCESSOR_IDENTIFIER`), nao o Defender nem o espaco. O registo de Aplicacoes
+nunca regista ficheiros bloqueados; o certo e o `CodeIntegrity/Operational`.
+
+Ferramentas criadas durante esta investigacao (gists, so de leitura):
+`scripts/diag-instalacao.ps1`, `scripts/reparar-instalacao.ps1` (agora guarda o
+**codigo de saida** do instalador, que e o que dá a pista), e
+`scripts/verificar-instalacao.ps1`.
 
 ## Funcionalidades recentes
 

@@ -2,6 +2,14 @@
 // "o que mudou" depois de o utilizador atualizar a app. Mais recente em cima.
 export const CHANGELOG = [
   {
+    version: "1.2.3",
+    items: [
+      "Corrigido: a app não instalava em Almost todos os computadores. O ficheiro que era descarregado tinha sido feito para o tipo de processador errado, por isso o instalador acabava sem pôr a app — só sobrando o ícone de desinstalar. Se ficaste com a app a meio, volta a instalar esta versão e fica resolvido.",
+      "Novo: se a instalação correr mal, agora há um script que apaga as sobras e instala de novo sozinho, conferindo que o ficheiro não chega cortado.",
+      "Melhorado: a versão web está publicada em meida.onrender.com — dá para usar a MEIDA no navegador, sem instalar nada.",
+    ],
+  },
+  {
     version: "1.2.2",
     items: [
       "Novo: os animes ganharam uma fonte de reprodução nova, que é a primeira da lista. Traz as legendas já ligadas, vai a 1080p e, ao contrário das outras, não enche o ecrã de anúncios.",

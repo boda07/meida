@@ -1,6 +1,6 @@
 {
   "name": "streamapp",
-  "version": "1.2.2",
+  "version": "1.2.3",
   "private": true,
   "description": "App pessoal tipo Stremio: catalogo TMDB + embed providers + torrents",
   "main": "electron/main.cjs",
@@ -21,8 +21,9 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "test": "npm --prefix server test",
-    "app:pack": "npm run build && electron-builder",
-    "app:publish": "npm run build && electron-builder --publish always && node scripts/prune-releases.mjs"
+    "app:pack": "npm run build && electron-builder --x64",
+    "app:pack:zip": "npm run build && electron-builder --win zip --x64",
+    "app:publish": "npm run build && electron-builder --x64 --publish always && node scripts/prune-releases.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

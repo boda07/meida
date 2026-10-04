@@ -1,5 +1,66 @@
 # Changelog
 
+## 1.2.3
+
+### Corrigido: o instalador não instalava em nenhum PC x86/x64 (1.2.0 a 1.2.2)
+- **Causa raiz**: a máquina de desenvolvimento é **Windows sobre ARM**
+  (Snapdragon; `PROCESSOR_IDENTIFIER = ARMv8 (64-bit) ... Qualcomm`). O
+  `electron-builder` foi corrido **sem `--x64`**, portanto empacotou **arm64** —
+  confirmado em `release/builder-debug.yml`, cuja única chave de topo era
+  `arm64:`. As releases **1.2.0, 1.2.1 e 1.2.2** ficaram com um instalador
+  que não instala num PC normal.
+- **Como falha, em silêncio** (`extractAppPackage.nsh` do electron-builder):
+  `identify_package` só define `$packageArch` se `${RunningX64}` ou
+  `${IsNativeARM64}`; num PC x64, `${IsNativeARM64}` é falso e `APP_64`/`APP_32`
+  não estão definidos porque só foi empacotado arm64. Logo `$packageArch` fica
+  vazio e `compute_files_for_current_arch` **não extrai um único ficheiro**. O
+  instalador prossegue: escreve a entrada no registo, deixa o
+  `Uninstall MEIDA.exe`, cria os atalhos a apontar para um `MEIDA.exe`
+  inexistente (o Windows mostra *"o Windows está a procurar MEIDA.exe"*) e sai
+  com **código 0**. Sem evento no CodeIntegrity, sem deteção do Defender.
+- **Correção**: `--x64` em `app:pack`, `app:pack:zip` e `app:publish`.
+  Verificado por três vias: `builder-debug.yml` com `x64:`, cabeçalho PE do
+  `MEIDA.exe` a `0x8664` (AMD64), e tamanho do instalador diferente do
+  anterior (113 395 232 bytes, contra 107 284 764 do arm64).
+- **Afeta toda a gente em x64**, não só o PC onde foi reportado. Como o
+  `prune-releases` mantém 3 releases, as 3 visíveis estavam partidas.
+- **Corrige também o diagnóstico anterior**: a hipótese da "corrida entre o
+  backend e o instalador" na 1.2.2 era errada. Não havia corrida; o que
+  partiu a instalação foi o payload arm64 quando o `electron-updater` actualizou
+  de 1.1.x para 1.2.0. A espera pelo backend em 1.2.2 fica (é inofensiva e
+  correcta por si), mas não era a causa.
+
+### Diagnóstico: como um instalador "bem-sucedido" não instala nada
+- Sintoma: o instalador acaba com código 0, deixa o desinstalador e a entrada no
+  Painel de Control, mas a pasta fica com 0,5 MB e sem `MEIDA.exe`.
+- O **registo de Aplicações nunca regista ficheiros bloqueados** — quem regista
+  é o `Microsoft-Windows-CodeIntegrity/Operational` e o histórico do Defender.
+- A primeira coisa a verificar quando o payload não aparece é a
+  **arquitectura** (`release/builder-debug.yml`, `PROCESSOR_IDENTIFIER`), antes
+  do Defender, do espaço em disco ou da versão do Windows.
+
+### Scripts de diagnóstico (gists, só de leitura, não alteram o PC)
+- `scripts/diag-instalacao.ps1` — estado do Windows, build, Controlo de
+  Aplicações Inteligentes, AppLocker/WDAC, MOTW.
+- `scripts/verificar-instalacao.ps1` — procura a MEIDA nas 9 pastas possíveis
+  (incluindo `C:\Program Files\streamapp`, que faltava), lê o Painel de
+  Control, o histórico do Defender, os logs do Defender/CodeIntegrity/AppLocker
+  filtrados para a MEIDA, e diz o que o Windows fez ao instalador.
+- `scripts/reparar-instalacao.ps1` — limpa a instalação partida (pasta, atalhos
+  **e a entrada do Painel de Control**, que deixava o instalador novo a tentar
+  correr um desinstalador inexistente), descarrega o instalador com verificação
+  de tamanho e sha512, e guarda o **código de saída** — que é o número que
+  distingue "o instalador fez o que devia" de "desistiu a meio".
+
+### Web
+- A versão web está publicada e a funcionar em **`https://meida.onrender.com`**
+  (`/api/health` → `{"ok":true,"tmdbConfigured":true}`). É a via para quem tem
+  a instalação de desktop bloqueada pelo Windows.
+- Retirada a via do VPS/Oracle Cloud (não disponível): apagados
+  `deploy/ORACLE-CHECKLIST.md`, `deploy/README.md`, `bootstrap.sh`,
+  `deploy.sh`, `meida.service`, `Caddyfile` e `duckdns-update.sh`. Fica o
+  `render.yaml` como blueprint para instâncias próprias.
+
 ## 1.2.2
 
 ### Corrigido: a atualização da app ficava a meio (atalho do Menu Iniciar partido)
