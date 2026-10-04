@@ -47,6 +47,14 @@ Se for preciso uma release apenas textual (notas), usar `gh release create` **de
 - Guardar: `JWT_SECRET`, `ADMIN_TOKEN` (rota `/api/admin/seed`), `TMDB_*`, `MAL_*`. Ver `deploy/SERVIDOR-PARTILHADO.md`.
 - **`MAL_REDIRECT_URI` tem de ser `https://meida.fadehost.app/api/mal/callback`** no FadeHost **e** em myanimelist.net/apiconfig. Sem isto o OAuth do MAL volta para `localhost:5175` e falha.
 - Migração de dados: `npm --prefix server run export:json -- saida.json` e depois `POST /api/admin/seed` com `x-admin-token`. O export **inclui** `user_tokens` (MAL/AniList/Letterboxd) mas **não** sessões JWT — é o certo, o remoto tem outro `JWT_SECRET`, por isso o utilizador entra uma vez com a senha normal.
+- **O servidor partilhado NÃO serve a interface web** — é só API. `deploy/SERVIDOR-PARTILHADO.md` diz para **não** lá definir `SERVE_WEB` nem `HOST`. Portanto `https://meida.fadehost.app/` não abre a app no browser: quem quiser a versão web precisa de `SERVE_WEB=1`, e isso só existe preparado para `deploy/meida.service` (VPS) e `render.yaml` (Render). **Não prometer "abre no browser" sem primeiro confirmar que há uma instância com `SERVE_WEB=1` em pé** — em 2026-10-04 nenhuma havia, e o servidor partilhado estava hibernado.
+
+## Modo web / browser
+
+- `npm run start:pwa` (na raiz) = `npm run build` + backend com `SERVE_WEB=1`. Compila e sobe em `http://localhost:5175`. **Não é preciso correr `npm run build` à parte.** Verificado em 2026-10-04: HTTP 200, `index.html` com `div id="root"` e referências a `/assets/`.
+- Gera também um **service worker** (workbox, `dist/sw.js`, ~25 entradas em precache) — ou seja a versão web é uma PWA instalável pelo browser.
+- O frontend já está preparado para não-Electron: `web/src/discord.js` devolve `window.electronAPI` e as funções tornam-se no-op silencioso quando não existe. É o mesmo código da app desktop, não uma versão separada.
+- **Aviso esperado e inofensivo ao arrancar:** `WebTorrent: uTP not supported Error: Cannot find module 'utp-native'`. É só o transporte uTP (UDP) que não está compilado; o WebTorrent continua a funcionar por TCP/WebRTC. No browser o uTP nem se usa (lá é WebRTC), por isso não afecta a versão web.
 
 ## Bugs corrigidos (não repetir erros)
 
