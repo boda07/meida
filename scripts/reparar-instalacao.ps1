@@ -23,13 +23,18 @@ param([switch]$NaoInstalar)
 $ProgressPreference = 'SilentlyContinue'
 $repo = "https://github.com/boda07/meida"
 $exeNome = "MEIDA.exe"
-# Pastas onde o electron-builder (per-user, oneClick) pode instalar.
+# Pastas onde o electron-builder pode instalar. O nome da pasta vem do
+# "name" do package.json (streamapp), nao do productName - por isso o mesmo
+# nome aparece em varias, e ha as duas variantes: sem administrador (por
+# utilizador, em %LOCALAPPDATA%) e como administrador (em Program Files).
 $caminhos = @(
   "$env:LOCALAPPDATA\Programs\streamapp",
   "$env:LOCALAPPDATA\Programs\MEIDA",
   "$env:LOCALAPPDATA\Programs\meida",
+  "$env:ProgramFiles\streamapp",
   "$env:ProgramFiles\MEIDA",
   "$env:ProgramFiles\meida",
+  "${env:ProgramFiles(x86)}\streamapp",
   "${env:ProgramFiles(x86)}\MEIDA",
   "${env:ProgramFiles(x86)}\meida"
 )
