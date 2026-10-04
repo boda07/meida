@@ -1,5 +1,34 @@
 # Changelog
 
+## 1.2.4
+
+### Corrigido: app abria com o bundle web antigo em cache (changelog velha e "fail to fetch")
+- **Sintoma** (PC x64 com instalação limpa da 1.2.3): a janela mostrava a
+  changelog só até 1.0.0 e dava "fail to fetch", apesar de o instalador e o
+  Windows registarem a 1.2.3.
+- **Causa**: a app abre em `loadURL("http://localhost:5175")` e o servidor
+  servia o `index.html` sem `Cache-Control`. A **cache HTTP do Chromium**
+  (`%APPDATA%\streamapp\Cache`, que **sobrevive à desinstalação NSIS** — a
+  desinstalação não apaga `AppData`) devolvia o `index.html` antigo, que
+  apontava para o bundle JS antigo (changelog até 1.0.0); quando esse JS antigo
+  já não estava na cache, o fetch da app falhava. Não é erro do instalador nem
+  da release: **verificado** extraindo `MEIDA-Setup-1.2.3.exe` (7-Zip): contém
+  `app-64.7z` e `app-arm64.7z`, e o `web/dist` traz `index-BBTnWU4E.js`
+  (changelog até 1.2.3, "Voltar atrás", Discord) — a release está íntegra.
+- **Correção** em `server/src/index.js`: o `index.html` passa a ser servido com
+  `Cache-Control: no-cache, no-store, must-revalidate` (tanto no `express.static`
+  como no fallback SPA). O Chromium revalida sempre, pelo que cada arranque
+  obtém o `index.html` atual que referencia o bundle novo. Os assets com hash no
+  nome (`index-<hash>.js`/`.css`) continuam cacheáveis — é o comportamento certo.
+- **Para quem já está afetado**: fechar a app e apagar `%APPDATA%\streamapp\Cache`
+  e `%APPDATA%\streamapp\Code Cache` (ou, mais simples, `Ctrl+Shift+R` dentro da
+  app para recarregar ignorando a cache).
+- **Nota**: o Service Worker só se regista fora do Electron
+  (`web/src/main.jsx`, guard `!window.electronAPI`), portanto na app desktop não
+  há interferência de SW — é cache HTTP clássica.
+- Testado localmente: `SERVE_WEB=1` devolve `Cache-Control: no-cache, no-store,
+  must-revalidate` em `/` e o HTML referencia o bundle novo.
+
 ## 1.2.3
 
 ### Corrigido: o instalador não instalava em nenhum PC x86/x64 (1.2.0 a 1.2.2)

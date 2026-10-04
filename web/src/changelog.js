@@ -2,6 +2,12 @@
 // "o que mudou" depois de o utilizador atualizar a app. Mais recente em cima.
 export const CHANGELOG = [
   {
+    version: "1.2.4",
+    items: [
+      "Corrigido: se já tinhas usado a app antes de atualizar, podia acontecer a janela abrir ainda com a versão antiga em memória — a lista de novidades aparecia desatualizada e por vezes dava erro \"fail to fetch\". Agora a app vai sempre buscar a versão nova ao arrancar, por isso deixa de ficar presa na versão antiga.",
+    ],
+  },
+  {
     version: "1.2.3",
     items: [
       "Corrigido: a app não instalava em Almost todos os computadores. O ficheiro que era descarregado tinha sido feito para o tipo de processador errado, por isso o instalador acabava sem pôr a app — só sobrando o ícone de desinstalar. Se ficaste com a app a meio, volta a instalar esta versão e fica resolvido.",

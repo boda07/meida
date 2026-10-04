@@ -74,11 +74,25 @@ if (process.env.SERVE_WEB === "1") {
   const __dirname = dirname(fileURLToPath(import.meta.url));
   // No app empacotado o caminho vem por WEB_DIST; em dev usa o relativo.
   const dist = process.env.WEB_DIST || resolve(__dirname, "../../web/dist");
-  app.use(express.static(dist));
+  app.use(
+    express.static(dist, {
+      setHeaders(res, filePath) {
+        // O index.html NUNCA pode ficar em cache: se ficar, a app volta a abrir
+        // com o bundle JS antigo (a changelog fica antiga e pode dar "fail to
+        // fetch" se o JS antigo ja nao estiver na cache). Os assets com hash no
+        // nome (index-XXXX.js) continuam cacheaveis — o nome muda a cada build.
+        if (filePath.endsWith("index.html")) {
+          res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+        }
+      },
+    })
+  );
   // Fallback SPA: tudo o que nao seja /api devolve o index.html.
   app.get("*", (req, res, next) => {
     if (req.path.startsWith("/api")) return next();
-    res.sendFile(resolve(dist, "index.html"));
+    res.sendFile(resolve(dist, "index.html"), {
+      headers: { "Cache-Control": "no-cache, no-store, must-revalidate" },
+    });
   });
 }
 
