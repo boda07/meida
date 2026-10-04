@@ -63,6 +63,8 @@ Se for preciso uma release apenas textual (notas), usar `gh release create` **de
 
 ## Bugs corrigidos (não repetir erros)
 
+- **Quase perdi o AGENTS.md inteiro (2026-10-04)**: usei a ferramenta `write` para acrescentar uma secção e ela **sobrescreveu o ficheiro todo** (18586 bytes → 2070). Salvei com `git checkout -- AGENTS.md`. **Porquê não voltou a acontecer:** para acrescentar texto a um ficheiro existente usa **sempre `edit`**, nunca `write`. O `write` só para criar ficheiros novos. Isto viola a regra "usar sempre a ferramenta `edit`" acima — obeyecê-la evita isto e mais.
+
 - **Release publicada sem `latest.yml` (auto-update partido)**: ao correr `npm run app:publish`, o GitHub devolveu `422 "Published releases must have a valid tag"` ao criar a release `v1.2.0`. Ficou a release publicada **só com o instalador** (1 asset em vez de 3) — sem `latest.yml` o botão "Procurar atualização" não funciona (o mesmo sintoma das v0.9.6–0.9.9). **Corrigido** correndo `npm run app:publish` outra vez: com a release já existente o electron-builder faz *update* em vez de *create* e envia os 3 assets. **Regra:** depois de publicar, confirmar `gh api repos/boda07/meida/releases` → a release nova tem de ter **3 assets** (`latest.yml`, `MEIDA-Setup-x.y.z.exe`, `MEIDA-Setup-x.y.z.exe.blockmap`), e `curl -sL https://github.com/boda07/meida/releases/latest/download/latest.yml` tem de devolver `version: <a que publicaste>`.
 - **O bug voltou na 1.2.2, e desta vez o asset que faltou foi o `.exe`** (não o `latest.yml`): o `npm run app:publish` terminou com `422 "Published releases must have a valid tag"` ao criar a release, e a release `v1.2.2` ficou publicada só com `latest.yml` + `.blockmap` — **sem o `MEIDA-Setup-1.2.2.exe`**, ou seja um `latest.yml` que aponta para um ficheiro inexistente. O instalador tinha sido construído localmente sem problemas (`release\MEIDA Setup 1.2.2.exe`, 102,3 MB) — falhou só o upload. **Como cada vez falta um asset diferente, contar os assets continua a ser a única verificação fiável**; nunca assumir que o `latest.yml` é o que falta. Repetir o `npm run app:publish` uploadou os 3 (`overwrite published file ... reason=already exists on GitHub`).
 - **O mesmo bug voltou na 1.2.1, com outro erro**: `422 "Validation Failed" / code: already_exists / field: tag_name` — a release `v1.2.1` foi criada e **publicada** (já não era draft) com 1 asset, e só depois é que uma segunda tentativa de `POST /releases` falhou com `already_exists`. Ou seja: **não estejas a olhar para o erro do fim do log para concluir que a publicação correu bem** — o `publish` pode ter gravado a release incompleta *antes* de uma chamada duplicada rebentar. O `npm run app:publish` termina com `Exited with code 1` **e mesmo assim a release pode existir e estar pela metade**. **Sempre** confirmar os 3 assets + o `latest.yml` público (comando acima) antes de dizer ao utilizador que a release está boa; se faltar o `latest.yml`, repetir `npm run app:publish` (na segunda corrida o log mostra `overwrite published file ... reason=already exists on GitHub` e o `latest.yml` aparece).
@@ -88,6 +90,44 @@ Se for preciso uma release apenas textual (notas), usar `gh release create` **de
   - **Descartados nesta procura** (2026-10-04): `supaplay.fun` (passou a "PREMIUM ACCESS", e o `aniwixi` cobra $50/mês — nada pago), `ani.megaplay.su` (devolve uma página de erro; a API JSON exige origem na lista branca), `ninjasheild.stream` (não responde), `myapi-psi-wheat.vercel.app` (API do AnimePahe, `/search` dá 503), `api.ani.zip` (404 na raiz).
   - **A `anikotoapi.site` dá exatamente os URLs do MegaPlay** (rota `s-2`), com 9044 títulos e `mal_id`/`ani_id` — mas **não tem pesquisa**, só paginação por data (91 páginas) e 60 requests/2 min por IP. Cobrir um título antigo exigiria rastear o catálogo todo; para já não compensa (ver `IDEIAS.md`).
 
+
+## Investigacao: instalacao partida no PC de um utilizador (2026-10-04)
+
+Sintoma: `%LOCALAPPDATA%\Programs\streamapp` com **so** `Uninstall MEIDA.exe`
+(0,5 MB), **sem** `MEIDA.exe` e **sem** `app-update.yml`, e o atalho do Menu
+Iniciar a apontar para um ficheiro inexistente. O utilizador disse que
+"funcionava antes".
+
+**Descartado com evidencia:**
+
+- **Controlo de Aplicacoes Inteligentes**: o Windows do utilizador e a **build
+  22000** (primeiro Windows 11, de 2021). A feature so existe a partir da build
+  **22567**. Nao esta presente, e nao ha nenhum bloqueio no registo do Windows.
+- **Defender**: zero deteccoes. **AppLocker**: inexistente na edicao Home.
+- **Config de build do electron-builder**: comparada commit a commit desde
+  1.1.0 ate HEAD, **zero chaves alteradas** — `nsis` (`oneClick`, `perMachine`,
+  `allowToChangeInstallationDirectory`), `artifactName`, `appId`
+  (`com.boda.meida`, estavel). **O empacotamento nao mudou.**
+- **Electron 44**: saltou de `^33.2.0` para `^44.5.1` no commit `5cb3e7f`
+  (1.2.0). Parece suspeito, mas o README do Electron v44.5.1 diz *"Windows
+  (Windows 10 and up)"* — corre no build 22000. **Nao e a causa.**
+
+**Causa mais provavel: a corrida do update automatico, ja corrigida na 1.2.2.**
+O backend e um segundo processo do **proprio `MEIDA.exe`** (`spawn` de
+`process.execPath` com `ELECTRON_RUN_AS_NODE`). Ate 1.2.1 chamava-se
+`autoUpdater.quitAndInstall()` sem esperar pelo backend; esse `.exe` trancado
+fazia o NSIS falhar a meio — o payload nao ficava e sobrava so o `Uninstall`.
+A 1.2.2 passou a `await stopServer(true)` antes de `quitAndInstall(false, true)`.
+
+**Isto explica o "funcionava antes":** o utilizador estava na **1.1.3**
+(Electron 33) e a atualizacao para 1.2.0/1.2.1 partiu-lhe a instalacao. A
+correcao **nao cura o estado actual**, so impede que volte a acontecer nas
+proximas atualizacoes. Uma instalacao limpa de 1.2.2 ou posterior deve
+funcionar.
+
+Como nao ha prova directa, `scripts/reparar-instalacao.ps1` passou a ler o
+registo **Application** do Windows apos uma falha, para o proximo caso ser
+diagnosticado numa execucao so.
 
 ## Funcionalidades recentes
 
