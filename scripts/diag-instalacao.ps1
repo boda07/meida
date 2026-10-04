@@ -18,6 +18,10 @@ function Secao($t) {
   Write-Output $t
   Write-Output ("=" * 64)
 }
+function Info($t) { Write-Output ("  " + $t) }
+function Aviso($t) { Write-Output ("  >> " + $t) }
+function Problema($t) { Write-Output ("  !! " + $t) }
+function Erro($t) { Write-Output ("  XX " + $t) }
 
 # Onde o electron-builder pode ter instalado a app (por utilizador ou para todos).
 $caminhos = @(
@@ -146,8 +150,88 @@ try {
   Write-Output ("  nao foi possivel ler: " + $_.Exception.Message)
 }
 
+Secao "7. O QUE PODE ESTAR A BLOQUEAR A INSTALACAO"
+# Esta seccao e so de LEITURA: nao altera nada no PC.
+
+# 7a. Windows
+try {
+  $os = Get-CimInstance Win32_OperatingSystem -ErrorAction Stop
+  Info ("Windows : " + $os.Caption + "  build " + $os.BuildNumber + "." + $os.OSArchitecture)
+} catch { Info "Windows : nao foi possivel ler." }
+
+# 7b. Smart App Control (bloqueia executaveis sem assinatura sem aviso)
+$sac = "desconhecido"
+$k = Get-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Control\CI\Policy" -ErrorAction SilentlyContinue
+if ($k -and $null -ne $k.VerifiedAndReputablePolicyState) {
+  switch ([int]$k.VerifiedAndReputablePolicyState) {
+    1 { $sac = "LIGADO" }
+    2 { $sac = "desligado" }
+    default { $sac = "estado " + $k.VerifiedAndReputablePolicyState }
+  }
+}
+if ($sac -eq "LIGADO") {
+  Problema "Smart App Control: LIGADO"
+  Info "Isto BLOQUEIA executaveis sem assinatura digital, sem mostrar aviso nenhum."
+  Info "E a causa mais provavel de uma instalacao ficar a meio."
+} else {
+  Info ("Smart App Control: " + $sac)
+}
+
+# 7c. Politicas de Controlo de Aplicacoes (AppLocker / WDAC)
+$al = "nenhuma encontrada"
+try {
+  $pol = Get-AppLockerPolicy -Effective -ErrorAction Stop | Select-Object -ExpandProperty Collection
+  if ($pol) {
+    $al = ($pol | ForEach-Object { $_.Name + " (modo: " + $_.EnforcementMode + ")" }) -join "; "
+  }
+} catch {
+  $al = "modulo AppLocker nao instalado neste Windows"
+}
+Info ("Politicas AppLocker/WDAC : " + $al)
+
+# 7d. Registo de eventos: bloqueios reais
+$achouEvento = $false
+foreach ($log in @("Microsoft-Windows-CodeIntegrity/Operational",
+                   "Microsoft-Windows-AppLocker/EXE and DLL",
+                   "Microsoft-Windows-AppLocker/MSI and Script")) {
+  try {
+    $ev = Get-WinEvent -FilterHashtable @{ LogName = $log; StartTime = (Get-Date).AddDays(-30) } `
+          -MaxEvents 200 -ErrorAction Stop |
+          Where-Object { $_.Message -match "MEIDA|meida|streamapp" }
+    if ($ev) {
+      $achouEvento = $true
+      Info ("BLOQUEIOS registados em " + $log + ":")
+      $ev | Select-Object -First 5 | ForEach-Object {
+        Info ("   " + $_.TimeCreated.ToString("yyyy-MM-dd HH:mm") + "  id=" + $_.Id)
+        Info ("      " + ($_.Message -split "`r?`n" | Select-Object -First 3 | Out-String).Trim().Replace("`r`n", " | "))
+      }
+    }
+  } catch { }
+}
+if (-not $achouEvento) {
+  Info "Nenhum bloqueio da MEIDA no registo de eventos dos ultimos 30 dias."
+}
+
+# 7e. Marca "baixado da internet" em ficheiros da MEIDA
+foreach ($dir in @("$env:TEMP", "$env:USERPROFILE\Downloads")) {
+  Get-ChildItem $dir -Filter "*MEIDA*" -ErrorAction SilentlyContinue |
+    Where-Object { $_.Name -match "Setup|\.exe$" } | Select-Object -First 3 | ForEach-Object {
+      try {
+        Get-Item $_.FullName -Stream Zone.Identifier -ErrorAction Stop | ForEach-Object {
+          Info ("marca de 'baixado da net' em " + $_.FileName)
+        }
+      } catch { }
+    }
+}
+
 Secao "VEREDITO"
-if ($instaladas.Count -eq 0) {
+if ($sac -eq "LIGADO") {
+  Problema "PROBLEMA ENCONTRADO: o Smart App Control esta ligado."
+  Info "Bloqueia o instalador porque a MEIDA ainda nao tem assinatura digital."
+  Info "Desligar o Smart App Control e DEFINITIVO (para repor e preciso reinstalar"
+  Info "o Windows), por isso nao o recommends a quem nao quer isso no PC."
+  Info "A solucao que nao toca no PC e assinar o instalador."
+} elseif ($instaladas.Count -eq 0) {
   Write-Output "  A app NAO esta instalada neste PC."
   if ($partidos -gt 0) {
     Write-Output "  Ha atalhos que apontam para ficheiros que nao existem -> e por isso"
