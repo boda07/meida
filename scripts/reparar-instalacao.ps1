@@ -228,6 +228,21 @@ if ($partida -or $lnks.Count) {
   }
 }
 
+# Atalhos que NAO estao partidos mas que o Windows ja marcou como "para
+# corrigir". Acontece quando o destino desaparece e reaparece: o Windows guarda
+# esse estado no atalho e continua a pedir reparacao mesmo depois de o ficheiro
+# voltar, ate o atalho ser criado de novo. Por isso apagam-se TODOS os atalhos da
+# MEIDA aqui, e deixam-se os criar depois a instalacao - com o MEIDA.exe ja no
+# sitio, que e a unica forma de nao nascerem marcados.
+$todosAtalhos = @(Get-ChildItem (Join-Path $env:APPDATA "Microsoft\Windows\Start Menu\Programs"), $env:ProgramData\Microsoft\Windows\Start\Menu\Programs, $env:USERPROFILE\Desktop, $env:PUBLIC\Desktop -Filter "*.lnk" -Recurse -ErrorAction SilentlyContinue |
+  Where-Object { $_.Name -match "MEIDA" })
+if ($todosAtalhos.Count -gt 0) {
+  foreach ($l in $todosAtalhos) {
+    try { Remove-Item $l.FullName -Force -ErrorAction SilentlyContinue } catch {}
+  }
+  Info ("atalhos limpos (" + $todosAtalhos.Count + ") para o Windows nao os marcar como partidos.")
+}
+
 # ------------------------------------------------- 3. descarregar e verificar
 Secao "4. DESCARREGAR O INSTALADOR (com verificacao)"
 try {
