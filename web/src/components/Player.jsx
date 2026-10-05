@@ -1,6 +1,15 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import FullscreenButton from "./FullscreenButton.jsx";
 import { useSettings } from "../settings/SettingsContext.jsx";
+
+// Um provider pode devolver um `data:` URL (vi um a servir
+// `data:application/pdf;base64,...` — um PDF disfarçado de página). Não é um
+// player: o Chromium aborta o carregamento, o iframe nunca dispara `load`, e o
+// auto-fallback acabava a trocar de fonte sozinho. Also não dá para acrescentar
+// `?autoplay=` a um data: URL (vira lixo). Recusamos à partida.
+function ePlayerValido(url) {
+  return /^https?:\/\//i.test(String(url || ""));
+}
 
 function applyPlaybackPrefs(src, { autoplay, autoskip }) {
   let url = src;
@@ -25,19 +34,29 @@ export default function Player({ embeds, deadIds, title, startIndex = 0 }) {
   const iframeRef = useRef(null);
   const { settings } = useSettings();
   const [reloadKey, setReloadKey] = useState(0);
-  // Indice da fonte activa dentro da lista `embeds` (nao o providerId).
-  const [index, setIndex] = useState(() => firstAlive(embeds, deadIds, startIndex));
+  // Só entram fontes com URL http(s) — um `data:` URL não é um player (ver
+  // ePlayerValido). Filtrar aqui evita que o auto-fallback fique a rodar sobre
+  // uma fonte que nunca pode carregar.
+  const lista = useMemo(
+    () => (embeds || []).filter((e) => ePlayerValido(e.embedUrl)),
+    [embeds]
+  );
+  // Indice da fonte activa dentro da lista `lista` (nao o providerId).
+  const [index, setIndex] = useState(() => firstAlive(lista, deadIds, startIndex));
   const [loaded, setLoaded] = useState(false);
+  // Fonte que foi trocada sozinha (para o utilizador saber o que aconteceu em
+  // vez de o player mudar de marca sem explicação).
+  const [trocada, setTrocada] = useState(null);
 
-  const active = embeds?.[index];
+  const active = lista?.[index];
   const finalSrc = active ? applyPlaybackPrefs(active.embedUrl, settings) : null;
 
   useEffect(() => {
     // Re-inicia o indice activo quando a lista ou a origem mudarem.
-    setIndex(() => firstAlive(embeds, deadIds, startIndex));
+    setIndex(() => firstAlive(lista, deadIds, startIndex));
     setReloadKey((k) => k + 1);
     setLoaded(false);
-  }, [embeds, deadIds, startIndex]);
+  }, [lista, deadIds, startIndex]);
 
   useEffect(() => {
     if (!active) return;
@@ -45,9 +64,17 @@ export default function Player({ embeds, deadIds, title, startIndex = 0 }) {
     let done = false;
     const timer = setTimeout(() => {
       if (!done) {
-        // Timeout: provider provavelmente down. Avanca silenciosamente.
+        // Timeout: o iframe nao carregou. Só se avança quando há outra fonte;
+        // se esta era a última, fica a mostrar a mensagem em vez de ficar em
+        // loop a recarregar a mesma fonte.
+        const proximo = nextAlive(index, lista, deadIds);
+        if (proximo === index) {
+          setLoaded(true); // sem mais fontes: para de tentar
+          return;
+        }
         done = true;
-        setIndex((i) => nextAlive(i + 1, embeds, deadIds));
+        setTrocada(active?.name || null);
+        setIndex(proximo);
         setReloadKey((k) => k + 1);
         setLoaded(false);
       }
@@ -66,7 +93,7 @@ export default function Player({ embeds, deadIds, title, startIndex = 0 }) {
       clearTimeout(timer);
       iframe?.removeEventListener("load", onload);
     };
-  }, [active, embeds, deadIds]);
+  }, [active, lista, deadIds, index]);
 
   if (!active) return null;
 
@@ -79,7 +106,10 @@ export default function Player({ embeds, deadIds, title, startIndex = 0 }) {
         title={title || active.name || "player"}
         allowFullScreen
         referrerPolicy="origin"
-        allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
+        // "autoplay" so entra quando a definicao esta ligada. Com a permissao
+        // sempre presente, o player do provider arrancava sozinho mesmo com o
+        // autoplay desligado nas Definicoes.
+        allow={`${settings.autoplay ? "autoplay; " : ""}encrypted-media; fullscreen; picture-in-picture`}
       />
       <button
         type="button"
@@ -102,6 +132,11 @@ export default function Player({ embeds, deadIds, title, startIndex = 0 }) {
           {active.name} · a carregar...
         </span>
       )}
+      {trocada && loaded && (
+        <span className="player-loading-hint muted" style={{ position: "absolute", left: 8, bottom: 8, fontSize: 12 }}>
+          {trocada} nao carregou · a usar {active?.name}
+        </span>
+      )}
       <FullscreenButton targetRef={iframeRef} />
     </div>
   );
@@ -116,10 +151,13 @@ function firstAlive(list, dead, start) {
   return s < list.length ? s : 0;
 }
 
-// Proximo indice vivo a partir de `i`.
+// Proximo indice vivo a partir de `i` (exclusive: a propria fonte nao conta).
+// Comeca em `i + 1` de proposito — comecando em `i`, a fonte que estava a
+// falhar era logo devolvida como "proxima" e o timeout de 15 s nunca saia
+// dela. Devolve `i` quando nao ha mais nenhuma.
 function nextAlive(i, list, dead) {
   if (!list?.length) return 0;
-  for (let j = i; j < list.length; j++) if (!dead?.has(list[j].provider)) return j;
+  for (let j = i + 1; j < list.length; j++) if (!dead?.has(list[j].provider)) return j;
   for (let j = 0; j < i; j++) if (!dead?.has(list[j].provider)) return j;
-  return 0;
+  return i;
 }
