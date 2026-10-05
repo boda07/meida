@@ -191,7 +191,11 @@ A app é construída num PC **Windows sobre ARM**, o que criou uma classe de bug
 que só aparecem noutros computadores: programas nativos (`.node`/`.dll`) que vão
 com a arquitectura errada. Isso chegou a partir **todos os PC x86** (Intel/AMD).
 
-A correcção foi feita e verificada emulado, mas **falta confirmar num PC x86 a
+> **Existem duas máquinas de desenvolvimento:** este PC (ARM) e o desktop x86 do
+> Boda. O script abaixo dá um veredito **real** no desktop (x86 nativo) e só uma
+> emulação neste PC ARM. Corre-o **nos dois**.
+
+A correcção foi feita e verificada, mas **compensa confirmar num PC x86 a
 sério**. Se tens um, corre o script abaixo.
 
 ### O que o script faz

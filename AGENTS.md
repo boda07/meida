@@ -25,14 +25,29 @@ A escala é **1–10**, não semver. O último número é um contador que vai de
 
 ## Processo de release (importante)
 
-> **ONDE SE COMPILA IMPORTA: o AGENTS.md anterior falava do LAPTOP, e estava certo.** As builds que sairam partidas (1.2.0 a 1.2.2 so arm64, o Electron 33.4.11) foram feitas **no laptop, que e' Windows sobre ARM** (`PROCESSOR_ARCHITECTURE = ARM64`, Snapdragon). **Este PC de desenvolvimento e x86** (medido 2026-10-05: `PROCESSOR_ARCHITECTURE = AMD64`, `PROCESSOR_IDENTIFIER = AMD64 Family 23 Model 96 Stepping 1, AuthenticAMD`, "AMD Ryzen 5 4500", Windows 10 Pro). Portanto: **naoazine de trocar os dois** — cada um tem o que lhe dá jeito e é por isso que existem dois. Duas consequencias practices: (1) o `scripts/verificar-x86.ps1` corre **aqui** como x86 nativo de verdade, sem emulacao — o "VEREDITO: TUDO CERTO" e' uma prova real do pacote x64, coisa que antes nao se podia obter nesta maquina; (2) **nao tires o `--x64 --arm64`** dos scripts `app:pack`, `app:pack:zip` e `app:publish`: se um dia a build for feita no laptop (ou noutra maquina ARM), sem `--x64` o `electron-builder` compila so arm64 e o instalador **nao instala em nenhum PC x86/x64 normal** — falha em silencio, escrevendo o registo, criando o desinstalador e os atalhos, extraindo zero ficheiros e saindo com codigo 0. **Foi assim que 1.2.0, 1.2.1 e 1.2.2 ficaram partidas** (ver "Instaladores arm64" mais abaixo). E a regra dos hooks existe precisamente para isso: nao se confia em qual das maquinas fez a build.
+> **ONDE SE COMPILA IMPORTA. Sao DUAS maquinas (aviso escrito e corrigido em 2026-10-05):**
 >
-> Para saber em que maquina se esta: `echo $env:PROCESSOR_ARCHITECTURE` — `AMD64` = este PC (x86); `ARM64` = o laptop. Se der `ARM64`, trata o build como sendo para ARM ate o `--x64 --arm64` ter corrido.
+> | Maquina | CPU | Windows | Para que serve |
+> | --- | --- | --- | --- |
+> | **PC de desenvolvimento** (onde o agent trabalha) | `ARMv8 (64-bit) Family 8 Model 1 Revision 201, Qualcomm` - Snapdragon X | Windows 11 Home 10.0.26200 | editar, `npm run dev`, testes |
+> | **Desktop do Boda** | `AMD64 Family 23 Model 96 Stepping 1, AuthenticAMD` - Ryzen 5 4500 | Windows 10 Pro | builds de validacao, testes em x86 real |
+>
+> Uma versao anterior deste aviso dizia "este PC de desenvolvimento e x86" - **estava errado**, a medicao tinha sido tirada no desktop, nao aqui. Duas consequencias praticas: (1) o `scripts/verificar-x86.ps1` so da um veredito **real** (x86 nativo, sem emulacao) **no desktop do Boda**; neste PC ARM ele corre mas emula x64; (2) **nao tires o `--x64 --arm64`** dos scripts `app:pack`, `app:pack:zip` e `app:publish`: sem `--x64`, uma build feita num PC ARM compila so arm64 e o instalador **nao instala em nenhum PC x86/x64 normal** - falha em silencio, escreve o registo, cria o desinstalador e os atalhos, extrai zero ficheiros e sai com codigo 0. **Foi assim que 1.2.0, 1.2.1 e 1.2.2 ficaram partidas** (ver "Instaladores arm64" mais abaixo). E a regra dos hooks existe precisamente para isso: **nao se confia em qual das maquinas fez a build**.
+>
+> ⚠️ **NÃO USAR `echo $env:PROCESSOR_ARCHITECTURE` — engana.** Num PC ARM o PowerShell corre **emulado a x64**, por isso essa variável responde `AMD64` mesmo estando em ARM (medido: `AMD64` aqui, num Snapdragon). A que diz a verdade é a `PROCESSOR_IDENTIFIER`:
+>
+> ```powershell
+> $env:PROCESSOR_IDENTIFIER
+> # ARMv8 (64-bit) ...  Qualcomm        = esta maquina e' ARM
+> # AMD64 Family 23 ...  AuthenticAMD   = o desktop do Boda e' x86
+> ```
+>
+> O `scripts/verificar-x86.ps1` faz isto pelo nome do CPU, que é o mais fiável.
 
 > **`node_modules` ENVELHECE QUANDO FAZES PULL — e foi assim que a 1.2.4 saiu partida outra vez.** Depois do pull de 2026-10-05 o `package.json` pedia `electron 44.5.1` (exacto) mas o `node_modules` tinha **33.4.11**, porque o `npm install` nunca tinha corrido com o pin novo. Como o `electron-builder` **nao tem `electronVersion` fixo** e usa a versao que esta em `node_modules`, a build sai com o Electron velho e **ninguem ve o erro**: o log mostra `electron=33.4.11` como se estivesse tudo bem. Sem `node:sqlite` (que so existe no Node 22+, importado em `server/src/db/index.js`) o backend morre ao arrancar e a app mostra `Cannot GET /` — em qualquer PC. **Ja nao depende de disciplina humana:** o hook `beforePack` `scripts/verificar-electron.cjs` compara a versao de `node_modules/electron/package.json` com a do `package.json` e **falha a build** se forem diferentes. Se der erro, a solucao e `npm install` (e se faltar o `electron.exe`, `node node_modules/electron/install.js`, porque o `postinstall` pode ser ignorado).
 
 
-> **BINARIOS NATIVOS DO `server/` TEM DE SER DA ARQUITECTURA CERTA (a 1.2.7 saiu partida assim — e foi o bug mais caro de sempre).** O `@electron/rebuild` **so reconstroi o modulo nativo do projecto principal**; o `server/` e' copiado tal e qual pelo `extraResources`, portanto qualquer `.node`/`.dll` la dentro vai sempre com a arquitectura da **maquina de desenvolvimento (ARM)**. `npmRebuild`, `buildDependenciesFromSource` e `nodeGypRebuild` **nao resolvem** — confirmei no `node_modules/app-builder-lib/scheme.json` que nenhum olha para o `server/`. Sintoma em PC x86: janela preta + "o servidor nao arrancou, codigo 1", porque o backend morre no `import` antes do primeiro log. **Resolvido na 1.2.8** com `scripts/empacotar-nativos.cjs` (hook `afterPack`, ver "Binarios nativos" mais abaixo). **Nao mexer no hook sem ler essa secao.**
+> **BINARIOS NATIVOS DO `server/` TEM DE SER DA ARQUITECTURA CERTA (a 1.2.7 saiu partida assim — e foi o bug mais caro de sempre).** O `@electron/rebuild` **so reconstroi o modulo nativo do projecto principal**; o `server/` e' copiado tal e qual pelo `extraResources`, portanto qualquer `.node`/`.dll` la dentro vai sempre com a arquitectura da **maquina onde a build foi feita** (se for uma ARM, vai ARM64 para o pacote x64). `npmRebuild`, `buildDependenciesFromSource` e `nodeGypRebuild` **nao resolvem** — confirmei no `node_modules/app-builder-lib/scheme.json` que nenhum olha para o `server/`. Sintoma em PC x86: janela preta + "o servidor nao arrancou, codigo 1", porque o backend morre no `import` antes do primeiro log. **Resolvido na 1.2.8** com `scripts/empacotar-nativos.cjs` (hook `afterPack`, ver "Binarios nativos" mais abaixo). **Nao mexer no hook sem ler essa secao.**
 
 > **LEMBRAR: `import` de modulos nativos tem de ser `await import()` com `try`/`catch`.** Foi o que salvou a app na 1.2.7 (ver `server/src/services/torrentEngine.js`). Se um dia um `.node` falhar outra vez, a app **nao pode morrer a arrancar** — e' a diferenca entre "os torrents nao funcionam nesse PC" e "ninguem consegue abrir a app".
 
@@ -108,7 +123,7 @@ Se for preciso uma release apenas textual (notas), usar `gh release create` **de
 
 **Este foi o bug mais caro de sempre: nenhuma versao publicada (1.2.0 ate 1.2.6) arrancava em nenhum PC x86.** Levou o dia inteiro a investigar em silencio ate aparecer um log (1.2.6).
 
-**O que acontece.** `server/node_modules` traz modulos nativos. O `electron-builder` copia essa pasta tal e qual pelo `extraResources`, **sem recompilar nada**. Como a maquina de desenvolvimento e ARM, o `.node` compilado no `npm install` local e' **ARM64** — e vai para o pacote x64 tal e qual. Em PC x86 o `dlopen` falha:
+**O que acontece.** `server/node_modules` traz modulos nativos. O `electron-builder` copia essa pasta tal e qual pelo `extraResources`, **sem recompilar nada**. Quando a build e' feita numa maquina ARM, o `.node` compilado no `npm install` local e' **ARM64** — e vai para o pacote x64 tal e qual. Em PC x86 o `dlopen` falha:
 
 ```
 Error: node_datachannel.node is not a valid Win32 application
@@ -137,8 +152,8 @@ E como o `webtorrent` era importado de forma **estatica**, o backend morria **an
 
 **A defesa importante:** no fim o hook varre **todos** os `.node`/`.dll` de `server/node_modules` no pacote e **falha a build** se algum ficar com a arquitectura errada. Testado: injetei um `.node` ARM64 num pacote desconhecido e a build parou com o erro certo. **Este e' o que impede a repeticao do bug** — antes nao havia nada que falhasse.
 
-**Como testar um binario x64 (so faz falta no LAPTOP, que e' ARM):** no laptop
-nao da para carregar um `.node` x64 com o Node local (da o mesmo `nao e' uma
+**Como testar um binario x64 (so e' preciso numa maquina ARM):** num PC ARM nao
+da para carregar um `.node` x64 com o Node local (da o mesmo `nao e' uma
 aplicacao Win32 valida`, ao contrario) — e' preciso o Windows emular. Descarga-se
 o Node x64 e usa-se:
 
@@ -148,17 +163,18 @@ Expand-Archive $env:TEMP\node-x64.zip -DestinationPath $env:TEMP\node-x64 -Force
 $env:TEMP\node-x64\node-v24.21.0-win-x64\node.exe
 ```
 
-**Neste PC (x86) nao e' preciso nada disto**: carrega-se o `.node` x64
+**Num PC x86 nao e' preciso nada disto**: carrega-se o `.node` x64
 directamente com o Node local, porque e' a arquitectura certa. E' por isso que o
-`scripts/verificar-x86.ps1` da aqui um veredito real e nao uma emulacao.
+`scripts/verificar-x86.ps1` da um veredito real no desktop do Boda, e so uma
+emulacao num PC ARM.
 
 Testado assim na 1.2.8: `require('node-datachannel')` carrega, `new WebTorrent()` gera peer id, `/api/health` e `/api/torrents` respondem.
 
 ## Instaladores arm64: 1.2.0 ate 1.2.2 nao instalam em PC x64 (2026-10-04)
 
-**CAUSA RAIZ, confirmada.** A build foi feita **no laptop, que e' Windows sobre
-ARM** (Snapdragon; `PROCESSOR_IDENTIFIER = ARMv8 (64-bit) ... Qualcomm`). O
-`electron-builder` sem `--x64` compila **arm64**. Confirmado em
+**CAUSA RAIZ, confirmada.** A build foi feita **numa maquina Windows sobre ARM**
+(`PROCESSOR_IDENTIFIER = ARMv8 (64-bit) ... Qualcomm`; ver o aviso no inicio
+deste ficheiro). O `electron-builder` sem `--x64` compila **arm64**. Confirmado em
 `release/builder-debug.yml`, cuja unica chave de topo era `arm64:`.
 
 **Como falha, em silencio.** `extractAppPackage.nsh` do electron-builder:
@@ -207,9 +223,9 @@ Ferramentas criadas durante esta investigacao (gists, so de leitura):
 `scripts/verificar-instalacao.ps1`.
 
 **`scripts/verificar-x86.ps1` — o script que falta quando mexeres nos nativos.**
-Existe porque o **laptop** (onde foi feita a build que deu problemas) e' ARM, e
-isso tornava impossivel provar numa build que o pacote x86 estava certo (ver
-"Binarios nativos do `server/`" mais acima). Abre os ficheiros do pacote, le o
+Existe porque **uma das duas maquinas e' ARM** (e foi de la que saiu a build que
+deu problemas), e num PC ARM nao se consegue provar que o pacote x86 esta certo
+(ver "Binarios nativos do `server/`" mais acima). Abre os ficheiros do pacote, le o
 cabecalho PE de cada `.node` e diz se estao do tipo certo, arranca o servidor e
 carrega o node-datachannel e o WebTorrent a serio. **100 por cento ASCII e sem
 BOM** (o Powershell le mal um script com BOM) — **tem de continuar assim**.
@@ -221,9 +237,10 @@ Gist (para testar sem clonar o repo):
 iwr -useb https://gist.githubusercontent.com/boda07/7e23010eb543763de239ab1e7af0ffc0/raw -OutFile "$env:TEMP\verificar-x86.ps1"; powershell -NoProfile -ExecutionPolicy Bypass -File "$env:TEMP\verificar-x86.ps1"
 ```
 
-Depois de mexer no hook `afterPack` ou nos nativos, **corre-o**: tanto aqui
-(x86 nativo) como no laptop (que emula x64) chega para apanhar um binario com o
-tipo errado — que era exactamente o que falhava em silencio. Detalhes em
+Depois de mexer no hook `afterPack` ou nos nativos, **corre-o nas duas
+maquinas**: no desktop do Boda (x86 nativo) dá um veredito real, e no PC ARM
+emula x64 e tambem chega para apanhar um binario com o
+tipo errado — que era exactamente o que falhava em silêncio. Detalhes em
 `README.md`, seccao "Testar num PC x86".
 
 **Cuidado com o PowerShell ao escrever neste script:** `OK "texto " + $variavel`
