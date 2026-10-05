@@ -196,6 +196,26 @@ Ferramentas criadas durante esta investigacao (gists, so de leitura):
 **codigo de saida** do instalador, que e o que dá a pista), e
 `scripts/verificar-instalacao.ps1`.
 
+**`scripts/verificar-x86.ps1` — o script que falta quando mexeres nos nativos.**
+Existe porque o PC de desenvolvimento e' ARM e isso torna impossivel provar numa
+build que o pacote x86 esta certo (ver "Binarios nativos do `server/`" mais
+acima). Abre os ficheiros do pacote, le o cabecalho PE de cada `.node` e diz se
+estao do tipo certo, arranca o servidor e carrega o node-datachannel e o
+WebTorrent a serio. **100 por cento ASCII e sem BOM** (o Powershell le mal um
+script com BOM) — **tem de continuar assim**.
+
+Gist (para testar sem clonar o repo):
+`https://gist.github.com/boda07/7e23010eb543763de239ab1e7af0ffc0`
+
+```powershell
+iwr -useb https://gist.githubusercontent.com/boda07/7e23010eb543763de239ab1e7af0ffc0/raw -OutFile "$env:TEMP\verificar-x86.ps1"; powershell -NoProfile -ExecutionPolicy Bypass -File "$env:TEMP\verificar-x86.ps1"
+```
+
+Depois de mexer no hook `afterPack` ou nos nativos, **corre-o**: a maquina ARM
+emula x64 e chega para apanhar um binario com o tipo errado — que era
+exactamente o que falhava em silencio. Detalhes em `README.md`, seccao "Testar
+num PC x86".
+
 ## Funcionalidades recentes
 
 - **Discord Rich Presence** (grátis, local): mostra no perfil do Discord o que se está a ver, como o Stremio. `electron/discord-presence.cjs` implementa o **protocolo RPC do Discord à mão** (frames `[opcode LE32][len LE32][JSON]`, HANDSHAKE/FRAME/CLOSE/PING/PONG) sobre o Named Pipe `\\?\pipe\discord-ipc-0..9` — **zero dependências** (o pacote npm `discord-rpc` está abandonado desde 2021; as alternativas modernas exigem Node >= 24.13). `client_id` = **1556179310077804564** (aplicação MEIDA no Discord Developers, grátis), sobreponível com `MEIDA_DISCORD_CLIENT_ID`. Frontend em `web/src/discord.js` (no-op silencioso sem Electron ou com a definição desligada), ligado em `Details.jsx` à escolha de fonte + ao `reportPos` do progresso. `MIN_UPDATE_MS = 15000` (limite do Discord); `clear()` mantém o socket, `shutdown()` é que fecha.
