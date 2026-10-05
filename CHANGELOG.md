@@ -1,5 +1,76 @@
 # Changelog
 
+## 1.2.5
+
+### Corrigido: a app nao abria de todo (1.2.4)
+- **Sintoma**: a app arrancava e mostrava `Cannot GET /`. O backend morria de
+  imediato ao arrancar, sem log no sitio obvio:
+  ```
+  Error [ERR_UNKNOWN_BUILTIN_MODULE]: No such built-in module: node:sqlite
+  Node.js v20.18.3
+  ```
+- **Causa**: `server/src/index.js` e `server/src/store.js` usam
+  `import { DatabaseSync } from "node:sqlite"`, que so existe a partir do
+  **Node 22**. A release **1.2.4** foi empacotada com **Electron 33.4.11**
+  (Node 20.18.3) em vez do **Electron 44.5.1** que o `package.json` declara.
+  Sem `node:sqlite` o backend nao arranca, e a janela fica sem nada para
+  mostrar.
+- **Como escorregou**: o `package.json` pedia `^44.5.1` e o `node_modules` tinha
+  44.5.1 instalado, por isso nada indicava problema — mas o binario que foi
+  para a release era de uma build anterior. **Faltou a verificacao que agora e
+  obrigatoria: ler a versao do Electron de dentro do binario empacotado** (ver
+  "Como verificar uma build" abaixo).
+- **Correcao**: `electron` passou a `"44.5.1"` exacto (`npm i -D --save-exact
+  electron@44.5.1`), sem o `^`, para nunca mais saltar de versao sozinho.
+  Rebuild com `electron=44.5.1` confirmado no log do empacotamento.
+- **Afeta toda a gente que instale a 1.2.4** — em qualquer PC e qualquer
+  arquitectura, a app nao servia nada. Quem actualizou para a 1.2.4 deve
+  actualizar para esta.
+
+### Corrigido: actualizar a app deixa de exigir conta
+- O "Procurar atualizacao" so existia no menu da conta, e esse menu nao aparece
+  sem sessao iniciada — quem nao tinha conta ficava sem forma de actualizar a
+  app. Passou a estar tambem em **Definis > Avancado > Atualizacoes**, que nao
+  pede login. `web/src/pages/Settings.jsx` ganhou a `checkUpdate` (com estado
+  de espera e mensagem de resultado); o "Desinstalar" passou a um bloco proprio
+  dentro da mesma seccao.
+
+### Login: feedback enquanto espera
+- `web/src/pages/Login.jsx`: o botao mostrava `"..."`, o que nao diz nada.
+  Passa a mostrar o anel de `LoadingStatus` (o componente que a app ja usava
+  noutros sitios) com "A entrar", e o cursor passa a `wait`. O estado `busy`
+  ja existia; so faltava mostrar.
+
+### Script de reparacao da instalacao
+- `scripts/reparar-instalacao.ps1`:
+  - A versao deixa de estar fixa: le a mais recente do `latest.yml`.
+  - Detecta o processador por `PROCESSOR_IDENTIFIER`, **nao** por
+    `PROCESSOR_ARCHITECTURE` — este diz `AMD64` mesmo num PC ARM, e era
+    exactamente esse o engano que escondia o problema das 1.2.0 a 1.2.2.
+  - Le o cabecalho PE do `MEIDA.exe` instalado e avisa se for do tipo errado
+    para o PC (`Get-TipoExe`).
+  - Espaco minimo de 500 para 1000 MB (o instalador tem ~210 MB e precisa de
+    espaco tambem para descompactar).
+  - Retirado o comentario que atribuia a falha a pasta do ambiente de trabalho:
+    **nao era a causa** (a pasta existia). Criar a pasta ficou, e e inofensiva.
+
+### Como verificar uma build (obrigatorio antes de publicar)
+Um build pode parecer correcto e levar o Electron errado dentro. Verificar
+sempre, nesta ordem:
+
+1. `release/builder-debug.yml` — a unica chave de topo tem de ser `x64:` e
+   `arm64:` (nunca so uma).
+2. O log do `electron-builder` tem de dizer `electron=<versao de
+   package.json>` em todas as linhas `packaging`.
+3. `node -e "...readUInt16LE(pe+4)..."` sobre `release/win-unpacked/MEIDA.exe` e
+   `release/win-arm64-unpacked/MEIDA.exe` — `0x8664` (x64) e `0xaa64` (ARM64).
+4. O `.exe` instalado tem de responder a `-e "console.log(process.versions)"` com
+   `ELECTRON_RUN_AS_NODE=1`, e `require('node:sqlite')` tem de funcionar.
+5. O `latest.yml` publico tem de bater certo com o `sha512` e o `size` reais do
+   instalador — **conferir sempre depois de publicar**, porque o
+   `electron-builder` pode gerar o `.yml` antes da assinatura final e deixar o
+   hash trocado (aconteceu na 1.2.3).
+
 ## 1.2.4
 
 ### Corrigido: app abria com o bundle web antigo em cache (changelog velha e "fail to fetch")

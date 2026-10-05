@@ -2,6 +2,15 @@
 // "o que mudou" depois de o utilizador atualizar a app. Mais recente em cima.
 export const CHANGELOG = [
   {
+    version: "1.2.5",
+    items: [
+      "Corrigido: a app não abria — aparecia um erro em vez de mostrar o conteúdo. Acontecia porque o programa de instalação vinha com a versão errada do motor que faz a app correr. Se a tua app está a dar erro ao abrir, atualiza para esta versão e fica resolvido.",
+      "Corrigido: o botão para procurar atualizações já não precisa de ter conta. Fica também em Definições › Avançado › Atualizações, para quem ainda não criou conta.",
+      "Melhorado: ao entrar na conta, o botão mostra agora uma animação de espera, para ficar claro que a app está a trabalhar e não encravada.",
+      "Corrigido: o script que instala a app em PCs onde a instalação ficou a meio foi melhorado — diz o tipo de processador do PC, confirma que o programa instalado é do tipo certo e apanha a versão mais recente.",
+    ],
+  },
+  {
     version: "1.2.4",
     items: [
       "Corrigido: se já tinhas usado a app antes de atualizar, podia acontecer a janela abrir ainda com a versão antiga em memória — a lista de novidades aparecia desatualizada e por vezes dava erro \"fail to fetch\". Agora a app vai sempre buscar a versão nova ao arrancar, por isso deixa de ficar presa na versão antiga.",
