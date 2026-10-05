@@ -214,6 +214,12 @@ const PROD_PORT_DEFAULT = 5175;
 // antes deixava a janela preta sem explicacao). Ele escreve a porta escolhida
 // neste ficheiro, e aqui le-se para a app abrir na porta certa.
 const PORT_FILE = () => path.join(app.getPath("userData"), "porta.txt");
+
+// Pasta dos registos, a mesma onde o backend escreve arranque-*.log e onde o
+// Electron desenha os erros que nao dao para mostrar numa caixa de dialogo
+// (URLs enormes, stack traces). Usado nas mensagens de erro para o utilizador
+// saber onde ir buscar o detalhe.
+const LOG_DIR = () => path.join(app.getPath("userData"), "logs");
 // Apaga a porta de uma sessao anterior. Sem isto a app pode ir buscar o
 // servidor a uma porta onde ele ja nao esta (porque na sessao passada ficou
 // noutra), e a janela falha ao abrir com um erro interno.
@@ -337,7 +343,7 @@ function startServer() {
             `Codigo: ${code}\n` +
             `Sinal: ${signal}\n\n` +
             `O ficheiro com o erro e' este:\n` +
-            `${path.join(app.getPath("userData"), "logs")}\n\n` +
+            `${LOG_DIR()}\n\n` +
             `Manda essa pasta a quem te deu a app.`,
           buttons: ["Fechar"],
         });
@@ -352,7 +358,16 @@ function startServer() {
 }
 
 // O server/vite podem ainda nao estar prontos — tenta carregar com retry.
+//
+// Enquanto se esta a tentar, o erro de carregamento e' ESPERADO e nao se mostra
+// nada ao utilizador: cada tentativa falhada dispara um `did-fail-load` com o
+// codigo -102 (ERR_CONNECTION_REFUSED) e, sem isto, aparecia um "a janela ficou
+// em branco" a cada 500 ms durante o arranque. So quando as tentativas
+// acabarem (ou nao houver mais para tentar) e' que vale a pena avisar.
+let tentativasRestantes = 0;
+
 function loadWithRetry(url, tries = 0) {
+  tentativasRestantes = 80 - tries;
   win.loadURL(url).catch(() => {
     if (tries < 80) setTimeout(() => loadWithRetry(url, tries + 1), 500);
   });
@@ -446,12 +461,41 @@ function createWindow() {
     closeSplash();
   };
   win.once("ready-to-show", reveal);
-  win.webContents.on("did-finish-load", reveal);
+  win.webContents.on("did-finish-load", () => {
+    // A janela carregou: acabou o arranque, ja nao ha tentativas pendentes.
+    // Sem isto, um servidor que caia mais tarde (-102) ficava silenciado para
+    // sempre, e o utilizador via so uma janela em branco sem aviso.
+    tentativasRestantes = 0;
+    reveal();
+  });
 
   // Se a pagina nao carregar, a janela fica preta sem explicar nada. Antes isso
   // deixava a pessoa sem ideia nenhuma do que se passou - e sem poder ajudar.
   // Agora diz o que aconteceu.
-  win.webContents.on("did-fail-load", (_e, code, desc, url) => {
+  //
+  // O quinto argumento (`isMainFrame`) e' essencial: o `did-fail-load` dispara
+  // TANTO para a janela principal COMO para cada iframe. Sem esta verificacao,
+  // um provider que devolvesse um URL invalido abria um "a janela ficou em
+  // branco" com a app perfeitamente saudavel - que era o que acontecia ao
+  // utilizador (faltava um "ts" e o video funcionava na mesma). O codigo de
+  // erro era -3 (ERR_ABORTED) e o URL um `data:application/pdf;base64,...`, que
+  // vem de um provider a servir um PDF como data URL.
+  win.webContents.on("did-fail-load", (_e, code, desc, url, isMainFrame) => {
+    if (!isMainFrame) {
+      // Um iframe que nao carregou. Frequente e inofensivo: o botao de recarregar
+      // a fonte resolve. So registamos - mostrar aqui era alarmismo falso.
+      console.error("[iframe] falhou:", code, desc, url);
+      return;
+    }
+    // A janela principal tambem falha durante o arranque, enquanto o backend
+    // ainda nao aceita ligacoes (-102 = ERR_CONNECTION_REFUSED). O loadWithRetry
+    // esta a tentar e vai succeeds; mostrar aqui dava um "a janela ficou em
+    // branco" a cada 500 ms durante o arranque. So avisamos se ja nao ha mais
+    // tentativas para fazer.
+    if (tentativasRestantes > 0) {
+      console.error(`[load] a tentar (${tentativasRestantes} restantes):`, code, desc);
+      return;
+    }
     console.error("[load] falhou:", code, desc, url);
     dialog.showMessageBox(win, {
       type: "error",
@@ -460,9 +504,11 @@ function createWindow() {
       detail:
         `Nao consegui carregar a interface.\n\n` +
         `Motivo: ${desc || "desconhecido"} (codigo ${code})\n` +
-        `Endereco: ${url}\n\n` +
-        `Isto e um erro do programa, nao do teu PC. Anota esta mensagem e ` +
-        `manda a quem te deu a app.`,
+        // O URL fica no registo, nao no ecra: pode ser um data URL gigante
+        // (base64) que nao cabe numa caixa de dialogo, e o utilizador via
+        // so um bocado de lixo em vez da causa.
+        `Isto e' um erro do programa, nao do teu PC. O endereco completo esta no registo:\n` +
+        `${LOG_DIR()}`,
       buttons: ["Fechar"],
     });
   });
