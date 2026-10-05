@@ -185,6 +185,80 @@ Para pôr uma instância tua no ar, o `render.yaml` é o_blueprint_ pronto
 dados é outra coisa e **não** serve a interface — ver
 [`deploy/SERVIDOR-PARTILHADO.md`](deploy/SERVIDOR-PARTILHADO.md).
 
+## Testar num PC x86 (o que falta confirmar)
+
+A app é construída num PC **Windows sobre ARM**, o que criou uma classe de bugs
+que só aparecem noutros computadores: programas nativos (`.node`/`.dll`) que vão
+com a arquitectura errada. Isso chegou a partir **todos os PC x86** (Intel/AMD).
+
+A correcção foi feita e verificada emulado, mas **falta confirmar num PC x86 a
+sério**. Se tens um, corre o script abaixo.
+
+### O que o script faz
+
+Não instala nada, não altera o PC, não manda nada para a net além de ler a
+release do GitHub. Ele olha para os ficheiros e diz o que está certo e o que
+está errado.
+
+Para o correr **sem clonar o repositório** (recomendado — assim testas
+exactamente o que o teu amigo vai instalar):
+
+```powershell
+iwr -useb https://gist.githubusercontent.com/boda07/7e23010eb543763de239ab1e7af0ffc0/raw -OutFile "$env:TEMP\verificar-x86.ps1"; powershell -NoProfile -ExecutionPolicy Bypass -File "$env:TEMP\verificar-x86.ps1"
+```
+
+Com o repositório clonado:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\verificar-x86.ps1
+```
+
+### O que esperar
+
+Cinco blocos. No fim, um veredicto: **TUDO CERTO**, **FUNCIONA, COM AVISOS**, ou
+**HÁ PROBLEMAS**.
+
+Os blocos são:
+
+1. **Este PC** — confirma que é x86 (num PC ARM avisa, e o teste do nativo não se aplica).
+2. **Os ficheiros na release** — qual é a versão mais recente no GitHub.
+3. **O programa dentro do pacote** — a parte importante. Lê o cabeçalho de
+   `MEIDA.exe` e do `node_datachannel.node` e diz se são do tipo certo, e
+   varre `server/node_modules` à procura de mais algum com o tipo errado.
+4. **O servidor interno** — arranca o servidor (sem abrir a janela), pergunta
+   `/api/health`, e carrega o programa nativo e o WebTorrent a sério.
+5. **O registo de arranque** — as últimas linhas de
+   `%APPDATA%\streamapp\logs\arranque-*.log`, se existirem.
+
+### Se der problemas
+
+Copia-me a saída. Os casos possíveis:
+
+| O que aparece | O que significa |
+| --- | --- |
+| `o programa nativo e' ARM64` | o pacote é do tipo errado — instala a release mais recente |
+| `o programa nativo NAO carrega` mas o bloco 3 está certo | outra coisa; a resposta do Node vem logo abaixo |
+| `o webtorrent nao arrancou` mas o nativo carregou | os torrents podem não funcionar, o resto da app sim |
+| `o servidor NAO arrancou` | é o bug do arranque; o bloco 5 mostra o erro |
+
+### Teste manual (o que o script não apanha)
+
+O script confirma que os ficheiros e o servidor estão bem. **Isto só se confirma
+a abrir a app:**
+
+1. Abre a MEIDA pelo ícone do Menu Iniciar. A janela tem de aparecer com o
+   catálogo — não uma janela preta.
+2. Entra na tua conta.
+3. Procura um filme e abre os **torrents**. Tenta reproduzir um que tenha
+   seeders. Se começar a carregar, os binários nativos estão certos.
+
+Se alguma das três falhar, diz-me o que vês e o que o bloco 5 do script
+mostrou.
+
+> O aviso `WebTorrent: uTP not supported Error: Cannot find module 'utp-native'`
+> no registo é **normal e inofensivo** — só falta o transporte uTP por UDP, e o
+> WebTorrent continua a funcionar por TCP e WebRTC.
+
 ## Licença
 
 [MIT](LICENSE) — Copyright (c) 2026 Boda.
