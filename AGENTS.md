@@ -29,6 +29,10 @@ A escala é **1–10**, não semver. O último número é um contador que vai de
 
 > **VERIFICAR O ELECTRON DENTRO DO BINARIO — obrigatorio (a 1.2.4 saiu partida assim).** O `package.json` pedia `electron ^44.5.1` e o `node_modules` tinha 44.5.1, e mesmo assim a release foi empacotada com **Electron 33.4.11**. Como o `electron-builder` **nao tem `electronVersion` fixo** e usa o binario de `node_modules`, uma build antiga pode entrar em silencio. Sem `node:sqlite` (que so existe no Node 22+) o backend morre ao arrancar e a app mostra `Cannot GET /` — **em qualquer PC, sem erro visivel**. Por isso o `electron` esta agora em `"44.5.1"` **exacto, sem `^`** (para nunca saltar sozinho). Antes de publicar, confirmar **todas** as linhas `packaging` do log com `electron=44.5.1`. Ver a lista completa em `CHANGELOG.md`, secao "Como verificar uma build".
 
+> **BINARIOS NATIVOS DO `server/` TEM DE SER DA ARQUITECTURA CERTA (a 1.2.7 saiu partida assim — e foi o bug mais caro de sempre).** O `@electron/rebuild` **so reconstroi o modulo nativo do projecto principal**; o `server/` e' copiado tal e qual pelo `extraResources`, portanto qualquer `.node`/`.dll` la dentro vai sempre com a arquitectura da **maquina de desenvolvimento (ARM)**. `npmRebuild`, `buildDependenciesFromSource` e `nodeGypRebuild` **nao resolvem** — confirmei no `node_modules/app-builder-lib/scheme.json` que nenhum olha para o `server/`. Sintoma em PC x86: janela preta + "o servidor nao arrancou, codigo 1", porque o backend morre no `import` antes do primeiro log. **Resolvido na 1.2.8** com `scripts/empacotar-nativos.cjs` (hook `afterPack`, ver "Binarios nativos" mais abaixo). **Nao mexer no hook sem ler essa secao.**
+
+> **LEMBRAR: `import` de modulos nativos tem de ser `await import()` com `try`/`catch`.** Foi o que salvou a app na 1.2.7 (ver `server/src/services/torrentEngine.js`). Se um dia um `.node` falhar outra vez, a app **nao pode morrer a arrancar** — e' a diferenca entre "os torrents nao funcionam nesse PC" e "ninguem consegue abrir a app".
+
 1. Bump da versão em `package.json` (raiz) — **+1 segundo a regra de numeração acima** (ex.: `0.9.9`).
 2. Atualizar o changelog da app: `web/src/changelog.js` (linguagem simples, sem termos técnicos, mais recente em cima).
 3. Atualizar `CHANGELOG.md` (raiz) — changelog técnico, com secções e detalhes.
@@ -96,6 +100,49 @@ Se for preciso uma release apenas textual (notas), usar `gh release create` **de
   - **Descartados nesta procura** (2026-10-04): `supaplay.fun` (passou a "PREMIUM ACCESS", e o `aniwixi` cobra $50/mês — nada pago), `ani.megaplay.su` (devolve uma página de erro; a API JSON exige origem na lista branca), `ninjasheild.stream` (não responde), `myapi-psi-wheat.vercel.app` (API do AnimePahe, `/search` dá 503), `api.ani.zip` (404 na raiz).
   - **A `anikotoapi.site` dá exatamente os URLs do MegaPlay** (rota `s-2`), com 9044 títulos e `mal_id`/`ani_id` — mas **não tem pesquisa**, só paginação por data (91 páginas) e 60 requests/2 min por IP. Cobrir um título antigo exigiria rastear o catálogo todo; para já não compensa (ver `IDEIAS.md`).
 
+
+## Binarios nativos do `server/`: como nao voltar a errar a arquitectura (2026-10-05)
+
+**Este foi o bug mais caro de sempre: nenhuma versao publicada (1.2.0 ate 1.2.6) arrancava em nenhum PC x86.** Levou o dia inteiro a investigar em silencio ate aparecer um log (1.2.6).
+
+**O que acontece.** `server/node_modules` traz modulos nativos. O `electron-builder` copia essa pasta tal e qual pelo `extraResources`, **sem recompilar nada**. Como a maquina de desenvolvimento e ARM, o `.node` compilado no `npm install` local e' **ARM64** — e vai para o pacote x64 tal e qual. Em PC x86 o `dlopen` falha:
+
+```
+Error: node_datachannel.node is not a valid Win32 application
+  code: 'ERR_DLOPEN_FAILED'
+```
+
+E como o `webtorrent` era importado de forma **estatica**, o backend morria **antes do primeiro `log.info`** — por isso nao havia rasto nenhum. Sintoma do lado do utilizador: janela preta e "a app nao conseguiu iniciar o servidor interno, codigo 1".
+
+**Quem tem `.node` no `server/node_modules`:**
+
+- `node-datachannel/build/Release/node_datachannel.node` — o problema. Vem do `webrtc-polyfill` (usado pelo `webtorrent`), **caminho fixo**, por isso o runtime escolhe sempre este.
+- `fs-native-extensions/prebuilds/<plataforma>-<arquitetura>/` — **nao e' problema**. O `require-addon` monta `"prebuilds/" + process.platform + "-" + process.arch` em runtime, e a pasta tem `win32-x64` e `win32-arm64`. Ja estava certo desde sempre; o hook ignora estes de proposito (`RUNTIME` em `scripts/empacotar-nativos.cjs`).
+
+**Como resolver um novo `.node` que apareca** (a lista nunca mais vai ter so este):
+
+1. Nao vale a pena tentar o `@electron/rebuild`, nem `npmRebuild`/`buildDependenciesFromSource`/`nodeGypRebuild` — confirmei no schema do `electron-builder` que nenhum reconstroi nada no `server/`.
+2. Meter o prebuild oficial em `scripts/native/` com o nome `<pacote>.win32-<arch>.node`.
+3. Acrescentar a entrada em `TROCAR` dentro de `scripts/empacotar-nativos.cjs`.
+4. **Nao mexer** no `package.json` do `server/` para "arrumar" isto a mao: volta a partir no proximo `npm install`.
+
+**Onde estao os binarios:** `scripts/native/node_datachannel.win32-x64.node` e `...win32-arm64.node`, tirados dos prebuilds oficiais de `murat-dogan/node-datachannel` release `v0.32.3`, variante `napi-v8`. Sao **N-API**, portanto servem para o Node e para o Electron em qualquer versao. Ficam no repositorio para a build nao depender da rede; `scripts/native/README.md` tem o porque.
+
+**Confirmacao de que o caminho esta certo:** o `.node` ARM64 que estava em `server/node_modules` (compilado localmente) e' **byte a byte igual** ao prebuild oficial `win32-arm64` (sha256 `c8ce3ad6...`). O `prebuild-install` e' que os tinha posto la.
+
+**Como o hook esta ligado:** `"afterPack": "scripts/empacotar-nativos.cjs"` no `build` do `package.json`. Corre **depois** de cada pacote estar montado, e `release/win-unpacked` / `release/win-arm64-unpacked` sao pastas separadas — por isso cada uma recebe o binario certo, sem condicoes de corrida.
+
+**A defesa importante:** no fim o hook varre **todos** os `.node`/`.dll` de `server/node_modules` no pacote e **falha a build** se algum ficar com a arquitectura errada. Testado: injetei um `.node` ARM64 num pacote desconhecido e a build parou com o erro certo. **Este e' o que impede a repeticao do bug** — antes nao havia nada que falhasse.
+
+**Como testar um binario x64 nesta maquina ARM:** nao da para carregar um `.node` x64 com o Node local (da o mesmo `nao e' uma aplicacao Win32 valida`, ao contrario). Descarregar o Node x64 e usa-lo — o Windows sobre ARM emula x64:
+
+```
+Invoke-WebRequest -useb https://nodejs.org/dist/v24.21.0/node-v24.21.0-win-x64.zip -OutFile $env:TEMP\node-x64.zip
+Expand-Archive $env:TEMP\node-x64.zip -DestinationPath $env:TEMP\node-x64 -Force
+$env:TEMP\node-x64\node-v24.21.0-win-x64\node.exe
+```
+
+Testado assim na 1.2.8: `require('node-datachannel')` carrega, `new WebTorrent()` gera peer id, `/api/health` e `/api/torrents` respondem.
 
 ## Instaladores arm64: 1.2.0 ate 1.2.2 nao instalam em PC x64 (2026-10-04)
 
