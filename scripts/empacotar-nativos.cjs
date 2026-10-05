@@ -96,30 +96,33 @@ exports.default = async function afterPack(context) {
 
   console.log(`  [nativos] a corrigir os binarios para ${arch}`);
 
-  // 1. Trocar os que sabemos.
+  // 1. Pôr o binario certo. Mesmo que o ficheiro nao exista no pacote: e' o que
+  //    acontece num clone novo, porque o `node-datachannel` nao traz o .node
+  //    dentro do tarball (verificado: 171 entradas, zero binarios) e depende do
+  //    script de instalacao — que o npm 11 bloqueia por omissao. Antes este caso
+  //    era ignorado em silencio e o pacote saia sem nenhum binario.
   for (const t of TROCAR) {
     const destino = path.join(modulos, ...t.de.split("/"));
     const fonte = path.join(PREBUILDS, t.ficheiro(arch));
-    if (!fs.existsSync(destino)) {
-      console.log(`  [nativos] ${t.de}: nao esta no pacote, a ignorar`);
-      continue;
-    }
     if (!fs.existsSync(fonte)) {
       throw new Error(
-        `[nativos] falta scripts/native/${t.ficheiro(arch)} - o pacote ${arch} sairia com o binario errado`
+        `[nativos] falta scripts/native/${t.ficheiro(arch)} - o pacote ${arch} sairia sem o binario`
       );
     }
-    const de = arquitecturaDe(destino);
+
+    const jaExiste = fs.existsSync(destino);
+    const de = jaExiste ? arquitecturaDe(destino) : "(nada)";
     const para = arquitecturaDe(fonte);
     if (de === para) {
       console.log(`  [nativos] ${t.de}: ja e' ${para}`);
       continue;
     }
+    fs.mkdirSync(path.dirname(destino), { recursive: true });
     fs.copyFileSync(fonte, destino);
     const feito = arquitecturaDe(destino);
     if (feito !== arch) {
       throw new Error(
-        `[nativos] ${t.de}: troquei o binario mas ficou ${feito} em vez de ${arch}`
+        `[nativos] ${t.de}: pus o binario mas ficou ${feito} em vez de ${arch}`
       );
     }
     console.log(`  [nativos] ${t.de}: ${de} -> ${feito}`);

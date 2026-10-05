@@ -240,8 +240,22 @@ iwr -useb https://gist.githubusercontent.com/boda07/7e23010eb543763de239ab1e7af0
 Depois de mexer no hook `afterPack` ou nos nativos, **corre-o nas duas
 maquinas**: no desktop do Boda (x86 nativo) dá um veredito real, e no PC ARM
 emula x64 e tambem chega para apanhar um binario com o
-tipo errado — que era exactamente o que falhava em silêncio. Detalhes em
+tipo errado — que era exactamente o que falhava em silencio. Detalhes em
 `README.md`, seccao "Testar num PC x86".
+
+**`npm ci` e o `electron` sao coisas diferentes (2026-10-05).** O `node-datachannel`
+**nao traz nenhum binario no tarball** do npm (verificado: 171 entradas, zero
+binarios, 663 941 bytes) — o `.node` so existe porque o script de instalacao o
+descarrega. O npm 11.17 avisa `allow-scripts` mas **nao bloqueia** (verificado:
+apaguei `build/` e o `npm ci` repus o ficheiro). Ja o **electron** precisa mesmo
+do script, porque o binario e' descarregado e nao vem no pacote: depois de um
+`npm ci` puro, `node_modules/electron/dist/electron.exe` **nao existe**. Por isso
+o `install:all` e' `npm ci && node node_modules/electron/install.js && ...`. O
+passo do `install.js` e' repetivel (devolve 0 mesmo com o binario ja la) e
+sobrevive a `npm ci` porque e' o Electron que escolhe a versao a descarregar.
+
+Usar `install:all` (com `npm ci`) antes de empacotar, e `install:all:update`
+(que usa `npm install`) so quando se mexe nas dependencias.
 
 **Cuidado com o PowerShell ao escrever neste script:** `OK "texto " + $variavel`
 **nao concatena** — passa 3 argumentos e a funcao so ve o primeiro, portanto a
