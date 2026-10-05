@@ -1,4 +1,3 @@
-import WebTorrent from "webtorrent";
 import os from "node:os";
 import { resolve } from "node:path";
 
@@ -7,8 +6,45 @@ import { log } from "./log.js";
 // Onde os pedacos descarregados sao guardados (temporario do sistema).
 const DOWNLOAD_DIR = resolve(os.tmpdir(), "streamapp-torrents");
 
-const client = new WebTorrent();
-client.on("error", (e) => log.error("webtorrent", e.message));
+// O WebTorrent e' opcional. Depende do node-datachannel, que tem um binario
+// nativo (.node) especifico da arquitectura; em Windows, se o binario for de
+// outra arquitectura, o Node morre com
+//
+//   Error: node_datachannel.node is not a valid Win32 application
+//
+// O import era ESTATICO, por isso o servidor morria ao arrancar e a janela da
+// app ficava preta. Agora carrega em silencio: se falhar, o resto da app
+// funciona e so as funcionalidades de torrent ficam indisponiveis.
+let client = null;
+let motivo = "";
+let tentativaFeita = false;
+
+async function carregar() {
+  if (client || tentativaFeita) return client;
+  tentativaFeita = true;
+  try {
+    const mod = await import("webtorrent");
+    const WebTorrent = mod.default || mod;
+    client = new WebTorrent();
+    client.on("error", (e) => log.error("webtorrent", e.message));
+    log.info("webtorrent", "torrents disponiveis.");
+  } catch (e) {
+    motivo = e?.message || String(e);
+    log.warn(
+      "webtorrent",
+      `Torrents indisponiveis neste PC (${motivo}). O resto da app funciona.`
+    );
+  }
+  return client;
+}
+
+export function torrentsDisponiveis() {
+  return !!client;
+}
+
+export function motivoIndisponivel() {
+  return motivo;
+}
 
 // infoHash -> magnet completo (com trackers), preenchido quando listamos torrents.
 const magnetCache = new Map();
@@ -24,11 +60,14 @@ export function getMagnet(infoHash) {
 }
 
 function findTorrent(key) {
+  if (!client) return null;
   return client.torrents.find((t) => t.infoHash?.toLowerCase() === key);
 }
 
 // Adiciona (ou reutiliza) um torrent e resolve quando estiver pronto.
-function addTorrent(infoHash) {
+async function addTorrent(infoHash) {
+  const c = await carregar();
+  if (!c) throw new Error(`Torrents indisponiveis: ${motivo}`);
   const key = infoHash.toLowerCase();
   const existing = findTorrent(key);
   if (existing) {
@@ -41,7 +80,7 @@ function addTorrent(infoHash) {
   }
   const torrentId = magnetCache.get(key) || `magnet:?xt=urn:btih:${infoHash}`;
   return new Promise((res, rej) => {
-    const t = client.add(torrentId, { path: DOWNLOAD_DIR }, (torrent) => res(torrent));
+    const t = c.add(torrentId, { path: DOWNLOAD_DIR }, (torrent) => res(torrent));
     t.once("error", rej);
   });
 }
@@ -72,6 +111,7 @@ export async function getTorrentFile(infoHash, fileIdx) {
 }
 
 export function getStatus(infoHash) {
+  if (!client) return null;
   const t = findTorrent(infoHash.toLowerCase());
   if (!t) return null;
   return {
@@ -86,6 +126,7 @@ export function getStatus(infoHash) {
 
 // Torrents ativos (a descarregar/reproduzir), para a lista "a gerir".
 export function listActive() {
+  if (!client) return [];
   return client.torrents.map((t) => {
     const name =
       t.files.find((f) => VIDEO_RE.test(f.name))?.name || t.name || "?";
@@ -101,6 +142,7 @@ export function listActive() {
 
 // Para de descarregar e remove o torrent (limpa ficheiros do disco).
 export function removeTorrent(infoHash) {
+  if (!client) return false;
   const t = findTorrent(infoHash.toLowerCase());
   if (!t) return false;
   return new Promise((res) => {

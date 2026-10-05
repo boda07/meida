@@ -584,6 +584,16 @@ if ($exeFinal -and (Test-Path $exeFinal) -and ($faltamFinal.Count -eq 0)) {
 # O nome da pasta do perfil vem do 'name' do package.json (streamapp), nao do
 # productName - por isso e' 'streamapp' e nao 'MEIDA'.
 $perfis = @((Join-Path $env:APPDATA 'streamapp'), (Join-Path $env:APPDATA 'meida'), (Join-Path $env:APPDATA 'MEIDA'))
+# A porta que o servidor usou da ultima vez. A app le este ficheiro para saber
+# em que porta abrir, por isso tem de desaparecer: se ficar com a porta de uma
+# sessao antiga, a app vai procurar o servidor onde ele ja nao esta e falha ao
+# abrir com um erro interno.
+foreach ($perf0 in $perfis) {
+  $pf = Join-Path $perf0 'porta.txt'
+  if (Test-Path $pf) {
+    try { Remove-Item $pf -Force -ErrorAction Stop; Info 'porta antiga apagada.' } catch {}
+  }
+}
 $cacheFalhou = $false
 foreach ($perf in $perfis) {
   if (-not (Test-Path $perf)) { continue }

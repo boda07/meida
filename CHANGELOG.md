@@ -1,5 +1,55 @@
 # Changelog
 
+## 1.2.7
+
+### Corrigido: a app nao arrancava em PCs x86 (todas as versoes desde 1.2.0)
+- **Sintoma**: janela preta, e a janela de erro dizia "a app nao conseguiu iniciar
+  o servidor interno, codigo 1". Sem log antigo: o backend morria antes do
+  primeiro `log.info`.
+- **Causa** (encontrada no `logs/arranque-*.log`):
+  ```
+  Error: node_datachannel.node is not a valid Win32 application
+    code: 'ERR_DLOPEN_FAILED'
+    at .../webrtc-polyfill/dist/esm/lib/node-datachannel.mjs:9
+  ```
+  O `webtorrent` -> `webrtc-polyfill` -> `node-datachannel` tem um binario
+  **nativo** (`.node`) especifico da arquitectura. Verificado no pacote:
+  `release/win-unpacked/.../node_datachannel.node` e
+  `release/win-arm64-unpacked/.../node_datachannel.node` estavam **ambos ARM64**
+  (`0xAA64`) — no pacote x64 tambem. Num PC x86 normal o `dlopen` falha e o
+  backend morre no arranque.
+- **Porquê que o `@electron/rebuild` nao resolveu**: ele so reconstroi o modulo
+  nativo do **projecto principal**. `server/` e' copiado tal e qual pelo
+  `extraResources`, por isso o `.node` que veio do `npm install` (compilado para
+  a maquina de desenvolvimento, um PC ARM) foi parar ao pacote x64 sem ser
+  tocado.
+- **Este bug explica o diagnostico anterior ficar pela metade**: sem log, so se
+  sabia que o backend morria, nao porquê. A partir da 1.2.6 ha
+  `logs/arranque-*.log`, e foi ai que a causa apareceu.
+- **Correcao** (`server/src/services/torrentEngine.js`):
+  - O `import WebTorrent from "webtorrent"` passa a `await import(...)` **lazy**,
+    dentro de `carregar()`, com `try`/`catch`.
+  - Se o binario nao carregar, fica registado o motivo e o servidor **arranca
+    na mesma**. So as funcionalidades que dependem do WebTorrent (streaming de
+    torrents) ficam indisponiveis nesse PC.
+  - `findTorrent`, `listActive`, `removeTorrent` e `getStatus` passam a devolver
+    valores vazios quando o cliente nao existe, em vez de rebentar.
+  - Listar torrents (`/api/torrents`) continua a funcionar: so o provider e'
+    preciso, nao o binario nativo.
+- **Testado** com o `.node` substituido por ficheiro invalido (que e' o que o
+  Windows ve quando a arquitectura nao bate certo):
+  - servidor arranca: `Backend a correr em http://127.0.0.1:5175`
+  - `/api/health` -> `{"ok":true,"tmdbConfigured":true}`
+  - `/` -> HTTP 200 com `div#root`
+  - `/api/catalog` -> HTTP 200, 39 879 bytes
+  - `/api/torrents` -> HTTP 200 com a lista (o servidor sobrevive)
+
+### Corrigido: a porta da sessao anterior
+- `electron/main.cjs` passa a apagar `%APPDATA%/streamapp/porta.txt` antes de
+  arrancar o servidor. Sem isso, se uma sessao anterior ficou noutra porta, a
+  app ia procurar o servidor onde ele ja nao estava e falhava ao abrir com um
+  erro interno. O script de reparacao tambem o apaga.
+
 ## 1.2.6
 
 ### Corrigido: a janela ficava preta (a app nao abria)

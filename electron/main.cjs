@@ -214,6 +214,16 @@ const PROD_PORT_DEFAULT = 5175;
 // antes deixava a janela preta sem explicacao). Ele escreve a porta escolhida
 // neste ficheiro, e aqui le-se para a app abrir na porta certa.
 const PORT_FILE = () => path.join(app.getPath("userData"), "porta.txt");
+// Apaga a porta de uma sessao anterior. Sem isto a app pode ir buscar o
+// servidor a uma porta onde ele ja nao esta (porque na sessao passada ficou
+// noutra), e a janela falha ao abrir com um erro interno.
+function limparPortaAntiga() {
+  try {
+    fs.unlinkSync(PORT_FILE());
+  } catch {
+    /* nao existia: nada a fazer */
+  }
+}
 function prodUrl() {
   try {
     const p = parseInt(fs.readFileSync(PORT_FILE(), "utf8").trim(), 10);
@@ -572,7 +582,11 @@ app.whenReady().then(() => {
   // O servidor local arranca SEMPRE (serve a app + o video). Em modo "dados na
   // nuvem" as rotas de dados vao para o servidor remoto partilhado, mas o UI e o
   // streaming continuam a correr neste computador.
-  if (!isDev) startServer();
+  if (!isDev) {
+    // A porta da sessao anterior ja nao vale: o servidor pode ter ficado noutra.
+    limparPortaAntiga();
+    startServer();
+  }
   createWindow();
   setupMenu();
   setupAutoUpdate();

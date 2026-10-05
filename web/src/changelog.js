@@ -2,6 +2,15 @@
 // "o que mudou" depois de o utilizador atualizar a app. Mais recente em cima.
 export const CHANGELOG = [
   {
+    version: "1.2.7",
+    items: [
+      "Corrigido: a app não abria de todo em vários computadores. Acontecia porque um componente de origem dos ficheiros tinha um programa próprio para o tipo de processador do meu computador, e em vez de mostrar a app dava um erro. Se não te abria, atualiza para esta versão.",
+      "Corrigido: se usas links magneto para ver vídeos, eles deixam de funcionar em alguns computadores — o resto da app funciona normalmente.",
+      "Corrigido: a app não fica mais presa numa versão antiga das novidades depois de atualizar.",
+      "Corrigido: o servidor interno já não morre em silêncio — escreve um registo e mostra o erro na janela.",
+    ],
+  },
+  {
     version: "1.2.6",
     items: [
       "Corrigido: a app abria com a janela preta. Acontecia quando o servidor interno não conseguia arrancar porque a porta já estava ocupada — fechavas a app e reabrias, e a nova não tinha tempo de ficar com a porta. Agora o servidor usa outra porta automaticamente.",
