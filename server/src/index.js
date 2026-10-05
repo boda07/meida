@@ -1,7 +1,7 @@
 import express from "express";
 import cors from "cors";
 import { fileURLToPath } from "node:url";
-import { writeFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { config } from "./config.js";
 import { catalogRouter } from "./routes/catalog.js";
@@ -75,6 +75,37 @@ if (process.env.SERVE_WEB === "1") {
   const __dirname = dirname(fileURLToPath(import.meta.url));
   // No app empacotado o caminho vem por WEB_DIST; em dev usa o relativo.
   const dist = process.env.WEB_DIST || resolve(__dirname, "../../web/dist");
+
+  // `/runtime-config.json` responde com o ficheiro de `web/public/` JA
+  // CORRIGIDO pela variavel de ambiente. Sem isto, trocar o servidor de dados
+  // obriga a recompilar o frontend e a redeployar — e a config errada fica em
+  // cache no navegador, a mandar pedidos a um servidor que ja nao e' o dos dados.
+  //
+  // Porquê e' preciso: e' este ficheiro que diz ao frontend "as contas, a
+  // biblioteca e os comentarios estao em https://...". E' assim que a versao web
+  // passa a ver os mesmos dados que a app de desktop (que ja vai ao servidor
+  // partilhado por `electron/default-server.txt`).
+  //
+  // A variavel e' MEIDA_REMOTE_DATA_BASE, a mesma do resto do projecto. O que
+  // estiver em `web/public/runtime-config.json` e' a base, e a variavel
+  // sobrescreve so o VITE_REMOTE_DATA_BASE — nunca o resto, para nao se perder
+  // o VITE_API_BASE.
+  app.get("/runtime-config.json", (req, res) => {
+    let base;
+    try {
+      base = JSON.parse(readFileSync(resolve(dist, "runtime-config.json"), "utf8"));
+      if (!base || typeof base !== "object") base = {};
+    } catch {
+      base = {};
+    }
+    const remoto = (process.env.MEIDA_REMOTE_DATA_BASE || "").trim();
+    if (remoto) {
+      base.VITE_REMOTE_DATA_BASE = remoto.replace(/\/+$/, "");
+    }
+    res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
+    res.json(base);
+  });
+
   app.use(
     express.static(dist, {
       setHeaders(res, filePath) {

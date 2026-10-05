@@ -27,11 +27,21 @@ async function loadRuntimeConfig() {
   }
 
   // No Electron o processo principal manda: em modo "dados na nuvem" diz qual e
-  // o servidor partilhado. Tem prioridade sobre o runtime-config.
+  // o servidor partilhado, e tem prioridade sobre o runtime-config.
+  //
+  // E o inverso tambem conta: se o utilizador escolheu "local" nas Definicoes,
+  // o runtime-config tem de ser IGNORADO. Sem esta ressalva, ter um
+  // VITE_REMOTE_DATA_BASE no ficheiro (que e' preciso para a versao web usar o
+  // servidor de dados partilhado) faria a app de desktop mandar contas e
+  // comentarios para a nuvem sem ninguem ter pedido isso.
   try {
     const cfg = await window.electronAPI?.getServerConfig?.();
-    if (cfg && cfg.mode === "remote" && cfg.url) {
-      window.MEIDA_REMOTE_DATA_BASE = String(cfg.url).replace(/\/+$/, "");
+    if (cfg) {
+      if (cfg.mode === "remote" && cfg.url) {
+        window.MEIDA_REMOTE_DATA_BASE = String(cfg.url).replace(/\/+$/, "");
+      } else {
+        window.MEIDA_REMOTE_DATA_BASE = "";
+      }
     }
   } catch {
     /* sem Electron: mantem o runtime-config */

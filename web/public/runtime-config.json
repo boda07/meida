@@ -1,1 +1,4 @@
-{ "VITE_API_BASE": "" }
+{
+  "VITE_API_BASE": "",
+  "VITE_REMOTE_DATA_BASE": "https://meida.fadehost.app"
+}
