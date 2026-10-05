@@ -2,6 +2,13 @@
 // "o que mudou" depois de o utilizador atualizar a app. Mais recente em cima.
 export const CHANGELOG = [
   {
+    version: "1.2.8",
+    items: [
+      "Corrigido: os links magneto voltam a funcionar — agora sim, em qualquer computador, tanto nos de processador normal como nos mais novos.",
+      "Corrigido: quando fazes a app, o programa de origem dos ficheiros é colocado já no formato certo para cada tipo de computador. Antes ia sempre o do meu computador, e por isso não funcionava nos outros.",
+    ],
+  },
+  {
     version: "1.2.7",
     items: [
       "Corrigido: a app não abria de todo em vários computadores. Acontecia porque um componente de origem dos ficheiros tinha um programa próprio para o tipo de processador do meu computador, e em vez de mostrar a app dava um erro. Se não te abria, atualiza para esta versão.",

@@ -1,6 +1,6 @@
 {
   "name": "streamapp",
-  "version": "1.2.7",
+  "version": "1.2.8",
   "private": true,
   "description": "App pessoal tipo Stremio: catalogo TMDB + embed providers + torrents",
   "main": "electron/main.cjs",
@@ -38,6 +38,7 @@
   "build": {
     "appId": "com.boda.meida",
     "productName": "MEIDA",
+    "afterPack": "scripts/empacotar-nativos.cjs",
     "directories": {
       "output": "release"
     },

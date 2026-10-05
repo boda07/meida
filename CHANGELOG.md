@@ -1,5 +1,62 @@
 # Changelog
 
+## 1.2.8
+
+### Os binarios nativos do servidor passam a ser especificos de cada arquitectura
+
+A 1.2.7 impediu que a app morresse quando o binario nativo nao carregava
+(`torrentEngine.js` passou a fazer `await import()` com `try`/`catch`). Isso
+resolveu a app a nao arrancar, mas deixou os torrents (streaming) a nao
+funcionar em PCs x86. Agora o binario correcto e' colocado em cada pacote.
+
+- **Causa de fundo**: o `@electron/rebuild` so reconstroi o modulo nativo do
+  projecto principal. O `server/` e' copiado tal e qual pelo `extraResources`,
+  por isso o `node_datachannel.node` que veio do `npm install` (compilado na
+  maquina de desenvolvimento, um PC **ARM**) foi parar ao pacote x64 sem ser
+  tocado. `npmRebuild`, `buildDependenciesFromSource` e `nodeGypRebuild` do
+  `electron-builder` nao ajudam: nenhum deles olha para o `server/`.
+- **Como foi resolvido** — `scripts/empacotar-nativos.cjs`, registado como
+  `afterPack` no `build` do `package.json`:
+  - Corre depois de cada pacote estar montado (`release\win-unpacked` e
+    `release\win-arm64-unpacked` sao pastas separadas), por isso cada uma recebe
+    o binario certo.
+  - Copia o binario de `scripts/native/` para dentro de
+    `resources/server/node_modules/node-datachannel/build/Release/`.
+  - No fim **varre todos os `.node` e `.dll` do `server/node_modules`** e falha a
+    build se algum ficar com a arquitectura errada. Os que vivem em
+    `prebuilds/<plataforma>-<arquitectura>/` sao ignorados, porque o
+    `require-addon` escolhe o certo em runtime (`fs-native-extensions` e' assim
+    e' que se resolvia sozinho).
+  - Se o binario certo nao estiver em `scripts/native/`, a build falha com a
+    mensagem a dizer qual falta.
+- **De onde vem os binarios** (`scripts/native/`): prebuilds oficiais do
+  `murat-dogan/node-datachannel`, release `v0.32.3`, variante `napi-v8`
+  (`node-datachannel-v0.32.3-napi-v8-win32-x64.tar.gz` e
+  `...-win32-arm64.tar.gz`). Sao N-API, portanto servem para o Node e para o
+  Electron em qualquer versao, e sao os mesmos ficheiros que o
+  `prebuild-install` descompacta ao instalar o pacote. Ficam no repositorio
+  para a build nao depender da rede. `scripts/native/README.md` explica.
+- **Confirmado**: o binario ARM64 do `node_modules` local e' **byte a byte igual**
+  ao prebuild oficial `win32-arm64` — ou seja, o caminho certo e' mesmo este.
+  Nao ha binarios para `linux`/`darwin` no repositorio porque so publicamos
+  Windows.
+
+### Testado a arquitectura x64 (o PC do utilizador que estava avariado)
+
+O problema: a maquina de desenvolvimento e' ARM64, por isso **nao conseguia
+carregar** um `.node` x64 para o testar. Resolvido com um Node x64
+(`node-v24.21.0-win-x64`), que o Windows sobre ARM corre emulando.
+
+| | com o binario errado (ARM64) | com o binario certo (x64) |
+|---|---|---|
+| `require('node-datachannel')` | `nao e' uma aplicacao Win32 valida` | carrega, `PeerConnection: function` |
+| `import('webtorrent')` + `new WebTorrent()` | falha | carrega, peer id gerado |
+| `/api/health` | servidor morre | `{"ok":true,...}` |
+| `/api/torrents` | — | HTTP 200, 26 944 bytes |
+| `fs-native-extensions` | escolhe `prebuilds/win32-x64` em runtime | idem |
+
+O pacote ARM64 continua a carregar com o Node local (ARM64), como antes.
+
 ## 1.2.7
 
 ### Corrigido: a app nao arrancava em PCs x86 (todas as versoes desde 1.2.0)
