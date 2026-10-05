@@ -1,5 +1,104 @@
 # Changelog
 
+## 1.2.9
+
+### Corrigido: o Electron desatualizado no node_modules (build sem dar erro)
+- **Sintoma**: nenhuma mudanca no codigo, mas qualquer build feita nesta maquina
+  sairia com o Electron errado e a app nao abria (janela preta, `Cannot GET /`).
+- **Causa**: depois do pull, o `package.json` passou a pedir `electron 44.5.1`
+  (exacto, sem `^`) mas o `node_modules` continuou com **33.4.11**, porque o
+  `npm install` nunca tinha corrido com o pin novo. O `electron-builder` nao tem
+  `electronVersion` fixo: tira a versao de `node_modules/electron`, por isso
+  empacotou 33.4.11 **sem dar qualquer erro** — o log ate escreve
+  `electron=33.4.11` como se estivesse tudo bem. Sem `node:sqlite` (que so
+  existe no Node 22+, importado em `server/src/db/index.js`) o backend morre no
+  `import` e a app mostra `Cannot GET /` em qualquer PC. E' o mesmo modo de
+  falha da 1.2.4, por outra via: ali o `package.json` dizia `^44.5.1`; aqui o
+  pin estava certo mas o `node_modules` e' que estava velho.
+- **Correcao**:
+  1. `npm install` na raiz (aumentou o electron para 44.5.1) e
+     `node node_modules/electron/install.js` — o `postinstall` tinha sido
+     ignorado e `node_modules/electron/dist/` nao existia. Sem isso o modo de
+     desenvolvimento (`npm run app:electron`) nem arranca; o empacotamento
+     nao é afectado porque o `electron-builder` descarrega o Electron do GitHub.
+  2. **`scripts/verificar-electron.cjs`** — novo hook `beforePack`
+     (`"beforePack"` no `build` do `package.json`) que compara a versao de
+     `node_modules/electron/package.json` com a de `package.json` e **falha a
+     build** se forem diferentes. Testado nos dois sentidos: passa com a versao
+     certa e, a pedir `33.4.11`, a build morre antes do `packaging`
+     (`failedTask=build`). E' a diferenca entre "ninguem ve o erro" e "a build
+     para logo".
+- **Porque nao basta o `^`:** `electron-updater` e' que instala versoes novas
+  para o utilizador; o `^`/`~` nao influencia o empacotamento. O queinfluencia e'
+  o que esta instalado em `node_modules` no momento da build — e esse e' agora o
+  que o hook verifica.
+
+### Corrigido: o script de verificacao perdia as mensagens que diziam a causa
+- `scripts/verificar-x86.ps1` tem 9 chamadas com concatenacao **fora de
+  parenteses**, em `OK "texto " + $variavel` e
+  `Write-Host "porta " + $Porta + "..."`. Em PowerShell isto **nao concatena**:
+  passam-se 3 argumentos ("texto ", "+", valor) e a funcao, que so via o
+  primeiro, imprime a frase sem o valor.
+- O que se perdia era precisamente o que interessa quando algo falha:
+  - `release mais recente no GitHub: ` (sem a versao)
+  - `porta  + 5175 + ` (em vez de `porta 5175`)
+  - **todas as mensagens de erro**: `nao consegui abrir a zip: `,
+    `o pedido de torrents falhou: `, `o catalogo nao respondeu: `,
+    `nao consegui ler as releases do GitHub: ` — e `o programa principal e' ` /
+    `o programa nativo e' ` sem o tipo, que e' a informacao central do script.
+- **Correcao**: parenteses nas 9 chamadas, e as funcoes `OK`/`Mal`/`Duv` passam a
+  juntar todas as palavras que lhes sao passadas (`JuntarMensagem`). Se sobrar
+  mais de um argumento, avisa — foi o que apanhar a 9.ª ocorrencia, que a
+  primeira busca por `Select-String` nao tinha mostrado.
+
+### Corrigido: a verificacao dava falsos erros nos pacotes arm64
+- O script comparava o tipo de tudo com `"x64"` fixo. Numa maquina ARM o
+  instalador poe a variante ARM64 (e AI que esta certo), e a zip arm64 dava
+  "[FALHA] o programa nativo e' ARM64" — a dizer que estava partido algo que
+  estava bem.
+- Agora ha `$EsteTipo` (o da maquina, para a app instalada) e `$Esperado` (para
+  cada pacote: o nome da zip diz `-arm64-win` = ARM64, `-win` = x64), e o
+  esperado e' escrito no ecra antes de comparar.
+- Tambem deixou de estar a versao "1.2.8" escrita a mao na lista de zips a
+  procurar: agora vem do GitHub e, se isso falhar, aceita qualquer
+  `MEIDA-*-win.zip` da pasta `release/`.
+
+### Corrigido: o AGENTS.md dizia que a maquina de build era Windows sobre ARM
+- **O AGENTS.md estava certo** — falava do **laptop**, que e' Windows sobre ARM
+  (`PROCESSOR_ARCHITECTURE = ARM64`, Snapdragon). E' de la que sairam as builds
+  1.2.0-1.2.2 so arm64 e o Electron 33.4.11.
+- **Este PC de desenvolvimento e x86**, medido em 2026-10-05:
+  `PROCESSOR_ARCHITECTURE = AMD64`,
+  `PROCESSOR_IDENTIFIER = AMD64 Family 23 Model 96 Stepping 1, AuthenticAMD`,
+  "AMD Ryzen 5 4500", Windows 10 Pro. Sao duas maquinas de proposito, e por isso
+  e' que se mantem o `--x64 --arm64` em todos os scripts de build: no dia em que
+  a build for feita no laptop, sem `--x64` o `electron-builder` compila so
+  arm64 e o instalador deixa de instalar em PC x86/x64. Para saber em que
+  maquina se esta: `echo $env:PROCESSOR_ARCHITECTURE` (`AMD64` = este PC;
+  `ARM64` = o laptop).
+
+### Verificacao da release 1.2.8 (instalador publicado, abertos de facto)
+- Descarregado o `MEIDA-Setup-1.2.8.exe` (238 714 457 bytes, igual ao asset) e
+  aberto com o 7-Zip. Contem `app-64.7z` **e** `app-arm64.7z`.
+- No payload x64: `MEIDA.exe` com cabecalho PE `x64`, versao 1.2.8.0, e
+  `node_datachannel.node` com PE `x64` e **sha256 igual ao prebuild oficial**
+  (`9C994ED1262F12313694D34F...`, de `scripts/native/`).
+- Executado o payload publicado: **Electron 44.5.1, Node 24.21.0, Chrome 152**,
+  e `node:sqlite` carrega (`DatabaseSync`, `StatementSync`, `Session`).
+  Arranca o servidor, `/api/health` responde, o catalogo responde, e o
+  `Cache-Control: no-cache, no-store, must-revalidate` da 1.2.4 esta presente.
+- Build local da 1.2.8 (as duas arquitecturas): o hook trocou o nativo no
+  arm64 — `node-datachannel/build/Release/node_datachannel.node: x64 -> arm64` —
+  que e' o bug original a ser travado a tempo.
+
+### Notas
+- O `prune-releases.mjs` devia manter 3 releases mas ficou com 6 (1.2.3 a
+  1.2.8): o script saltou provavelmente por o `gh` nao estar autenticado no
+  laptop. As releases 1.2.3 e 1.2.4 estao partidas e continuavam para download
+  manual.
+- `scripts/verificar-x86.ps1` continua **100% ASCII e sem BOM** (verificado byte
+  a byte) — o PowerShell le mal um script com BOM.
+
 ## 1.2.8
 
 ### Os binarios nativos do servidor passam a ser especificos de cada arquitectura

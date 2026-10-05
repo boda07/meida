@@ -2,6 +2,13 @@
 // "o que mudou" depois de o utilizador atualizar a app. Mais recente em cima.
 export const CHANGELOG = [
   {
+    version: "1.2.9",
+    items: [
+      "Corrigido: a app deixava de abrir em vários computadores depois de uma atualização, sem dar nenhum erro — o ecrã ficava preto. Agora, antes de cada versão ser publicada, a app é verificada automaticamente e esse tipo de problema já não consegue passar despercebido.",
+      "Melhorado: as versões publicadas passam por uma conferência que abre o instalador e confirma que está tudo bem dentro dele, em vez de confiar que está.",
+    ],
+  },
+  {
     version: "1.2.8",
     items: [
       "Corrigido: os links magneto voltam a funcionar — agora sim, em qualquer computador, tanto nos de processador normal como nos mais novos.",

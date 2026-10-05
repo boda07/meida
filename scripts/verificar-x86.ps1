@@ -15,9 +15,27 @@
 $Erro = 0
 $Aviso = 0
 
-function OK   ([string]$m) { Write-Host ("  [ OK ] " + $m) }
-function Mal  ([string]$m) { Write-Host ("  [FALHA] " + $m) -ForegroundColor Red;  $script:Erro++ }
-function Duv  ([string]$m) { Write-Host ("  [ ? ] " + $m) -ForegroundColor Yellow; $script:Aviso++ }
+# As tres funcoes de mensagem juntam todas as palavras que lhes sao passadas.
+#
+# Antes recebiam um unico [string]$m, e isso era uma armadilha: numa chamada como
+#   OK "a versao e' " + $Versao
+# o PowerShell NAO concatena - passa tres argumentos ("a versao e' ", "+",
+# $Versao) e a funcao, que so via o primeiro, imprimia a frase sem a versao. O
+# mesmo acontecia com `Write-Host "porta " + $Porta + "..."`, que saia
+# "porta  + 5175 + ...". Ou seja: as mensagens que dizem porque algo correu mal
+# perdiam justamente a parte importante. Por isso agora, se sobrar mais de um
+# argumento, e' aviso de que falta um parenteses na chamada.
+function JuntarMensagem($Argumentos) {
+  if ($Argumentos.Count -gt 1) {
+    Write-Host "  [ ? ]atencao: mensagem chamada com varios argumentos (falta um parenteses)"
+    $script:Aviso++
+  }
+  return ($Argumentos -join " ")
+}
+
+function OK   { Write-Host ("  [ OK ] " + (JuntarMensagem $args)) }
+function Mal  { Write-Host ("  [FALHA] " + (JuntarMensagem $args)) -ForegroundColor Red;  $script:Erro++ }
+function Duv  { Write-Host ("  [ ? ] " + (JuntarMensagem $args)) -ForegroundColor Yellow; $script:Aviso++ }
 function Cab  ([string]$m) { Write-Host ""; Write-Host ("== " + $m + " " + ("=" * [Math]::Max(0, 58 - $m.Length))) -ForegroundColor Cyan }
 
 # Le o cabecalho PE de um ficheiro e devolve "x64", "ARM64", "x86" ou "?" (ou
@@ -106,6 +124,14 @@ if ([Environment]::Is64BitOperatingSystem) {
 }
 
 $EhARM = ($Modelo -match "ARM|Snapdragon|Oryon|Apple") -or ($Processador -eq 5)
+
+# O tipo de binario que este PC espera. Numa maquina ARM o instalador poe a
+# variante ARM64 (e AI que esta certo), por isso a comparacao tem de ser feita
+# contra o arquitectura da maquina e nao contra um "x64" fixo - senao num PC ARM
+# o script acusava um falso erro no que esta perfeitamente bem.
+$EsteTipo = if ($EhARM) { "ARM64" } else { "x64" }
+Write-Host ("  tipo esperado: " + $EsteTipo)
+
 if ($EhARM) {
   Duv "este PC e' ARM. Entao o teste do programa nativo x86 nao se aplica aqui."
   Write-Host "          (num PC ARM corre o binario ARM64, que e' o correcto.)"
@@ -121,12 +147,12 @@ try {
   $Tag = (Invoke-RestMethod -Uri "https://api.github.com/repos/boda07/meida/releases/latest" -Headers @{ "User-Agent" = "meida" } -TimeoutSec 40).tag_name
   if ($Tag) { $Versao = $Tag.Trim() -replace "^v", "" }
   if ($Versao) {
-    OK "release mais recente no GitHub: " + $Versao
+    OK ("release mais recente no GitHub: " + $Versao)
   } else {
     Duv "a release do GitHub nao respondeu com um numero de versao"
   }
 } catch {
-  Duv "nao consegui ler as releases do GitHub: " + $_.Exception.Message
+  Duv ("nao consegui ler as releases do GitHub: " + $_.Exception.Message)
 }
 
 # ------------------------------------------------------- 3. OS PROGRAMAS DENTRO
@@ -139,7 +165,21 @@ $Locais = @()
 $Instalada = Join-Path $env:LOCALAPPDATA "Programs\streamapp"
 if (Test-Path $Instalada) { $Locais += $Instalada }
 
-foreach ($Nome in @("MEIDA-1.2.8-win.zip", "MEIDA-$Versao-win.zip")) {
+# Nomes das zips a procurar. A versao vem do GitHub; se isso falhar, aceita-se
+# qualquer MEIDA-*-win.zip que esteja na pasta de release. Antes a versao
+# "1.2.8" estava escrita a mao aqui, o que obrigava a editar o script a cada
+# release.
+$NomesZip = @()
+if ($Versao) {
+  $NomesZip += "MEIDA-$Versao-win.zip"
+  $NomesZip += "MEIDA-$Versao-arm64-win.zip"
+}
+if (Test-Path "release") {
+  $NomesZip += @(Get-ChildItem "release" -Filter "MEIDA-*-win.zip" -ErrorAction SilentlyContinue |
+                 Select-Object -ExpandProperty Name)
+}
+
+foreach ($Nome in ($NomesZip | Select-Object -Unique)) {
   if (-not $Nome) { continue }
   foreach ($Pasta in @($env:TEMP, "$env:USERPROFILE")) {
     $Z = Join-Path $Pasta $Nome
@@ -147,7 +187,10 @@ foreach ($Nome in @("MEIDA-1.2.8-win.zip", "MEIDA-$Versao-win.zip")) {
   }
 }
 # Tambem a pasta de release, se tiveres o repo clonado.
-if (Test-Path "release\MEIDA-$Versao-win.zip") { $Locais += (Resolve-Path "release\MEIDA-$Versao-win.zip").Path }
+foreach ($Nome in ($NomesZip | Select-Object -Unique)) {
+  $Z = Join-Path "release" $Nome
+  if (Test-Path $Z) { $Locais += (Resolve-Path $Z).Path }
+}
 
 if ($Locais.Count -eq 0) {
   Duv "nao encontrei a app instalada nem a zip."
@@ -156,6 +199,17 @@ if ($Locais.Count -eq 0) {
   foreach ($Lugar in $Locais) {
     Write-Host ("  --> " + $Lugar)
 
+    # Que tipo se espera aqui? Na app instalada, o da maquina. Numa zip, o que o
+    # proprio nome diz: MEIDA-<ver>-win.zip = x64, MEIDA-<ver>-arm64-win.zip =
+    # ARM64. Sem isto, a zip arm64 era comparada com o x64 do PC e dava um erro
+    # falso, quando o pacote estava certo.
+    $Esperado = $EsteTipo
+    if ($Lugar.EndsWith(".zip")) {
+      if ($Lugar -match "arm64") { $Esperado = "ARM64" }
+      else { $Esperado = "x64" }
+    }
+    Write-Host ("  esperado : " + $Esperado)
+
     if ($Lugar.EndsWith(".zip")) {
       $Destino = Join-Path $env:TEMP ("meida-teste-" + [System.IO.Path]::GetFileNameWithoutExtension($Lugar))
       Remove-Item $Destino -Recurse -Force -ErrorAction SilentlyContinue
@@ -163,7 +217,7 @@ if ($Locais.Count -eq 0) {
         Add-Type -AssemblyName System.IO.Compression.FileSystem
         [System.IO.Compression.ZipFile]::ExtractToDirectory($Lugar, $Destino)
       } catch {
-        Mal "nao consegui abrir a zip: " + $_.Exception.Message
+        Mal ("nao consegui abrir a zip: " + $_.Exception.Message)
         continue
       }
       $Raiz = $Destino
@@ -181,12 +235,11 @@ if ($Locais.Count -eq 0) {
       Write-Host ("  tamanho  : " + [Math]::Round((Get-Item $Exe).Length / 1MB, 1) + " MB")
 
       $Tipo = TipoDe $Exe
-      if ($Tipo -eq "x64") {
-        OK "o programa principal e' do tipo x64 (certo para este PC)"
-      } elseif ($Tipo -eq "ARM64") {
-        Mal "o programa principal e' ARM64 - NAO vai funcionar neste PC"
+      if ($Tipo -eq $Esperado) {
+        OK ("o programa principal e' do tipo " + $Esperado + " (certo)")
       } else {
-        Mal "o programa principal e' " + $Tipo + " - tipo errado"
+        Mal ("o programa principal e' " + $Tipo + " - aqui esperava-se " + $Esperado)
+        Write-Host "          E' o bug do instalador: o pacote trouxe o programa de outra maquina."
       }
     }
 
@@ -198,13 +251,13 @@ if ($Locais.Count -eq 0) {
     } else {
       Write-Host ("  nativo   : " + [Math]::Round((Get-Item $Nativo).Length / 1MB, 1) + " MB")
       $TN = TipoDe $Nativo
-      if ($TN -eq "x64") {
-        OK "o programa nativo e' x64 (certo)"
+      if ($TN -eq $Esperado) {
+        OK ("o programa nativo e' " + $Esperado + " (certo)")
       } elseif ($TN -eq "ARM64") {
         Mal "o programa nativo e' ARM64 - e' este o bug que estragava os PCs x86"
         Write-Host "          Volta a instalar a partir da release mais recente."
       } else {
-        Mal "o programa nativo e' " + $TN + " - tipo errado"
+        Mal ("o programa nativo e' " + $TN + " - aqui esperava-se " + $Esperado)
       }
     }
 
@@ -216,14 +269,14 @@ if ($Locais.Count -eq 0) {
         Where-Object { $_.FullName -notlike "*\prebuilds\*" } |
         ForEach-Object {
           $TT = TipoDe $_.FullName
-          if ($TT -and $TT -ne "x64") {
-            $Estranhos += ($_.FullName.Replace($PastaModulos, "") + " (tipo " + $TT + ")")
+          if ($TT -and $TT -ne $Esperado) {
+            $Estranhos += ($_.FullName.Replace($PastaModulos + "\", "") + " (tipo " + $TT + ")")
           }
         }
       if ($Estranhos.Count -eq 0) {
         OK "nenhum outro programa com o tipo errado"
       } else {
-        foreach ($E in $Estranhos) { Mal "programa com o tipo errado: " + $E }
+        foreach ($E in $Estranhos) { Mal ("programa com o tipo errado: " + $E) }
       }
     }
   }
@@ -240,7 +293,7 @@ $ExeInstalado = Join-Path $Instalada "MEIDA.exe"
 if (-not (Test-Path $ExeInstalado)) {
   Duv "a app nao esta instalada, por isso nao posso testar o servidor"
 } else {
-  Write-Host "  a testar se o servidor arranca (porta " + $Porta + ")..."
+  Write-Host ("  a testar se o servidor arranca (porta " + $Porta + ")...")
 
   # Arranca o servidor sem abrir a janela: o MEIDA.exe tambem e' o Node.
   $Env:ELECTRON_RUN_AS_NODE = "1"
@@ -322,7 +375,7 @@ $CorpoWt = 'setTimeout(()=>{console.log("MEIDA_PEER=demorou")},20000);' +
     $T = Invoke-RestMethod -Uri ("http://127.0.0.1:" + $Porta + "/api/torrents?type=movie&imdb=tt0133093&title=Matrix") -TimeoutSec 40
     OK ("os torrents responderam (" + $T.torrents.Count + " resultados para Matrix)")
   } catch {
-    Duv "o pedido de torrents falhou: " + $_.Exception.Message
+    Duv ("o pedido de torrents falhou: " + $_.Exception.Message)
   }
 
   # --- o catalogo responde? (a app precisa dele para mostrar seja o que for)
@@ -331,7 +384,7 @@ $CorpoWt = 'setTimeout(()=>{console.log("MEIDA_PEER=demorou")},20000);' +
     $NC = ($C | ConvertTo-Json -Depth 3 -Compress).Length
     OK ("o catalogo respondeu (" + $NC + " caracteres)")
   } catch {
-    Duv "o catalogo nao respondeu: " + $_.Exception.Message
+    Duv ("o catalogo nao respondeu: " + $_.Exception.Message)
   }
 
   Remove-Item Env:\ELECTRON_RUN_AS_NODE -ErrorAction SilentlyContinue
