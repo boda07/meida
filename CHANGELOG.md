@@ -1,5 +1,88 @@
 # Changelog
 
+## 1.3.0
+
+### A versao web passa a ver os mesmos dados que a app de desktop
+
+Era a resposta a "os comentarios estao a ser partilhados em todos os
+computadores". A arquitectura **ja existia**: `web/src/api/client.js` manda as
+rotas de dados para um servidor remoto e so mantem local o video e o catalogo.
+O que faltava era dizer ao browser qual e' esse servidor — so a app de Electron
+o sabia, por `electron/default-server.txt`.
+
+- **`web/public/runtime-config.json`** ganha
+  `VITE_REMOTE_DATA_BASE: "https://meida.fadehost.app"`. O `main.jsx` ja lia
+  este valor do ficheiro quando nao ha Electron, por isso e' o sitio certo.
+  Antes so havia `VITE_API_BASE`, e a versao web usava a base de dados dela
+  propria — contas e comentarios diferentes dos da app de desktop.
+- **`server/src/index.js`**: `/runtime-config.json` passa a ser gerado. O
+  servidor le o ficheiro de `web/public/` e substitui o `VITE_REMOTE_DATA_BASE`
+  pelo valor de `MEIDA_REMOTE_DATA_BASE`, se existir. Assim trocar o servidor de
+  dados deixa de obrigar a recompilar o frontend e a redeployar, e a config
+  errada nao fica presa na cache do navegador (`Cache-Control: no-store`). A
+  variavel sobrescreve **so** o `VITE_REMOTE_DATA_BASE`, nunca o resto, para nao
+  se perder o `VITE_API_BASE`.
+- **`web/src/main.jsx` (correccao obrigatoria)**: ao meter um
+  `VITE_REMOTE_DATA_BASE` no ficheiro, a app de desktop em modo "local" passava a
+  mandar contas e comentarios para a nuvem sem ninguem ter pedido — o codigo so
+  sobrescrevia o valor quando o modo era "remote", e em "local" o runtime-config
+  era aceite. Agora, se o Electron responder e o modo nao for "remote",
+  `MEIDA_REMOTE_DATA_BASE` e' posto a `""`.
+
+### O que passa a ser partilhado
+
+Tudo o que `LOCAL_API_PREFIXES` (`web/src/api/client.js`) nao lista:
+
+| Vai para o servidor partilhado | Fica local |
+| --- | --- |
+| contas e sessao (`/api/auth/login`) | video e legendas (`/api/stream`, `/api/play`, `/api/subtitles`, `/api/proxy`) |
+| biblioteca, listas, diario (`/api/library`, `/api/export/json`) | catalogo (`/api/catalog`, `/api/search`, `/api/details`) |
+| perfis e ligacoes (`/api/profile/me`, `/api/mal/link`) | torrents (`/api/torrents`, `/api/debrid`) |
+| **comentarios** (`/api/comments`) | health |
+| MAL / AniList / Letterboxd (`/api/letterboxd/diary`) | watch party (`/api/wp`, para ficar na mesma maquina) |
+| watch party state, conquistas | |
+
+### CORS verificado (a peca que estava em duvida)
+
+O `cors()` so e' desligado quando `SERVE_WEB === "1"`, e o FadeHost nao serve a
+interface — logo o CORS fica aberto. Medido em `https://meida.fadehost.app`:
+
+```
+GET /api/health  (Origin: https://meida.onrender.com)
+  -> HTTP 200, Access-Control-Allow-Origin: *
+OPTIONS /api/auth/login
+  (pre-flight com POST e content-type,authorization)
+  -> HTTP 204, Allow-Origin: *, Allow-Headers: content-type,authorization,
+     Allow-Methods: GET,HEAD,PUT,PATCH,POST,DELETE
+```
+
+Ou seja: o browser consegue autenticar-se no servidor partilhado a partir da
+versao web. Sem isto, a mudanca nao funcionaria.
+
+### Testado
+
+- compilacao: o `runtime-config` novo foi para o `web/dist`.
+- servidor sem a variavel: `{"VITE_API_BASE":"","VITE_REMOTE_DATA_BASE":"https://meida.fadehost.app"}`.
+- servidor com a variavel: `{"VITE_API_BASE":"","VITE_REMOTE_DATA_BASE":"https://outro-servidor.exemplo"}` (a barra final e' removida).
+- `Cache-Control: no-store, no-cache, must-revalidate`.
+- `/api/health` e `/` continuam a responder, `/` traz `div#root`.
+- destino de cada rota reproduzindo a logica do `baseFor()` (ver tabela acima).
+- lint: 16 erros antes e 16 depois — os 16 ja la estavam.
+
+### Notas
+
+- **Falta um redesploy no Render** para isto valer na versao web. O Render so
+  redesplega depois de um push.
+- Quem tinha conta **na versao web** perde o acesso a essa conta: os dados do
+  Render deixam de ser lidos. E' preciso criar a conta outra vez (ou migrar com
+  `POST /api/admin/seed` no FadeHost, se `ADMIN_TOKEN` estiver definido).
+- A base do Render passa a guardar so catalogo e video — mais leve e mais
+  previsivel. Em troca, o FadeHost hiberna quando para, e o primeiro pedido
+  depois de um tempo parado demora uns segundos a acordar (ja acontecia com a
+  app de desktop).
+- O `node_modules` deixa de se poder envelhecer: `install:all` passou a usar
+  `npm ci`. Ver a seccao da 1.2.9 e o commit `bfd3267`.
+
 ## 1.2.9
 
 ### Corrigido: o Electron desatualizado no node_modules (build sem dar erro)

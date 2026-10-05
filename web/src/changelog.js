@@ -2,6 +2,14 @@
 // "o que mudou" depois de o utilizador atualizar a app. Mais recente em cima.
 export const CHANGELOG = [
   {
+    version: "1.3.0",
+    items: [
+      "Melhorado: a versão no browser e a app instalada passam a ver as mesmas coisas — a mesma conta, a mesma biblioteca, os mesmos comentários. Antes cada uma tinha os seus dados.",
+      "Melhorado: já não é preciso reinstalar a app para trocar de servidor de dados. Agora dá para mudar uma definição e pronto.",
+      "Corrigido: se escolheste usar a app semligação partilhada, os teus dados deixam de ir para o servidor sem isso acontecer.",
+    ],
+  },
+  {
     version: "1.2.9",
     items: [
       "Corrigido: a app deixava de abrir em vários computadores depois de uma atualização, sem dar nenhum erro — o ecrã ficava preto. Agora, antes de cada versão ser publicada, a app é verificada automaticamente e esse tipo de problema já não consegue passar despercebido.",
