@@ -1,5 +1,46 @@
 # Changelog
 
+## 1.2.6
+
+### Corrigido: a janela ficava preta (a app nao abria)
+- **Sintoma**: a app instalava e abria, mas a janela ficava preta. Sem erro, sem
+  aviso, sem nada no log. O script de reparacao dizia "instalada e completa" -
+  e estava certo, a instalacao estava boa.
+- **Causa**: `server/src/index.js` ouve sempre na porta **5175**
+  (`config.port`). Se essa porta estiver ocupada, o `app.listen` emitia
+  `EADDRINUSE` e o **backend morria no arranque**. Pior: o backend e lancado
+  como processo separado com `stdio: "inherit"`, ou seja, a saida dele ia para
+  a consola do Electron - **que numa app instalada nao existe**. O erro
+  desaparecia no vazio.
+- **Porquê "instalada e completa" e mesmo assim preta**: a installacao estava
+  correcta; o que falhava era o servidor ao arrancar, e isso acontecia depois.
+- **Agravante**: fechar e reabrir depressa. A instancia anterior nao libertava a
+  porta a tempo, a nova batia em cima e morria. Sem log novo, porque o backend
+  morre **antes** do primeiro `log.info`.
+- **Correcao**:
+  - `server/src/index.js` tenta `config.port`, e se estiver ocupada passa a
+    seguinte ( ate `port + 3`), em vez de morrer. Escreve a porta escolhida em
+    `%APPDATA%/streamapp/porta.txt`.
+  - `electron/main.cjs` le esse ficheiro (`prodUrl()`) e abre a interface na
+    porta certa, esperando por `/api/health` antes de carregar.
+  - O backend passa a escrever num ficheiro em vez de `stdio: "inherit"`:
+    `%APPDATA%/streamapp/logs/arranque-AAAA-MM-DD.log`.
+  - Se o backend morrer, aparece uma janela com o codigo de saida e a pasta do
+    log. Antes: preto e calado.
+  - `did-fail-load` e `console-message` passam a mostrar/registar o erro da
+    pagina. Antes: preto e calado.
+  - A app limpa `Cache` + `serviceworkers`/`cachestorage` ao arrancar (nunca
+    `localstorage`, `indexdb` nem `cookies`, onde estao os dados do utilizador).
+- **Testado**: duas instancias em simultaneo. A segunda escolhe a 5176 e ambas
+  respondem a `/api/health` e a `/` com `div#root`.
+
+### Diagnostico que vale a pena reter
+Um processo filho com `stdio: "inherit"` **nao tem onde escrever** quando e
+lancado por uma app empacotada (nao ha consola). Qualquer erro dele - e
+invisivel. Antes de culpar o sistema operativo, perguntar sempre: *onde vai a
+saida deste processo?* E, ao mesmo tempo, dar-lhe um ficheiro de log e um
+dialogo de erro, para a proxima vez ser obvious.
+
 ## 1.2.5
 
 ### Corrigido: a app nao abria de todo (1.2.4)

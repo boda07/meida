@@ -1,6 +1,6 @@
 {
   "name": "streamapp",
-  "version": "1.2.5",
+  "version": "1.2.6",
   "private": true,
   "description": "App pessoal tipo Stremio: catalogo TMDB + embed providers + torrents",
   "main": "electron/main.cjs",
@@ -47,11 +47,20 @@
     ],
     "extraResources": [
       {
+        "from": "server/node_modules",
+        "to": "server/node_modules",
+        "filter": [
+          "**/*"
+        ]
+      },
+      {
         "from": "server",
         "to": "server",
         "filter": [
           "**/*",
           ".env",
+          "!node_modules",
+          "!node_modules/**",
           "!data",
           "!data/**",
           "!**/*.md",
@@ -80,7 +89,8 @@
     "nsis": {
       "oneClick": true,
       "perMachine": false,
-      "allowToChangeInstallationDirectory": false
+      "allowToChangeInstallationDirectory": false,
+      "useZip": false
     },
     "publish": [
       {

@@ -2,6 +2,15 @@
 // "o que mudou" depois de o utilizador atualizar a app. Mais recente em cima.
 export const CHANGELOG = [
   {
+    version: "1.2.6",
+    items: [
+      "Corrigido: a app abria com a janela preta. Acontecia quando o servidor interno não conseguia arrancar porque a porta já estava ocupada — fechavas a app e reabrias, e a nova não tinha tempo de ficar com a porta. Agora o servidor usa outra porta automaticamente.",
+      "Corrigido: quando a app não consegue abrir, agora aparece uma janela a dizer porquê e onde está o registo do erro. Antes a janela ficava preta sem explicar nada.",
+      "Corrigido: a app limpa o cache da interface ao arrancar, para as novidades não ficarem presas numa versão antiga.",
+      "Corrigido: o servidor agora escreve um registo do que faz, para se poder ver o que está errado quando algo falha.",
+    ],
+  },
+  {
     version: "1.2.5",
     items: [
       "Corrigido: a app não abria — aparecia um erro em vez de mostrar o conteúdo. Acontecia porque o programa de instalação vinha com a versão errada do motor que faz a app correr. Se a tua app está a dar erro ao abrir, atualiza para esta versão e fica resolvido.",

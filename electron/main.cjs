@@ -14,7 +14,8 @@ if (!process.versions?.electron) {
   );
   process.exit(1);
 }
-const { app, BrowserWindow, shell, dialog, ipcMain, Menu } = require("electron");
+const { app, BrowserWindow, shell, dialog, ipcMain, Menu, session } = require("electron");
+const http = require("http");
 const path = require("path");
 const fs = require("fs");
 const { spawn } = require("child_process");
@@ -208,7 +209,21 @@ ipcMain.handle("clear-presence", (event) => {
 
 const isDev = process.env.ELECTRON_DEV === "1";
 const DEV_URL = "http://localhost:5173";
-const PROD_URL = "http://localhost:5175";
+const PROD_PORT_DEFAULT = 5175;
+// O backend pode ficar noutra porta se a 5175 estiver ocupada (fiz-lo morrer
+// antes deixava a janela preta sem explicacao). Ele escreve a porta escolhida
+// neste ficheiro, e aqui le-se para a app abrir na porta certa.
+const PORT_FILE = () => path.join(app.getPath("userData"), "porta.txt");
+function prodUrl() {
+  try {
+    const p = parseInt(fs.readFileSync(PORT_FILE(), "utf8").trim(), 10);
+    if (p > 0 && p < 65536) return `http://127.0.0.1:${p}`;
+  } catch {
+    /* sem ficheiro: usa a porta por omissao */
+  }
+  return `http://127.0.0.1:${PROD_PORT_DEFAULT}`;
+}
+const PROD_URL = isDev ? "http://localhost:5175" : "http://127.0.0.1:5175";
 
 let serverProc = null;
 let win = null;
@@ -241,6 +256,23 @@ function closeSplash() {
 // Em producao corre o backend usando o Node embutido no Electron.
 // Quando empacotado, o server e o web/dist ficam em "resources" (fora do asar).
 function startServer() {
+  // Log do arranque do backend, em ficheiro. E o unico sítio onde se ve o que
+  // o backend fez ou deixou de fazer - essencial quando a janela fica preta.
+  let logFd = "ignore";
+  try {
+    const dir = path.join(app.getPath("userData"), "logs");
+    fs.mkdirSync(dir, { recursive: true });
+    const stamp = new Date().toISOString().slice(0, 10);
+    logFd = fs.openSync(path.join(dir, `arranque-${stamp}.log`), "a");
+    fs.writeSync(
+      logFd,
+      `--- arranque ${new Date().toISOString()} ---\n` +
+        `electron=${process.versions.electron} node=${process.versions.node}\n`
+    );
+  } catch {
+    logFd = "ignore";
+  }
+
   const serverBase = app.isPackaged
     ? path.join(process.resourcesPath, "server")
     : path.join(__dirname, "..", "server");
@@ -259,6 +291,8 @@ function startServer() {
       DB_DIR: app.getPath("userData"),
       // O servidor local nunca precisa de estar exposto a rede.
       HOST: "127.0.0.1",
+      // Se a porta estiver ocupada o backend escolhe outra e escreve-a aqui.
+      MEIDA_PORT_FILE: PORT_FILE(),
       // Modo "dados na nuvem": a app serve o UI e o video localmente, mas as
       // rotas de dados (conta, biblioteca, social) vao diretas para o servidor
       // partilhado; as rotas de video locais (Real-Debrid) aceitam o token
@@ -267,7 +301,43 @@ function startServer() {
         ? { MEIDA_REMOTE_DATA_URL: remoteUrl }
         : {}),
     },
-    stdio: "inherit",
+    // A saida do backend vai para um ficheiro. Com "inherit" ia para a consola
+    // do Electron, que numa app instalada nao existe - por isso, se o backend
+    // morresse ao arrancar (falta uma dependencia, permissao negada), nao
+    // aparecia nada em lado nenhum e a janela ficava preta sem explicacao.
+    stdio: ["ignore", logFd, logFd],
+  });
+
+  // Se o backend morrer, escreve no log porque. Antes falhava em silencio.
+  serverProc.on("exit", (code, signal) => {
+    const msg =
+      `[backend] morreu: codigo=${code} sinal=${signal} ` +
+      `(${new Date().toISOString()})\n`;
+    console.error(msg);
+    try {
+      fs.appendFileSync(logFd, msg);
+    } catch {}
+    if (code !== 0 && code !== null) {
+      try {
+        dialog.showMessageBox({
+          type: "error",
+          title: "MEIDA - o servidor nao arrancou",
+          message: "A app nao conseguiu iniciar o servidor interno.",
+          detail:
+            `Codigo: ${code}\n` +
+            `Sinal: ${signal}\n\n` +
+            `O ficheiro com o erro e' este:\n` +
+            `${path.join(app.getPath("userData"), "logs")}\n\n` +
+            `Manda essa pasta a quem te deu a app.`,
+          buttons: ["Fechar"],
+        });
+      } catch {}
+    }
+  });
+  serverProc.stderr?.on("data", (d) => {
+    try {
+      fs.appendFileSync(logFd, String(d));
+    } catch {}
   });
 }
 
@@ -368,13 +438,59 @@ function createWindow() {
   win.once("ready-to-show", reveal);
   win.webContents.on("did-finish-load", reveal);
 
+  // Se a pagina nao carregar, a janela fica preta sem explicar nada. Antes isso
+  // deixava a pessoa sem ideia nenhuma do que se passou - e sem poder ajudar.
+  // Agora diz o que aconteceu.
+  win.webContents.on("did-fail-load", (_e, code, desc, url) => {
+    console.error("[load] falhou:", code, desc, url);
+    dialog.showMessageBox(win, {
+      type: "error",
+      title: "MEIDA nao conseguiu abrir",
+      message: "A janela ficou em branco.",
+      detail:
+        `Nao consegui carregar a interface.\n\n` +
+        `Motivo: ${desc || "desconhecido"} (codigo ${code})\n` +
+        `Endereco: ${url}\n\n` +
+        `Isto e um erro do programa, nao do teu PC. Anota esta mensagem e ` +
+        `manda a quem te deu a app.`,
+      buttons: ["Fechar"],
+    });
+  });
+  // Erros da pagina (fetch mal formado, modulo em falta) vao para a consola do
+  // Electron - que em modo instalado ninguem ve. Guardam-se num ficheiro para
+  // se poder diagnosticar depois.
+  win.webContents.on("console-message", (_e, level, msg, line, src) => {
+    if (level >= 2) {
+      console.error(`[pagina] ${msg} (${src}:${line})`);
+    }
+  });
+
   // A app e servida SEMPRE pelo servidor local deste computador: e ele que corre
   // o video/streaming. Em modo "dados na nuvem" o frontend encaminha as rotas de
   // dados (conta, biblioteca, social) para o servidor remoto partilhado.
   if (isDev) {
     loadWithRetry(DEV_URL);
   } else {
-    loadWithRetry(PROD_URL);
+    // Espera que o backend escreva a porta escolhida (ou que a janela apanhe a
+    // porta por omissao) antes de abrir a interface.
+    const abrir = (tentativas) => {
+      const url = prodUrl();
+      const teste = http
+        .get(`${url}/api/health`, (res) => {
+          res.resume();
+          loadWithRetry(url);
+        })
+        .on("error", () => {
+          if (tentativas > 0) {
+            setTimeout(() => abrir(tentativas - 1), 500);
+          } else {
+            // Nao respondeu: mostra o erro em vez de deixar preto.
+            loadWithRetry(url);
+          }
+        });
+      teste.setTimeout(4000, () => teste.destroy());
+    };
+    abrir(60);
   }
 
   if (isDev) win.webContents.openDevTools({ mode: "detach" });
@@ -429,6 +545,30 @@ app.whenReady().then(() => {
     serverMode = "local";
   }
   createSplash();
+  // Limpa o cache da interface ao arrancar. Sem isto, depois de uma
+  // atualizacao a app abre com o index.html e os ficheiros JS de uma versao
+  // antiga que ficaram no perfil do Electron: a lista de novidades prende-se
+  // numa versao velha, o bundle antigo pede ficheiros que ja nao existem
+  // ("fail to fetch") e a janela fica preta. E o pior sintoma de todos porque
+  // parece que a app esta partida.
+  //
+  // "serviceworkers" e "cachestorage" sao os culpados: o service worker segura
+  // uma copia antiga da interface e so se larga se for explicitamente
+  // descartado - o clearCache() sozinho nao chega.
+  //
+  // So na app instalada (em dev o Vite nao quer cache limpo). Nao apaga nada do
+  // utilizador: toco-se em "serviceworkers" e "cachestorage", nunca em
+  // "localstorage", "indexdb" ou "cookies", que e' onde estao as listas, as
+  // notas e a sessao.
+  if (!isDev) {
+    const sess = session.defaultSession;
+    sess.clearCache().catch(() => {});
+    sess
+      .clearStorageData({
+        storages: ["serviceworkers", "cachestorage"],
+      })
+      .catch(() => {});
+  }
   // O servidor local arranca SEMPRE (serve a app + o video). Em modo "dados na
   // nuvem" as rotas de dados vao para o servidor remoto partilhado, mas o UI e o
   // streaming continuam a correr neste computador.

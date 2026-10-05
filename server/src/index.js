@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
 import { fileURLToPath } from "node:url";
+import { writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { config } from "./config.js";
 import { catalogRouter } from "./routes/catalog.js";
@@ -103,10 +104,59 @@ app.use((err, req, res, _next) => {
   res.status(err.status || 500).json({ error: err.message });
 });
 
-app.listen(config.port, config.host, () => {
-  log.info("backend", `Backend a correr em http://${config.host}:${config.port}`);
-  // Force reload
-  if (!config.tmdb.apiKey && !config.tmdb.accessToken) {
-    log.warn("backend", "TMDB nao configurado. Cria server/.env a partir de server/.env.example.");
+// Arranca a escutar. Se a porta estiver ocupada, tenta a seguinte em vez de
+// morrer: antes, um EADDRINUSE matava o servidor no arranque e a janela ficava
+// preta sem mostrar nada (foi o que aconteceu num PC de um utilizador, com
+// outra coisa a usar a porta 5175).
+const PORTAS = [config.port, config.port + 1, config.port + 2, config.port + 3];
+let portaEscolhida = null;
+
+function tentar(indice) {
+  if (indice >= PORTAS.length) {
+    log.error(
+      "backend",
+      `Nenhuma porta livre entre ${PORTAS[0]} e ${PORTAS[PORTAS.length - 1]}. Abortado.`
+    );
+    process.exit(1);
   }
-});
+  const porta = PORTAS[indice];
+  const servidor = app.listen(porta, config.host);
+
+  servidor.once("listening", () => {
+    portaEscolhida = porta;
+    // O Electron precisa de saber em que porta ficou. Le-o do ficheiro.
+    // (num ficheiro ESM nao se pode usar require.)
+    try {
+      if (process.env.MEIDA_PORT_FILE) {
+        writeFileSync(process.env.MEIDA_PORT_FILE, String(porta));
+      }
+    } catch {
+      /* sem ficheiro de porta e' normal em dev */
+    }
+    log.info("backend", `Backend a correr em http://${config.host}:${porta}`);
+    if (porta !== config.port) {
+      log.warn(
+        "backend",
+        `A porta ${config.port} estava ocupada; a app ficou na porta ${porta}.`
+      );
+    }
+    if (!config.tmdb.apiKey && !config.tmdb.accessToken) {
+      log.warn(
+        "backend",
+        "TMDB nao configurado. Cria server/.env a partir de server/.env.example."
+      );
+    }
+  });
+
+  servidor.once("error", (err) => {
+    if (err && err.code === "EADDRINUSE") {
+      log.warn("backend", `Porta ${porta} ocupada. A tentar a seguinte...`);
+      servidor.close(() => tentar(indice + 1));
+      return;
+    }
+    log.error("backend", `Erro ao escutar: ${err && err.message}`);
+    process.exit(1);
+  });
+}
+
+tentar(0);
