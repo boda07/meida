@@ -60,6 +60,30 @@ A escala é **1–10**, não semver. O último número é um contador que vai de
 
 Se for preciso uma release apenas textual (notas), usar `gh release create` **depois** do `app:publish` com `--notes-file`.
 
+### O `app:publish` falha em ~metade das vezes: arruma com `scripts/fix-latest.cjs`
+
+Já falhou **quatro vezes** (1.2.0, 1.2.1, 1.2.2 e 1.3.2), todas com `422 Validation Failed` ao `POST /releases`. O electron-builder **não sabe repetir**: com a release já criada ele continua a tentar *create* e volta a falhar. Por isso o passo 5 acima acaba com `Exited with code 1` **e mesmo assim a release existe, publicada e pela metade**.
+
+Quando isso acontecer, **não repitas o `app:publish`** (reconstroi 228 MB e volta a falhar). Corre:
+
+```
+node scripts/fix-latest.cjs <versao>
+```
+
+O script é **idempotente** — só envia o que falta ou o que mudou de tamanho, por isso repetir é barato. E no fim **verifica**: os 3 assets presentes, e o `latest.yml` público a devolver a versão certa *e* o `sha512` a bater com o do instalador assinado. Se algo estiver errado, sai com erro.
+
+Duas coisas que o script faz e que são fáceis de fazer mal à mão:
+
+- **Gera o `latest.yml` a partir do `.exe` já assinado.** A assinatura acrescenta bytes; um hash calculado antes não bate e o updater rejeita o download. Na 1.3.2 o `release\latest.yml` era ainda o da **1.3.1** (timestamp 01:17 contra 04:22 do `.exe`), porque a build morreu antes de o escrever — publicar aquilo mandava instalar a versão antiga.
+- **Usa o nome com tracos** (`MEIDA-Setup-x.y.z.exe`), não o nome em disco (`MEIDA Setup x.y.z.exe`). É assim que o updater procura, e é o nome a que o `.blockmap` já publicado se chama.
+
+Notas de PowerShell que custaram tempo:
+
+- `curl` está aliased a `Invoke-WebRequest`, que não aceita `-sIL`. Usar `curl.exe` (ou `execFileSync("curl", …)` a partir de Node, que contorna o alias).
+- `gh api` **não** aceita `--repo` (só `gh release upload` aceita). Passar o endpoint completo: `gh api repos/boda07/meida/releases/tags/v1.3.2`.
+- `gh` despeja o manual inteiro no stderr quando rejeita um flag — capturar só a primeira linha, senão o output explode.
+- O `gh` **não** está em `C:\Program Files\Git\cmd\`, está em `C:\Program Files\GitHub CLI\`. Se um script correr sem esse PATH dá `pid: 0, stderr: undefined`, que parece outra coisa toda.
+
 ## Regras de edição
 
 - **NUNCA escrever caracteres chineses.** Nem nas mensagens ao utilizador, nem em ficheiros, nem em commits. O utilizador já reclamou várias vezes (2026-10-04). CJK = U+2E80–U+9FFF (mais U+3000–U+303F e U+FF00–U+FFEF). **Antes de mostrar texto, revê-lo.** Em ficheiros, verificar sempre com:
