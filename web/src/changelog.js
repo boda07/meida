@@ -2,6 +2,15 @@
 // "o que mudou" depois de o utilizador atualizar a app. Mais recente em cima.
 export const CHANGELOG = [
   {
+    version: "1.3.1",
+    items: [
+      "Corrigido: o vídeo começava sozinho mesmo com a reprodução automática desligada nas definições.",
+      "Corrigido: o player deixava de mostrar um vídeo à partida e saltava sozinho para outro servidor. Agora só usa servidores que funcionam, e se mudar de servidor avisa-te qual falhou.",
+      "Corrigido: aparecia um erro a dizer que a janela ficou em branco quando a app estava perfeitamente bem. Era um aviso falso que aparecia a cada 500 ms durante o arranque.",
+      "Corrigido: quando a app consegue mesmo abrir, o erro que sobra é menos barulhento e indica onde está o registo com o detalhe.",
+    ],
+  },
+  {
     version: "1.3.0",
     items: [
       "Melhorado: a versão no browser e a app instalada passam a ver as mesmas coisas — a mesma conta, a mesma biblioteca, os mesmos comentários. Antes cada uma tinha os seus dados.",

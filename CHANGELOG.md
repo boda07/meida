@@ -1,5 +1,82 @@
 # Changelog
 
+## 1.3.1
+
+### Corrigido: o video comecava sozinho com o autoplay desligado
+- `web/src/components/Player.jsx` punha **sempre** `allow="autoplay"` no iframe.
+  Isso da ao player do provider permissao para arrancar sozinho, independently
+  da definicao nas Definicoes. Agora essa permissao so entra quando o autoplay
+  esta ligado.
+- O `applyPlaybackPrefs` ja acrescentava `autoplay=false` ao URL, mas poucos
+  providers respeitam o parametro quando o iframe tem a permissao — o parametro
+  sozinho nao chega.
+
+### Corrigido: o player saltava sozinho de servidor a cada 15 s
+Bug com tres partes, todas em `web/src/components/Player.jsx`:
+
+1. **`nextAlive(i)` devolvia a propria fonte que estava a falhar.** O loop
+   comecava em `j = i`, logo a fonte partida era logo devolvida como "a
+   seguinte". Como o timeout de 15 s usava essa funcao, o auto-fallback nunca
+   saia da fonte que falhava e reiniciava a mesma. Passa a comecar em `i + 1` e
+   devolve `i` quando nao ha mais nenhuma.
+2. **Um provider devolvia um `data:` URL.** O caso reportado foi
+   `data:application/pdf;base64,aG1t` — um PDF disfarçado de pagina. O Chromium
+   aborta o carregamento, o iframe **nunca dispara `load`**, e por isso o timeout
+   de 15 s expirava sempre. Agora a lista e filtrada antes de ser usada
+   (`ePlayerValido`): so entram URLs `http(s)`. Um `data:` URL tambem nao pode
+   receber `?autoplay=` — isso juntaria lixo a um base64.
+3. **O timeout mexia mesmo nao havendo alternativa.** Agora, se a fonte que
+   falhou era a ultima, para em vez de ficar a recarregar a mesma.
+
+Acrescentado: quando a fonte muda sozinha, aparece um aviso discreto
+("<fonte> nao carregou · a usar <fonte>") em vez da marca mudar sem explicacao.
+
+### Corrigido: o aviso de "a janela ficou em branco" disparava sem ser preciso
+O `did-fail-load` do Electron dispara **tanto para a janela principal como para
+cada iframe**, e o handler so lia os quatro primeiros argumentos. Portanto um
+iframe de provider a falhar era tratado como se a janela inteira tivesse
+caido — com a app perfeitamente saudavel (que era o sintoma reportado: o aviso
+ aparecia sempre que o video comecava ou se mudava de servidor, e o video
+funcionava na mesma apos fechar).
+
+- O quinto argumento (`isMainFrame`, confirmado no `electron.d.ts`) passa a ser
+  lido: um iframe que falha so fica registado.
+- **`-102` (ERR_CONNECTION_REFUSED) durante o arranque.** O `loadWithRetry` tenta
+  ate 80 vezes, e cada tentativa falhada disparava um "a janela ficou em branco"
+  a cada 500 ms. Agora o handler sabe quando ainda ha tentativas pendentes
+  (`tentativasRestantes`) e so avisa se ja nao ha mais — ou seja, se o servidor
+  cair mesmo a serio depois da app ter aberto. O contador e' reposto no
+  `did-finish-load`, para que uma queda posterior volte a avisar.
+- **O URL saiu da caixa de dialogo.** Um `data:` URL em base64 nao cabe, e o
+  utilizador via so um bocado do codigo (foi o "ts" que apareceu no ecrã do
+  utilizador). O URL completo fica no registo, com o caminho indicado.
+
+### Verificado
+
+- Regra do `did-fail-load`, com a logica reproduzida: iframe falhado sem dialogo;
+  `-102` com tentativas pendentes sem dialogo; `-102` e `-105` sem tentativas
+  pendentes com dialogo. Um dialogo, so no ultimo caso.
+- `ePlayerValido`: aceita `http(s)`, rejeita `data:`, `javascript:`, vazio e
+  `null` — incluindo o `data:application/pdf` do caso reportado.
+- `nextAlive`: salta para a seguinte, roda para a anterior quando e' a ultima, e
+  devolve o proprio indice quando nao ha nenhuma alternativa.
+- `allow` muda conforme a definicao: com autoplay ligado leva `autoplay; ` a
+  frente, desligado nao leva.
+- ESLint e `npm run build` do frontend limpos.
+- O `lint` do repositorio continua nos mesmos 16 erros que ja estavam.
+
+### Notas
+
+- O instalador e' **unico e serve as duas arquitecturas**: `builder-debug.yml`
+  tem `x64:`, `arm64:` e `nsis:`, e o `latest.yml` aponta para um so ficheiro
+  (`MEIDA-Setup-1.3.1.exe`). O `electron-builder` mete os dois apps no mesmo
+  instalador e deixa-o extrair o certo conforme o PC. Por isso o botao
+  "Procurar atualizacao" funciona igual em ARM e x86.
+- A script de reparacao continua a repor os ficheiros a partir da zip porque o
+  instalador do electron-builder ja demonstrou sair com codigo 0 sem extrair
+  ficheiros (o bug dos arm64). Para uma atualizacao de rotina o botao chega; a
+  linha e' para quando a instalacao esta estragada.
+
 ## 1.3.0
 
 ### A versao web passa a ver os mesmos dados que a app de desktop
