@@ -11,6 +11,8 @@ import { useSettings } from "../settings/SettingsContext.jsx";
 import Avatar from "../components/Avatar.jsx";
 import LoadingStatus from "../components/LoadingStatus.jsx";
 import { CheckIcon } from "../components/icons.jsx";
+import ProfileStats from "../components/ProfileStats.jsx";
+import { statsFrom } from "../components/profileStats.js";
 
 // Título a mostrar: para anime respeita a opção ingles/romaji guardada no servidor.
 function displayTitle(it, romaji) {
@@ -97,14 +99,22 @@ export default function UserProfile() {
 
   const canView = Boolean(profile?.canView);
 
+  // A biblioteca carrega sempre que se pode ver, e nao so quando a aba
+  // "Biblioteca" esta' activa: e' dela que saem a capa e os numeros, e esses
+  // fazem parte da identidade do perfil. Se so carregasse com a aba, abrir o
+  // perfil em "Seguidores" mostraria um perfil sem capa nem numeros.
+  useEffect(() => {
+    if (!canView || items !== null) return;
+    api
+      .userLibrary(username)
+      .then((d) => setItems(d.items || []))
+      .catch(() => setItems([]));
+  }, [canView, username, items]);
+
+  // O resto das abas carrega so quando pedidas.
   useEffect(() => {
     if (!canView) return;
-    if (tab === "library" && items === null) {
-      api
-        .userLibrary(username)
-        .then((d) => setItems(d.items || []))
-        .catch(() => setItems([]));
-    } else if (tab === "lists" && lists === null) {
+    if (tab === "lists" && lists === null) {
       api
         .userLists(username)
         .then((d) => setLists(d.lists || []))
@@ -115,7 +125,7 @@ export default function UserProfile() {
         .then((d) => setPeople(d.users || []))
         .catch(() => setPeople([]));
     }
-  }, [canView, tab, username, items, lists, people]);
+  }, [canView, tab, username, lists, people]);
 
   async function toggleFollow() {
     if (!user || !profile) return;
@@ -158,22 +168,32 @@ export default function UserProfile() {
 
   const u = profile.user;
   const isMe = profile.isMe;
+  // As estatisticas so fazem sentido com a biblioteca carregada. Durante o
+  // carregamento a zona dos numeros nao aparece: mostrar zeros que a seguir
+  // seriam numeros reais e' pior do que nao mostrar nada.
+  const stats = items === null ? null : statsFrom(items);
+  // Num perfil privado visto por outra pessoa a biblioteca nao vem, e por isso
+  // nao ha capa nem numeros. Mostrar "0 titulos" seria mentira: o perfil pode
+  // ter muitos, e so que aquele utilizador nao os pode ver.
+  const temDados = items !== null && items.length > 0;
 
   return (
     <div className="sub-page profile-page">
-      <header className="profile-head">
-        <Avatar avatar={u.avatar} name={u.username} size={84} />
-        <div className="profile-info">
+      {/* Identidade: avatar, nome, bio e accoes. Sem capa e sem sobreposicoes,
+          ver o comentario no CSS. */}
+      <header className="profile-header">
+        <Avatar avatar={u.avatar} name={u.username} size={76} />
+        <div className="profile-id">
           <h2 className="profile-username">{u.username}</h2>
           {u.bio && <p className="profile-bio">{u.bio}</p>}
-          <div className="profile-counts">
-            <button className="profile-count" onClick={() => switchTab("followers")}>
-              <strong>{profile.followers}</strong> seguidores
+          <div className="profile-social">
+            <button className="profile-social-link" onClick={() => switchTab("followers")}>
+              {profile.followers} seguidores
             </button>
-            <button className="profile-count" onClick={() => switchTab("following")}>
-              <strong>{profile.following}</strong> a seguir
+            <button className="profile-social-link" onClick={() => switchTab("following")}>
+              {profile.following} a seguir
             </button>
-            {!u.isPublic && <span className="profile-private">🔒 Perfil privado</span>}
+            {!u.isPublic && <span className="profile-private">Perfil privado</span>}
           </div>
         </div>
         <div className="profile-actions">
@@ -188,23 +208,52 @@ export default function UserProfile() {
                 onClick={toggleFollow}
                 disabled={busy}
               >
-                {profile.isFollowing ? "A seguir ✓" : "Seguir"}
+                {profile.isFollowing ? "A seguir" : "Seguir"}
               </button>
             )
           )}
         </div>
       </header>
 
-      <div className="profile-tabs">
+      {/* Números: quantos títulos, quantos vistos, quantos por ver, e a média das
+          notas. São texto, não cartões — o número grande carrega o peso e o
+          rótulo pequeno diz o que é. */}
+      {stats && temDados && (
+        <dl className="profile-stats">
+          <div className="profile-stat">
+            <dt>títulos</dt>
+            <dd>{stats.total}</dd>
+          </div>
+          <div className="profile-stat">
+            <dt>vistos</dt>
+            <dd>{stats.vistos}</dd>
+          </div>
+          <div className="profile-stat">
+            <dt>a ver</dt>
+            <dd>{stats.aVer}</dd>
+          </div>
+          {stats.media !== null && (
+            <div className="profile-stat">
+              <dt>média</dt>
+              <dd>{stats.media}</dd>
+            </div>
+          )}
+        </dl>
+      )}
+
+      <div className="profile-tabs" role="tablist">
         {[
           { id: "library", label: "Biblioteca" },
           { id: "lists", label: "Listas" },
+          { id: "stats", label: "Estatísticas" },
           { id: "followers", label: "Seguidores" },
           { id: "following", label: "A seguir" },
         ].map((t) => (
           <button
             key={t.id}
-            className={`tf-chip ${tab === t.id ? "active" : ""}`}
+            role="tab"
+            aria-selected={tab === t.id}
+            className={`profile-tab ${tab === t.id ? "active" : ""}`}
             onClick={() => switchTab(t.id)}
           >
             {t.label}
@@ -219,6 +268,8 @@ export default function UserProfile() {
         </p>
       ) : tab === "library" ? (
         <PosterGrid items={items} empty="A biblioteca está vazia." romaji={romaji} />
+      ) : tab === "stats" ? (
+        <ProfileStats items={items} />
       ) : tab === "lists" ? (
         <div className="profile-lists">
           {lists === null ? (

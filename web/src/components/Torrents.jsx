@@ -22,7 +22,7 @@ function matchAudio(t, mode) {
 // Procura torrents (Torrentio + YTS...) e reproduz o escolhido no nosso player.
 // Se o Real-Debrid estiver ligado, os torrents em cache reproduzem logo (sem
 // esperar por peers); os outros caem para o WebTorrent local.
-export default function Torrents({ type, imdb, title, season, episode, anime, defaultAudio, startAt, onProgress }) {
+export default function Torrents({ type, imdb, title, season, episode, anime, defaultAudio, startAt, onProgress, onAudioChange }) {
   const [list, setList] = useState(null);
   const [error, setError] = useState(null);
   const [selected, setSelected] = useState(null);
@@ -34,6 +34,18 @@ export default function Torrents({ type, imdb, title, season, episode, anime, de
   const [audio, setAudio] = useState(
     anime ? (defaultAudio === "dub" ? "dub" : "sub") : "all"
   );
+
+  // Escolher aqui também grava. Sem isto, o dub escolhido nos torrents era
+  // estado interno deste componente: perdia-se ao sair da página e o "continua
+  // a ver" voltava ao sub.
+  //
+  // "all" só quer dizer "não filtrar por áudio" — não corresponde a nenhum
+  // valor de URL de provider, por isso o pai é que decide se isso deve mudar a
+  // preferência guardada do título. Passamos o valor e deixamos a decisão ao pai.
+  function mudarAudio(a) {
+    setAudio(a);
+    onAudioChange?.(a);
+  }
   // Real-Debrid: { linked, instant: Map<infoHash, true> }
   const [debrid, setDebrid] = useState(null);
   // URL já resolvido (Debrid é async: primeiro resolve, depois toca).
@@ -219,7 +231,7 @@ export default function Torrents({ type, imdb, title, season, episode, anime, de
               <button
                 key={a.id}
                 className={`tf-chip ${audio === a.id ? "active" : ""}`}
-                onClick={() => setAudio(a.id)}
+                onClick={() => mudarAudio(a.id)}
               >
                 {a.label}
               </button>

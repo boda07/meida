@@ -459,14 +459,21 @@ export function finishProgress(e) {
   return tx(() => {
     ensureProgressRow(e.userId, e.type, e.tmdbId);
     const cur = readProgress(e.userId, e.type, e.tmdbId);
-    const hasNext = e.nextSeason != null && e.nextEpisode != null;
+    // So o `nextEpisode` e' obrigatorio. A TEMPORADA e' opcional, porque no anime
+    // os episodios sao globais (1..N) e nao ha temporada: o cliente manda
+    // `nextSeason: null` e antes isto era tratado como "nao ha proximo", o que
+    // marcava o anime como acabado ao fim de cada episodio e o tirava do
+    // "continua a ver" (medido a 2026-10-06, no Dragon Ball).
+    const hasNext = e.nextEpisode != null;
     patchProgress(e.userId, e.type, e.tmdbId, {
       title: e.title,
       poster: e.poster,
       startedAt: cur.startedAt ?? now(),
       finishedAt: now(),
+      // `position: null` apaga a posicao a meio: o proximo episodio comeca do
+      // principio, e o "continua a ver" deixa de mostrar uma barra quase cheia.
       position: null,
-      season: hasNext ? e.nextSeason : e.season,
+      season: hasNext ? e.nextSeason ?? cur.season ?? null : e.season,
       episode: hasNext ? e.nextEpisode : e.episode,
       status: hasNext ? "watching" : "finished",
     });

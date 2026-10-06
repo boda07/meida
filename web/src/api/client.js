@@ -103,6 +103,38 @@ export const settingsStore = {
   },
 };
 
+// Áudio POR TÍTULO (anime): "dub" ou "sub", guardado à parte das Definições.
+//
+// Porquê não nas Definições: há animes que só existem dobrados e outros que
+// não têm dobrado nenhum. Uma definição global obriga a trocar sempre — que era
+// o que se passava com o Dragon Ball (medido a 2026-10-06).
+//
+// Chave "tipo:id" (ex.: "anime:1234"). Sem entrada = segue a Definição global.
+// Fica em localStorage como o resto das preferências: NÃO vai para o servidor,
+// portanto não acompanha entre PCs. Quando chegar a hora de sincronizar, é este
+// objeto que passa a ser uma coluna na tabela do utilizador.
+const AUDIO_KEY = "streamapp_audio_titulos";
+function lerAudio() {
+  try {
+    const v = JSON.parse(localStorage.getItem(AUDIO_KEY) || "{}");
+    return v && typeof v === "object" ? v : {};
+  } catch {
+    return {};
+  }
+}
+export const audioTituloStore = {
+  get(chave) {
+    const v = lerAudio()[chave];
+    return v === "dub" || v === "sub" ? v : null;
+  },
+  set(chave, audio) {
+    if (audio !== "dub" && audio !== "sub") return;
+    const v = lerAudio();
+    v[chave] = audio;
+    localStorage.setItem(AUDIO_KEY, JSON.stringify(v));
+  },
+};
+
 // Parametros de idioma (+ conteudo adulto) a juntar aos pedidos de catálogo.
 function langParams() {
   const s = settingsStore.get();

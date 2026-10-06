@@ -93,12 +93,19 @@ export default function Player({ embeds, deadIds, title, startIndex = 0 }) {
       clearTimeout(timer);
       iframe?.removeEventListener("load", onload);
     };
-  }, [active, lista, deadIds, index]);
+    // `reloadKey` TEM de estar nesta lista, e nao e' por cerimonia: o efeito de
+    // cima faz `setReloadKey(k + 1)` ao abrir, e o `key` do iframe obriga o
+    // React a deitar fora o elemento e criar outro. Sem esta dependencia, este
+    // efeito nao voltava a correr e o `load` ficava ligado ao iframe que ja
+    // tinha ido para o caixote — ou seja, nunca chegava. O aviso "a carregar"
+    // ficava no ecra com o video a dar, e o auto-fallback de 15s chegava a
+    // trocar de fonte com o video a reproduzir bem.
+  }, [active, lista, deadIds, index, reloadKey]);
 
   if (!active) return null;
 
   return (
-    <div className="player" ref={iframeRef}>
+    <div className="player">
       <iframe
         key={reloadKey}
         ref={iframeRef}

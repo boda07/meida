@@ -2,6 +2,20 @@
 // "o que mudou" depois de o utilizador atualizar a app. Mais recente em cima.
 export const CHANGELOG = [
   {
+    version: "1.3.2",
+    items: [
+      "Novo: o perfil tem uma aba de Estatísticas, com os teus géneros mais vistos, que tipos vês, como se distribuem as tuas notas e os títulos que mais te marcaram.",
+      "Melhorado: o perfil deixou de ter aquela faixa com uma imagem esticada no topo, que tapava o teu nome e ficava esquisita quando o ecrã era grande. O nome é agora a coisa maior do perfil, e o bloco usa a largura toda do ecrã.",
+      "Corrigido: quando acabavas um episódio de anime, o título saía do “Continua a ver” em vez de passar ao episódio seguinte. Só sai mesmo quando já não há episódios a seguir — e numa série, quando acaba a temporada, passa para a primeira da seguinte.",
+      "Corrigido: as legendas deixavam de aparecer em alguns episódios. Era o mesmo problema do aviso que fica no ecrã: a app achava que o vídeo não carregou e mudava de servidor a meio, já com o vídeo a dar.",
+      "Corrigido: o aviso “a carregar” ficava no canto do vídeo mesmo depois de o vídeo estar a passar.",
+      "Novo: o áudio (legendado ou dobrado) fica agora guardado por título. Antes tinhas de escolher de todas as vezes, porque não se guardava — e como há animes que só existem dobrados, a escolha nas definições não resolvia.",
+      "Corrigido: o 111Movies deixou de funcionar (o sítio desapareceu da internet). Passou a usar o servidor de vídeo que ficou de pé, que é mais rápido e traz legendas, Chromecast e janela flutuante.",
+      "Melhorado: o bloqueador de anúncios aprendeu 16 sítios novos que passavam por ele. Entre eles havia um que estava a gravar o que fazias dentro do leitor e a mandar para a Microsoft — esse já não carrega.",
+      "Melhorado: quando decides se queres legendado ou dobrado dentro da lista de transferências, a escolha também fica guardada.",
+    ],
+  },
+  {
     version: "1.3.1",
     items: [
       "Corrigido: o vídeo começava sozinho mesmo com a reprodução automática desligada nas definições.",

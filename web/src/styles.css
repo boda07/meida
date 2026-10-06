@@ -4439,60 +4439,90 @@ h2 {
 }
 
 /* ===== Perfis e pessoas ===== */
+
+/* Sem max-width: o limite de 1200px parava o cabecalho a meio do ecra largo,
+   enquanto a grelha de cartazes de baixo seguia ate ao fim. Ficava um bloco
+   estreito em cima de um largo em baixo, e a linha do lado direito parecia
+   estragada. Agora o cabecalho, os numeros, os separadores e a grelha
+   ocupam exactamente a mesma largura. */
 .profile-page {
-  max-width: 1200px;
+  max-width: none;
 }
 
-.profile-head {
+/* Perfil: identidade, numeros, separadores.
+
+   SEM CAPA. A capa era um cartaz vertical esticado para panoramica e deu
+   problema de tres maneiras seguidas: ficava presa aos 1200px do content num
+   ecra largo (sobrava preto ao lado), o degradue tapava o nome (o fade tinha
+   z-index 2 e o bloco da identidade nao tinha nenhum), e o avatar a pousar
+   sobre a capa obrigava a margens negativas. Em vez de a corrigir uma terceira
+   vez, saiu.
+
+   O que fica e' fluxo normal, de cima para baixo: sem posicao absoluta, sem
+   margem negativa, sem nada por cima de nada. Nao ha largura de ecra onde isto
+   se desfaca. */
+
+/* Identidade: avatar a esquerda, nome e bio ao lado, accoes a direita. Tudo
+   alinhado pelo topo, na mesma linha de base. */
+.profile-header {
   display: flex;
-  align-items: center;
-  gap: 20px;
+  align-items: flex-start;
+  gap: 8px 24px;
   flex-wrap: wrap;
-  padding-bottom: 20px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-.profile-info {
-  flex: 1;
-  min-width: 200px;
+.profile-id {
+  flex: 1 1 260px;
+  min-width: 0;
 }
 
+/* O nome e' o titulo da pagina: a coisa maior que aqui dentro. Archivo 700
+   com o entreletra apertado, para as letras nao se abrirem em nomes
+   compridos. */
 .profile-username {
   margin: 0;
-  font-size: 26px;
+  font-family: "Archivo", sans-serif;
+  font-size: 34px;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  line-height: 1.08;
+  color: var(--text);
 }
 
+/* Bio: no maximo 62 caracteres por linha, para se ler sem saltar a vista de
+   uma ponta a outra da pagina. */
 .profile-bio {
-  margin: 6px 0 0;
+  margin: 8px 0 0;
   color: var(--text-secondary);
-  font-size: 14px;
-  max-width: 560px;
+  font-size: 14.5px;
+  line-height: 1.55;
+  max-width: 62ch;
 }
 
-.profile-counts {
+/* seguidores / a seguir: sao ligacoes, nao numeros principais — por isso sao
+   discretos, ao contrario dos numeros da biblioteca. */
+.profile-social {
   display: flex;
   align-items: center;
-  gap: 16px;
-  margin-top: 10px;
+  gap: 18px;
+  margin-top: 12px;
   flex-wrap: wrap;
 }
 
-.profile-count {
+.profile-social-link {
   background: none;
   border: none;
   color: var(--text-secondary);
   font-family: inherit;
-  font-size: 14px;
+  font-size: 13px;
   cursor: pointer;
   padding: 0;
+  border-bottom: 1px solid transparent;
 }
 
-.profile-count strong {
+.profile-social-link:hover {
   color: var(--text);
-}
-
-.profile-count:hover strong {
-  color: var(--accent);
+  border-bottom-color: rgba(255, 255, 255, 0.35);
 }
 
 .profile-private {
@@ -4503,16 +4533,355 @@ h2 {
   padding: 2px 10px;
 }
 
+/* `align-self: center` e nao o `flex-start` da linha: com o topo, o botao
+   ficava a nivel do topo do avatar (76px) e a leitura era "esta pendurado no
+   ceu". Ao centro, fica a nivel do meio do bloco de identidade. */
 .profile-actions {
   display: flex;
   gap: 8px;
+  align-self: center;
 }
 
+/* Numeros. `<dl>` porque sao mesmo pares de termo/descricao: o rotulo e' o
+   termo (dt) e o numero e' a descricao (dd), que e' a semantica certa.
+   Cifras tabulares para os numeros ficarem alinhados uns com os outros. */
+.profile-stats {
+  /* A hairline separa "quem e'" de "o que viu". E' a unica regra do perfil
+     que nao diz nada sobre o conteudo: so divide as duas zonas. */
+  display: flex;
+  gap: 34px;
+  flex-wrap: wrap;
+  margin: 26px 0 20px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.profile-stat {
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 3px;
+}
+
+.profile-stat dt {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.profile-stat dd {
+  margin: 0;
+  font-family: "Archivo", sans-serif;
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+
+/* Separadores: linha fina em vez de chip preenchido. Mais quieto, e o
+   sublinhado do activo diz o mesmo sem gritar. */
 .profile-tabs {
   display: flex;
-  gap: 8px;
+  gap: 22px;
   flex-wrap: wrap;
-  margin: 20px 0;
+  margin: 24px 0 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.profile-tab {
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 0 2px 10px;
+}
+
+.profile-tab:hover {
+  color: var(--text);
+}
+
+.profile-tab.active {
+  color: var(--text);
+  border-bottom-color: var(--accent);
+}
+
+/* Ecra estreito: o nome desce e o avatar encolhe, para a linha de identidade
+   nao ficar espremida. O avatar vem do JSX com `size` em pixels, por isso e'
+   preciso apontar para os tres elementos que ele pode dar. */
+@media (max-width: 560px) {
+  .profile-header {
+    gap: 6px 16px;
+  }
+
+  .profile-header > .avatar-img,
+  .profile-header > .avatar-emoji,
+  .profile-header > .avatar-initial {
+    width: 58px;
+    height: 58px;
+    font-size: 29px;
+  }
+
+  .profile-username {
+    font-size: 26px;
+  }
+
+  .profile-actions {
+    width: 100%;
+  }
+
+  .profile-stats {
+    gap: 18px 24px;
+  }
+
+  .profile-stat dd {
+    font-size: 24px;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Aba "Estatísticas".
+
+   Duas colunas num ecra largo, uma estreita num ecra pequeno. Duas porque sao
+   quatro blocos e quatro blocos empilhados davam uma coluna tao alta que era
+   preciso rolar muito para passar de "Géneros" a "Mais vistos" — que e'
+   precisamente o que se vai ver.
+
+   A barra cresce no meio e o numero fica encostado a ela, por isso num ecra
+   largo o numero nunca se afasta da barra que explica. Nao ha `max-width` no
+   bloco: a barra e' a unica coisa que pode ocupar a largura toda, e encolhe-la
+   deixaria buracos a um lado. */
+.st {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 32px 44px;
+  align-items: start;
+  margin-bottom: 40px;
+}
+
+/* As tres medidas do topo ocupam a largura toda, acima das colunas: sao a
+   resposta curta, e nao devem ficar prensadas numa coluna. */
+.st-cabecalho {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: 40px;
+  flex-wrap: wrap;
+  margin: 0;
+  padding: 0 0 22px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.st-cifra {
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 2px;
+}
+
+.st-cifra dt {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.st-cifra dd {
+  margin: 0;
+  font-family: "Archivo", sans-serif;
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+/* A frase: uma leitura em portugues do que os numeros querem dizer. E' o que
+   separa "79" de "as notas estão concentradas na zona alta" — o numero sozinho
+   obriga a pessoa a fazer a conta. */
+.st-frase {
+  grid-column: 1 / -1;
+  margin: -8px 0 0;
+  max-width: 70ch;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+}
+
+.st-frase strong {
+  color: var(--text);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.st-bloco {
+  min-width: 0;
+}
+
+.st-bloco-topo {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.st-titulo {
+  margin: 0;
+  font-family: "Archivo", sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--text);
+}
+
+/* O asterisco ao lado do titulo ("8 de 24") diz que a lista esta cortada, sem
+   ocupar uma linha so para isso. */
+.st-nota {
+  font-size: 11px;
+  color: var(--text-secondary);
+  opacity: 0.75;
+  white-space: nowrap;
+}
+
+.st-linhas {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+/* Rótulo | barra | número. A barra cresce no meio e o numero fica encostado a
+   direita, para os numeros formarem uma coluna vertical em vez de andarem
+   soltos ao fim de cada barra. */
+.st-row {
+  display: grid;
+  grid-template-columns: minmax(60px, 116px) minmax(0, 1fr) 38px;
+  align-items: center;
+  gap: 12px;
+}
+
+.st-name {
+  font-size: 13px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.st-bar {
+  height: 8px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+}
+
+.st-fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--accent);
+  transition: width 0.25s ease;
+}
+
+.st-n {
+  font-family: "Archivo", sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  color: var(--text);
+}
+
+/* "Mais vistos": lista com miniatura, porque aqui o titulo e' o conteudo — ao
+   contrario das barras, onde so o genero interessa. */
+.st-top {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.st-top-linha {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 7px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  text-decoration: none;
+  color: var(--text);
+}
+
+.st-top-linha:hover .st-top-nome {
+  color: var(--accent);
+}
+
+.st-top-linha:last-child {
+  border-bottom: none;
+}
+
+.st-top-img {
+  width: 32px;
+  height: 45px;
+  flex: 0 0 auto;
+  object-fit: cover;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+/* Titulo sem cartaz: um rectangulo cinzento com o mesmo tamanho, para a linha
+   ficar alinhada com as outras em vez de encurtar. */
+.st-top-sem {
+  display: block;
+}
+
+.st-top-nome {
+  flex: 1;
+  min-width: 0;
+  font-size: 13.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.st-top-nota {
+  flex: 0 0 auto;
+  font-family: "Archivo", sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent);
+}
+
+.st-vazio {
+  padding: 24px 0;
+  max-width: 60ch;
+}
+
+@media (max-width: 900px) {
+  .st {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 28px;
+  }
+}
+
+@media (max-width: 560px) {
+  .st-cabecalho {
+    gap: 22px 28px;
+  }
+
+  .st-cifra dd {
+    font-size: 22px;
+  }
+
+  /* Numa coluna estreita o rotulo fica com 40% e a barra com o resto: se o
+     rotulo roubar mais, a barra vira um risco e deixa de se ver a diferenca
+     entre dois generos. */
+  .st-row {
+    grid-template-columns: minmax(52px, 40%) minmax(0, 1fr) 32px;
+    gap: 9px;
+  }
 }
 
 .profile-locked {

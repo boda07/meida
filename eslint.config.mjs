@@ -41,7 +41,7 @@ export default [
   },
   // Electron e build scripts (CommonJS).
   {
-    files: ["electron/**/*.cjs", "build/**/*.cjs"],
+    files: ["electron/**/*.cjs", "build/**/*.cjs", "scripts/**/*.cjs"],
     languageOptions: { globals: globals.node },
   },
   // Web: React (browser) com as regras de hooks. JSX via espree.

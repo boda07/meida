@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
-import { api, imageUrl } from "../api/client.js";
+import { audioTituloStore, api, imageUrl } from "../api/client.js";
 import { useSettings } from "../settings/SettingsContext.jsx";
 import { useAuth } from "../auth/AuthContext.jsx";
 import { useWatchParty } from "../watchparty/WatchPartyContext.jsx";
@@ -210,10 +210,12 @@ export default function Details() {
 
   // Separador inicial vindo das definições (providers/extract/torrents)
   const [mode, setMode] = useState(settings.defaultTab || "providers");
-  // Aúdio local do anime (só este título): null = segue as Definições,
-  // "sub"/"dub" = override só aqui (não muda as Definições globais).
-  const [localAudio, setLocalAudio] = useState(null);
-  const animeAudio = localAudio || settings.animeAudio;
+// Audio do anime, guardado POR TITULO em vez de nas Definicoes: ha animes que
+// so existem dobrados e outros que nao tem dobrado nenhum, portanto uma
+// definicao global obrigava a trocar sempre. Sem entrada guardada = segue as
+// Definicoes.
+const [localAudio, setLocalAudio] = useState(null);
+const animeAudio = localAudio || settings.animeAudio;
   // O extrator de anime (player próprio) esta configurado no servidor?
   const [animeExtractorOn, setAnimeExtractorOn] = useState(false);
   // O "Sem anúncios" de filmes/series (Consumet) esta configurado? Se nao (sem
@@ -268,6 +270,32 @@ export default function Details() {
       })
       .catch((e) => setError(e.message));
   }, [details, season, settings.overviewLang]);
+
+  // Chave do titulo para a preferencia de audio: "tipo:id", o mesmo formato
+  // que se usa no resto do ficheiro.
+  const chaveAudio = details ? `${details.type}:${details.id}` : null;
+
+  // Carrega a preferencia guardada deste titulo assim que os detalhes chegam.
+  // Sem isto a escolha vivia so enquanto a pagina estivesse aberta: ao voltar
+  // ao Inicio e clicar outra vez em "continua a ver", voltava ao "sub" das
+  // Definicoes.
+  useEffect(() => {
+    if (!chaveAudio) return;
+    setLocalAudio(audioTituloStore.get(chaveAudio));
+  }, [chaveAudio]);
+
+  // Unico ponto de escrita do audio, para os dois sitios que o escolhem
+  // (a barra em cima e os chips dos torrents) gravarem igual.
+  //
+  // "all" e' exclusivo dos torrents (ver todos os ficheiros, sem escolher
+  // audio) e nao corresponde a nenhum valor de URL de provider, por isso NAO
+  // mexe na preferencia guardada: se a pessoa tinha o Dragon Ball em dub e foi
+  // so ver "Todos" na lista, o dub continua a ser o dos providers.
+  function escolherAudio(a) {
+    if (a !== "dub" && a !== "sub") return;
+    setLocalAudio(a);
+    if (chaveAudio) audioTituloStore.set(chaveAudio, a);
+  }
 
   // "Se gostaste disto" (TMDB similar / recomendações do MAL). Uma vez por título.
   useEffect(() => {
@@ -634,13 +662,13 @@ api
             <div className="mode-tabs" style={{ margin: 0 }}>
               <button
                 className={animeAudio === "sub" ? "active" : ""}
-                onClick={() => setLocalAudio("sub")}
+                onClick={() => escolherAudio("sub")}
               >
                 Legendado
               </button>
               <button
                 className={animeAudio === "dub" ? "active" : ""}
-                onClick={() => setLocalAudio("dub")}
+                onClick={() => escolherAudio("dub")}
               >
                 Dobrado
               </button>
@@ -690,6 +718,7 @@ api
               episode={details.isMovie ? 1 : episode}
               anime
               defaultAudio={animeAudio}
+              onAudioChange={escolherAudio}
               startAt={startAt}
               onProgress={reportPos}
             />

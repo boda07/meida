@@ -69,6 +69,29 @@ const AD_HOSTS = [
   //     que dispara popunders), so pediu segmentos de video. O unico pedido de
   //     terceiros e o statlytic.net, que e estatisticas. ---
   "statlytic.net",
+
+  // --- Medidos no vidcore.org a 2026-10-06 (filme Inception, 171 pedidos) ---
+  //     Esta pagina traz DOIS scripts no <head> que nao tem nada a ver com
+  //     video: o motor de anuncios (giriudog) e o Microsoft Clarity. Tudo o
+  //     resto — downloadhub4u, movish.to, vidzen.fun, vdrk.site, workers.dev —
+  //     e' a cadeia que resolve e entrega o video, e NAO pode ser bloqueada
+  //     (estao em NEVER_BLOCK, mais abaixo).
+  "giriudog.com", // wwr.giriudog.com — motor de anuncios, 135 KB de webpack
+  "giriupot.com", // ssdwinz.giriupot.com — configuracao do bloco de anuncios
+  "giriuker.com", // wwpa.giriuker.com — citado pelo motor de anuncios
+  "giriucon.com", // x1.giriucon.com — as imagens do anuncio
+  "adoperator.com", // loja de anuncios, chamada pelo motor
+  "benchform.org", // popunder
+  "biomanos.org", // popunder
+  "show-sb.com", // /sb/au/...html = unidades de anuncio
+  "holdbitter.com", // /sb/ssp/in-page-push/ = o "play" falso sobreposto ao video
+  "storageimagedisplay.com", // a imagem desse "play" falso
+  "nresystems.com", // static.nresystems.com/img.gif — pixel de tracking
+  "erdwas.com", // tracking.eu.erdwas.com/rtb/ — impressao de Leilao (RTB)
+  "apiguinee.org", // /pixel/ase — pixel de tracking
+  // O Clarity grava a sessao (cliques, scroll) e envia-a para a Microsoft. Nao
+  // e' so' tracking: e' gravacao do que a pessoa fez dentro do player.
+  "clarity.ms", // www/scripts/r.clarity.ms
 ];
 
 // Dominios que NUNCA podem ser bloqueados, porque o video deixaria de passar.
@@ -92,6 +115,30 @@ const NEVER_BLOCK = [
   "phantomharbor.website",
   "phantomharbor.space",
   "silentvoyage.space",
+
+  // --- Cadeia do vidcore.org (medida a 2026-10-06) -----------------------------
+  // CUIDADO: estes nomes parecem anuncios ("downloadhub", "vidzen", "shrink") e
+  // NAO sao. Sao o que resolve e entrega o stream. Bloquear qualquer um deles
+  // deixa o player preto sem dar erro. `scripts/testar-adblock.cjs` verifica
+  // esta lista de tempos em tempos.
+  "vdrk.site", // sub.vdrk.site = legendas; cache.vdrk.site = cache
+  "movish.to", // player-sources, a fonte de verdade dos mirrors
+  "downloadhub4u.xyz", // /proxy.php?url=... — o proxy que traz o stream
+  "vidzen.fun", // /api/sources — lista de servidores alternativos
+  "vidrack.created.app", // /api/sources/videasy — outra lista de servidores
+  "cinextream.cc", // ddl.cinextream.cc — servidor de video
+  "codetabs.com", // api.codetabs.com — proxy para o HLS
+  "corsproxy.io", // proxy do HLS
+  "jsdelivr.net", // cdn.jsdelivr.net/npm/hls.js — o motor de reproducao
+  "instafashion662-3d4.workers.dev", // worker que serve os segmentos
+
+  // !!! NAO bloquear `.cfd` nem `.qpon` por TLD. !!!
+  // O VidLove (player.vidlove.cc) entrega os segmentos de video atraves de
+  // `a2.<palavra-aleatoria>.cfd/api?d=...`, e a palavra muda de sessao para
+  // sessao. Ou seja: o video da alguns domios `.cfd` que sao, ao mesmo tempo, de
+  // anuncios. Ja bloqueia-se o `kirpankinky.cfd` e o `ceriphtibbit.cfd` pelo
+  // nome EXACTO, e e' assim que tem de continuar: pelo TLD inteiro matava-se o
+  // video sem o utilizador ver porque.
 ];
 
 const BLOCK_ALL =

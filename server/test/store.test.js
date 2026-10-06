@@ -167,6 +167,19 @@ test("finishProgress avanca para o episodio seguinte", () => {
 
   store.finishProgress({ userId: u.id, type: "tv", tmdbId: 5, season: 1, episode: 5 });
   assert.equal(store.getProgress(u.id, "tv", 5).status, "finished");
+
+  // ANIME: aqui e' que o bug vivia, e nao apanhou pelo caso de cima. Os
+  // episodios do anime sao globais (1..N) e nao ha temporada, portanto o cliente
+  // manda `nextSeason: null`. A regra antiga exigia temporada E episodio, dava
+  // `hasNext = false` sempre, e o anime saia do "continua a ver" ao fim de cada
+  // episodio (medido a 2026-10-06, no Dragon Ball).
+  store.finishProgress({ userId: u.id, type: "anime", tmdbId: 9, season: null, episode: 6, nextSeason: null, nextEpisode: 7 });
+  const anime = store.getProgress(u.id, "anime", 9);
+  assert.equal(anime.status, "watching", "no anime, sem temporada, continua 'a ver'");
+  assert.equal(anime.episode, 7);
+
+  store.finishProgress({ userId: u.id, type: "anime", tmdbId: 9, season: null, episode: 7, nextSeason: null, nextEpisode: null });
+  assert.equal(store.getProgress(u.id, "anime", 9).status, "finished", "no ultimo episodio sai");
 });
 
 test("importProgress com null limpa a data", () => {

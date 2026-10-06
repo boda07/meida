@@ -10,11 +10,13 @@
 export const PROVIDERS = [
   // Ordem = preferência (a 1ª viva é a fonte default). Ordenado por velocidade e
   // fiabilidade medida (2026-08-02, filme Inception + série Luke Cage):
-  //   vidapi 128ms, moviesapi 123ms, 111movies 171ms, vidlink 203ms,
-  //   2embed 210ms, superembed 229ms, smashystream 290ms.
-  // Removidos: megaembed (mgeb.top) — 2280ms no filme (~10x mais lento) e serve
+  //   vidapi 128ms, moviesapi 123ms, vidlink 203ms,
+//   2embed 210ms, superembed 229ms, smashystream 290ms.
+// Removidos: megaembed (mgeb.top) — 2280ms no filme (~10x mais lento) e serve
   // áudio PT-BR via Superflix; vidfast — SPA que resolve o vídeo só no browser
-  // (a health-check passa mas o stream falhava nos testes).
+// (a health-check passa mas o stream falhava nos testes).
+// Substituído: 111movies — o domínio morreu (DNS caído) em 2026-10-06; ver o
+// VidLove mais abaixo, que é o servidor de vídeo que ficou de pé.
   {
     id: "vidapi",
     name: "VidAPI",
@@ -29,11 +31,34 @@ export const PROVIDERS = [
     tv: "https://moviesapi.to/tv/{tmdb}-{season}-{episode}",
   },
   {
-    // 111Movies redireciona para player.vidlove.cc (servidor dedicado de vídeo).
-    id: "111movies",
-    name: "111Movies",
-    movie: "https://111movies.com/movie/{tmdb}",
-    tv: "https://111movies.com/tv/{tmdb}/{season}/{episode}",
+    // VidLove. Substitui o 111Movies (2026-10-06).
+    //
+    // O 111movies.com morreu: o DNS do proprio dominio deixou de responder
+    // (EAI_AGAIN / "falha do servidor DNS"), por isso QUALQUER url dava erro de
+    // rede — e nao de pagina de erro, que e pior, porque o health-check via
+    // timeout e nao via "esta morto".
+    //
+    // O que o substituiu e' o servidor de video do proprio 111Movies, que
+    // continua vivo em player.vidlove.cc e tem o MESMO formato de url. Medido
+    // a 2026-10-06 com Fight Club (2h19, duracao correcta) e Inception:
+    //   - movie: /embed/movie/{tmdb}       200, 69-122ms
+    //   - tv:    /embed/tv/{tmdb}/{s}/{e}  200
+    //   - traz legendas, Chromecast e picture-in-picture
+    //
+    // Duas coisas a saber antes de mexer aqui:
+    //   - NAO arranca sozinho. O elemento <video> so existe DEPOIS de carregar
+    //     no play, por isso `?autoPlay=true` nao chega: quem resolve e' o
+    //     botao do player. Como o iframe dispara `load` assim que a pagina
+    //     carrega, o aviso "a carregar" da app desaparece logo (certo) e o
+    //     utilizador ve o botao de play.
+    //   - O STREAM passa por um dominio de anuncios: os segmentos vao para
+    //     `a2.<palavra>.cfd/api?d=...`, com a palavra a mudar de sesso para
+    //     sesso. Por isso NUNCA adicionar `.cfd` a lista de anuncios — o
+    //     video deixava de passar. (Ver electron/adblock.cjs.)
+    id: "vidlove",
+    name: "VidLove",
+    movie: "https://player.vidlove.cc/embed/movie/{tmdb}",
+    tv: "https://player.vidlove.cc/embed/tv/{tmdb}/{season}/{episode}",
   },
   {
     id: "vidlink",

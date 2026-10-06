@@ -1,5 +1,153 @@
 # Changelog
 
+## 1.3.2
+
+### Corrigido: acabando um episodio de anime, o titulo saia do "continua a ver"
+Bug no servidor, em `finishProgress` (`server/src/store.js`):
+
+```js
+// antes
+const hasNext = e.nextSeason != null && e.nextEpisode != null;
+```
+
+Exigia **temporada E episodio**. Mas no anime os episodios sao globais (1..N) e
+**nao ha temporada** — o cliente (`nextEpisodePos` em `web/src/pages/Details.jsx`)
+manda `nextSeason: null`. Logo `hasNext` era SEMPRE falso para anime: marcava
+acabado ao fim de cada episodio e a entrada saia do "continua a ver" em vez de
+avancar para o seguinte.
+
+Series e filmes funcionavam sempre (a temporada vem preenchida), que e' porque
+isto passou meses sem dar sinal — e porque o teste que existia em
+`server/test/store.test.js` so cobria `type: "tv"` com temporada, passando com o
+bug. Agora a decisao e' so pelo episodio:
+
+```js
+const hasNext = e.nextEpisode != null;
+season: hasNext ? e.nextSeason ?? cur.season ?? null : e.season,
+```
+
+O `?? cur.season` preserva a temporada quando o proximo episodio vem sem ela (anime).
+
+### Corrigido: as legendas desapareciam em alguns episodios
+Consequencia do bug seguinte. Com o `load` do iframe nunca a chegar, o
+auto-fallback de 15 s disparava mesmo com o video a reproduzir e trocava de
+fonte — e a fonte nova vinha sem legendas. Corrigir o `load` resolveu os dois.
+
+### Corrigido: "a carregar" ficava no ecra com o video a dar
+`web/src/components/Player.jsx`. O efeito que regista o listener de `load` tinha
+`[active, lista, deadIds, index]` nas dependencias, e nao `reloadKey`. Mas outro
+efeito faz `setReloadKey(k + 1)` ao abrir, e o `key` do `<iframe>` obriga o React
+a **deitar fora o elemento e criar outro**. O listener ficava ligado ao iframe
+que ja tinha ido para o caixote, e `load` nunca chegava.
+
+Consequencias, ambasmeasured em 2026-10-06 no VidCore:
+- o aviso "MegaPlay · a carregar..." ficava 15 s no ecra com o video a dar;
+- ao fim dos 15 s, o auto-fallback trocava de fonte a meio da reproducao.
+
+Acrescentado `reloadKey` as dependencias. Aproveitei para tirar um `ref` que
+estava nos dois elementos ao mesmo tempo (o `div` e o `iframe`): o iframe
+ganhava por ordem da anexacao das refs, o que e' fragil.
+
+### Corrigido: o 111Movies deixou de funcionar
+`111movies.com` deixou de resolver: o DNS do proprio dominio passou a falhar
+(`EAI_AGAIN`, e o PowerShell responde "falha do servidor DNS"). Isto e' pior do
+que uma pagina de erro — da erro de **rede**, por isso o health-check via timeout
+em vez de dizer "esta morto", e nenhuma url funcionava.
+
+O servidor de video do proprio 111Movies continua de pe em `player.vidlove.cc` e
+tem o **mesmo formato de url**. Medido a 2026-10-06 (Fight Club, Inception,
+Breaking Bad S1E1):
+
+| url | resposta |
+| --- | --- |
+| `/embed/movie/{tmdb}` | 200, 69-122 ms |
+| `/embed/tv/{tmdb}/{s}/{e}` | 200 |
+
+Comprovado com `readyState: 4` e duracao 2:19:08 no Fight Club (2h19 reais), e
+legendas + Chromecast + picture-in-picture. **162 ms** no health-check — terceiro
+mais rapido dos 10 providers. O id passou de `111movies` para `vidlove`.
+
+Duas coisas ficaram escritas em `providers.js`: nao arranca sozinho (o `<video>`
+so existe depois de carregar no play), e **o stream passa por um dominio de
+anuncios** (`a2.<palavra>.cfd/api?d=...`, com a palavra a mudar de sessao), pelo
+que `.cfd` nunca pode ser bloqueado por TLD.
+
+### Corrigido: o audio (legendado/dobrado) nao se guardava
+`localAudio` em `web/src/pages/Details.jsx` era `useState(null)`: so vivia
+enquanto a pagina estivesse aberta. Voltar ao Inicio e clicar outra vez em
+"continua a ver" trazia o `sub` das Definicoes, e a barra de audio voltava ao
+estado inicial. Como ha animes que so existem dobrados, mudar a definicao global
+nao resolvia (e nao devia: o dub e' so desse).
+
+Agora e' guardado **por titulo**, em `localStorage` (`audioTituloStore` em
+`web/src/api/client.js`, chave `"<tipo>:<id>"`). Sem entrada = segue as Definicoes.
+
+Os **dois** sitios que escolhem passam pela mesma funcao, `escolherAudio`:
+- a barra "Audio deste titulo" — e' a que manda `audio` na URL dos providers, por
+  isso o dub nos providers tambem fica guardado;
+- os chips Legendado/Dobrado/Todos da lista de torrents, que passou a ter
+  `onAudioChange`.
+
+O "Todos" dos torrents e' deliberadamente ignorado por `escolherAudio`: nao
+corresponde a nenhum valor de URL de provider, e nao deve desfazer o dub guardado
+so porque a pessoa foi ver a lista toda.
+
+Nota: fica em `localStorage`, como as Definicoes, portanto **nao acompanha entre
+PCs**. Passar para o servidor e' uma coluna nova na tabela do utilizador.
+
+### Corrigido: anuncios no VidCore
+Medido a 2026-10-06 em `vidcore.org/embed/movie/27205`: 171 pedidos, dos quais a
+pagina traz **dois scripts no `<head>` sem relacao com video**:
+`wwr.giriudog.com` (135 KB de motor de anuncios, com `popunder`, `window.open`,
+`beforeunload`) e `clarity.ms` (Microsoft Clarity, que **grava a sessao** — cliques
+e scroll — e envia para a Microsoft).
+
+Mais as camadas que se desenham por cima do video (`cdn.holdbitter.com`, que e' o
+"play" falso do `/in-page-push/`), e pixels de tracking e de leilao (RTB).
+Bloqueados 16 dominios, em `electron/adblock.cjs`.
+
+**A parte delicada:** `downloadhub4u.xyz`, `vidzen.fun`, `vidrack.created.app` e
+`vdrk.site` parecem anuncios (`downloadhub`, `vidzen`) e **nao sao** — sao a cadeia
+que resolve o stream e as legendas. Bloquea-los dava um player preto sem erro.
+Estao em `NEVER_BLOCK` com o motivo escrito, e em `verificar`-land no teste.
+
+### Novo: teste do bloqueador de anuncios
+`scripts/testar-adblock.cjs`, ligado ao `npm test`. Confirma os dois sentidos
+(18 anuncios bloqueados, 14 urls de video/legendas livres) e falha a build se
+alguem mexer na lista. Foi verificado que falha mesmo: com o bloqueio total
+forcado, apanha 15 problemas.
+
+`eslint.config.mjs` passou a cobrir `scripts/**/*.cjs` — ate agora os scripts em
+CommonJS nao tinham os globais de Node declarados.
+
+### Novo: aba de Estatisticas no perfil
+`web/src/components/ProfileStats.jsx` + `detalheStats()` em
+`web/src/components/profileStats.js`. Tudo calculado no cliente a partir da
+biblioteca que a API ja devolveu — sem pedidos extra.
+
+Conteudo: media e mediana (juntas dizem coisas que uma barra sozinha nao diz),
+distribuicao das notas em 5 faixas, generos mais marcados, split por tipo, e os
+titulos com nota mais alta.
+
+O que **nao** se mostra, e porquê: ano de estreia, temporada, estudio, duracao e
+numero de episodios. Nada disso esta' na tabela `library` (`toApi()` em
+`server/src/store.js` so' tem tipo, generos e nota), por isso esses graficos
+dariam sempre zero.
+
+A barra cresce contra o **maior** do bloco, nao contra o total: senao a barra
+mais alta ocupava a largura toda e as outras sumiam.
+
+### Redesenho do perfil
+A capa (o poster esticado) saiu. Deu problema de tres maneiras seguidas: ficava
+presa aos 1200px do content num ecra largo, o degradue tapava o nome (o fade
+tinha `z-index: 2` e o bloco da identidade nao tinha nenhum), e o avatar a pousar
+sobre a capa obrigava a margens negativas.
+
+O que ficou e' fluxo normal, sem posicao absoluta, sem margem negativa, sem
+sobreposicao — nao ha largura de ecra onde se desfaca. O `max-width: 1200px` foi
+tirado para o cabecalho alinhar com a grelha de cartazes, e o nome passou a 34 px
+(maior que os numeros) para o perfil ter hierarquia.
+
 ## 1.3.1
 
 ### Corrigido: o video comecava sozinho com o autoplay desligado
