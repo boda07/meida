@@ -22,6 +22,7 @@ const { spawn } = require("child_process");
 const { autoUpdater } = require("electron-updater");
 const discordPresence = require("./discord-presence.cjs");
 const { installAdBlock } = require("./adblock.cjs");
+const { definirAutoplay } = require("./autoplay.cjs");
 
 // ===== Servidor: local (video) + remoto (dados) =====
 // A app corre SEMPRE localmente (serve o UI e o video/streaming). Em modo "dados
@@ -206,6 +207,29 @@ ipcMain.handle("clear-presence", (event) => {
   discordPresence.clear();
   return { ok: true };
 });
+
+// "Autoplay desligado" nas Definicoes. O renderer diz o valor; aqui injecta-se
+// `Permissions-Policy: autoplay=()` nas respostas de documento quando esta
+// desligado. Sem isto so funciona com providers que respeitem o parametro do
+// URL, e o MegaPlay nao respeita (ver electron/autoplay.cjs).
+ipcMain.handle("set-autoplay", (event, ligado) => {
+  if (!isTrustedSender(event)) return { ok: false, error: "Origem nao autorizada." };
+  const ligadoFinal = ligado !== false;
+  aplicarAutoplay(ligadoFinal);
+  if (process.env.MEIDA_AUTOPLAY_DEBUG === "1") {
+    console.log(`[autoplay] definicao do utilizador: ${ligadoFinal ? "ligado" : "desligado"}`);
+  }
+  return { ok: true, autoplay: ligadoFinal };
+});
+
+// Aplica a politica na sessao. Separado para o arranque e para o IPC usarem
+// exactamente o mesmo caminho. Sem window nao ha nada a fazer (o servidor web
+// serve a interface fora do Electron, onde nao existe este hook).
+function aplicarAutoplay(ligado) {
+  const janela = BrowserWindow.getAllWindows()[0];
+  if (!janela) return false;
+  return definirAutoplay(janela.webContents.session, ligado);
+}
 
 const isDev = process.env.ELECTRON_DEV === "1";
 const DEV_URL = "http://localhost:5173";
@@ -453,6 +477,20 @@ function createWindow() {
     console.log(`[adblock] ativo (${quantos} dominios)`);
   } else {
     installAdBlock(win.webContents.session);
+  }
+
+  // Politica de autoplay, so com MEIDA_AUTOPLAY_DEBUG=1 (como o adblock). Fica
+  // a forcar "desligado" e a registar cada documento a que toca — foi assim que
+  // se viu que a definicao chegava e que o cabecalho saia, e que o MegaPlay
+  // arrancava na mesma (motivo do portao "Carregar video" no Player.jsx).
+  //
+  // Em uso normal a politica e' posta pelo IPC `set-autoplay`, que o renderer
+  // chama com o valor das Definicoes assim que a app arranca.
+  if (process.env.MEIDA_AUTOPLAY_DEBUG === "1") {
+    definirAutoplay(win.webContents.session, false, (...partes) =>
+      console.log("[autoplay]", ...partes)
+    );
+    console.log("[autoplay] diagnostico ligado (a forcar autoplay desligado)");
   }
 
   // Quando a app estiver carregada, mostra a janela e fecha a splash.

@@ -192,6 +192,7 @@ function toApi(r) {
     poster: r.poster,
     watched: r.watched,
     watchlist: r.watchlist,
+    status: r.status ?? null, // "paused" | "dropped" | null (ver estadoDe)
     score: r.score, // nota pessoal (0-100)
     rating: r.rating ?? null, // media da comunidade (MAL/TMDB)
     updatedAt: r.updated_at,
@@ -222,8 +223,8 @@ export function upsertLibrary(entry) {
   db.prepare(
     `INSERT INTO library
        (user_id, media_type, external_id, title, title_en, title_romaji, poster,
-        genres, watched, watchlist, score, rating, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        genres, watched, watchlist, status, score, rating, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
      ON CONFLICT(user_id, media_type, external_id) DO UPDATE SET
        title        = excluded.title,
        title_en     = COALESCE(excluded.title_en, library.title_en),
@@ -232,6 +233,7 @@ export function upsertLibrary(entry) {
        genres       = COALESCE(excluded.genres, library.genres),
        watched      = excluded.watched,
        watchlist    = excluded.watchlist,
+       status       = excluded.status,
        score        = excluded.score,
        rating       = COALESCE(excluded.rating, library.rating),
        updated_at   = excluded.updated_at`
@@ -246,10 +248,33 @@ export function upsertLibrary(entry) {
     entry.genres === undefined ? null : JSON.stringify(entry.genres),
     (entry.watched ? 1 : 0),
     (entry.watchlist ? 1 : 0),
+    entry.status === undefined || entry.status === null ? null : String(entry.status),
     entry.score ?? null,
     entry.rating ?? null,
     now()
   );
+}
+
+/**
+ * Estado final de um item da biblioteca. E' a UNICA funcao que decide, para nao
+ * cada consumidor inventar a sua regra (foi exactamente isso que deu no "a ver"
+ * do perfil a contar a watchlist toda).
+ *
+ *   paused  -> "paused"     (em pausa)
+ *   dropped -> "dropped"    (abandonado)
+ *   watched -> "completed"  (visto)
+ *   watchlist -> "plan"     (para ver)
+ *   nada    -> "none"
+ *
+ * O `status` sobrepoe-se as flags porque os estados sao mutuamente exclusivos.
+ */
+export function estadoDe(e) {
+  if (!e) return "none";
+  if (e.status === "paused") return "paused";
+  if (e.status === "dropped") return "dropped";
+  if (e.watched) return "completed";
+  if (e.watchlist) return "plan";
+  return "none";
 }
 
 // Versão "safe" de upsert para imports: só actualiza campos explicitamente

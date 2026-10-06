@@ -2,6 +2,16 @@
 // "o que mudou" depois de o utilizador atualizar a app. Mais recente em cima.
 export const CHANGELOG = [
   {
+    version: "1.3.3",
+    items: [
+      "Corrigido: com o autoplay desligado nas definições, o vídeo do MegaPlay começava na mesma. Não há forma de o travar pelo lado do sítio, por isso agora o vídeo só carrega depois de carregares nele — assim funciona com todos os sítios, e não só com os que respeitam a definição.",
+      "Novo: podes marcar um título como “Em pausa” ou “Abandonado” na ficha. Aparecem também como filtros na tua biblioteca e entram nas estatísticas do perfil.",
+      "Corrigido: o perfil dizia que estavas “a ver” 389 coisas, quando era a tua lista de “para ver”. Agora são duas coisas separadas: “para ver” é a lista, e “a ver agora” é o que realmente começaste.",
+      "Melhorado: as estatísticas do perfil deixaram de mostrar um gráfico que não dizia nada — quase todas as notas caíam em duas barras. Agora mostram onde estão a tua nota mais baixa, a mediana e a mais alta.",
+      "Corrigido: a lista que se chamava “Mais vistos” mostrava os títulos com nota mais alta. Passou a chamar-se “Melhores notas”.",
+    ],
+  },
+  {
     version: "1.3.2",
     items: [
       "Novo: o perfil tem uma aba de Estatísticas, com os teus géneros mais vistos, que tipos vês, como se distribuem as tuas notas e os títulos que mais te marcaram.",

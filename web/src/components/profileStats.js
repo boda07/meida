@@ -7,12 +7,39 @@
 //
 // Os numeros que interessam, e porque:
 //   - titulos: quantos estao na biblioteca (o total da pessoa)
-//   - vistos: os que ela acabou (watched)
-//   - a ver: os que quer ver (watchlist e ainda nao vistos)
+//   - vistos: os que ela acabou (estado "completed")
+//   - aVer: os que ela quer ver (estado "plan", a watchlist)
+//   - emPausa / abandonados: os que ela comecou e parou, ou deitou fora
 //   - media: a media das notas pessoais (0-100), so de quem puso nota
 //
-// Separar "titulos" de "vistos + a ver" conta cada titulo uma vez so: um titulo
+// "aVer" e' a lista de "para ver", NAO "o que a pessoa esta a ver agora". Em
+// portugues as duas coisas chamam-se quase igual e e' por aqui que nasce a
+// confusao: o diario tem um status "watching" que e' mesmo "a ver agora" (so
+// existe depois de comecar), enquanto a watchlist e' a intencao. Por isso a
+// etiqueta na UI diz "para ver" e o "a ver agora" vem do diario (ver
+// UserProfile.jsx).
+//
+// Separar "titulos" de "vistos + aVer" conta cada titulo uma vez so: um titulo
 // marcado como visto E na watchlist conta 1 em "titulos", nao 2.
+
+/**
+ * Estado final de um item da biblioteca. E' a MESMA regra que `estadoDe()` no
+ * servidor (`server/src/store.js`), reescrita aqui de proposito: o frontend nao
+ * pode importar o store do servidor — essa cadeia traz o SQLite
+ * (`db/index.js`) e abriria uma base de dados dentro do browser.
+ *
+ * Sao oito linhas. Para que as duas versoes nao voltem a divergir (foi essa
+ * divergencia que fez o perfil contar 389 "para ver" quando a pessoa via 2),
+ * `scripts/testar-estados.mjs` verifica que concordam.
+ */
+export function estadoDe(e) {
+  if (!e) return "none";
+  if (e.status === "paused") return "paused";
+  if (e.status === "dropped") return "dropped";
+  if (e.watched) return "completed";
+  if (e.watchlist) return "plan";
+  return "none";
+}
 
 /** Calcula as quatro estatisticas a partir dos itens da biblioteca. */
 export function statsFrom(items) {
@@ -22,9 +49,18 @@ export function statsFrom(items) {
   let soma = 0;
   let comNota = 0;
 
+  let emPausa = 0;
+  let abandonados = 0;
+
   for (const it of lista) {
-    if (it.watched) vistos++;
-    else if (it.watchlist) aVer++;
+    // Conta-se pelo ESTADO, nao pelas flags cruas. Era assim que um titulo
+    // "em pausa" ou "abandonado" acabava contado como "para ver" — e o perfil
+    // mostrava 389 quando a pessoa via 2 (2026-10-07).
+    const estado = estadoDe(it);
+    if (estado === "completed") vistos++;
+    else if (estado === "plan") aVer++;
+    else if (estado === "paused") emPausa++;
+    else if (estado === "dropped") abandonados++;
     if (typeof it.score === "number" && it.score > 0) {
       soma += it.score;
       comNota++;
@@ -35,6 +71,8 @@ export function statsFrom(items) {
     total: lista.length,
     vistos,
     aVer,
+    emPausa,
+    abandonados,
     // Media arredondada. Sem notas e' null, para a UI poder esconder em vez de
     // mostrar 0 (que e' diferente de "nota media zero").
     media: comNota ? Math.round(soma / comNota) : null,
@@ -63,17 +101,6 @@ const ROTULO_TIPO = { anime: "Anime", movie: "Filmes", tv: "Series" };
 // que mudaria a cada titulo novo).
 const ORDEM_TIPO = ["anime", "movie", "tv"];
 
-// Faixas de nota. Cinco e' o sweet spot: com menos, perde-se a forma da
-// distribuicao; com mais, as barras ficam com dois pixels de altura e nao se
-// leem.
-const FAIXAS_NOTA = [
-  { ate: 20, rotulo: "ate 20" },
-  { ate: 40, rotulo: "21 a 40" },
-  { ate: 60, rotulo: "41 a 60" },
-  { ate: 80, rotulo: "61 a 80" },
-  { ate: 100, rotulo: "81 a 100" },
-];
-
 // Quantos generos mostrar. Oito enche uma coluna sem ficar um muro de barras, e
 // cobre praticamente tudo: um genero que fica sempre de fora e' porque so' duas
 // ou tres pessoas o tem.
@@ -88,11 +115,17 @@ export function detalheStats(items) {
 
   const generos = new Map();
   const tipos = new Map(ORDEM_TIPO.map((t) => [t, 0]));
-  const faixas = FAIXAS_NOTA.map((f) => ({ ...f, n: 0 }));
   const notas = [];
   let soma = 0;
 
+  let emPausa = 0;
+  let abandonados = 0;
+
   for (const it of lista) {
+    const estado = estadoDe(it);
+    if (estado === "paused") emPausa++;
+    else if (estado === "dropped") abandonados++;
+
     if (it.type && tipos.has(it.type)) tipos.set(it.type, tipos.get(it.type) + 1);
 
     for (const g of Array.isArray(it.genres) ? it.genres : []) {
@@ -103,12 +136,6 @@ export function detalheStats(items) {
     if (typeof it.score === "number" && it.score > 0) {
       notas.push(it.score);
       soma += it.score;
-      for (const f of faixas) {
-        if (it.score <= f.ate) {
-          f.n++;
-          break;
-        }
-      }
     }
   }
 
@@ -133,6 +160,8 @@ export function detalheStats(items) {
 
   return {
     total: lista.length,
+    emPausa,
+    abandonados,
     comNota,
     media,
     mediana,
@@ -144,7 +173,6 @@ export function detalheStats(items) {
       nome: ROTULO_TIPO[t],
       n: tipos.get(t),
     })),
-    faixas,
     // Quantos generos distintos tem a biblioteca toda, para o "8 de 24" ao lado
     // do titulo dizer que a lista esta cortada.
     totalGeneros: generos.size,

@@ -70,6 +70,10 @@ export default function UserProfile() {
   const [error, setError] = useState(null);
   const [tab, setTab] = useState("library");
   const [items, setItems] = useState(null);
+  // Quantos titulos a pessoa esta a ver AGORA. Sai do diario (status
+  // "watching"), nao da biblioteca: e' o unico sitio onde "a ver"
+  // significa mesmo o presente. So existe no teu proprio perfil.
+  const [aVerAgora, setAVerAgora] = useState(null);
   const [lists, setLists] = useState(null);
   const [openList, setOpenList] = useState(null);
   const [openListItems, setOpenListItems] = useState(null);
@@ -110,6 +114,28 @@ export default function UserProfile() {
       .then((d) => setItems(d.items || []))
       .catch(() => setItems([]));
   }, [canView, username, items]);
+
+  // Diario, so para contar o "a ver agora". Num perfil que nao e' o teu nao
+  // se pede (o diario de outra pessoa nao e' publico) e o numero fica a null,
+  // o que faz a UI esconder a linha em vez de mostrar um 0 enganador.
+  useEffect(() => {
+    if (!profile?.isMe || !canView) {
+      setAVerAgora(null);
+      return;
+    }
+    let vivo = true;
+    api
+      .progress()
+      .then((d) => {
+        if (!vivo) return;
+        const n = (d.items || []).filter((i) => i.status === "watching").length;
+        setAVerAgora(n);
+      })
+      .catch(() => vivo && setAVerAgora(null));
+    return () => {
+      vivo = false;
+    };
+  }, [profile?.isMe, canView, username]);
 
   // O resto das abas carrega so quando pedidas.
   useEffect(() => {
@@ -228,10 +254,36 @@ export default function UserProfile() {
             <dt>vistos</dt>
             <dd>{stats.vistos}</dd>
           </div>
+          {/* "A ver agora" e' outra coisa que "para ver", e e' o que o
+              utilizador espera ler em "a ver": o diario guarda um
+              `status: watching`, que so passa a existir depois de arrancar um
+              titulo. A watchlist e' a intencao. Sao numeros separados.
+              So no teu proprio perfil — o diario de outra pessoa nao e'
+              publico, e mostrar 0 ai seria mentira. */}
+          {aVerAgora !== null && (
+            <div className="profile-stat">
+              <dt>a ver agora</dt>
+              <dd>{aVerAgora}</dd>
+            </div>
+          )}
           <div className="profile-stat">
-            <dt>a ver</dt>
+            <dt>para ver</dt>
             <dd>{stats.aVer}</dd>
           </div>
+          {/* So aparecem quando ha. Um "0 em pausa" fixo no perfil so ocupa
+              espaco e chateia. */}
+          {stats.emPausa > 0 && (
+            <div className="profile-stat">
+              <dt>em pausa</dt>
+              <dd>{stats.emPausa}</dd>
+            </div>
+          )}
+          {stats.abandonados > 0 && (
+            <div className="profile-stat">
+              <dt>abandonados</dt>
+              <dd>{stats.abandonados}</dd>
+            </div>
+          )}
           {stats.media !== null && (
             <div className="profile-stat">
               <dt>média</dt>
@@ -269,7 +321,7 @@ export default function UserProfile() {
       ) : tab === "library" ? (
         <PosterGrid items={items} empty="A biblioteca está vazia." romaji={romaji} />
       ) : tab === "stats" ? (
-        <ProfileStats items={items} />
+        <ProfileStats items={items} aVerAgora={aVerAgora} />
       ) : tab === "lists" ? (
         <div className="profile-lists">
           {lists === null ? (

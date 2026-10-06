@@ -46,6 +46,7 @@ export default function LibraryControls({ details }) {
 
   const watched = entry?.watched || false;
   const watchlist = entry?.watchlist || false;
+  const estado = entry?.status || null; // "paused" | "dropped" | null
   const score = entry?.score || "";
 
   return (
@@ -80,6 +81,25 @@ export default function LibraryControls({ details }) {
           ))}
         </select>
       </label>
+
+      {/* Estados que a watchlist nao cobre: comecar e parar, ou desistir de
+          vez. Atribuir um destes LIMPA a watchlist — senao o titulo contava
+          duas vezes, como "em pausa" e como "para ver". */}
+      <button
+        className={`lib-estado pausa ${estado === "paused" ? "on" : ""}`}
+        onClick={() => save({ status: estado === "paused" ? null : "paused" })}
+        title="Comecei mas parei"
+      >
+        {estado === "paused" ? "✓ Em pausa" : "Pausar"}
+      </button>
+
+      <button
+        className={`lib-estado largado ${estado === "dropped" ? "on" : ""}`}
+        onClick={() => save({ status: estado === "dropped" ? null : "dropped" })}
+        title="Não vou acabar isto"
+      >
+        {estado === "dropped" ? "✓ Abandonado" : "Abandonar"}
+      </button>
 
       {details.type === "movie" && (
         <button

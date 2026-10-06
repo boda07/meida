@@ -5,11 +5,14 @@ import { useAuth } from "../auth/AuthContext.jsx";
 import { useSettings } from "../settings/SettingsContext.jsx";
 import LoadingStatus from "../components/LoadingStatus.jsx";
 import { CheckIcon } from "../components/icons.jsx";
+import { estadoDe } from "../components/profileStats.js";
 
 const FILTERS = [
   { id: "all", label: "Tudo" },
   { id: "watchlist", label: "Watchlist" },
   { id: "watched", label: "Vistos" },
+  { id: "paused", label: "Em pausa" },
+  { id: "dropped", label: "Abandonados" },
 ];
 
 const TYPE_FILTERS = [
@@ -219,6 +222,8 @@ export default function Library() {
     if (selList == null) {
       if (filter === "watchlist") arr = arr.filter((i) => i.watchlist);
       else if (filter === "watched") arr = arr.filter((i) => i.watched);
+      else if (filter === "paused") arr = arr.filter((i) => estadoDe(i) === "paused");
+      else if (filter === "dropped") arr = arr.filter((i) => estadoDe(i) === "dropped");
       if (typeFilter !== "all") arr = arr.filter((i) => i.type === typeFilter);
       if (genreSel.size)
         arr = arr.filter((i) => {

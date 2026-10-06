@@ -13,4 +13,5 @@ contextBridge.exposeInMainWorld("electronAPI", {
   // Discord Rich Presence: mostrar no Discord o que se esta a ver.
   setPresence: (data) => ipcRenderer.invoke("set-presence", data),
   clearPresence: () => ipcRenderer.invoke("clear-presence"),
+  setAutoplay: (ligado) => ipcRenderer.invoke("set-autoplay", ligado),
 });

@@ -1,5 +1,108 @@
 # Changelog
 
+## 1.3.3
+
+### Corrigido: o autoplay desligado nao impedia o MegaPlay de arrancar
+Reportado a 2026-10-07, no MegaPlay (o provider de anime principal).
+
+A app ja fazia as duas coisas obvias (ver `Player.jsx`): tirar `autoplay` do
+atributo `allow` do iframe, e acrescentar `?autoplay=false&autoPlay=false` ao
+URL. Nao chegava, por dois motivos medidos:
+
+**O MegaPlay nao aceita o parametro.** O HTML do player
+(`megaplay.buzz/stream/ani/<id>/<ep>/<audio>`) tem:
+
+```js
+window.settings = { time: 0, autoPlay: "1", ... }   // fixo, sempre "1"
+// o unico parametro lido da query string e' ?time= e ?unix=
+```
+
+Ou seja, nao existe parametro que faca o player nao arrancar.
+
+**O `allow` so pode dar permissao, nunca tirar.** E mesmo sem delegacao, o
+Chromium autoriza o autoplay quando a origem tem Media Engagement Index — ou
+seja, depois de algumas semanas a ver anime com som no mesmo sitio. E' por isso
+que o defeito so aparecia no MegaPlay.
+
+Primeira tentativa (mantida): injectar `Permissions-Policy: autoplay=()` nas
+respostas de documento, em `electron/autoplay.cjs`. O log de diagnostico
+confirmou que o cabecalho **sai mesmo** (`subFrame BLOQUEIA autoplay ->
+autoplay=()`) e mesmo assim o video arrancou. Ficou como segunda barreira,
+porque e' correcta e vale para outros providers.
+
+A correcao que resolve e' no `Player.jsx`: **com o autoplay desligado, o iframe
+so nasce depois de um clique.** Enquanto ele nao existir nao ha video para
+arrancar — nao depende do browser, do provider, nem de politica nenhuma.
+
+Cuidados que dao jeito:
+
+- So o **primeiro** carregamento precisa de clique. Depois o auto-fallback de
+  15 s volta a trocar de fonte sozinho, como sempre.
+- Volta a aparecer em **fonte nova** (episodio seguinte, trocar de audio).
+- Se ligares o autoplay, desaparece e o player abre logo como antes.
+- O botao e' um `<button>` de verdade (Tab/Enter/Space), com `focus-visible`.
+
+`MEIDA_AUTOPLAY_DEBUG=1` liga o log de diagnostico, como o do adblock.
+
+### Novo: "em pausa" e "abandonado" na biblioteca
+Os estados que o MyAnimeList e o AniList tem e que aqui faltavam. Sem eles, os
+estatisticos do perfil contavam tudo o que estava na watchlist como "para ver".
+
+**Migracao 4** (`server/src/db/schema.js`): uma coluna `status TEXT`. Uma coluna
+em vez de mais duas flags porque os estados sao **mutuamente exclusivos** — com
+flags e' possivel ficar "visto E abandonado" ao mesmo tempo, e cada consumidor
+tinha de inventar a sua regra para desempatar. `NULL` = usa as flags de sempre,
+portanto os titulos existentes nao mudam de estado.
+
+**`estadoDe()`** em `server/src/store.js` e' a unica funcao que decide o estado
+final, para nao haver duas regras. A mesma regra esta replicada em
+`web/src/components/profileStats.js` — o frontend **nao pode** importar o store
+do servidor, porque essa cadeia traz o SQLite e abriria uma base de dados
+dentro do browser.
+
+`scripts/testar-estados.mjs` (22 verificacoes, ligado ao `npm test`) passa por
+cima das **duas** versoes e compara os 12 casos possiveis de
+`status` x `watched` x `watchlist`. Se uma mudar sem a outra, falha. Foi a
+divergencia entre as duas que causou o bug original.
+
+UI: dois botoes na ficha (`LibraryControls.jsx`) ao lado do "Watchlist" e do
+"Marcar como visto". O abandonado fica **riscado**, como no MyAnimeList. Dois
+filtros novos na biblioteca.
+
+Ao atribuir `paused`/`dropped`, a rota **limpa** `watched`/`watchlist` — se nao, o
+titulo contava duas vezes (como "em pausa" e como "para ver"), que e' exactamente
+o bug do 389. Tirar o `status` nao repoe a watchlist: quem despausa decide de
+novo o que quer com o titulo, em vez do app adivinhar.
+
+### Corrigido: o perfil dizia "a ver" quando queria dizer "para ver"
+Duas coisas diferentes com o mesmo nome em portugues:
+
+- No **diario**, "A ver" e' o `status: watching`, que so existe depois de
+  arrancar um titulo. E' mesmo o presente.
+- No **perfil**, `aVer` contava `watchlist && !watched` — a intencao.
+
+Resultado: o perfil dizia 389 "a ver" quando a pessoa via 2. Agora sao dois
+numeros separados. "A ver agora" vem do diario e so aparece **no teu proprio
+perfil** — o diario de outra pessoa nao e' publico, e mostrar 0 ai seria
+mentira.
+
+### Corrigido: o grafico das notas nao dizia nada
+As barras de 20 em 20 davam `1 / 3 / 30 / 167 / 104`. Numa escala 0-100 quase
+toda a gente nota entre 60 e 100, por isso tres quartos da biblioteca cabia em
+duas barras: tres quartos do grafico para dizer que duas barras eram maiores que
+as outras.
+
+Substituido por um **espectro** — uma linha 0-100 com as marcas da nota mais
+baixa, da mediana e da mais alta. E' a mesma linguagem visual do "Comparar com a
+comunidade" que ja existia na ficha (`.lib-rating-track`), por isso nao parece um
+grafico colado de fora.
+
+### Corrigido: "Mais vistos" nao mostrava os mais vistos
+Ordenava por **nota**, nao por reproducoes — e nao ha contagem de reproducoes em
+lado nenhum, por isso o nome era mentira. Passou a "Melhores notas", e so mostra
+titulos que tem nota (antes dos cinco podiam ser os cinco primeiros com 100, por
+ordem da base de dados).
+
 ## 1.3.2
 
 ### Corrigido: acabando um episodio de anime, o titulo saia do "continua a ver"

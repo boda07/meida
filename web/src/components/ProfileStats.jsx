@@ -51,7 +51,7 @@ function Bloco({ titulo, nota, linhas, maior }) {
 /**
  * @param items  a biblioteca completa (`null` enquanto carrega)
  */
-export default function ProfileStats({ items }) {
+export default function ProfileStats({ items, aVerAgora }) {
   if (items === null) return <p className="muted st-vazio">A carregar...</p>;
   if (!items.length) {
     return (
@@ -68,14 +68,16 @@ export default function ProfileStats({ items }) {
   // quando a pessoa ainda nao viu nada — para o bloco nunca ficar vazio num
   // perfil novo.
   const maisVistos = items
-    .filter((it) => it.watched)
+    .filter((it) => it.watched && (it.score || 0) > 0)
     .sort((a, b) => (b.score || 0) - (a.score || 0))
     .slice(0, 5);
   const emAlta = items
     .filter((it) => !it.watched && it.watchlist)
     .slice(0, 5);
   const destaque = maisVistos.length ? maisVistos : emAlta;
-  const rotuloDestaque = maisVistos.length ? "Mais vistos" : "Na lista";
+  // Ordena por NOTA, nao por vezes vistas — nao ha contagem de reproducoes
+  // em lado nenhum, por isso o nome antigo era mentira.
+  const rotuloDestaque = maisVistos.length ? "Melhores notas" : "Na lista";
 
   return (
     <div className="st">
@@ -86,6 +88,32 @@ export default function ProfileStats({ items }) {
         <div className="st-cifra">
           <dt>títulos</dt>
           <dd>{s.total}</dd>
+        </div>
+        <div className="st-cifra">
+          <dt>vistos</dt>
+          <dd>{s.vistos}</dd>
+        </div>
+        {aVerAgora !== null && (
+          <div className="st-cifra">
+            <dt>a ver agora</dt>
+            <dd>{aVerAgora}</dd>
+          </div>
+        )}
+        {s.emPausa > 0 && (
+          <div className="st-cifra">
+            <dt>em pausa</dt>
+            <dd>{s.emPausa}</dd>
+          </div>
+        )}
+        {s.abandonados > 0 && (
+          <div className="st-cifra">
+            <dt>abandonados</dt>
+            <dd>{s.abandonados}</dd>
+          </div>
+        )}
+        <div className="st-cifra">
+          <dt>para ver</dt>
+          <dd>{s.aVer}</dd>
         </div>
         <div className="st-cifra">
           <dt>com nota</dt>
@@ -137,13 +165,38 @@ export default function ProfileStats({ items }) {
         <Bloco titulo="Tipos" linhas={s.tipos} maior={s.tipos[0].n} />
       )}
 
-      {s.faixas.some((f) => f.n > 0) && (
-        <Bloco
-          titulo="Notas"
-          nota="0 a 100"
-          linhas={s.faixas}
-          maior={Math.max(...s.faixas.map((f) => f.n))}
-        />
+      {/* As notas: um espectro, nao barras.
+          As barras de 20 em 20 (1 / 3 / 30 / 167 / 104) nao diziam nada: numa
+          escala 0-100 quase toda a gente nota entre 60 e 100, por isso tres
+          quartos da biblioteca cabia em duas barras. O espectro diz em uma linha
+          onde estao o teu piso, o meio e o teu tecto — que e' a informacao
+          util sobre como costumas a notar. A barra e' a mesma linguagem do
+          "Comparar com a comunidade" que ja existe na ficha. */}
+      {s.maisBaixa !== null && (
+        <section className="st-bloco">
+          <div className="st-bloco-topo">
+            <h3 className="st-titulo">As tuas notas</h3>
+            <span className="st-nota">{s.comNota} com nota</span>
+          </div>
+          <div className="st-espectro">
+            <div className="st-espectro-linha">
+              <span className="st-espectro-marco min" style={{ left: `${s.maisBaixa}%` }} />
+              <span className="st-espectro-mediana" style={{ left: `${s.mediana}%` }} />
+              <span className="st-espectro-marco max" style={{ left: `${s.maisAlta}%` }} />
+            </div>
+            <div className="st-espectro-legendas">
+              <span>
+                <strong>{s.maisBaixa}</strong> a mais baixa
+              </span>
+              <span>
+                <strong>{s.mediana}</strong> a mediana
+              </span>
+              <span>
+                <strong>{s.maisAlta}</strong> a mais alta
+              </span>
+            </div>
+          </div>
+        </section>
       )}
 
       {destaque.length > 0 && (

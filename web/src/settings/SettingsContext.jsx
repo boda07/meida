@@ -68,6 +68,14 @@ export function SettingsProvider({ children }) {
     });
   }
 
+  // Diz ao processo principal se o autoplay esta ligado. Tem de acontecer AQUI
+  // e nao no Player: o cabecalho tem de estar na resposta do documento do
+  // iframe, e o primeiro provider carrega muito depois deste ponto. Se so fosse
+  // no Player, o primeiro video ja arrancaria antes da politica estar posta.
+  useEffect(() => {
+    window.electronAPI?.setAutoplay?.(settings.autoplay !== false);
+  }, [settings.autoplay]);
+
   return (
     <SettingsContext.Provider value={{ settings, update }}>
       {children}

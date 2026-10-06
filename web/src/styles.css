@@ -2278,7 +2278,8 @@ h2 {
 }
 
 .lib-watchlist,
-.lib-watched {
+.lib-watched,
+.lib-estado {
   padding: 10px 22px;
   border-radius: var(--radius-pill);
   border: 1px solid rgba(255, 255, 255, 0.25);
@@ -2290,8 +2291,32 @@ h2 {
   transition: all 0.2s;
 }
 
+/* "Pausar" e "Abandonar" sao acoes menos-lined than as outras, por isso sao
+   menores e mais discretas: sao o caso raro, nao o caminho normal. O "on" usa
+   uma cor diferente em cada um para se ler de relance qual esta posto. */
+.lib-estado {
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+.lib-estado.on.pausa {
+  border-color: rgba(255, 255, 255, 0.45);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.lib-estado.on.largo {
+  border-color: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.05);
+  /* Barrado, como quem risca um titulo. E' o unico sinal visual de "isto nao
+     vai acontecer" que a app tem, e e' o que o MyAnimeList faz tambem. */
+  text-decoration: line-through;
+}
+
 .lib-watchlist:hover,
-.lib-watched:hover {
+.lib-watched:hover,
+.lib-estado:hover {
   border-color: rgba(255, 255, 255, 0.5);
   background: rgba(255, 255, 255, 0.06);
 }
@@ -3241,6 +3266,54 @@ h2 {
   height: 100%;
   border: 0;
   background: #000;
+}
+
+/* Portao do "carregar video": o que aparece no lugar do iframe quando o
+   autoplay esta desligado. Preenche a area toda e e' um botao de verdade
+   (tecla Tab, Enter, Space), nao uma imagem clicavel — senao quem navega com o
+   teclado ficava preso aqui. */
+.player-arrancar {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  width: 100%;
+  border: none;
+  border-radius: inherit;
+  background: radial-gradient(120% 120% at 50% 40%, #16161a, #08080a);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.player-arrancar svg {
+  color: var(--accent);
+  /* Um circulo por volta do triangulo: e' o simbolo de "play" que toda a gente
+     reconhece, e mantem o botao legivel sem depender da cor. */
+  padding: 14px 12px 14px 15px;
+  box-sizing: content-box;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 50%;
+  background: rgba(201, 3, 3, 0.14);
+}
+
+.player-arrancar:hover svg {
+  background: rgba(201, 3, 3, 0.24);
+  border-color: rgba(255, 255, 255, 0.28);
+}
+
+.player-arrancar:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -4px;
+}
+
+.player-arrancar:hover {
+  color: var(--text);
 }
 
 /* Botao de ecra inteiro sobreposto ao canto do player */
@@ -4712,6 +4785,57 @@ h2 {
 .st-frase strong {
   color: var(--text);
   font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Espectro das notas: uma linha 0-100 com tres marcas — a mais baixa, a
+   mediana e a mais alta. E' a mesma linguagem do "Comparar com a comunidade"
+   que ja existe na ficha (`.lib-rating-track`), por isso nao parece um
+   grafico colado de outra coisa. */
+.st-espectro-linha {
+  position: relative;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.09);
+}
+
+.st-espectro-marco,
+.st-espectro-mediana {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.st-espectro-marco {
+  width: 4px;
+  height: 14px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.5);
+}
+
+/* A mediana e' o dado principal: mais alta, e' o vermelho da marca. */
+.st-espectro-mediana {
+  width: 3px;
+  height: 22px;
+  border-radius: 2px;
+  background: var(--accent);
+}
+
+.st-espectro-legendas {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 12px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.st-espectro-legendas strong {
+  display: block;
+  font-family: "Archivo", sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
   font-variant-numeric: tabular-nums;
 }
 

@@ -24,6 +24,10 @@ import { getCachedRating, getCachedRatings, getRatings as getLetterboxdRatings }
 import { isOnline } from "../services/net.js";
 import { cacheGet, cacheSet } from "../services/cache.js";
 
+// Estados que um item pode ter na coluna `status` da biblioteca. NULL = usa as
+// flags watched/watchlist (ver estadoDe() em server/src/store.js).
+const ESTADOS_OK = new Set(["paused", "dropped"]);
+
 export const libraryRouter = Router();
 libraryRouter.use(requireAuth);
 
@@ -238,14 +242,29 @@ libraryRouter.get("/library/item", (req, res) => {
 libraryRouter.post("/library", (req, res) => {
   const { tmdbId, type, title, poster, watched, watchlist, score, genres, rating } =
     req.body || {};
+  const { status } = req.body || {};
   if (!tmdbId || (type !== "movie" && type !== "tv" && type !== "anime")) {
     return res.status(400).json({ error: "tmdbId e type (movie|tv|anime) sao obrigatorios" });
   }
   if (score != null && (score < 1 || score > 100)) {
     return res.status(400).json({ error: "score tem de estar entre 1 e 100" });
   }
+  // "paused" / "dropped" / null. Qualquer outro valor e' erro de corpo, nao um
+  // estado desconhecido guardado em silencio.
+  if (status !== undefined && status !== null && !ESTADOS_OK.has(status)) {
+    return res.status(400).json({ error: "status invalido (paused|dropped|null)" });
+  }
 
   const existing = getLibraryItem(req.user.id, Number(tmdbId), type);
+
+  // Um item "em pausa" ou "abandonado" nao pode continuar a contar como "para
+  // ver" — era isso que fazia o perfil dizer 389 quando a pessoa via 2. Por isso
+  // marcar um destes estados limpa as flags; o estado passa a ser o `status`.
+  // Tirar o `status` (voltar a null) NAO repõe a watchlist: quem despausa um
+  // titulo decide de novo o que quer com ele, em vez de o app adivinhar.
+  const estadoNovo = status === undefined ? (existing?.status ?? null) : status;
+  const temEstado = estadoNovo === "paused" || estadoNovo === "dropped";
+
   upsertLibrary({
     userId: req.user.id,
     tmdbId: Number(tmdbId),
@@ -254,8 +273,9 @@ libraryRouter.post("/library", (req, res) => {
     poster: poster ?? existing?.poster ?? null,
     genres: Array.isArray(genres) ? genres : existing?.genres ?? [],
     rating: rating != null ? Number(rating) : existing?.rating ?? null,
-    watched: watched != null ? (watched ? 1 : 0) : existing?.watched ?? 0,
-    watchlist: watchlist != null ? (watchlist ? 1 : 0) : existing?.watchlist ?? 0,
+    watched: temEstado ? 0 : watched != null ? (watched ? 1 : 0) : existing?.watched ?? 0,
+    watchlist: temEstado ? 0 : watchlist != null ? (watchlist ? 1 : 0) : existing?.watchlist ?? 0,
+    status: estadoNovo,
     score: score !== undefined ? score : existing?.score ?? null,
   });
   res.json({ item: normalizeRow(getLibraryItem(req.user.id, Number(tmdbId), type)) });

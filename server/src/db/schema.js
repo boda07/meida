@@ -163,4 +163,30 @@ export const MIGRATIONS = [
       `);
     },
   },
+
+  {
+    version: 4,
+    name: "estados-da-biblioteca",
+    up(db) {
+      // "Em pausa" e "abandonado". A biblioteca so tinha `watched` e `watchlist`,
+      // que dao tres estados (visto / para ver / sem nada). Faltavam os dois
+      // estados que o MyAnimeList e o AniList tm e que as pessoas usam para
+      // dizer "comecei mas parei" e "nao vou acabar" — sem eles, os estatisticos
+      // do perfil contavam tudo o que estava na watchlist como "para ver", que
+      // e' a intencao e nao o presente.
+      //
+      // Porquê uma coluna `status` e nao mais duas flags (`paused`, `dropped`):
+      // os estados sao mutuamente exclusivos. Com flags teriamos de adivinhar o
+      // vencedor em cada leitura e podia aparecer "visto E abandonado ao mesmo
+      // tempo". Uma coluna com um valor so nao tem como ficar contraditoria.
+      //
+      // NULL = usa as flags (comportamento de sempre). 'paused' / 'dropped' =
+      // sobrepoem-se a elas. Ver `estadoDe()` em server/src/store.js, que e' a
+      // unica funcao que decide o estado final.
+      db.exec(`
+        ALTER TABLE library ADD COLUMN status TEXT;
+        CREATE INDEX IF NOT EXISTS idx_library_status ON library(user_id, status);
+      `);
+    },
+  },
 ];
