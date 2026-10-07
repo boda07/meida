@@ -48,6 +48,39 @@ export default function Player({ embeds, deadIds, title, startIndex = 0 }) {
   // vez de o player mudar de marca sem explicação).
   const [trocada, setTrocada] = useState(null);
 
+  // O `deadIds` num ref, e nao nas dependencias do efeito que reinicia o player.
+  // O health-check chega DEPOIS do video estar a dar (o backend local gasta uns
+  // segundos a sondar todos os providers, e o hook volta a perguntar de 3 em 3 s),
+  // e quando chega nao lhe compete mexer em nada. O timeout de fallback le-o daqui.
+  const deadRef = useRef(deadIds);
+  deadRef.current = deadIds;
+
+  // "Ja carregou" e o timer do timeout em refs, nao em estado, porque o `load`
+  // pode chegar antes do efeito ter tempo de correr. Ver `marcarCarregado`.
+  const carregouRef = useRef(false);
+  const timerRef = useRef(null);
+
+  /**
+   * O iframe carregou.
+   *
+   * Vem do `onLoad` do React e nao de um `addEventListener` dentro de um efeito,
+   * para o listener ja estar ligado quando o elemento e' criado.
+   *
+   * A razao do bug: quando o iframe e' recriado com a MESMA url — o que
+   * acontecia cada vez que o health-check chegava — vinha do cache e o `load`
+   * disparava em milissegundos, as vezes antes de um efeito ter tempo de lixar
+   * o listener. Perdia-se o evento, `loaded` ficava a false para sempre (o aviso
+   * "a carregar" ficava no ecra com o video a dar) e o timeout de 15 s acabava
+   * por trocar de fonte com o video a reproduzir bem.
+   */
+  function marcarCarregado() {
+    if (carregouRef.current) return;
+    carregouRef.current = true;
+    clearTimeout(timerRef.current);
+    timerRef.current = null;
+    setLoaded(true);
+  }
+
   // Com o autoplay DESLIGADO, o iframe so nasce depois de um clique.
   //
   // Porque nao basta a `Permissions-Policy: autoplay=()` (electron/autoplay.cjs):
@@ -65,12 +98,21 @@ export default function Player({ embeds, deadIds, title, startIndex = 0 }) {
   const active = lista?.[index];
   const finalSrc = active ? applyPlaybackPrefs(active.embedUrl, settings) : null;
 
+  // Re-inicia o indice activo quando a lista ou a origem mudarem: episodio novo,
+  // titulo novo, trocar de audio.
+  //
+  // `deadIds` NAO entra aqui, e e' o ponto todo. O health-check chega uns
+  // segundos DEPOIS do episode arrancar, e antes isto reiniciava o player
+  // inteiro: deitava fora o iframe e criava outro com a mesma url (da' a fonte
+  // a mudar "uns segundos depois") e punha `loaded` a false, o que fazia o
+  // aviso "a carregar" aparecer com o video a reproduzir. Quem decide se se
+  // sai da fonte activa e' o efeito logo a seguir, e so' quando essa fonte
+  // esta mesmo nos mortos.
   useEffect(() => {
-    // Re-inicia o indice activo quando a lista ou a origem mudarem.
-    setIndex(() => firstAlive(lista, deadIds, startIndex));
+    setIndex(() => firstAlive(lista, deadRef.current, startIndex));
     setReloadKey((k) => k + 1);
     setLoaded(false);
-  }, [lista, deadIds, startIndex]);
+  }, [lista, startIndex]);
 
   // Fonte nova (episodio novo, titulo novo, trocar de audio): o portao volta a
   // aparecer se o autoplay estiver desligado. NAO se mexe quando so o indice muda,
@@ -79,49 +121,66 @@ export default function Player({ embeds, deadIds, title, startIndex = 0 }) {
     setArrancado(settings.autoplay);
   }, [lista, settings.autoplay]);
 
+  // Chegou o resultado do health-check: sai da fonte actual APENAS se ela
+  // estiver nos mortos. E' a unica coisa que o health-check nos diz de util, e
+  // o unico caso em que vale a pena deitar o iframe fora.
+  //
+  // So reage a `deadIds` de proposito: se dependesse tambem de `active`/`index`,
+  // correria de novo sempre que o timeout trocasse de fonte, e podia voltar a
+  // trocar outra vez — uma bola de neve entre o health-check e o fallback.
+  /* eslint-disable react-hooks/exhaustive-deps */
   useEffect(() => {
-    if (!active) return;
+    if (!deadIds || !active) return;
+    if (!deadIds.has(active.provider)) return;
+    const proximo = nextAlive(index, lista, deadIds);
+    // Sem alternativa: fica a fonte partida, mas o aviso de "nao carregou"
+    // avisa a pessoa e ela pode escolher outra a mao.
+    if (proximo === index) return;
+    setTrocada(active.name || null);
+    setIndex(proximo);
+    setReloadKey((k) => k + 1);
     setLoaded(false);
-    let done = false;
-    const timer = setTimeout(() => {
-      if (!done) {
-        // Timeout: o iframe nao carregou. Só se avança quando há outra fonte;
-        // se esta era a última, fica a mostrar a mensagem em vez de ficar em
-        // loop a recarregar a mesma fonte.
-        const proximo = nextAlive(index, lista, deadIds);
-        if (proximo === index) {
-          setLoaded(true); // sem mais fontes: para de tentar
-          return;
-        }
-        done = true;
-        setTrocada(active?.name || null);
-        setIndex(proximo);
-        setReloadKey((k) => k + 1);
-        setLoaded(false);
+  }, [deadIds]);
+  /* eslint-enable react-hooks/exhaustive-deps */
+
+  // Timeout de fallback: 15 s sem `load` -> proxima fonte.
+  //
+  // `arrancado` entra nas dependencias e na guarda: com o autoplay desligado
+  // ainda nao ha iframe nenhum, e contar 15 s a espera de um `load` que nunca
+  // chega trocava a fonte sem a pessoa ter carregado em nada.
+  useEffect(() => {
+    if (!active || !arrancado) return;
+    // Recomeca a espera. Esta efeito corre no `reloadKey` de proposito: e' o
+    // que avisa de que o iframe foi recriado e precisa de novo os 15 s.
+    carregouRef.current = false;
+    setLoaded(false);
+    timerRef.current = setTimeout(() => {
+      if (carregouRef.current) return;
+      carregouRef.current = true;
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+      // Timeout: o iframe nao carregou. So se avanca quando ha outra fonte;
+      // se esta era a ultima, fica a mostrar a mensagem em vez de ficar em
+      // loop a recarregar a mesma fonte.
+      const proximo = nextAlive(index, lista, deadRef.current);
+      if (proximo === index) {
+        setLoaded(true); // sem mais fontes: para de tentar
+        return;
       }
+      setTrocada(active?.name || null);
+      setIndex(proximo);
+      setReloadKey((k) => k + 1);
+      setLoaded(false);
     }, TIMEOUT_MS);
 
-    const iframe = iframeRef.current;
-    const onload = () => {
-      if (!done) {
-        done = true;
-        clearTimeout(timer);
-        setLoaded(true);
-      }
-    };
-    iframe?.addEventListener("load", onload);
     return () => {
-      clearTimeout(timer);
-      iframe?.removeEventListener("load", onload);
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
     };
-    // `reloadKey` TEM de estar nesta lista, e nao e' por cerimonia: o efeito de
-    // cima faz `setReloadKey(k + 1)` ao abrir, e o `key` do iframe obriga o
-    // React a deitar fora o elemento e criar outro. Sem esta dependencia, este
-    // efeito nao voltava a correr e o `load` ficava ligado ao iframe que ja
-    // tinha ido para o caixote — ou seja, nunca chegava. O aviso "a carregar"
-    // ficava no ecra com o video a dar, e o auto-fallback de 15s chegava a
-    // trocar de fonte com o video a reproduzir bem.
-  }, [active, lista, deadIds, index, reloadKey]);
+    // `deadRef` e' um ref: nao precisa de dependencia, e usar `deadIds` aqui
+    // voltava a reiniciar a espera (e o aviso) cada vez que o health-check
+    // chegasse, sem haver iframe novo para vir.
+  }, [active, lista, index, reloadKey, arrancado]);
 
   if (!active) return null;
 
@@ -135,6 +194,7 @@ export default function Player({ embeds, deadIds, title, startIndex = 0 }) {
           title={title || active.name || "player"}
           allowFullScreen
           referrerPolicy="origin"
+          onLoad={marcarCarregado}
           // "autoplay" so entra quando a definicao esta ligada. Com a permissao
           // sempre presente, o player do provider arrancava sozinho mesmo com o
           // autoplay desligado nas Definicoes.

@@ -367,7 +367,21 @@ h2 {
   fill: none;
 }
 
+/* ===== Pesquisa na barra =====
+   A pilula da barra e' CENTRADA (`left: 50%` + `translateX(-50%)`) e tem
+   `backdrop-filter: blur(20px)`. Por isso, quando o input crescia de 0 para
+   180 px, a barra INTEIRA recentrava e deslizava 90 px para a esquerda — e o
+   fundo desfocado ia com ela. Era o "o wallpaper mexe" (medido a 2026-10-07:
+   barra fechada left=184, aberta left=94, com o centro fixo em 395).
+
+   A correcao: o input sai do fluxo. Cresce para a ESQUERDA, por cima dos
+   links de navegacao, com o seu proprio fundo. A pilula mantem sempre a mesma
+   largura, portanto nao se mexe nada — nem a barra, nem o fundo.
+
+   Havia uma segunda regra `.search.open input` (170 px) imediatamente antes
+   desta, anulada pela cascata. Nao a reintroduzo. */
 .search {
+  position: relative; /* referencia para o input absoluto */
   display: flex;
   align-items: center;
   gap: 0;
@@ -380,29 +394,48 @@ h2 {
 }
 
 .search input {
+  /* `position: absolute` e' o que impede a pilula de mudar de largura: um
+     elemento fora do fluxo nao contribui para a largura do pai. */
+  position: absolute;
+  right: 100%; /* encosta a esquerda da pilula, onde esta o icone */
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 1; /* acima do fundo da pilula e dos links que cobre */
   width: 0;
   padding: 0;
-  border: none;
-  background: transparent;
+  margin-right: 0;
+  opacity: 0;
+  pointer-events: none;
+  border: 1px solid transparent;
+  border-radius: var(--radius-pill);
+  background: rgba(18, 18, 22, 0.94);
   color: var(--text);
   font-family: inherit;
   font-size: 14px;
   outline: none;
-  transition: width 0.25s, padding 0.25s;
+  transition: width 0.25s ease, padding 0.25s ease, margin 0.25s ease,
+    opacity 0.15s ease;
 }
 
 .search.open input {
-  width: 170px;
-  padding: 0 14px 0 4px;
+  width: 230px;
+  padding: 8px 14px;
+  /* respiro entre a pesquisa e a pilula: sem isto as duas formas
+     arredondadas ficam coladas e aparece um entalhe no meio */
+  margin-right: 8px;
+  opacity: 1;
+  pointer-events: auto;
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* O foco e' o unico sinal de que se pode escrever aqui: o input vive sobre a
+   pilula e nao apanha o contorno do `:focus-visible` global. */
+.search.open input:focus-visible {
+  border-color: var(--accent);
 }
 
 .search input::placeholder {
   color: rgba(255, 255, 255, 0.45);
-}
-
-.search.open input {
-  width: 180px;
-  padding: 8px;
 }
 
 /* ===== Perfil dropdown ===== */
@@ -4363,12 +4396,45 @@ h2 {
   margin-top: 8px;
 }
 
+/* Momento do video. Era <input type="number"> com "seg" ao lado: pedia 125 para
+   dizer 2:05. Agora e' texto em m:ss, do tamanho de um momento. */
 .comment-at {
   display: inline-flex;
   align-items: center;
   gap: 6px;
   font-size: 12px;
   color: var(--text-secondary);
+}
+
+.comment-at input {
+  width: 74px;
+  padding: 6px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.3);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.comment-at input::placeholder {
+  color: var(--text-secondary);
+}
+
+.comment-at input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.comment-at.erro input {
+  border-color: #ff5a7a;
+}
+
+.comment-aviso {
+  margin: 6px 0 0;
+  font-size: 12px;
+  color: #ff5a7a;
 }
 
 .comment-at input {
@@ -4454,26 +4520,53 @@ h2 {
   gap: 14px;
 }
 
+/* O like. Antes era so' a palavra "Gosto" e um numero que aparecia apenas
+   quando maior que zero — com zerolikes ficava um botao sem nada, e a pessoa
+   concluia que o botao nao existia. Agora e' um coracao com a contagem sempre
+   visivel, e um contorno quando ja se gostou (para se ver sem depender so da
+   cor, que e' o unico sinal que um daltonismo nao distingue). */
 .comment-like {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   background: none;
-  border: none;
+  border: 1px solid transparent;
+  border-radius: var(--radius-pill);
+  padding: 3px 10px 3px 8px;
   color: var(--text-secondary);
   font-family: inherit;
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
   cursor: pointer;
-  padding: 0;
-  transition: color 0.15s;
+  transition: color 0.15s, background 0.15s, border-color 0.15s;
 }
 
-.comment-like:hover:not(:disabled),
+.comment-like:hover:not(:disabled) {
+  background: rgba(255, 90, 122, 0.1);
+  border-color: rgba(255, 90, 122, 0.35);
+  color: #ff5a7a;
+}
+
 .comment-like.on {
   color: #ff5a7a;
+  border-color: rgba(255, 90, 122, 0.45);
+  background: rgba(255, 90, 122, 0.12);
+}
+
+.comment-like:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.comment-like-icone {
+  font-size: 14px;
+  line-height: 1;
 }
 
 .comment-like:disabled {
   cursor: default;
-  opacity: 0.6;
+  opacity: 0.55;
 }
 
 .comment-link {
@@ -5160,4 +5253,177 @@ h2 {
 
 .set-text:focus {
   border-color: var(--accent);
+}
+
+/* ===== Notificacoes: o sino ===== */
+
+.notif {
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.notif-sino {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.notif-sino:hover,
+.notif-sino[aria-expanded="true"] {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text);
+}
+
+.notif-sino:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* A conta sai para fora do botao para o "9+" nao estourar a barra nem empurrar
+   o resto do header. */
+.notif-conta {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  min-width: 17px;
+  height: 17px;
+  padding: 0 4px;
+  border-radius: 9px;
+  background: var(--accent);
+  color: #fff;
+  font-family: "Manrope", system-ui, sans-serif;
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 17px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  box-shadow: 0 0 0 2px var(--bg-dark);
+}
+
+/* Abre por baixo do sino, alinhado a direita para nunca sair do ecra (o sino
+   esta no canto). */
+.notif-painel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 330px;
+  max-height: 420px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  background: var(--bg-surface);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55);
+  z-index: 60;
+}
+
+.notif-topo {
+  position: sticky;
+  top: 0;
+  padding: 11px 14px 9px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  background: var(--bg-surface);
+  font-family: "Archivo", system-ui, sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.notif-lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.notif-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 14px;
+  border: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  background: none;
+  text-align: left;
+  text-decoration: none;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+
+.notif-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.notif-texto {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+
+.notif-texto > span:first-child {
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.notif-texto strong {
+  font-weight: 700;
+}
+
+.notif-preview {
+  font-size: 12px;
+  line-height: 1.35;
+  color: var(--text-secondary);
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.notif-quando {
+  font-size: 11px;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.notif-avatar-vazio {
+  flex: 0 0 auto;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.notif-vazio {
+  margin: 0;
+  padding: 22px 16px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+/* Em ecra estreito o painel nao cabe ao lado do sino: vai de margem a margem,
+   fixo, para nunca sair do ecra. */
+@media (max-width: 480px) {
+  .notif-painel {
+    position: fixed;
+    top: 56px;
+    right: 8px;
+    left: 8px;
+    width: auto;
+  }
 }

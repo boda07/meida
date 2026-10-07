@@ -92,6 +92,15 @@ export default function Details() {
 
   // Player a reportar posição (nos players próprios: torrents/HLS/extratores).
   const activeProviderRef = useRef(null); // último provider escolhido (ref, p/ não reiniciar timers)
+  // Ultima posicao de video que um player reportou (segundos). Serve para o
+  // botao "neste momento" dos comentarios. Nos providers em iframe nao ha
+  // posicao a que pegar, e por isso fica null.
+  const [posAtual, setPosAtual] = useState(null);
+  // Trocar de episodio/fonte invalida o tempo: o "12:34" era do anterior.
+  useEffect(() => {
+    setPosAtual(null);
+  }, [details?.id, season, episode]);
+
   const reportPos = useCallback((position, duration) => {
     if (!user || !details) return;
     api
@@ -107,6 +116,7 @@ export default function Details() {
         provider: activeProviderRef.current,
       })
       .catch(() => {});
+    setPosAtual(position);
     // Presença no Discord: aproveita o mesmo callback do progresso para mostrar
     // "12:34 / 45:00" enquanto se vê (o Discord filtra os updates a mais).
     showPresence({
@@ -882,6 +892,7 @@ api
         tmdbId={details.id}
         season={details.type === "tv" ? season : null}
         episode={details.type === "anime" || details.type === "tv" ? episode : null}
+        posAtual={posAtual}
       />
 
       {compareOpen && (

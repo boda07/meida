@@ -22,6 +22,7 @@ import { socialRouter } from "./routes/social.js";
 import { commentsRouter } from "./routes/comments.js";
 import { watchPartyRouter } from "./routes/watchparty.js";
 import { adminRouter } from "./routes/admin.js";
+import { notificationsRouter } from "./routes/notifications.js";
 import { log } from "./services/log.js";
 
 const app = express();
@@ -48,6 +49,7 @@ app.use("/api", adminRouter);
 app.use("/api", catalogRouter);
 app.use("/api", sourcesRouter);
 app.use("/api", authRouter);
+app.use("/api", notificationsRouter);
 // social/comments ANTES dos routers com requireAuth global (letterboxd, debrid,
 // progress, export, achievements, library): esses aplicam o login a TUDO o que
 // lhes chega, e os perfis publicos e a leitura de comentarios sao anonimos.

@@ -1,5 +1,120 @@
 # Changelog
 
+## 1.3.4
+
+### Corrigido: aviso "a carregar" permanente e troca de fonte com o video a dar
+Reportado a 2026-10-07, so na app de desktop (nao no browser).
+
+O sintoma eran dois na mesma causa: o aviso `megaplay (anime) a carregar...`
+ficava no ecra com o video a reproduzir, e a fonte mudava uns segundos depois de
+o episodio arrancar.
+
+Causa: `deadIds` estava nas dependencias do efeito que reinicia o player
+(`web/src/components/Player.jsx`). O health-check chega **depois** do video
+comecar — no backend local gasta ~2 s a sondar os 10 providers e o
+`useProviderHealth` volta a perguntar de 3 em 3 s — e ao passar de `null` para
+`Set` disparava:
+
+1. `setReloadKey(k + 1)`: o React deitava fora o iframe e criava outro **com a
+   mesma URL**, que vinha do cache. Da' a "fonte a mudar uns segundos depois".
+2. `setLoaded(false)`: o aviso "a carregar" reaparecia com o video a dar.
+3. O `load` do iframe recriado disparava em milissegundos, as vezes antes de um
+   efeito ter tempo de lixar o listener `addEventListener`. Perdia-se o evento,
+   `loaded` ficava a `false` para sempre, e aos 15 s o timeout de fallback trocava
+   de fonte com o video a reproduzir bem.
+
+Tres mudancas:
+
+- `deadIds` saiu das dependencias do reinicio. Houve agora um efeito separado que
+  so sai da fonte actual **se ela estiver mesmo nos mortos** (e nao quando o
+  health-check chega).
+- O `load` passou para o `onLoad` do React, para o listener estar ligado quando
+  o elemento e' criado em vez de depois.
+- O timeout passou a guardar o estado em refs e a respeitar `arrancado` (com o
+  autoplay desligado nao ha iframe, e contar 15 s trocava a fonte sem a pessoa
+  ter carregado em nada).
+
+Verificado no browser durante 40 s, com o health-check a resolver dentro da
+janela: zero recreacoes de iframe, zero avisos. A troca de titulo continua a
+reiniciar o player.
+
+### Corrigido: "vistos" e "para ver" em branco nas Estatisticas do perfil
+Desde a 1.3.2. `ProfileStats.jsx` renderiza `s.vistos` e `s.aVer`, mas
+`detalheStats()` nunca os devolvia — so' `statsFrom()` os calcula, e a aba nao o
+chama. Passavam a ser `undefined`, que o React renderiza como vazio. O cabecalho
+do perfil nao se notava porque usa `statsFrom()`.
+
+Passaram a ser calculados no mesmo ciclo, com o mesmo `estadoDe()`, e por isso
+tambem respondem a qualquer filtro.
+
+### Corrigido: filtro da biblioteca nao voltava a pagina 1
+`Library.jsx` chamava `setFilter`/`setSort`/`setTypeFilter` sem mexer em `page`.
+Estar na pagina 9 e carregar em "Em pausa" saltava para a pagina 9 de uma lista
+com 2 — ou seja, para o fim dela. O `safePage` escondia o defeito: limitava a
+pagina mas limitava para a ultima.
+
+### Corrigido: a barra da pesquisa mexia o fundo desfocado
+`.nav-bar` e' uma pilula **centrada** (`left: 50%` + `translateX(-50%)`) com
+`backdrop-filter: blur(20px)`. Quando o input crescia de 0 para 180 px a barra
+recentrava e deslizava 90 px para a esquerda, e o fundo ia com ela (medido:
+fechada `left=184`, aberta `left=94`, centro fixo em 395).
+
+O input passou a `position: absolute`, a crescer para a **esquerda** por cima dos
+links de navegacao. Fora do fluxo, nao contribui para a largura do pai, portanto a
+pilula mantem-se constante. Depois: `mexeu: false`, barra e menu de perfil
+identicos nos dois estados.
+
+### Novo: paginacao na biblioteca do perfil
+`PosterGrid` (que serve a biblioteca e as listas) passou a paginar a 60 por
+pagina — o mesmo que a pagina de biblioteca, para o dedo saber onde esta o
+"Seguinte". Mudar de perfil ou de lista volta a pagina 1; a pagina nunca passa do
+fim. A biblioteca principal ja paginava (60 por pagina); o scroll gigante era o
+do perfil.
+
+### Novo: sino de notificacoes
+Migracao 5 (`server/src/db/schema.js`), rotas em
+`server/src/routes/notifications.js`, store em `server/src/store.js`, sino em
+`web/src/components/NotificationBell.jsx`.
+
+Tres eventos: resposta a um comentario, gosto num comentario, e "comecou a
+seguir-te". Duas regras que o store garante: nunca notificar a pessoa de si
+propria, e nunca duplicar (indice unico em `(user_id, kind, ref_id, actor_id)`).
+O `like` so notifica se o like foi mesmo novo (`guard.changes > 0`).
+
+Detalhe importante de montagem: o `requireAuth` esta **em cada rota**, nao com
+`router.use(...)`. Um `router.use(requireAuth)` corre para todos os pedidos que
+entram no router e, sem token, responde 401 em vez de seguir — e como este router
+e' montado em `/api`, isso partia o registo e o login de toda a gente. Apanhado
+pelo teste de fumo ponta a ponta.
+
+### Novo: rosto do comentario e datas relativas
+- A contagem do like passou a aparecer **sempre**, mesmo a zero. Antes so
+  aparecia com `likes > 0`, e com zero ficava um coracao solto sem contexto —
+  dai a conclusao de que nao havia likes. O `.on` ganhou contorno alem da cor
+  (para se ler sem depender so da cor) e `aria-pressed`.
+- `when()` (data absoluta "07 out") deu lugar a `haQuanto()`: "agora mesmo",
+  "ha 10 seg", "ha 3 min", "ha 5 h", "ha 2 dias", e data completa depois de uma
+  semana. Datas no futuro nao dao negativos (desvio de relogio entre maquinas).
+- O campo do momento deixou de ser `<input type="number">` (pedia `125` para
+  dizer 2:05) e passou a texto em `m:ss`, aceitando as duas escritas, com
+  mensagem de erro e a bloquear o botao. Ganhou um "neste momento" quando o
+  player sabe a posicao (nos providers em iframe nao ha, e ai o botao nao
+  aparece em vez de aparecer morto).
+
+Novo modulo `web/src/lib/tempo.js` com **44 verificacoes** em
+`scripts/testar-tempo.mjs`.
+
+### Melhorado: generos das Estatisticas em portugues
+A BD guarda os generos em ingles (vem da TMDB/AniList). `ROTULO_GENERO` traduz
+para mostrar e o que nao tiver traducao usavel aparece tal e qual ("Isekai",
+"Shounen"). A chave continua a ser o nome original: `"Music"` e `"Música"`
+existem os dois na BD e traduzem para a mesma palavra, e chaves repetidas fazem o
+React trocar linhas.
+
+### Testes
+`npm test` passou de 84 para **97** verificacoes (48 servidor + 14 adblock +
+14 autoplay + 22 estados + 17 notificacoes + 44 tempo).
+
 ## 1.3.3
 
 ### Corrigido: o autoplay desligado nao impedia o MegaPlay de arrancar

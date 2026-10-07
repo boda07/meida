@@ -13,7 +13,7 @@
 // (o "Series 12" de um perfil com 412 animes virava um risco de 1px).
 import { Link } from "react-router-dom";
 import { imageUrl } from "../api/client.js";
-import { detalheStats } from "./profileStats.js";
+import { detalheStats, rotuloGenero } from "./profileStats.js";
 
 /** Uma linha: rotulo, barra, numero. A barra cresce contra o maior do bloco. */
 function Linha({ nome, n, maior }) {
@@ -41,7 +41,10 @@ function Bloco({ titulo, nota, linhas, maior }) {
       </div>
       <div className="st-linhas">
         {linhas.map((l) => (
-          <Linha key={l.nome} nome={l.nome} n={l.n} maior={maior} />
+          // A chave e' o nome ORIGINAL (ingles): dois generos podem traduzir
+          // para a mesma palavra ("Music" e "Música" existem os dois na BD),
+          // e chaves repetidas fazem o React trocar linhas entre si.
+          <Linha key={l.nome} nome={rotuloGenero(l.nome)} n={l.n} maior={maior} />
         ))}
       </div>
     </section>

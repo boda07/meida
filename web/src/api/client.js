@@ -254,6 +254,13 @@ export const api = {
   likeComment: (id) => post(`/api/comments/${id}/like`, {}),
   unlikeComment: (id) => del(`/api/comments/${id}/like`),
 
+  // Notificacoes. `notifications()` traz a lista E a contagem num pedido so —
+  // o sino e' actualizado a cada minuto e nao vale a pena dois pedidos.
+  notifications: () => get("/api/notifications"),
+  notificationsUnread: () => get("/api/notifications/unread"),
+  markNotificationRead: (id) => post(`/api/notifications/${id}/read`, {}),
+  markAllNotificationsRead: () => post("/api/notifications/read-all", {}),
+
   // Biblioteca pessoal
   library: () => get("/api/library", langParams()),
   libraryItem: (type, tmdb) => get("/api/library/item", { type, tmdb }),
