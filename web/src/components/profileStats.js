@@ -82,7 +82,7 @@ export function statsFrom(items) {
 // ---------------------------------------------------------------------------
 // Estatisticas da aba "Estatisticas": mais do que quatro numeros.
 //
-// Aqui ja nao e' so contar — e' agrupar a biblioteca para responder a "que tipo
+// Aqui ja nao e' so contar -- e' agrupar a biblioteca para responder a "que tipo
 // de pessoa ve isto": que generos, que formatos, e como distribui as notas.
 //
 // O que NAO se calcula, e porquê: ano de estreia, temporada, estudio, duracao e
@@ -90,12 +90,44 @@ export function statsFrom(items) {
 // `toApi()` em server/src/store.js: so' ha tipo, generos e nota). Prometer um
 // grafico por ano com dados que nao existem daria sempre zero. Se um dia
 // passarmos a guardar `air_date`/`genres` da/details, e' aqui que o grafico
-// entra — nao noutro sitio.
+// entra -- nao noutro sitio.
 //
 // As contagens sao de titulos, nao de generos: um anime de accao com fantasia
 // conta 1 em "titulos" e 1 em cada um dos dois generos. E' por isso que a soma
-// dos generos passa largamente o total — e o correcto.
+// dos generos passa largamente o total -- e o correcto.
 const ROTULO_TIPO = { anime: "Anime", movie: "Filmes", tv: "Series" };
+
+// Genero em ingles -> rotulo em portugues (para mostrar). A BD guarda ingles
+// porque e' assim que vem da TMDB/AniList; a UI fala portugues. O que nao
+// estiver aqui aparece tal e qual — termos como "Isekai" ou "Shounen" nao tem
+// traducao usavel e troca-los so' confundia.
+export const ROTULO_GENERO = {
+  Action: "Ação",
+  Adventure: "Aventura",
+  Animation: "Animação",
+  Comedy: "Comédia",
+  Crime: "Crime",
+  Documentary: "Documentário",
+  Drama: "Drama",
+  Family: "Família",
+  Fantasy: "Fantasia",
+  History: "História",
+  Horror: "Terror",
+  Music: "Música",
+  Música: "Música",
+  Mystery: "Mistério",
+  Romance: "Romance",
+  "Science Fiction": "Ficção Científica",
+  "Sci-Fi": "Ficção Científica",
+  Thriller: "Thriller",
+  War: "Guerra",
+  Western: "Faroeste",
+};
+
+/** Nome do genero para mostrar: traduz quando sabemos, senao devolve igual. */
+export function rotuloGenero(nome) {
+  return ROTULO_GENERO[nome] || nome;
+}
 
 // Ordem fixa, para as barras sairem sempre iguais (e nao por ordem de contagem,
 // que mudaria a cada titulo novo).
@@ -109,6 +141,8 @@ const MAX_GENEROS = 8;
 /**
  * As estatisticas da aba. Devolve sempre as tres listas, mesmo vazias, para a
  * UI poder dizer "ainda nao ha notas" em vez de nao mostrar nada.
+ *
+ * @param items  a biblioteca completa
  */
 export function detalheStats(items) {
   const lista = Array.isArray(items) ? items : [];
@@ -118,12 +152,20 @@ export function detalheStats(items) {
   const notas = [];
   let soma = 0;
 
+  let vistos = 0;
+  let aVer = 0;
   let emPausa = 0;
   let abandonados = 0;
 
   for (const it of lista) {
     const estado = estadoDe(it);
-    if (estado === "paused") emPausa++;
+    // `vistos` e `aVer` eram calculados so' por `statsFrom()`, que a aba nao
+    // chama — por isso a aba mostrava as linhas com o numero em branco, e' o
+    // "falta o a ver" do perfil de outra pessoa (desde a 1.3.2). Aqui sao do
+    // mesmo estadoDe, sobre a MESMA lista (logo, sobre o filtro de genero).
+    if (estado === "completed") vistos++;
+    else if (estado === "plan") aVer++;
+    else if (estado === "paused") emPausa++;
     else if (estado === "dropped") abandonados++;
 
     if (it.type && tipos.has(it.type)) tipos.set(it.type, tipos.get(it.type) + 1);
@@ -140,7 +182,7 @@ export function detalheStats(items) {
   }
 
   // Desempate pela media mais alta; seemn empate, o titulo mais recente (a API
-  // ordena por updated_at) — o mesmo criterio que a capa usava.
+  // ordena por updated_at) -- o mesmo criterio que a capa usava.
   const comNota = notas.length;
   notas.sort((a, b) => b - a);
   const media = comNota ? Math.round(soma / comNota) : null;
@@ -150,7 +192,7 @@ export function detalheStats(items) {
         : Math.round((notas[comNota / 2 - 1] + notas[comNota / 2]) / 2))
     : null;
 
-  // Ordenar por contagem e, em empate, alfabeticamente — para o resultado ser
+  // Ordenar por contagem e, em empate, alfabeticamente -- para o resultado ser
   // igual sempre. Sem o desempate, dois generos com 12 titulos trocavam de lugar
   // conforme a ordem da base de dados.
   const listaGeneros = [...generos.entries()]
@@ -160,6 +202,8 @@ export function detalheStats(items) {
 
   return {
     total: lista.length,
+    vistos,
+    aVer,
     emPausa,
     abandonados,
     comNota,

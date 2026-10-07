@@ -269,6 +269,22 @@ export default function Library() {
     [shown, safePage]
   );
 
+  // Qualquer mudanca de filtro, ordem, tipo ou genero volta a pagina 1.
+  //
+  // Sem isto, estar na pagina 9 e carregar em "Em pausa" saltava para a pagina 9
+  // de uma lista que so' tem 2 — ou seja, para o fim dela. A pessoa pedia o
+  // inicio e-lhe davam um qualquer troco do meio, sem nenhum aviso. E o
+  // `safePage` de cima esconde o problema: limita a pagina, mas limita para a
+  // ultima, que nao e' o que se quer ver depois de filtrar.
+  //
+  // Nota: ao mudar de filtro a pagina volta a 1 e o efeito de fazer scroll (em
+  // baixo) dispara tambem, porque a `safePage` mudou. Nao se nota muito — quem
+  // mexe nos filtros ja esta no alto da pagina, ao lado dos botoes — e subir e'
+  // o comportamento certo depois de a lista encolher.
+  useEffect(() => {
+    setPage(1);
+  }, [filter, typeFilter, genreSel, sort, dir, selList]);
+
   // Sobe ao topo ao trocar de página (mais agradavel em listas grandes).
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });

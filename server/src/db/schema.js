@@ -189,4 +189,44 @@ export const MIGRATIONS = [
       `);
     },
   },
+
+  {
+    version: 5,
+    name: "notificacoes",
+    up(db) {
+      // Uma notificacao por evento que aconteceu a alguem.
+      //
+      // O indice unico (user_id, kind, ref_id, actor_id) e' o que impede o
+      // silencio: se a mesma pessoa curtir o mesmo comentario cinco vezes, so'
+      // ha uma notificacao. Sem esta restricao, Bastava carregar no like varias
+      // vezes para encher o sino de ruido.
+      //
+      // `lida` e' uma coluna e nao um registo separado de leitura: nao interessa
+      // QUANDO se leu, so' que ja se leu.
+      //
+      // `preview` e' um bocado do texto do comentario, para se ler a notificacao
+      // sem abrir a pagina. Cortado pelo store, nao pela base de dados.
+      db.exec(`
+        CREATE TABLE notifications (
+          id          INTEGER PRIMARY KEY AUTOINCREMENT,
+          user_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          kind        TEXT    NOT NULL,   -- reply | like | follow
+          actor_id    INTEGER REFERENCES users(id) ON DELETE CASCADE,
+          ref_id      INTEGER,            -- comentario (reply/like) ou pessoa (follow)
+          media_type  TEXT,               -- contexto: onde ir quando se clica
+          external_id INTEGER,
+          season      INTEGER,
+          episode     INTEGER,
+          preview     TEXT,               -- um bocado do texto, para se ler sem abrir
+          read        INTEGER NOT NULL DEFAULT 0,  -- o sino so conta as que estao a 0
+          created_at  TEXT    NOT NULL
+        );
+
+        CREATE INDEX idx_notifications_user
+          ON notifications(user_id, created_at DESC);
+        CREATE UNIQUE INDEX idx_notifications_unica
+          ON notifications(user_id, kind, ref_id, COALESCE(actor_id, 0));
+      `);
+    },
+  },
 ];

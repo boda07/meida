@@ -1,6 +1,6 @@
 {
   "name": "streamapp",
-  "version": "1.3.3",
+  "version": "1.3.4",
   "private": true,
   "description": "App pessoal tipo Stremio: catalogo TMDB + embed providers + torrents",
   "main": "electron/main.cjs",
@@ -21,10 +21,12 @@
     "app": "npm run build && electron .",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "test": "npm --prefix server test && node scripts/testar-adblock.cjs && node scripts/testar-autoplay.mjs && node scripts/testar-estados.mjs",
+    "test": "npm --prefix server test && node scripts/testar-adblock.cjs && node scripts/testar-autoplay.mjs && node scripts/testar-estados.mjs && node scripts/testar-notificacoes.mjs && node scripts/testar-tempo.mjs",
     "test:adblock": "node scripts/testar-adblock.cjs",
     "test:autoplay": "node scripts/testar-autoplay.mjs",
     "test:estados": "node scripts/testar-estados.mjs",
+    "test:notificacoes": "node scripts/testar-notificacoes.mjs",
+    "test:tempo": "node scripts/testar-tempo.mjs",
     "app:pack": "npm run build && electron-builder --x64 --arm64",
     "app:pack:zip": "npm run build && electron-builder --win zip --x64 --arm64",
     "app:publish": "npm run build && electron-builder --x64 --arm64 --publish always && node scripts/prune-releases.mjs"

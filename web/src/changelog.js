@@ -2,6 +2,21 @@
 // "o que mudou" depois de o utilizador atualizar a app. Mais recente em cima.
 export const CHANGELOG = [
   {
+    version: "1.3.4",
+    items: [
+      "Corrigido: o aviso “a carregar” ficava no canto do vídeo mesmo com o vídeo a passar, e o servidor de vídeo mudava sozinho uns segundos depois de começares. Acontecia por causa de uma verificação interna que acabava a correr duas vezes.",
+      "Novo: a tua biblioteca no perfil passou a ter páginas. Antes eram as 700 ou tal títulos todos de uma vez, sem se ver o fim; agora são 60 por página.",
+      "Novo: podes dar “gostar” a um comentário. Antes o coração lá estava mas não se percebia que era um botão, e o número só aparecia quando alguém já tinha gostado. Agora a contagem está sempre visível e o coração fica preenchido quando já deste gosto.",
+      "Novo: as datas dos comentários passaram a ser relativas: “agora mesmo”, “há 10 segundos”, “há 3 minutos”, “há 2 dias”. Passa a data só depois de uma semana.",
+      "Corrigido: no comentário já não se escreve o tempo em segundos. Podes escrever 2:05 ou 125, e há um botão que põe o momento em que estás a ver.",
+      "Novo: sino de notificações no topo. Avisa-te quando alguém responde a um comentário teu, quando alguém gosta de um comentário teu, ou quando alguém começa a seguir-te.",
+      "Corrigido: nas estatísticas do perfil, “vistos” e “para ver” apareciam em branco.",
+      "Melhorado: os nomes dos géneros nas estatísticas estão agora em português.",
+      "Corrigido: ao escrever na pesquisa, o fundo desfocado da barra mexia de lado.",
+      "Corrigido: ao filtrar a biblioteca, se estavas numa página alta, saltavas para o fim da lista filtrada em vez de para o início.",
+    ],
+  },
+  {
     version: "1.3.3",
     items: [
       "Corrigido: com o autoplay desligado nas definições, o vídeo do MegaPlay começava na mesma. Não há forma de o travar pelo lado do sítio, por isso agora o vídeo só carrega depois de carregares nele — assim funciona com todos os sítios, e não só com os que respeitam a definição.",

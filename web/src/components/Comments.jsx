@@ -5,25 +5,14 @@ import { Link } from "react-router-dom";
 import { api } from "../api/client.js";
 import { useAuth } from "../auth/AuthContext.jsx";
 import Avatar from "./Avatar.jsx";
+import { haQuanto, quandoCompleto, paraTempo, paraSegundos } from "../lib/tempo.js";
 
-// 125 -> "2:05". Devolve null quando nao ha marca no video.
-function fmtClock(s) {
-  if (s == null) return null;
-  const m = Math.floor(s / 60);
-  const sec = Math.floor(s % 60);
-  return `${m}:${String(sec).padStart(2, "0")}`;
-}
-
-function when(iso) {
-  if (!iso) return "";
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return "";
-  return d.toLocaleDateString("pt-PT", { day: "2-digit", month: "short" });
-}
+// O tempo no video e a data sao os dois de web/src/lib/tempo.js (com testes).
+// Aqui so' se decide o que se mostra.
 
 function CommentItem({ c, user, onLike, onDelete, onReply }) {
   const mine = user && c.author.id === user.id;
-  const clock = fmtClock(c.atSeconds);
+  const clock = paraTempo(c.atSeconds);
   return (
     <li className={`comment ${c.deleted ? "is-deleted" : ""}`}>
       <Avatar avatar={c.author.avatar} name={c.author.username} size={34} />
@@ -32,21 +21,37 @@ function CommentItem({ c, user, onLike, onDelete, onReply }) {
           <Link className="comment-author" to={`/u/${encodeURIComponent(c.author.username)}`}>
             {c.author.username}
           </Link>
-          {clock && <span className="comment-clock" title="Minuto no vídeo">⏱ {clock}</span>}
-          <span className="comment-when">{when(c.createdAt)}</span>
+          {clock && (
+            <span className="comment-clock" title={whenTitle(c.atSeconds)}>
+              ⏱ {clock}
+            </span>
+          )}
+          {/* "ha 10 s atras" em vez de "07 out": numa conversa recem-escrita a
+              data nao diz nada, e obriga a fazer as contas. O title traz a data
+              exacta para quando ja nao e' recente. */}
+          <span className="comment-when" title={quandoCompleto(c.createdAt)}>
+            {haQuanto(c.createdAt)}
+          </span>
         </div>
         <p className="comment-text">
           {c.deleted ? <em className="muted">Comentário apagado</em> : c.body}
         </p>
         {!c.deleted && (
           <div className="comment-actions">
+            {/* A contagem aparece sempre, mesmo a zero. Antes so aparecia com
+                likes > 0, o que fazia o botao ser um coracao solto sem
+                contexto — e a pessoa concluia que nao havia likes. */}
             <button
               className={`comment-like ${c.likedByMe ? "on" : ""}`}
               onClick={() => onLike(c)}
               disabled={!user}
-              title={user ? "Gosto" : "Entra para gostar"}
+              aria-pressed={c.likedByMe ? "true" : "false"}
+              title={user ? (c.likedByMe ? "Tirar o gosto" : "Gostar") : "Entra para gostar"}
             >
-              ♥ {c.likes > 0 ? c.likes : ""}
+              <span className="comment-like-icone" aria-hidden="true">
+                {c.likedByMe ? "♥" : "♡"}
+              </span>
+              <span>{c.likes}</span>
             </button>
             {user && <button className="comment-link" onClick={() => onReply(c.id)}>Responder</button>}
             {mine && <button className="comment-link danger" onClick={() => onDelete(c.id)}>Apagar</button>}
@@ -64,12 +69,23 @@ function CommentItem({ c, user, onLike, onDelete, onReply }) {
   );
 }
 
-export default function Comments({ type, tmdbId, season = null, episode = null }) {
+// Title do ⏱: "minuto 125 do video" em vez de repetir "2:05" ao lado de si.
+function whenTitle(seg) {
+  const n = Number(seg);
+  if (!Number.isFinite(n)) return "";
+  return `Minuto do vídeo: ${paraTempo(n)} (${Math.round(n)} segundos)`;
+}
+
+// `posAtual` e' a posicao do player em segundos, quando ha player nosso a dar
+// progresso. Nos providers (iframe) nao ha — dai o botao so aparecer com valor.
+export default function Comments({ type, tmdbId, season = null, episode = null, posAtual = null }) {
   const { user } = useAuth();
   const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [body, setBody] = useState("");
-  const [atSeconds, setAtSeconds] = useState("");
+  const [atTime, setAtTime] = useState(""); // o que a pessoa escreve: "2:05"
+  const atSegundos = paraSegundos(atTime); // null se nao der para interpretar
+  const atErrado = atTime.trim() !== "" && atSegundos === null;
   const [replyTo, setReplyTo] = useState(null);
   const [replyBody, setReplyBody] = useState("");
   const [busy, setBusy] = useState(false);
@@ -101,10 +117,10 @@ export default function Comments({ type, tmdbId, season = null, episode = null }
         season,
         episode,
         body: body.trim(),
-        atSeconds: atSeconds === "" ? null : Number(atSeconds),
+        atSeconds: atSegundos,
       });
       setBody("");
-      setAtSeconds("");
+      setAtTime("");
       load();
     } catch (err) {
       setError(err.message);
@@ -168,17 +184,32 @@ export default function Comments({ type, tmdbId, season = null, episode = null }
               maxLength={2000}
             />
             <div className="comment-form-foot">
-              <label className="comment-at" title="Marca o minuto do vídeo (opcional)">
+              <label className={`comment-at ${atErrado ? "erro" : ""}`}>
                 <input
-                  type="number"
-                  min="0"
-                  value={atSeconds}
-                  onChange={(e) => setAtSeconds(e.target.value)}
-                  placeholder="—"
+                  type="text"
+                  inputMode="numeric"
+                  value={atTime}
+                  onChange={(e) => setAtTime(e.target.value)}
+                  placeholder="0:00"
+                  title="Momento do vídeo (opcional). Aceita 2:05 ou 125."
+                  maxLength={8}
                 />
-                <span>seg</span>
+                <span>momento</span>
               </label>
-              <button className="lib-watched" disabled={busy || !body.trim()}>
+              {/* So com os nossos players, que dizem a posicao. Nos providers
+                  (iframe) nao ha tempo a que pegar, por isso o botao nao aparece
+                  em vez de aparecer desactivado. */}
+              {posAtual != null && posAtual > 0 && (
+                <button
+                  type="button"
+                  className="comment-link"
+                  onClick={() => setAtTime(paraTempo(posAtual))}
+                  title="Usar o momento em que estás"
+                >
+                  ⏱ neste momento
+                </button>
+              )}
+              <button className="lib-watched" disabled={busy || !body.trim() || atErrado}>
                 Comentar
               </button>
             </div>
@@ -187,6 +218,12 @@ export default function Comments({ type, tmdbId, season = null, episode = null }
       ) : (
         <p className="muted">
           <Link to="/login">Entra</Link> para comentar.
+        </p>
+      )}
+
+      {atErrado && (
+        <p className="comment-aviso">
+          Esse momento não se percebe. Escreve 2:05 ou 125.
         </p>
       )}
 

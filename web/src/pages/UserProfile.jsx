@@ -3,7 +3,7 @@
 //
 // Privacidade: se o perfil for privado e eu não for o dono, a API esconde a
 // biblioteca/listas (canView=false) e mostramos um aviso.
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { api, imageUrl } from "../api/client.js";
 import { useAuth } from "../auth/AuthContext.jsx";
@@ -22,12 +22,52 @@ function displayTitle(it, romaji) {
   return it.title;
 }
 
-function PosterGrid({ items, empty, romaji }) {
+// Grelha de cartoes com paginacao.
+//
+// O mesmo componente serve a biblioteca do perfil e as listas. Com 539 titulos
+// de uma vez a pagina media quase tres ecras de scroll e nao se via o fim, o
+// que e' pior do que nao ver nada: a pessoa fica a achar que a lista acaba ali.
+// 60 por pagina e' o mesmo que a biblioteca principal, para o dedo saber onde
+// esta o "Seguinte" sem o procurar.
+function PosterGrid({ items, empty, romaji, porPagina = 60 }) {
+  // Os hooks ficam ANTES de qualquer return. "A carregar" e' null, nao lista
+  // vazia, e devolver mais cedo mudaria a ordem dos hooks entre renders — o que
+  // o React nao perdoa e mostra como "os hooks mudaram de ordem entre renders".
+  const [page, setPage] = useState(1);
+  const grelhaRef = useRef(null);
+
+  const lista = items || [];
+  const pageCount = Math.max(1, Math.ceil(lista.length / porPagina));
+  // A pagina nunca passa do fim. Acontece sem avisar quando se apaga um titulo
+  // estando na ultima pagina: sem este limite aparecia uma pagina vazia e o
+  // "Seguinte" continuava a poder ser carregado.
+  const safePage = Math.min(page, pageCount);
+  const paged = lista.slice((safePage - 1) * porPagina, safePage * porPagina);
+
+  // Mudar de perfil, de lista ou de aba volta sempre a primeira pagina. Sem isto
+  // abrir o perfil de outra pessoa mostrava a pagina 9 do perfil anterior.
+  useEffect(() => {
+    setPage(1);
+  }, [items]);
+
+  function mudarPara(n) {
+    setPage(n);
+    // Sobe ate ao inicio da grelha, e de proposito instantaneo.
+    //
+    // Com `behavior: "smooth"` o salto nao acontecia: o React volta a desenhar
+    // os 60 cartoes logo a seguir e o Chrome cancela o movimento suave a meio
+    // (medido a 2026-10-07: ficava no scroll de baixo a ver a pagina nova fora
+    // do ecra). E um salto suave de quase 4000 px e' uma espera, nao uma
+    // transicao — aqui a pessoa pediu outra pagina, nao uma animacao.
+    grelhaRef.current?.scrollIntoView({ block: "start", behavior: "auto" });
+  }
+
   if (!items) return <p className="muted">A carregar...</p>;
   if (!items.length) return <p className="muted">{empty}</p>;
   return (
-    <div className="grid">
-      {items.map((it) => {
+    <>
+      <div className="grid" ref={grelhaRef}>
+      {paged.map((it) => {
         const t = displayTitle(it, romaji);
         return (
           <Link
@@ -56,7 +96,32 @@ function PosterGrid({ items, empty, romaji }) {
           </Link>
         );
       })}
-    </div>
+      </div>
+      {/* `lib-pager` de proposito: as mesmas regras da biblioteca principal, para
+          o botao ter o mesmo aspeto nos dois sitios. Com uma pagina so nao se
+          mostra nada — um "Pagina 1 de 1" e' ruido. */}
+      {pageCount > 1 && (
+        <div className="lib-pager">
+          <button
+            className="lib-pager-btn"
+            disabled={safePage <= 1}
+            onClick={() => mudarPara(safePage - 1)}
+          >
+            ← Anterior
+          </button>
+          <span className="lib-pager-info">
+            Página {safePage} de {pageCount} · {lista.length} títulos
+          </span>
+          <button
+            className="lib-pager-btn"
+            disabled={safePage >= pageCount}
+            onClick={() => mudarPara(safePage + 1)}
+          >
+            Seguinte →
+          </button>
+        </div>
+      )}
+    </>
   );
 }
 

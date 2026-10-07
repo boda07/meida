@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { NavLink, useNavigate, useLocation } from "react-router-dom";
+import NotificationBell from "./NotificationBell.jsx";
 import ProfileMenu from "./ProfileMenu.jsx";
 import WatchParty from "./WatchParty.jsx";
 
@@ -106,7 +107,7 @@ export default function Header() {
   };
 
   return (
-    <header className="nav-bar">
+    <header className={`nav-bar ${searchOpen ? "pesquisa-aberta" : ""}`}>
       <div className="nav-left">
         <nav className="nav-links">
           <NavLink to="/" end title="Início">
@@ -155,6 +156,8 @@ export default function Header() {
           />
         </form>
         <WatchParty />
+        {/* O sino fica antes do perfil: e' sobre a pessoa, nao sobre a app. */}
+        <NotificationBell />
         <ProfileMenu />
       </div>
     </header>
