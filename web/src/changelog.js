@@ -2,6 +2,13 @@
 // "o que mudou" depois de o utilizador atualizar a app. Mais recente em cima.
 export const CHANGELOG = [
   {
+    version: "1.3.7",
+    items: [
+      "Corrigido: ao abrir a ficha de um anime, série ou filme, aparecia o ecrã de erro “Algo correu mal”. A app não abria nenhum título — era preciso reiniciar depois de atualizar para 1.3.6. Desculpa: foi um erro meu na 1.3.6.",
+      "Corrigido: o atalho da MEIDA no menu Iniciar apontava para uma pasta de compilação em vez da app instalada, e por isso deixava de funcionar. Se te aparece um atalho que não abre, apaga-o: a 1.3.7 cria-o no sítio certo.",
+    ],
+  },
+  {
     version: "1.3.6",
     items: [
       "Corrigido: o que aparecia no Discord já não contava tempo quando o vídeo está parado. Agora aparece “Pausado” e o contador pára. Antes só parava quando saías do episódio.",

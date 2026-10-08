@@ -1,5 +1,68 @@
 # Changelog
 
+## 1.3.7
+
+### Corrigido: a app nao abria nenhum titulo depois da 1.3.6
+Reportado a 2026-10-08 por um utilizador no ARM. **Foi um erro meu na 1.3.6, e
+affectou toda a gente que a instalou** — nao era especifico do ARM.
+
+Sintoma: a app abre, o login funciona, a pagina inicial carrega — e ao tocar num
+anime, serie ou filme aparece
+
+```
+Algo correu mal
+Ocorreu um erro ao mostrar esta pagina. Recarrega para tentar de novo.
+```
+
+que e' o `web/src/components/ErrorBoundary.jsx`. Pior: como o reinicio limpava,
+dava a impressao de que era preciso reiniciar depois de atualizar.
+
+Causa, no console do browser:
+
+```
+ReferenceError: Cannot access 'active' before initialization
+    at Details (.../pages/Details.jsx:108:55)
+```
+
+O bloco do Discord introduzido na 1.3.6 ficou **antes** da seccao "Fontes / player"
+do `Details.jsx`, onde vive o `const [active, setActive] = useState(null)`, e metia
+`active` no array de dependencias de dois `useEffect`. O React avalia esse array **no
+sitio da chamada**, ainda dentro do corpo do componente, e da' em cima da declaracao.
+
+**E' o mesmo bug da v1.1.1** (que partiu os `embeds`), pela mesma confusao. Nem o
+lint nem o `npm run build` o apanham: o Vite compila isto sem dizer nada. So se
+descobre abrindo a app — que e' o que devia ter feito antes de publicar.
+
+A regra que faltava na cabeca: um **array de dependencias** so' pode citar `const` ja
+declaradas acima. O **corpo** do efeito pode usar o que quiser, porque so' corre
+depois do render (por isso o `reportPos`, que usa refs no corpo, pode estar em
+qualquer sitio).
+
+- `web/src/pages/Details.jsx`: o bloco do Discord e o `reportPos` foram para depois
+  das declaracoes das fontes.
+- `scripts/testar-ganchos-deps.mjs` (novo, ligado ao `npm test`): procura
+  dependencias citadas antes de serem declaradas, em todos os `.jsx`, **respeitando
+  as fronteiras entre componentes**. Confirma-se que falha com o codigo partido
+  (apanha os dois pontos) e passa com o corrigido.
+  - Sem o cuidado das fronteiras o teste dava 7 falsos positivos (`Manga.jsx` e
+    `UserProfile.jsx` declaram nomes em componentes diferentes). Um teste com falsos
+    positivos e' pior do que nenhum: ninguem confia nele e deixa de ser corrido.
+
+### Corrigido: o atalho do menu Iniciar apontava para a pasta de compilacao
+No mesmo PC, o `MEIDA.lnk` do menu Iniciar apontava para
+`Documents/Meida/release/win-arm64-unpacked/MEIDA.exe` — a pasta que o
+`electron-builder` apaga e refaz a cada compilacao. O atalho ficava a apontar para
+nada e o WindowsEDIA que o shortcut estava corrompido, a oferecer "Reparar" (que,
+com `NoRepair = 1` no registo, nao faz nada).
+
+Consequencia pratica: quem o usava estava a correr a **build de desenvolvimento**,
+nao a app instalada — o que e' tambem porque o crash da 1.3.6 aparecia mesmo depois
+de "instalar". A 1.3.7 recria o atalho no sitio certo.
+
+### Corrigido: o log do instalador
+`build.nsis.logging` esta agora `true`. Sem isso o instalador nao deixa rasto do
+que fez, e um ficheiro que falha a extrair e' silencioso (ver "Instalador" abaixo).
+
 ## 1.3.6
 
 ### Corrigido: a presenca no Discord conta o tempo com o video parado

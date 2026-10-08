@@ -1,6 +1,6 @@
 {
   "name": "streamapp",
-  "version": "1.3.6",
+  "version": "1.3.7",
   "private": true,
   "description": "App pessoal tipo Stremio: catalogo TMDB + embed providers + torrents",
   "main": "electron/main.cjs",
@@ -99,7 +99,8 @@
       "oneClick": true,
       "perMachine": false,
       "allowToChangeInstallationDirectory": false,
-      "useZip": false
+      "useZip": true,
+      "include": "build/instalar-log.nsh"
     },
     "publish": [
       {
