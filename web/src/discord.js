@@ -54,7 +54,8 @@ function subLine(phase, season, episode, position, duration) {
 /**
  * Mostra/actualiza a presenca.
  * @param {{title?:string, type?:string, season?:number, episode?:number,
- *          position?:number, duration?:number, poster?:string}} media
+ *          position?:number, duration?:number, poster?:string,
+ *          paused?:boolean}} media
  */
 export function showPresence(media) {
   const api = bridge();
@@ -65,6 +66,9 @@ export function showPresence(media) {
       state: subLine(media.type, media.season, media.episode, media.position, media.duration),
       largeImage: posterUrl(media.poster),
       largeText: media.title,
+      // `paused` congela o contador do Discord. Sem isto o tempo continuava a
+      // correr com o video parado.
+      paused: Boolean(media.paused),
     });
   } catch {
     /* silencioso */

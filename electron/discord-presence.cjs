@@ -85,6 +85,10 @@ function activityPayload() {
     details: current.details,
     timestamps: { start: current.startTimestamp },
   };
+  // `paused: true` e' o que o Discord usa para congelar o contador e escrever
+  // "Pausado". Sem isto, o tempo continuava a correr mesmo com o video parado —
+  // que era o defeito reportado.
+  if (current.paused) activity.timestamps.paused = Date.now();
   if (current.state) activity.state = current.state;
   if (current.largeImage) {
     activity.assets = {
@@ -257,9 +261,13 @@ function onFrame(opcode, body) {
 
 // Mostra `details` no perfil. `state` e a linha de baixo (ex.: "S1E2 · 12:34/45:00").
 // `largeImage` pode ser um URL (o Discord vai buscar a imagem).
-function setPresence({ details, state = "", largeImage = "", largeText = "" } = {}) {
+// `paused` diz ao Discord para congelar o contador: e' o que distingue "esta a
+// ver" de "deixou em pausa a meio".
+function setPresence({ details, state = "", largeImage = "", largeText = "", paused = false } = {}) {
   if (destroyed || !details) return false;
   const changed = !current || current.details !== details;
+  const wasPaused = Boolean(current && current.paused);
+  const agoraPausado = Boolean(paused);
   current = {
     details: String(details).slice(0, 128),
     state: String(state || "").slice(0, 128),
@@ -267,8 +275,12 @@ function setPresence({ details, state = "", largeImage = "", largeText = "" } = 
     largeText: largeText || "",
     // O contador do tempo so reinicia quando muda de titulo.
     startTimestamp: changed ? Date.now() : current.startTimestamp,
+    paused: agoraPausado,
   };
-  if (ready) sendPresence(changed);
+  // Uma mudanca de pausa tambem tem de sair na hora: se nao, o Discord
+  // continuava a contar mais 15 s (o intervalo minimo) com o estado errado.
+  // `changed` (titulo novo) ja e' forcado.
+  if (ready) sendPresence(changed || wasPaused !== agoraPausado);
   else connect();
   return true;
 }

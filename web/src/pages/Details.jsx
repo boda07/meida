@@ -101,6 +101,51 @@ export default function Details() {
     setPosAtual(null);
   }, [details?.id, season, episode]);
 
+  // Discord: quando o progresso deixa de chegar, o video esta parado.
+  // Sem isto o Discord contava o tempo como se estivesse a ver, e so'
+  // saindo do episodio o contador parava.
+  //
+  // `PRESENCA_PAUSADA_MS` tem de ser maior que o intervalo com que o player
+  // reporta (uns 5 s), mas menor que o intervalo minimo do Discord (15 s) —
+  // assim a pausa aparece no Discord sem esperarmos pelo proximo update.
+  const PRESENCA_PAUSADA_MS = 10000;
+  const [presencaPausada, setPresencaPausada] = useState(true);
+  const ultimoProgressoRef = useRef(0);
+
+  useEffect(() => {
+    // Sem progresso nenhum (providers em iframe, ou ainda nao comecou a dar):
+    // a presenca fica em pausa desde o inicio. E' o honesto — nao sabemos.
+    if (!details?.title || !active) {
+      clearPresence();
+      return undefined;
+    }
+    ultimoProgressoRef.current = Date.now();
+    setPresencaPausada(true);
+    const t = setInterval(() => {
+      const parado = Date.now() - ultimoProgressoRef.current > PRESENCA_PAUSADA_MS;
+      setPresencaPausada((antes) => (antes === parado ? antes : parado));
+    }, 3000);
+    return () => clearInterval(t);
+    // `details` pela identidade nao: muda a cada pedido e reiniciava a pausa
+    // sem motivo. So' as propriedades que o efeito le.
+  }, [details?.title, details?.type, details?.poster, active, season, episode]);
+
+  // O intervalo acima so muda o estado. Este efeito e' que o leva ao Discord —
+  // sem ele, `presencaPausada` nao chegava a lado nenhum.
+  useEffect(() => {
+    if (!details?.title || !active) return;
+    showPresence({
+      title: details.title,
+      type: details.type,
+      season: details.type === "tv" ? season : null,
+      episode: details.type === "anime" || details.type === "tv" ? episode : null,
+      poster: details.poster,
+      paused: presencaPausada,
+    });
+    // Ver a nota do efeito de cima: `details` pela identidade reiniciaria a
+    // pausa a cada pedido.
+  }, [details?.title, details?.type, details?.poster, active, season, episode, presencaPausada]);
+
   const reportPos = useCallback((position, duration) => {
     if (!user || !details) return;
     api
@@ -117,6 +162,9 @@ export default function Details() {
       })
       .catch(() => {});
     setPosAtual(position);
+    // Ha progresso: o video esta a dar.
+    ultimoProgressoRef.current = Date.now();
+    setPresencaPausada(false);
     // Presença no Discord: aproveita o mesmo callback do progresso para mostrar
     // "12:34 / 45:00" enquanto se vê (o Discord filtra os updates a mais).
     showPresence({
@@ -170,19 +218,10 @@ export default function Details() {
   // desaparece se tirares a fonte ou saíres da ficha. Nos providers com iframe
   // não dá para saber se estão a tocar (o Stremio também não sabe) — por isso
   // mostramos a partir da fonte escolhida.
-  useEffect(() => {
-    if (!details?.title || !active) {
-      clearPresence();
-      return;
-    }
-    showPresence({
-      title: details.title,
-      type: details.type,
-      season: details.type === "tv" ? season : null,
-      episode: details.type === "anime" || details.type === "tv" ? episode : null,
-      poster: details.poster,
-    });
-  }, [details, active, season, episode]);
+  // Presença no Discord (grátis): o que mostrar e' decidido pelo efeito acima
+  // (`PRESENCA_PAUSADA_MS`), que sabe se ha progresso ou se o video esta parado.
+  // Este efeito antigo — que mostrava assim que se escolhia uma fonte, sempre
+  // "a ver" e sem nunca parar — foi removido: era a origem do defeito.
 
   // Saiu da ficha -> esconde a presença (senão ficava "A ver ..." para sempre).
   useEffect(() => () => clearPresence(), []);
