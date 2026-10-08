@@ -1,5 +1,88 @@
 # Changelog
 
+## 1.3.6
+
+### Corrigido: a presenca no Discord conta o tempo com o video parado
+Reportado a 2026-10-08.
+
+O sintoma: o Discord dizia que estavas "a ver" desde o momento em que escolhias
+um servidor de video, antes sequer de carregares no play. E o contador nunca
+parava — pausar continuava a contar. So' saires do episodio limpava.
+
+Duas causas, no mesmo sítio.
+
+**1. A presenca aparecia ao escolher a fonte.** O `Details.jsx` tinha um efeito
+que chamava `showPresence` sem `position` assim que `active` (a fonte escolhida)
+mudava. Ia ao Discord a dizer "a ver" sem nada estar a dar. O comentario no
+codigo justificava ("nos providers com iframe nao da para saber se estao a
+tocar"), mas isso so justifica mostrar o TITULO — nao mostrar como se estivesse
+a ver. O efeito foi removido.
+
+**2. O tempo nunca parava.** O `discord-presence.cjs` mandava
+`timestamps: { start }` fixo ao escolher a fonte e nunca mais tocava. O Discord
+conta "12 min a ver" desde esse instante porque era a unica informacao que
+tinha. Sem `paused` nao ha como dizer-lhe que parou.
+
+### Tres estados, em vez de "sempre a ver"
+A primeira correcao (deste e do commit anterior) tratou "sem progresso" como
+"em pausa", com `timestamps.paused`. Isso estragou o caso dos players em iframe:
+nele o progresso **nunca** chega, nem com o video a dar, e portanto ficavam
+todos marcados como "Pausado" para sempre — pior do que o defeito original, que
+ao menos tinha o contador a verdade.
+
+A distincao que faltava e' entre "parou" e "nunca soube":
+
+| estado | quando | o que vai para o Discord |
+| --- | --- | --- |
+| `a-ver` | o progresso chega (players nossos) | `timestamps.start`, contador a correr |
+| `pausa` | o progresso chegou e parou | `timestamps.start` + `timestamps.paused` (congela, escreve "Pausado") |
+| `sem-dados` | nunca chegou progresso (iframes) | **sem `timestamps` nenhum** |
+
+Em `sem-dados` o Discord mostra o titulo, nao conta tempo e nao diz "Pausado".
+Nos tres casos o titulo aparece — o que muda e' so se o Discord pode afirmar
+alguma coisa. Nos iframes nao sabemos se da', e afirmar seria mentira.
+
+O que separa "parou" de "nunca soube" e' o `viuProgressoRef` do `Details.jsx`:
+uma vez que houve progresso, soubemos que aquele player da' sinal, e uma
+ausencia a seguir e' uma pausa. Sem isso, um player nosso que arranca devagar
+era acusado de pausa logo a partida.
+
+- `electron/discord-presence.cjs`: `activityPayload()` passou a `buildActivity()`,
+  funcao pura e **exportada** — e' a logica que decide os `timestamps` e ja esteve
+  errada duas vezes, sem ponto testavel nao dava para apanha-la. `setPresence()`
+  passou a receber `estado` (valores invalidos caem em `a-ver`, nunca em
+  `pausa` — acusar alguem de ter pausado sem provas seria pior).
+- Uma mudanca de estado sai **na hora**, sem esperar o `MIN_UPDATE_MS` de 15 s.
+  Sem isso o Discord ainda mostrava o estado anterior durante mais 15 s.
+- `electron/main.cjs`: acrescentado `estado` a lista de campos do
+  `ipcMain.handle("set-presence")`. **Este handler lista os campos um a um**, nao
+  passa o objeto — e o `estado` tinha ficado de fora, o que faria o Discord
+  receber sempre a omissão e o defeito voltar **sem erro nenhum em lado nenhum**.
+- `web/src/pages/Details.jsx`: `presencaPausada` (booleano) substituido por
+  `presencaEstado` ("a-ver" | "pausa" | "sem-dados"). `PRESENCA_PAUSADA_MS` = 10 s,
+  entre o intervalo com que o player reporta (uns 5 s) e o minimo do Discord
+  (15 s), para a pausa aparecer sem demorar. O efeito que envia o estado nao leva
+  `position` — quem a manda e' o `reportPos`, porque o `subLine` so escreve o
+  tempo se a posicao existir.
+- `web/src/discord.js`: `showPresence` passa `estado` em vez de `paused`.
+
+### Testes
+`scripts/testar-presenca-discord.mjs`, 24 verificacoes, ligado ao `npm test`
+(104 -> 128). Cobre os tres estados e o que cada um manda, o default de um
+estado invalido, o encaminhamento do `estado` pelo IPC, e as guardas do
+`Details.jsx`.
+
+**O teste foi verificado com o codigo partido** (mutacao + teste), senao nao
+prova nada: tirando o `estado` do IPC, mandando `timestamps` sempre, tirando o
+`paused` da pausa, e tirando a guarda do `viuProgressoRef`. As quatro dao falha.
+(A primeira tentativa de verificar isto **nao aplicou as mutacoes** — o regex nao
+batia com o codigo — e o teste passou verde sobre codigo intacto. Passou a
+imprimir `mudou? true/false` antes de cada corrida.)
+
+### Nao verificado
+O efeito real no Discord so' se ve na app Electron; no browser a presenca e'
+no-op (`window.electronAPI` nao existe). Falta testar na app.
+
 ## 1.3.5
 
 ### Corrigido: a fonte de video escolhida a mao mudava sozinha

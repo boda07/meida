@@ -2,6 +2,14 @@
 // "o que mudou" depois de o utilizador atualizar a app. Mais recente em cima.
 export const CHANGELOG = [
   {
+    version: "1.3.6",
+    items: [
+      "Corrigido: o que aparecia no Discord já não contava tempo quando o vídeo está parado. Agora aparece “Pausado” e o contador pára. Antes só parava quando saías do episódio.",
+      "Corrigido: nos servidores de vídeo que são uma janela por cima (o MegaPlay, o VidLove e outros), o Discord já não fica a dizer “Pausado” o tempo todo. Não sabemos se estão a dar, por isso agora aparece só o título, sem tempo a contar e sem dizer que está em pausa. Continua a aparecer que estás a ver.",
+      "Corrigido: escolher um servidor de vídeo já não põe nada no Discord antes de carregares no play.",
+    ],
+  },
+  {
     version: "1.3.5",
     items: [
       "Corrigido: quando escolhias um servidor de vídeo, ele mudava sozinho passados uns segundos — chegaste a escolher o VidLove e aparecia o VidLink sem teres pedido nada. Agora a fonte que escolhes fica até mudares de escolha.",
