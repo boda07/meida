@@ -14,3 +14,7 @@ server/dev.err
 # Nunca commitar dumps/base de dados antiga (pode conter dados pessoais/tokens)
 /data.json
 /data.json.bak
+
+# Config local do OpenCode (skills, agentes, prompts). Nao e' codigo da MEIDA:
+# e' ferramenta de trabalho e muda por maquina. Nao ir para o repositorio.
+.opencode/
