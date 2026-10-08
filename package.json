@@ -28,9 +28,11 @@
     "test:notificacoes": "node scripts/testar-notificacoes.mjs",
     "test:tempo": "node scripts/testar-tempo.mjs",
     "test:player": "node scripts/testar-player-fonte.mjs",
-    "app:pack": "npm run build && electron-builder --x64 --arm64",
-    "app:pack:zip": "npm run build && electron-builder --win zip --x64 --arm64",
-    "app:publish": "npm run build && electron-builder --x64 --arm64 --publish always && node scripts/prune-releases.mjs"
+    "test:deps": "node scripts/testar-ganchos-deps.mjs",
+    "test:presenca": "node scripts/testar-presenca-discord.mjs",
+    "app:pack": "npm run build && electron-builder --x64",
+    "app:pack:zip": "npm run build && electron-builder --win zip --x64",
+    "app:publish": "npm run build && electron-builder --x64 --publish always && node scripts/prune-releases.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
@@ -99,8 +101,7 @@
       "oneClick": true,
       "perMachine": false,
       "allowToChangeInstallationDirectory": false,
-      "useZip": true,
-      "include": "build/instalar-log.nsh"
+      "useZip": false
     },
     "publish": [
       {

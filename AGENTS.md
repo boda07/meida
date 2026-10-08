@@ -196,6 +196,54 @@ emulacao num PC ARM.
 
 Testado assim na 1.2.8: `require('node-datachannel')` carrega, `new WebTorrent()` gera peer id, `/api/health` e `/api/torrents` respondem.
 
+## O arquivo ARM64 sai TRUNCADO quando a build e' feita nesta maquina ARM (2026-10-08, 1.3.7)
+
+**Este e' um bug diferente do de cima, e o pior de todos pela razao de custar tempo: e' silencioso e so' afecta o ARM.** Enquanto o bug das 1.2.0-1.2.2 era x64, este e' o inverso — **o x64 funciona e o ARM nao**.
+
+**Sintoma.** O instalador acaba com **codigo 0**, escreve o registo, cria o desinstalador, cria os atalhos — e o `MEIDA.exe` **nao existe**. A app nao arranca. Quem installou tem de ir ao "Reparar"/"Alterar" do Windows (que com `NoRepair=1` no registo nao faz nada) e fica sem atalho no desktop.
+
+**Diagnostico — comparar o pacote com o instalado.** Nao e' adivinhar, e' contar ficheiros: `release/win-arm64-unpacked` tem 2740 ficheiros, o instalado tinha 2733. Falhavam **7, todos no topo, todos `.exe`/`.dll`**: `MEIDA.exe`, `ffmpeg.dll`, `vulkan-1.dll`, `d3dcompiler_47.dll`, `dxcompiler.dll`, `dxil.dll`, `vk_swiftshader.dll`. Os `.pak`, `.dat`, `.bin` estavam todos la, e `resources\elevate.exe` tambem — porque esse vem do script NSIS, nao do arquivo.
+
+**O que fica de fora e' deitar fora.** Nao e' espaco em disco (694 GB livres). Nao e' antivirus (zero deteccoes, zero eventos de CodeIntegrity). Nao e' permissao (copiar o `MEIDA.exe` a mao para a mesma pasta funciona). Nao e' binarios de arquitectura errada (o `MEIDA.exe` do pacote e' mesmo ARM64). Nao e' empacotamento — o `.7z` dentro do instalador **tem** os 7 ficheiros, com o `MEIDA.exe` a 227 MB.
+
+**A prova de que o arquivo esta corrompido** (esta e' a parte que custa horas se nao se pensar):
+
+```
+7z t app-arm64.7z   ->  ERROR: Unsupported Method : vk_swiftshader.dll
+                        ERROR: Unsupported Method : vulkan-1.dll
+                        Sub items Errors: 7
+7z t app-64.7z      ->  Everything is Ok   (2740 ficheiros, 620 pastas)
+```
+
+O `app-arm64.7z` esta **truncado**: as ultimas entradas tem cabecalhos ilegiveis. E sao **as ultimas** — os 7 ficheiros em falta sao as ultimas entradas do arquivo, por ordem. `Blocks = 2728` em ambos, mas o x64 fecha com "Everything is Ok".
+
+**Isto explica todos os sintomas que nao se explicavam:**
+- `Nsis7z::Extract` **e** `nsisunz::Unzip` falham: o arquivo esta corrompido, nao o metodo. Por isso `useZip: true` e' **pior** — aborta com codigo 2 e nao instala nada (em vez de 2733 em 2740).
+- O `CopyFiles` "parcialmente bem" tambem: e' o fallback do macro `extractUsing7za` a re-extrair a ignorar erros.
+- O instalador da **1.3.5** falha **exactamente igual** — logo **nao e' regressao**, o ARM nunca esteve a funcionar.
+- O `MEIDA.exe` e' o maior ficheiro (227 MB) e esta na cauda corrompida: a falta de espaco nao se explica pelo tamanho, mas o arquivo grande e' precisamente o que a truncagem leva.
+
+**Porquê que acontece aqui e nao no desktop do Boda.** O `7za` do electron-builder na cache e' **x86, versao 24.09** (verificado pelo cabecalho PE) e corre emulado neste ARM. O `app-64.7z` feito **nesta mesma maquina** sai perfeito, por isso o problema e' do caminho **arm64** do empacotamento sob emulacao, nao do compressor.
+
+**A correcao escolhida para a 1.3.7: `--x64` sem `--arm64`.** O Windows ARM corre x64 emulado, e o `extractAppPackage.nsh` escolhe o pacote "64" em ARM quando `APP_ARM64` nao esta definido:
+
+```nsis
+!ifdef APP_64
+  ${if} ${RunningX64}
+  ${OrIf} ${IsNativeARM64}
+    StrCpy $packageArch "64"
+```
+
+Resultado: **instalador que funciona em toda a gente** (ARM emulado), contra um que nao funciona em ARM nenhum. O preco e' perder o ARM nativo. Para o ter de volta, compilar num PC x86 — que e' o que o aviso do inicio deste ficheiro ja diz para as builds de validacao, e agora ha uma razao concreta.
+
+**Verificado de ponta a ponta na 1.3.7:** instalou com codigo 0, 2741/2740 ficheiros (0 em falta, 0 tamanhos errados), `MEIDA.exe` = 0x8664, atalhos do menu Iniciar **e** do desktop a apontar para `AppData\Local\Programs\streamapp\MEIDA.exe`, e a app arrancou com o backend a responder 200.
+
+**`app:pack`, `app:pack:zip` e `app:publish` ficaram so' com `--x64`.** Voltar a meter `--arm64` sem compilar num PC x86 volta a publicar um instalador partido no ARM — e desta vez em silencio.
+
+**Diagnostico que vale a pena reter:** um instalador que "acaba com sucesso", escreve o registo e cria os atalhos, mas **nao extrai os executaveis**, e' sempre **o arquivo, nao o destino**. Comparar contagens de ficheiros entre o pacote e o instalado leva-me ao ponto em minutos; `7z t` no arquivo aponta o culpado. E `7z` consegue abrir o instalador NSIS (`7z l`, `7z e`) — e' assim que se chega ao `.7z` embutido, que de outra forma nao existe em disco.
+
+**Um quase-erro meu, para nao repetir:** comecou com "o atalho aponta para a pasta da build e o Windows diz que esta corrompido", que parece ser do instalador. Era o `.lnk` do menu Iniciar apontado para `release\win-arm64-unpacked\MEIDA.exe` — a pasta que o electron-builder apaga a cada build. Quem o usava estava a correr a **build de desenvolvimento**, nao a app instalada. **Antes de culpar o instalador, confirmar para onde aponta o atalho.**
+
 ## Instaladores arm64: 1.2.0 ate 1.2.2 nao instalam em PC x64 (2026-10-04)
 
 **CAUSA RAIZ, confirmada.** A build foi feita **numa maquina Windows sobre ARM**

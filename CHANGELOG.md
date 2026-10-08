@@ -59,6 +59,50 @@ Consequencia pratica: quem o usava estava a correr a **build de desenvolvimento*
 nao a app instalada — o que e' tambem porque o crash da 1.3.6 aparecia mesmo depois
 de "instalar". A 1.3.7 recria o atalho no sitio certo.
 
+### Corrigido: a instalacao em Windows ARM deixava a app sem executavel
+Reportado a 2026-10-08. Este bug **e' anterior a 1.3.6** — o instalador da 1.3.5
+falha exactamente igual — e so' afecta o ARM. O x64 estava sempre bem.
+
+Sintoma: o instalador acaba com **codigo 0**, escreve o registo, cria o
+desinstalador e os atalhos — e o `MEIDA.exe` **nao existe**. A app nao arranca, e
+quem installou fica sem atalho no ambiente de trabalho.
+
+Comparando `release/win-arm64-unpacked` (2740 ficheiros) com o instalado (2733),
+faltavam **7, todos no topo, todos `.exe`/`.dll`**: `MEIDA.exe`, `ffmpeg.dll`,
+`vulkan-1.dll`, `d3dcompiler_47.dll`, `dxcompiler.dll`, `dxil.dll`,
+`vk_swiftshader.dll`. Os `.pak`/`.dat`/`.bin` estavam todos la.
+
+**A causa: o `app-arm64.7z` embutido no instalador esta truncado.** Com
+`7z t` nos dois arquivos do mesmo instalador:
+
+```
+app-arm64.7z  ->  ERROR: Unsupported Method : vk_swiftshader.dll
+                   Sub items Errors: 7
+app-64.7z     ->  Everything is Ok   (2740 ficheiros, 620 pastas)
+```
+
+As entradas corrompidas sao as **ultimas** do arquivo, e o `MEIDA.exe` (227 MB) esta
+nessa cauda. Isto explica porque `Nsis7z::Extract` **e** `nsisunz::Unzip` falham
+(o problema e' o arquivo, nao o metodo de extracao) e porque `useZip: true` e'
+**pior** — aborta com codigo 2 e nao instala nada.
+
+Descartado: espaco em disco (694 GB livres), antivirus (zero deteccoes),
+permissao de escrita (copiar o `MEIDA.exe` a mao para a mesma pasta funciona),
+binarios de arquitectura errada (o `MEIDA.exe` do pacote e' ARM64 a serio).
+
+**Correcao: `--x64` sem `--arm64`.** O Windows ARM corre x64 emulado, e o
+`extractAppPackage.nsh` escolhe o pacote "64" em ARM quando `APP_ARM64` nao esta
+definido. Troca-se ARM nativo (que nao funcionava) por x64 emulado (que
+funciona). Para recuperar o ARM nativo, compilar num PC x86 — o `7za` do
+electron-builder e' x86 24.09 e corre emulado aqui; o `app-64.7z` feito nesta
+maquina sai perfeito, por isso o problema e' do caminho arm64 sob emulacao.
+
+Verificado de ponta a ponta: codigo 0, 2741/2740 ficheiros (0 em falta, 0
+tamanhos errados), `MEIDA.exe` = 0x8664, atalhos do menu Iniciar e do desktop a
+apontar para a pasta de instalacao, e a app arrancada com `/` e `/api/health` a 200.
+
+`app:pack`, `app:pack:zip` e `app:publish` ficaram so' com `--x64`.
+
 ### Corrigido: o log do instalador
 `build.nsis.logging` esta agora `true`. Sem isso o instalador nao deixa rasto do
 que fez, e um ficheiro que falha a extrair e' silencioso (ver "Instalador" abaixo).

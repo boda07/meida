@@ -6,6 +6,7 @@ export const CHANGELOG = [
     items: [
       "Corrigido: ao abrir a ficha de um anime, série ou filme, aparecia o ecrã de erro “Algo correu mal”. A app não abria nenhum título — era preciso reiniciar depois de atualizar para 1.3.6. Desculpa: foi um erro meu na 1.3.6.",
       "Corrigido: o atalho da MEIDA no menu Iniciar apontava para uma pasta de compilação em vez da app instalada, e por isso deixava de funcionar. Se te aparece um atalho que não abre, apaga-o: a 1.3.7 cria-o no sítio certo.",
+      "Corrigido: em computadores Windows com chip ARM (Snapdragon, por exemplo), a instalação ficava a meio — o programa não abria de todo e ficavas sem atalho no ambiente de trabalho. Agora o instalador leva a versão completa para qualquer computador, ARM incluído. Corre um bocadinho mais devagar aí, porque é emulado.",
     ],
   },
   {
