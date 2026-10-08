@@ -135,19 +135,43 @@ const emFalta = obrigatorios.filter((o) => !nomes.includes(o));
 if (emFalta.length) falha(`faltam na release: ${emFalta.join(", ")}`);
 
 // 6) O `latest.yml` publico e' o que o electron-updater vai mesmo ler.
-const publico = execFileSync(
-  "curl",
-  ["-sL", `https://github.com/${REPO}/releases/latest/download/latest.yml`],
-  { encoding: "utf8" }
-);
-const v = /version:\s*(\S+)/.exec(publico);
-const s = /sha512:\s*(\S+)/.exec(publico);
-log(`latest.yml publico: version=${v ? v[1] : "(ilegivel)"}`);
-if (!v || v[1] !== versao) {
-  falha(`o latest.yml publico aponta para ${v ? v[1] : "?"} e nao para ${versao}`);
-}
-if (!s || s[1] !== sha512) {
-  falha("o sha512 do latest.yml publico nao bate com o do instalador");
+//
+//    Nao se usa o `curl`. Na 1.3.6 o script rebentou aqui com
+//    `spawnSync curl ENOENT` — depois de publicar, no meio da verificacao, sem
+//    dizer nada sobre o resultado. A causa: o `curl.exe` do Windows esta em
+//    C:\Windows\System32, que nem sempre esta no PATH do processo. Confirmado
+//    que `curl` E `curl.exe` dao ambos ENOENT aqui. O `fetch` e' nativo do Node
+//    desde a v18 e nao depende do PATH, por isso e' o que se usa. O
+//    `C:\Windows\System32\curl.exe` com caminho completo fica de reserva para
+//    maquinas sem rede ao nivel do Node.
+//
+//    Este bloco e' o ultimo do script, por isso pode ser assincrono sem
+//    reescrever o resto (que e' CommonJS sincrono, onde o `await` do topo nao
+//    e' valido).
+const URL_PUBLICO = `https://github.com/boda07/meida/releases/latest/download/latest.yml`;
+
+async function verificarPublico() {
+  let publico;
+  try {
+    const r = await fetch(URL_PUBLICO);
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    publico = await r.text();
+  } catch (e) {
+    log(`fetch falhou (${e.message}); a tentar o curl.exe com caminho completo`);
+    publico = execFileSync("C:\\Windows\\System32\\curl.exe", ["-sL", URL_PUBLICO], {
+      encoding: "utf8",
+    });
+  }
+  const v = /version:\s*(\S+)/.exec(publico);
+  const s = /sha512:\s*(\S+)/.exec(publico);
+  log(`latest.yml publico: version=${v ? v[1] : "(ilegivel)"}`);
+  if (!v || v[1] !== versao) {
+    falha(`o latest.yml publico aponta para ${v ? v[1] : "?"} e nao para ${versao}`);
+  }
+  if (!s || s[1] !== sha512) {
+    falha("o sha512 do latest.yml publico nao bate com o do instalador");
+  }
+  log(`\n${TAG(versao)} completa: instalador + blockmap + latest.yml, e o hash publico bate com o do ficheiro assinado.`);
 }
 
-log(`\n${TAG(versao)} completa: instalador + blockmap + latest.yml, e o hash publico bate com o do ficheiro assinado.`);
+verificarPublico().catch((e) => falha(`a verificacao final rebentou: ${e?.message || e}`));

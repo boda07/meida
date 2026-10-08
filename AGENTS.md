@@ -80,6 +80,7 @@ Duas coisas que o script faz e que são fáceis de fazer mal à mão:
 Notas de PowerShell que custaram tempo:
 
 - `curl` está aliased a `Invoke-WebRequest`, que não aceita `-sIL`. Usar `curl.exe` (ou `execFileSync("curl", …)` a partir de Node, que contorna o alias).
+- **`execFileSync("curl")` dá `ENOENT` nesta máquina (2026-10-08, na 1.3.6).** Não é o alias — o `curl.exe` do Windows está em `C:\Windows\System32`, e **o `System32` não está no PATH que o processo Node vê**. Confirmado que `curl` **e** `curl.exe` dão ambos `ENOENT`, mesmo com `Test-Path` a dizer que o ficheiro existe. **É por isso que o `fix-latest.cjs` passou a usar `fetch`** (nativo do Node desde a v18, não depende do PATH), com o `C:\Windows\System32\curl.exe` de caminho completo só de reserva. O estrago: o script **publicava os 3 assets e só depois rebentava** na verificação final — ou seja, saía com erro sem dizer nada sobre o resultado, que é a pior forma de falhar. Se um script precisar de HTTP, **`fetch`**, nunca `curl`.
 - `gh api` **não** aceita `--repo` (só `gh release upload` aceita). Passar o endpoint completo: `gh api repos/boda07/meida/releases/tags/v1.3.2`.
 - `gh` despeja o manual inteiro no stderr quando rejeita um flag — capturar só a primeira linha, senão o output explode.
 - O `gh` **não** está em `C:\Program Files\Git\cmd\`, está em `C:\Program Files\GitHub CLI\`. Se um script correr sem esse PATH dá `pid: 0, stderr: undefined`, que parece outra coisa toda.
