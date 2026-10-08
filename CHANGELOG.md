@@ -1,5 +1,69 @@
 # Changelog
 
+## 1.3.5
+
+### Corrigido: a fonte de video escolhida a mao mudava sozinha
+Reportado a 2026-10-08, com South Park.
+
+O sintoma: clicavas no VidLove e, uns segundos depois, aparecia o VidLink sem
+teres pedido nada.
+
+Causa: o auto-fallback de 15 s do `Player.jsx` dispara sempre que o `load` do
+iframe nao chega a tempo. O VidLink e' o provider logo a seguir ao VidLove na
+lista de `server/src/services/providers.js` (ordem: vidapi, moviesapi, vidlove,
+vidlink), por isso era esse que ficava com o video. Num player de serie pesada
+isto acontece com regularidade.
+
+O selector de fonte punha o VidLove (`setPlayerIndex`), mas nao dizia ao player
+que a escolha era da pessoa — o timeout continuava a contar.
+
+- `Details.jsx`: novo estado `fonteManual`, posto a `true` nos dois `onSelect`
+  (filme e serie) e passado ao `Player` como `manual`.
+- `Player.jsx`: com `manual`, o timeout espera `TIMEOUT_MANUAL_MS` (45 s) em vez
+  de 15 s e, em vez de trocar de fonte, so chama `setLoaded(true)` — deixa de
+  mostrar "a carregar" e a fonte fica.
+- O health-check (`deadIds`) continua a trocar de fonte: uma fonte marcada como
+  morta esta mesmo partida, e ai mudar e' o que ajuda. O que deixou de acontecer
+  e' a troca por lentidao.
+- Titulo novo volta ao automatico (`setFonteManual(false)` no efeito que carrega
+  os detalhes). Dentro do mesmo titulo, a escolha mantem-se de episodio a
+  episodio.
+
+`scripts/testar-player-fonte.mjs`, 7 verificacoes da decisao do timeout.
+
+### A barra da pesquisa: cinco tentativas, e a que resulta
+O problema original (1.3.4): a pilula da barra e' **centrada**
+(`left: 50%` + `translateX(-50%)`) com `backdrop-filter: blur(20px)`. Quando o
+input crescia de 0 para 180 px a barra recentrava e deslizava 90 px para a
+esquerda, e o fundo ia com ela.
+
+Cada tentativa de corrigir criou um defeito diferente, todos medidos:
+
+| tentativa | defeito |
+| --- | --- |
+| `position: absolute` no input | a barra parava de mexer, mas o input crescia por cima dos links de navegacao |
+| `min-width: 400px` no `.search` | barra de 744 px com os links a ocupar 222 px — 484 px de vao morto |
+| `background` opaco no input | rectangulo de cor ligeiramente diferente do fundo da pilula |
+| `outline` para o foco | desenha-se por FORA da caixa e nao e' recortado pelo `border-radius` da pilula — a linha vermelha saia da barra |
+
+A solucao: **os links e o input trocam de lugar com a mesma largura**. Ao abrir,
+o `nav-left` encolhe para `width: 0` (com `overflow: hidden`) e o input cresce
+para a esquerda pelos mesmos 222 px — a largura real dos links, medida, nao um
+valor inventado. A pilula fica com a mesma largura nos dois estados.
+
+- input transparente e sem borda: e' uma janela dentro da pilula, nao uma caixa
+- `caret-color: var(--accent)`: o cursor na cor da app e' o sinal de "podes
+  escrever aqui", sem precisar de moldura
+- foco desenhado pela propria pilula com `box-shadow: inset 0 0 0 1px` — o
+  `inset` fica sempre dentro e nunca transborda
+
+Medido: barra 382 px igual fechada e aberta, nav-left 222 -> 0, input 0 -> 222,
+sem sobreposicao.
+
+### Testes
+`npm test` de 97 para **104** verificacoes (48 servidor + 14 adblock + 14
+autoplay + 22 estados + 17 notificacoes + 44 tempo + 7 fonte de video).
+
 ## 1.3.4
 
 ### Corrigido: aviso "a carregar" permanente e troca de fonte com o video a dar

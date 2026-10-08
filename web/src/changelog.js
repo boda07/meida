@@ -2,6 +2,17 @@
 // "o que mudou" depois de o utilizador atualizar a app. Mais recente em cima.
 export const CHANGELOG = [
   {
+    version: "1.3.5",
+    items: [
+      "Corrigido: quando escolhias um servidor de vídeo, ele mudava sozinho passados uns segundos — chegaste a escolher o VidLove e aparecia o VidLink sem teres pedido nada. Agora a fonte que escolhes fica até mudares de escolha.",
+      "Corrigido: a barra do topo já não se mexe ao escrever na pesquisa — o fundo desfocado saltava de lado.",
+      "Corrigido: ao escrever na pesquisa, o campo não aparece por cima dos botões de navegação. Agora ocupa o lugar deles.",
+      "Corrigido: o campo da pesquisa já não é uma caixa de cor diferente dentro da barra.",
+      "Corrigido: a linha vermelha que aparecia ao escrever na pesquisa já não sai para fora da barra.",
+      "Corrigido: a barra do topo já não fica esticada com um espaço vazio quando a pesquisa está fechada.",
+    ],
+  },
+  {
     version: "1.3.4",
     items: [
       "Corrigido: o aviso “a carregar” ficava no canto do vídeo mesmo com o vídeo a passar, e o servidor de vídeo mudava sozinho uns segundos depois de começares. Acontecia por causa de uma verificação interna que acabava a correr duas vezes.",
