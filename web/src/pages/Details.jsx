@@ -101,6 +101,46 @@ export default function Details() {
     setPosAtual(null);
   }, [details?.id, season, episode]);
 
+
+  // Fontes / player
+  const [embeds, setEmbeds] = useState([]);
+  const [active, setActive] = useState(null);
+  // Indice activo do player (para o Player fazer fallback/timeout a partir dele).
+  const [playerIndex, setPlayerIndex] = useState(0);
+  // A pessoa escolheu a fonte a mao? Se sim, o player NAO troca sozinho: era o
+  // que estava a acontecer — clicaste no VidLove e, 15 s depois, aparecia o
+  // VidLink sem teres pedido nada. So o auto-fallback inicial (sem escolha) e'
+  // que salta de fonte sozinho.
+  const [fonteManual, setFonteManual] = useState(false);
+  // Watch Party: fonte (provider) que o host escolheu, para os convidados verem a
+  // mesma — senao cada um fica no 1o provider, que pode estar partido ("nao vejo nada").
+  const wantedSourceRef = useRef(null);
+  // Health-check dos providers (ids mortos; null = ainda desconhecido).
+  const deadProviders = useProviderHealth();
+
+  // Fonte inicial: a escolhida pelo host da watch party, ou a primeira viva
+  // (salta os que o health-check marcou como mortos).
+  function pickDefault(embedsList) {
+    const want = wantedSourceRef.current;
+    const alive = embedsList.filter(
+      (e) => !deadProviders?.has(e.provider)
+    );
+    return (
+      (want && (alive.find((e) => e.provider === want) || embedsList.find((e) => e.provider === want))) ||
+      alive[0] ||
+      embedsList[0] ||
+      null
+    );
+  }
+
+// Mantém o ref do último provider escolhido a par do estado ativo.
+  useEffect(() => {
+    activeProviderRef.current = active?.provider ?? null;
+  }, [active]);
+  // NOTA: este bloco esta aqui, e' nao antes das declaracoes das fontes, por
+  // causa do "temporal dead zone": um array de dependencias so' pode citar
+  // `const` JA declaradas acima (o React avalia-o durante o render). Ver o
+  // comentario do bloco.
   // Discord: tres estados, conforme o que sabemos — e o que sabemos e' "chegou
   // progresso?", nao "esta a tocar?".
   //
@@ -206,42 +246,6 @@ export default function Details() {
       estado: "a-ver",
     });
   }, [user, details, season, episode]);
-
-  // Fontes / player
-  const [embeds, setEmbeds] = useState([]);
-  const [active, setActive] = useState(null);
-  // Indice activo do player (para o Player fazer fallback/timeout a partir dele).
-  const [playerIndex, setPlayerIndex] = useState(0);
-  // A pessoa escolheu a fonte a mao? Se sim, o player NAO troca sozinho: era o
-  // que estava a acontecer — clicaste no VidLove e, 15 s depois, aparecia o
-  // VidLink sem teres pedido nada. So o auto-fallback inicial (sem escolha) e'
-  // que salta de fonte sozinho.
-  const [fonteManual, setFonteManual] = useState(false);
-  // Watch Party: fonte (provider) que o host escolheu, para os convidados verem a
-  // mesma — senao cada um fica no 1o provider, que pode estar partido ("nao vejo nada").
-  const wantedSourceRef = useRef(null);
-  // Health-check dos providers (ids mortos; null = ainda desconhecido).
-  const deadProviders = useProviderHealth();
-
-  // Fonte inicial: a escolhida pelo host da watch party, ou a primeira viva
-  // (salta os que o health-check marcou como mortos).
-  function pickDefault(embedsList) {
-    const want = wantedSourceRef.current;
-    const alive = embedsList.filter(
-      (e) => !deadProviders?.has(e.provider)
-    );
-    return (
-      (want && (alive.find((e) => e.provider === want) || embedsList.find((e) => e.provider === want))) ||
-      alive[0] ||
-      embedsList[0] ||
-      null
-    );
-  }
-
-// Mantém o ref do último provider escolhido a par do estado ativo.
-  useEffect(() => {
-    activeProviderRef.current = active?.provider ?? null;
-  }, [active]);
 
   // Presença no Discord (grátis): o título aparece assim que escolhes uma fonte e
   // desaparece se tirares a fonte ou saíres da ficha. O que o Discord diz sobre o
