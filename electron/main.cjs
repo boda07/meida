@@ -198,6 +198,11 @@ ipcMain.handle("set-presence", (event, data) => {
     state: data?.state,
     largeImage: data?.largeImage,
     largeText: data?.largeText,
+    // `estado` ("a-ver" | "pausa" | "sem-dados"). Tem de ser Explicitamente
+    // listado aqui: o IPC so passa os campos marcados, e sem esta linha o
+    // Discord recebia sempre "a-ver" — o contador a correr com o video parado,
+    // que era o defeito reportado a 2026-10-08.
+    estado: data?.estado,
   });
   return { ok: true, connected: discordPresence.isConnected(), clientId: discordPresence.CLIENT_ID };
 });

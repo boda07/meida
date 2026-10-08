@@ -78,27 +78,46 @@ function write(buf) {
   }
 }
 
-function activityPayload() {
+// Constroi a actividade que vai para o Discord. Funcao pura (nao toca em nada
+// externo) para poder ser testada — e' a logica que ja falhou duas vezes.
+//
+// Tres estados, e o que os distingue e' o que sabemos — nao o que achamos:
+//
+//  - "a-ver"     : o progresso chega. Contador a correr desde `startTimestamp`.
+//  - "pausa"     : o progresso chegava e parou. `timestamps.paused` congela o
+//                  contador e o Discord escreve "Pausado".
+//  - "sem-dados" : nunca chegou progresso (players em iframe). NAO se manda
+//                  timestamps nenhum: sem eles o Discord nao conta tempo, e
+//                  nao diz "Pausado" — que seria mentira. O titulo aparece,
+//                  que e' o que interessa.
+//
+// Antes, "sem progresso" era lido como "em pausa" e os iframes ficavam sempre
+// marcados como pausados, mesmo com o video a dar. E antes disso, todos ficavam
+// sempre "a ver", mesmo sem dar play.
+function buildActivity(pres, agora = Date.now()) {
   const activity = {
     // 3 = Watching ("A ver"). E o mesmo que usam a Netflix/Crunchyroll.
     type: 3,
-    details: current.details,
-    timestamps: { start: current.startTimestamp },
+    details: pres.details,
   };
-  // `paused: true` e' o que o Discord usa para congelar o contador e escrever
-  // "Pausado". Sem isto, o tempo continuava a correr mesmo com o video parado —
-  // que era o defeito reportado.
-  if (current.paused) activity.timestamps.paused = Date.now();
-  if (current.state) activity.state = current.state;
-  if (current.largeImage) {
+  if (pres.estado !== "sem-dados") {
+    activity.timestamps = { start: pres.startTimestamp };
+    if (pres.estado === "pausa") activity.timestamps.paused = agora;
+  }
+  if (pres.state) activity.state = pres.state;
+  if (pres.largeImage) {
     activity.assets = {
-      large_image: current.largeImage,
-      large_text: current.largeText || current.details,
+      large_image: pres.largeImage,
+      large_text: pres.largeText || pres.details,
     };
   }
+  return activity;
+}
+
+function activityPayload() {
   return {
     cmd: "SET_ACTIVITY",
-    args: { pid: process.pid, activity },
+    args: { pid: process.pid, activity: buildActivity(current) },
     nonce: crypto.randomUUID(),
   };
 }
@@ -261,13 +280,16 @@ function onFrame(opcode, body) {
 
 // Mostra `details` no perfil. `state` e a linha de baixo (ex.: "S1E2 · 12:34/45:00").
 // `largeImage` pode ser um URL (o Discord vai buscar a imagem).
-// `paused` diz ao Discord para congelar o contador: e' o que distingue "esta a
-// ver" de "deixou em pausa a meio".
-function setPresence({ details, state = "", largeImage = "", largeText = "", paused = false } = {}) {
+//
+// `estado`: "a-ver" | "pausa" | "sem-dados". Ver `activityPayload()` para o
+// que cada um faz. O valor unknown e' do frontend (nao sabe o estado ainda).
+const ESTADOS = new Set(["a-ver", "pausa", "sem-dados"]);
+
+function setPresence({ details, state = "", largeImage = "", largeText = "", estado = "a-ver" } = {}) {
   if (destroyed || !details) return false;
+  const novoEstado = ESTADOS.has(estado) ? estado : "a-ver";
   const changed = !current || current.details !== details;
-  const wasPaused = Boolean(current && current.paused);
-  const agoraPausado = Boolean(paused);
+  const antes = current ? current.estado : null;
   current = {
     details: String(details).slice(0, 128),
     state: String(state || "").slice(0, 128),
@@ -275,12 +297,12 @@ function setPresence({ details, state = "", largeImage = "", largeText = "", pau
     largeText: largeText || "",
     // O contador do tempo so reinicia quando muda de titulo.
     startTimestamp: changed ? Date.now() : current.startTimestamp,
-    paused: agoraPausado,
+    estado: novoEstado,
   };
-  // Uma mudanca de pausa tambem tem de sair na hora: se nao, o Discord
-  // continuava a contar mais 15 s (o intervalo minimo) com o estado errado.
-  // `changed` (titulo novo) ja e' forcado.
-  if (ready) sendPresence(changed || wasPaused !== agoraPausado);
+  // Uma mudanca de estado tambem tem de sair na hora: se nao, o Discord ficava
+  // mais 15 s (o intervalo minimo) a mostrar o estado anterior. `changed` (titulo
+  // novo) ja e' forcado.
+  if (ready) sendPresence(changed || antes !== novoEstado);
   else connect();
   return true;
 }
@@ -306,4 +328,7 @@ function shutdown() {
   teardown();
 }
 
-module.exports = { CLIENT_ID, setPresence, clear, isConnected, shutdown };
+// `buildActivity` e' exportado so' para os testes: e' a funcao pura que decide o
+// que vai para o Discord, e ja esteve errada duas vezes (a contador a correr com
+// o video parado; e os iframes marcados como "Pausado" sem estar).
+module.exports = { CLIENT_ID, setPresence, clear, isConnected, shutdown, buildActivity };

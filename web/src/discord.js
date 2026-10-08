@@ -53,9 +53,17 @@ function subLine(phase, season, episode, position, duration) {
 
 /**
  * Mostra/actualiza a presenca.
+ *
+ * `estado` tem tres valores, e a distincao importa:
+ *   - "a-ver"     : o progresso chega (players nossos). O Discord conta tempo.
+ *   - "pausa"     : o progresso parou. O Discord escreve "Pausado" e congela.
+ *   - "sem-dados" : nunca houve progresso (players em iframe). O Discord mostra
+ *                   o titulo e NAO conta tempo nem diz "Pausado" — nao sabemos se
+ *                   esta a dar, e afirmar o contrario seria mentira.
+ *
  * @param {{title?:string, type?:string, season?:number, episode?:number,
  *          position?:number, duration?:number, poster?:string,
- *          paused?:boolean}} media
+ *          estado?:string}} media
  */
 export function showPresence(media) {
   const api = bridge();
@@ -66,9 +74,7 @@ export function showPresence(media) {
       state: subLine(media.type, media.season, media.episode, media.position, media.duration),
       largeImage: posterUrl(media.poster),
       largeText: media.title,
-      // `paused` congela o contador do Discord. Sem isto o tempo continuava a
-      // correr com o video parado.
-      paused: Boolean(media.paused),
+      estado: media.estado || "a-ver",
     });
   } catch {
     /* silencioso */

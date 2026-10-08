@@ -101,37 +101,60 @@ export default function Details() {
     setPosAtual(null);
   }, [details?.id, season, episode]);
 
-  // Discord: quando o progresso deixa de chegar, o video esta parado.
-  // Sem isto o Discord contava o tempo como se estivesse a ver, e so'
-  // saindo do episodio o contador parava.
+  // Discord: tres estados, conforme o que sabemos — e o que sabemos e' "chegou
+  // progresso?", nao "esta a tocar?".
   //
-  // `PRESENCA_PAUSADA_MS` tem de ser maior que o intervalo com que o player
-  // reporta (uns 5 s), mas menor que o intervalo minimo do Discord (15 s) —
-  // assim a pausa aparece no Discord sem esperarmos pelo proximo update.
+  //   "a-ver"     : o progresso chega (players nossos). O Discord conta tempo.
+  //   "pausa"     : o progresso chegou e parou. O Discord congela e diz "Pausado".
+  //   "sem-dados" : nunca chegou progresso (players em iframe: MegaPlay, VidLove,
+  //                 ...). NAO se diz nada sobre o estado: o Discord mostra o
+  //                 titulo sem contador e sem "Pausado".
+  //
+  // A distincao entre "pausa" e "sem-dados" e' o que faltava. Antes, "sem
+  // progresso" era lido como "em pausa" e os iframes ficavam sempre marcados
+  // como pausados, mesmo com o video a dar. E antes disso, todos ficavam sempre
+  // "a ver", mesmo sem dar play.
+  //
+  // `PRESENCA_PAUSADA_MS` esta entre o intervalo com que o player reporta (uns
+  // 5 s) e o intervalo minimo do Discord (15 s): a pausa aparece sem esperarmos
+  // pelo proximo update.
   const PRESENCA_PAUSADA_MS = 10000;
-  const [presencaPausada, setPresencaPausada] = useState(true);
+  const [presencaEstado, setPresencaEstado] = useState("sem-dados");
   const ultimoProgressoRef = useRef(0);
+  // Uma vez que houve progresso, soubemos que este player da' sinal. Sem isto,
+  // um player nosso que arranca devagar seria tomado por um iframe em vez de
+  // "ainda nao comecou".
+  const viuProgressoRef = useRef(false);
 
   useEffect(() => {
-    // Sem progresso nenhum (providers em iframe, ou ainda nao comecou a dar):
-    // a presenca fica em pausa desde o inicio. E' o honesto — nao sabemos.
     if (!details?.title || !active) {
       clearPresence();
       return undefined;
     }
     ultimoProgressoRef.current = Date.now();
-    setPresencaPausada(true);
+    // Fonte nova: ainda nao sabemos nada sobre ela. So' quando `reportPos`
+    // chegar e' que passamos a "a-ver".
+    viuProgressoRef.current = false;
+    setPresencaEstado("sem-dados");
     const t = setInterval(() => {
-      const parado = Date.now() - ultimoProgressoRef.current > PRESENCA_PAUSADA_MS;
-      setPresencaPausada((antes) => (antes === parado ? antes : parado));
+      const semSinal = Date.now() - ultimoProgressoRef.current > PRESENCA_PAUSADA_MS;
+      setPresencaEstado((antes) => {
+        // Nunca houve progresso: continuamos sem dados (iframe, ou ainda nao
+        // comecou a dar). Nao e' pausa — e' falta de informacao.
+        if (!viuProgressoRef.current) return antes === "sem-dados" ? antes : "sem-dados";
+        // Houve progresso e agora nao ha: pausa a valer.
+        return semSinal ? "pausa" : "a-ver";
+      });
     }, 3000);
     return () => clearInterval(t);
-    // `details` pela identidade nao: muda a cada pedido e reiniciava a pausa
+    // `details` pela identidade nao: muda a cada pedido e reiniciaria o estado
     // sem motivo. So' as propriedades que o efeito le.
   }, [details?.title, details?.type, details?.poster, active, season, episode]);
 
   // O intervalo acima so muda o estado. Este efeito e' que o leva ao Discord —
-  // sem ele, `presencaPausada` nao chegava a lado nenhum.
+  // sem ele, `presencaEstado` nao chegava a lado nenhum. Nao leva `position`: o
+  // `subLine` so escreve o tempo se a posicao existir, e quem a manda e' o
+  // `reportPos` abaixo.
   useEffect(() => {
     if (!details?.title || !active) return;
     showPresence({
@@ -140,11 +163,11 @@ export default function Details() {
       season: details.type === "tv" ? season : null,
       episode: details.type === "anime" || details.type === "tv" ? episode : null,
       poster: details.poster,
-      paused: presencaPausada,
+      estado: presencaEstado,
     });
-    // Ver a nota do efeito de cima: `details` pela identidade reiniciaria a
-    // pausa a cada pedido.
-  }, [details?.title, details?.type, details?.poster, active, season, episode, presencaPausada]);
+    // Ver a nota do efeito de cima: `details` pela identidade reiniciaria o
+    // estado a cada pedido.
+  }, [details?.title, details?.type, details?.poster, active, season, episode, presencaEstado]);
 
   const reportPos = useCallback((position, duration) => {
     if (!user || !details) return;
@@ -162,11 +185,16 @@ export default function Details() {
       })
       .catch(() => {});
     setPosAtual(position);
-    // Ha progresso: o video esta a dar.
+    // Chegou progresso, logo o video esta a dar. E, a partir de agora, sabemos
+    // que este player da' sinal — uma ausencia futura e' pausa, nao falta de
+    // informacao (ver `viuProgressoRef`).
     ultimoProgressoRef.current = Date.now();
-    setPresencaPausada(false);
+    viuProgressoRef.current = true;
+    setPresencaEstado("a-ver");
     // Presença no Discord: aproveita o mesmo callback do progresso para mostrar
-    // "12:34 / 45:00" enquanto se vê (o Discord filtra os updates a mais).
+    // "12:34 / 45:00" enquanto se vê (o Discord filtra os updates a mais). Este
+    // `showPresence` e' o unico que leva `position` — o efeito acima so leva o
+    // estado, porque nao tem a posicao.
     showPresence({
       title: details.title,
       type: details.type,
@@ -175,6 +203,7 @@ export default function Details() {
       poster: details.poster,
       position,
       duration,
+      estado: "a-ver",
     });
   }, [user, details, season, episode]);
 
@@ -214,14 +243,15 @@ export default function Details() {
     activeProviderRef.current = active?.provider ?? null;
   }, [active]);
 
-  // Presença no Discord (grátis): aparece assim que escolhes uma fonte e
-  // desaparece se tirares a fonte ou saíres da ficha. Nos providers com iframe
-  // não dá para saber se estão a tocar (o Stremio também não sabe) — por isso
-  // mostramos a partir da fonte escolhida.
-  // Presença no Discord (grátis): o que mostrar e' decidido pelo efeito acima
-  // (`PRESENCA_PAUSADA_MS`), que sabe se ha progresso ou se o video esta parado.
+  // Presença no Discord (grátis): o título aparece assim que escolhes uma fonte e
+  // desaparece se tirares a fonte ou saíres da ficha. O que o Discord diz sobre o
+  // estado é decidido pelo efeito acima (`presencaEstado`), não aqui.
+  //
   // Este efeito antigo — que mostrava assim que se escolhia uma fonte, sempre
-  // "a ver" e sem nunca parar — foi removido: era a origem do defeito.
+  // "a ver" e sem nunca parar — foi removido: era a origem do defeito. A nota de
+  // que "nos providers com iframe não dá para saber se estão a tocar" continua
+  // verdadeira, mas só justifica mostrar o TÍTULO, não mostrar como se estivesse
+  // a ver. Daí o estado "sem-dados".
 
   // Saiu da ficha -> esconde a presença (senão ficava "A ver ..." para sempre).
   useEffect(() => () => clearPresence(), []);
