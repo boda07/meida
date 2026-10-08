@@ -30,7 +30,15 @@ function applyPlaybackPrefs(src, { autoplay, autoskip }) {
 // saltando os providers marcados como mortos (deadIds). Evita o "loading" infinito
 // quando o provider activo esta down (ex.: IPs de datacenter, bot detection).
 const TIMEOUT_MS = 15000;
-export default function Player({ embeds, deadIds, title, startIndex = 0 }) {
+
+// Com `manual` (a pessoa escolheu a fonte), o tempo de espera e' maior e o
+// timeout NAO troca de fonte: so deixa de mostrar "a carregar". 45 s e' o
+// suficiente para um player de serie demorar, e nao e' tanto que a pessoa
+// fique sem feedback. Se a fonte estiver mesmo partida, ve-se — e ela escolhe
+// outra, que e' o que ia fazer de qualquer maneira.
+const TIMEOUT_MANUAL_MS = 45000;
+
+export default function Player({ embeds, deadIds, title, startIndex = 0, manual = false }) {
   const iframeRef = useRef(null);
   const { settings } = useSettings();
   const [reloadKey, setReloadKey] = useState(0);
@@ -154,24 +162,38 @@ export default function Player({ embeds, deadIds, title, startIndex = 0 }) {
     // que avisa de que o iframe foi recriado e precisa de novo os 15 s.
     carregouRef.current = false;
     setLoaded(false);
-    timerRef.current = setTimeout(() => {
-      if (carregouRef.current) return;
-      carregouRef.current = true;
-      clearTimeout(timerRef.current);
-      timerRef.current = null;
-      // Timeout: o iframe nao carregou. So se avanca quando ha outra fonte;
-      // se esta era a ultima, fica a mostrar a mensagem em vez de ficar em
-      // loop a recarregar a mesma fonte.
-      const proximo = nextAlive(index, lista, deadRef.current);
-      if (proximo === index) {
-        setLoaded(true); // sem mais fontes: para de tentar
-        return;
-      }
-      setTrocada(active?.name || null);
-      setIndex(proximo);
-      setReloadKey((k) => k + 1);
-      setLoaded(false);
-    }, TIMEOUT_MS);
+    timerRef.current = setTimeout(
+      () => {
+        if (carregouRef.current) return;
+        carregouRef.current = true;
+        clearTimeout(timerRef.current);
+        timerRef.current = null;
+
+        // Escolha manual: a pessoa disse qual quer. Fica nesta, aconteca o que
+        // acontecer. Este era o defeito reportado — clicaste no VidLove e, 15 s
+        // depois, aparecia o VidLink sem teres pedido nada.
+        if (manual) {
+          // Deixa de reclamar "a carregar". A fonte fica como esta; se estiver
+          // partida a pessoa ve e escolhe outra.
+          setLoaded(true);
+          return;
+        }
+
+        // Timeout automatico: o iframe nao carregou. So se avanca quando ha
+        // outra fonte; se esta era a ultima, fica a mostrar a mensagem em vez
+        // de ficar em loop a recarregar a mesma fonte.
+        const proximo = nextAlive(index, lista, deadRef.current);
+        if (proximo === index) {
+          setLoaded(true); // sem mais fontes: para de tentar
+          return;
+        }
+        setTrocada(active?.name || null);
+        setIndex(proximo);
+        setReloadKey((k) => k + 1);
+        setLoaded(false);
+      },
+      manual ? TIMEOUT_MANUAL_MS : TIMEOUT_MS
+    );
 
     return () => {
       clearTimeout(timerRef.current);
@@ -180,7 +202,7 @@ export default function Player({ embeds, deadIds, title, startIndex = 0 }) {
     // `deadRef` e' um ref: nao precisa de dependencia, e usar `deadIds` aqui
     // voltava a reiniciar a espera (e o aviso) cada vez que o health-check
     // chegasse, sem haver iframe novo para vir.
-  }, [active, lista, index, reloadKey, arrancado]);
+  }, [active, lista, index, reloadKey, arrancado, manual]);
 
   if (!active) return null;
 

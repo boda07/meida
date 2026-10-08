@@ -269,6 +269,10 @@ h2 {
   display: flex;
   align-items: center;
   gap: 0;
+  /* `flex-shrink: 0` impede que o flex encolha o nav-left sozinho (por espaco
+     insuficiente na barra); so encolhe quando a pesquisa abre, via `width: 0`. */
+  flex-shrink: 0;
+  max-width: 100%;
 }
 
 .logo {
@@ -380,9 +384,15 @@ h2 {
 
    Havia uma segunda regra `.search.open input` (170 px) imediatamente antes
    desta, anulada pela cascata. Nao a reintroduzo. */
+/* O input cresce para a ESQUERDA e o nav-left encolhe exactamente o mesmo
+   valor, por isso a pílula mantem a MESMA largura nos dois estados: nada se
+   mexe e o input ocupa o sitio exacto que os links libertaram (sem sobrepor
+   nada). Nao ha `min-width` fixo — isso criava um vao morto de 480 px.
+
+   Medido em 2026-10-08: nav-left tem 222 px de largura, e por isso e' esse o
+   valor que o input tem de ocupar ao abrir. */
 .search {
-  position: relative; /* referencia para o input */
-  min-width: 400px; /* referencia fixa para a barra nao mudar de centro */
+  position: relative;
   display: flex;
   align-items: center;
   gap: 0;
@@ -395,7 +405,8 @@ h2 {
 }
 
 .search input {
-  /* Volta ao fluxo: o input expande, os links esvanecem, a pilula nao se mexe. */
+  /* `flex: 0 0 auto` para o input ocupar so o que lhe pedem, e nao roubar espaco
+     dos botoes a direita (sino, perfil). */
   flex: 0 0 auto;
   min-width: 0;
   width: 0;
@@ -405,37 +416,49 @@ h2 {
   color: var(--text);
   font-family: inherit;
   font-size: 13px;
+  /* O cursor na cor de destaque da app: e' o sinal de "podes escrever
+     aqui", e nao precisa de moldura nem de fundo. */
+  caret-color: var(--accent);
+  /* O input nao leva contorno: o foco e' desenhado pela propria pilula
+     (`.search:focus-within`, com `box-shadow: inset`), que fica preso dentro
+     dela. Um `outline` aqui saia da barra. */
   outline: none;
   transition: width 0.25s ease, padding 0.25s ease, opacity 0.15s ease;
 }
 
+/* A largura aberta e' a MESMA que o nav-left liberta (222 px medidos), para a
+   pílula ficar com largura constante. 12 px de padding sao compensados nos 10 px
+   que o nav-left perde, por isso o total bate certo. */
 .search.open input {
-  width: 200px;
+  width: 222px;
   padding: 6px 12px;
   opacity: 1;
   pointer-events: auto;
-  border-color: rgba(255, 255, 255, 0.1);
-  background: rgba(18, 18, 22, 0.94);
 }
 
-/* O foco e' o unico sinal de que se pode escrever aqui: o input vive sobre a
-   pilula e nao apanha o contorno do `:focus-visible` global. */
-.search.open input:focus-visible {
-  border-color: var(--accent);
+/* O foco e' desenhado pela PILULA (esta regra), nao pelo input.
+   Motivo: um `outline` no input desenha-se por FORA da caixa e nao e' recortado
+   pelo border-radius da pilula — a linha vermelha saia da barra. Um
+   `box-shadow: inset` desenha-se sempre para dentro, respeita o raio da pilula
+   e nunca pode transbordar. Fica uma linha de 1 px mesmo na borda. */
+.search:focus-within {
+  box-shadow: inset 0 0 0 1px var(--accent);
 }
 
-/* Quando a pesquisa esta aberta, os links de navegacao esvanecem para dar
-   espaco ao input, sem mexer a pílula (que ja nao muda de largura). */
-.pesquisa-aberta .nav-links {
-  opacity: 0.25;
+/* O nav-left encolhe para 0 quando a pesquisa abre, dando espaco ao input que
+   cresce para a esquerda. `overflow: hidden` impede os links de transbordarem do
+   espaco encolhido; `white-space: nowrap` garante que nao ha quebra de linha
+   durante a transicao. */
+.nav-left {
+  overflow: hidden;
+  white-space: nowrap;
+  transition: width 0.25s ease, opacity 0.15s ease;
+}
+
+.pesquisa-aberta .nav-left {
+  width: 0;
+  opacity: 0;
   pointer-events: none;
-  transition: opacity 0.2s ease;
-}
-
-.pesquisa-aberta .nav-links:hover,
-.pesquisa-aberta .nav-links:focus-within {
-  opacity: 1;
-  pointer-events: auto;
 }
 
 .pesquisa-aberta .nav-links:hover,

@@ -135,6 +135,11 @@ export default function Details() {
   const [active, setActive] = useState(null);
   // Indice activo do player (para o Player fazer fallback/timeout a partir dele).
   const [playerIndex, setPlayerIndex] = useState(0);
+  // A pessoa escolheu a fonte a mao? Se sim, o player NAO troca sozinho: era o
+  // que estava a acontecer — clicaste no VidLove e, 15 s depois, aparecia o
+  // VidLink sem teres pedido nada. So o auto-fallback inicial (sem escolha) e'
+  // que salta de fonte sozinho.
+  const [fonteManual, setFonteManual] = useState(false);
   // Watch Party: fonte (provider) que o host escolheu, para os convidados verem a
   // mesma — senao cada um fica no 1o provider, que pode estar partido ("nao vejo nada").
   const wantedSourceRef = useRef(null);
@@ -247,6 +252,11 @@ const animeAudio = localAudio || settings.animeAudio;
     setDetails(null);
     setError(null);
     setActive(null);
+    // Titulo novo: a escolha manual de fonte foi para o titulo anterior. O
+    // proximo volta ao auto-fallback normal (se a primeira fonte nao responder,
+    // salta para a seguinte). Dentro do mesmo titulo, a escolha mantem-se entre
+    // episodios.
+    setFonteManual(false);
     api
       .details(type, id)
       .then((d) => {
@@ -742,6 +752,8 @@ api
                 // Posiciona o player no indice desta fonte para recomeçar o timeout.
                 const idx = embeds.findIndex((x) => x.provider === e?.provider);
                 setPlayerIndex(idx >= 0 ? idx : 0);
+                // Escolha manual: a partir de agora o player fica nesta fonte.
+                setFonteManual(true);
               }}
               deadIds={deadProviders}
               title={details.title}
@@ -755,6 +767,7 @@ api
                 deadIds={deadProviders}
                 title={details.title}
                 startIndex={playerIndex}
+                manual={fonteManual}
               />
             ) : (
               <p className="muted">A carregar fontes...</p>
@@ -806,6 +819,8 @@ api
                 setActive(e);
                 const idx = embeds.findIndex((x) => x.provider === e?.provider);
                 setPlayerIndex(idx >= 0 ? idx : 0);
+                // Escolha manual: a partir de agora o player fica nesta fonte.
+                setFonteManual(true);
               }}
               deadIds={deadProviders}
               title={details.title}
@@ -819,6 +834,7 @@ api
                 deadIds={deadProviders}
                 title={details.title}
                 startIndex={playerIndex}
+                manual={fonteManual}
               />
             ) : (
               <p className="muted">A carregar fontes...</p>
