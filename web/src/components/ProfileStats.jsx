@@ -13,7 +13,8 @@
 // (o "Series 12" de um perfil com 412 animes virava um risco de 1px).
 import { Link } from "react-router-dom";
 import { imageUrl } from "../api/client.js";
-import { detalheStats, rotuloGenero } from "./profileStats.js";
+import { detalheStats, rotuloGenero, serieMensal } from "./profileStats.js";
+import GraficoMensal from "./GraficoMensal.jsx";
 
 /** Uma linha: rotulo, barra, numero. A barra cresce contra o maior do bloco. */
 function Linha({ nome, n, maior }) {
@@ -66,6 +67,9 @@ export default function ProfileStats({ items, aVerAgora }) {
   }
 
   const s = detalheStats(items);
+  // A serie temporal sai da MESMA lista que o resto (o mesmo filtro de genero
+  // que `detalheStats` ve), para o grafico nunca discordar dos numeros de cima.
+  const serie = serieMensal(items);
 
   // Os "top titulos" sao os cinco mais vistos, ou os cinco com nota mais alta
   // quando a pessoa ainda nao viu nada — para o bloco nunca ficar vazio num
@@ -149,6 +153,19 @@ export default function ProfileStats({ items, aVerAgora }) {
               ? "A média está acima da mediana: poucos títulos com nota muito alta estão a puxar a média para cima."
               : "A média está abaixo da mediana: há muitos títulos bem avaliados a puxar a média para baixo."}
         </p>
+      )}
+
+      {/* A serie temporal. Vai logo a seguir aos numeros grandes porque e' a
+          unica coisa que responde a "como estou a ir", e os numeros de cima so' dao
+          o estado. O componente esconde-se sozinho se a serie for curta demais
+          para valer alguma coisa (menos de 3 meses). */}
+      {serie.length >= 3 && (
+        <section className="st-bloco">
+          <div className="st-bloco-topo">
+            <h3 className="st-titulo">Ao longo do ano</h3>
+          </div>
+          <GraficoMensal serie={serie} />
+        </section>
       )}
 
       {s.generos.length > 0 && (

@@ -5281,6 +5281,72 @@ h2 {
   }
 }
 
+/* ===== Grafico de meses (SVG puro) =====
+   Sem biblioteca: as barras sao <rect> com `height` calculada em unidades de
+   desenho, e o SVG e' responsivo por CSS. A cor vem do mesmo token que o resto
+   da app, por isso mudar a cor de destaque muda o grafico tambem. */
+.gm {
+  margin: 0;
+}
+
+.gm svg {
+  display: block;
+  overflow: visible;
+}
+
+/* Guias horizontais: a linha mais fraca possivel. Sao orientacao, nao dados. */
+.gm-guia {
+  stroke: rgba(255, 255, 255, 0.07);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.gm-num,
+.gm-rot {
+  fill: rgba(255, 255, 255, 0.45);
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.gm-ano {
+  fill: rgba(255, 255, 255, 0.8);
+}
+
+/* A coluna. A cor vem do token; o `opacity` põe a barra "normal" um pouco para
+   tras e o hover traz para a frente. So' a opacidade muda, para nao custar
+   animacao ao desenhar 12 rects. */
+.gm-barra {
+  fill: var(--accent);
+  opacity: 0.82;
+  transition: opacity 0.15s ease;
+}
+
+.gm-barra:hover,
+.gm-barra.on {
+  opacity: 1;
+}
+
+/* Mes sem actividade: 3px de barra, nao nada. O zero e' informacao — e' ver que
+   nao houve nada. Se a coluna sumisse, o eixo mentia sobre esse mes. A cor e' a
+   mesma, so' que mais apagada, para nao parecer um mes com muita actividade. */
+.gm-barra.vazia {
+  opacity: 0.22;
+}
+
+.gm-valor {
+  fill: var(--text);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.gm-legenda {
+  margin: 10px 0 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.5);
+  max-width: 62ch;
+}
+
 .profile-locked {
   padding: 24px 0;
 }

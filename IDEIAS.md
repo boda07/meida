@@ -295,20 +295,39 @@ Ou seja: o **raciocínio** já é o mesmo que o do outro projeto. O que falta é
 - [ ] **Faixa de números no perfil** com os tokens acima — o número grande na cor
       de destaque, o rótulo em maiúsculas, a linha vertical de 1px entre eles, e
       seguidores / a seguir a abrir a lista em vez de só mostrarem um número.
-- [ ] **Página `/stats` com o gráfico de meses** em CSS puro. O `/stats` já está nas
-      ideias de estatística, mas com outro conteúdo (histograma de notas, Tempo
-      total, género mais visto). Falta-lhe a dimensão **"ao longo do tempo"**, que
-      é a que o outro projeto mostra.
+- [x] **Gráfico de "ao longo do tempo" no perfil** — 12 meses de barras verticais
+      em **SVG puro** (`GraficoMensal.jsx`, sem dependências), alimentado por
+      `serieMensal()` em `profileStats.js`. Mede **actividade** (última vez que
+      mexeste num título), não visionamento, e a legenda diz-o. Três decisões que
+      vieram do outro projecto: a escala cresce contra o **maior** mês (e não
+      contra o total), um mês vazio fica a **3 px em vez de nada** — o zero é
+      informação, e sumir fazia o eixo mentir —, e a cor vem do mesmo token que o
+      resto da app. O eixo X leva o ano só quando muda. Só aparece com 3+ meses de
+      dados. Testado em `scripts/testar-grafico-mensal.mjs` (55 verificações,
+      incluindo que a barra mais alta usa pelo menos 80% da altura — defeito
+      encontrado no perfil real, onde o eixo dava 0/500/1000 com a barra a 53%).
+- [ ] **Página `/stats`** com o resto do conteúdo (histograma de notas, tempo
+      total, género mais visto). A dimensão temporal já está no perfil; falta
+      juntar o resto num sítio próprio.
 - [ ] **Separar o público do privado** nas estatísticas do perfil: números de
       biblioteca e seguidores são públicos; o gráfico de meses e a distribuição por
       estado de visionamento são só de quem é dono.
 
-### Uma nota sobre o dashboard
+### Nota sobre os gráficos: sem biblioteca, e não por princípio
 
-O dashboard de admin do ProdSound usa **Chart.js** (linha do tempo de registos,
-circular por tipo). Para a MEIDA isso **não** vale a pena: seria uma dependência
-nova para um ecrã que ninguém vai ver. O que se aproveita é a ideia da grelha de
-cartões com número em destaque, se algum dia houver um painel de administração.
+Cheguei a escrever que o Chart.js do dashboard de admin do ProdSound não valia a
+pena por ser uma dependência nova. **Estava a responder ao ecrã errado** — um
+ecrã de administração que ninguém vê. Nas estatísticas do perfil, que toda a
+gente vê, um gráfico é o sítio certo, e era uma lacuna real.
+
+Feito com SVG à mão na mesma, mas por uma razão prática e não por princípio: uma
+coluna é um `<rect>`, e o gráfico do ProdSound no perfil **já é CSS puro**. O que a
+biblioteca traria (pan, zoom, animações de entrada) não se usa num gráfico de 12
+barras, e o ficheiro inteiro tem menos de 4 KB contra +70 a +200 KB.
+
+O que muda se algum dia o gráfico passar a 3 ou 4 séries com cursor e *tooltip*
+detalhado: aí a conta muda, e a biblioteca passa a compensar. Vale a pena ter
+essa linha escrita.
 
 ---
 

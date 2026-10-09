@@ -222,3 +222,80 @@ export function detalheStats(items) {
     totalGeneros: generos.size,
   };
 }
+
+/* ===== Serie temporal =====================================================
+   As estatisticas todas acima sao CATEGORICAS: contam ("12 accao"),
+   distribuem ("genero mais visto"), resumem ("nota mais alta"). Nenhuma
+   responde a "quanto tenho visto ultimamente" — que e' a pergunta que um perfil
+   perguntado a si proprio coloca ao fim de um mes.
+
+   Este bloco preenche essa lacuna. E' o que o projecto antigo (ProdSound)
+   mostra com `.pa-chart`: colunas por mes, seis meses. Aqui sao 12, porque um
+   ano mostra o ciclo e seis meses esconde a pergunta "ainda vou a tempo?".
+
+   A data vem do campo `updatedAt` que a biblioteca ja' traz. NÃO e' a data em
+   que a pessoa viu a coisa: e' a ultima vez que esse item mudou (meteu-se na
+   biblioteca, deu-lhe nota, marcou como visto). O grafico mede ACTIVIDADE, nao
+   visionamento — e o texto da legenda diz isso, para ninguem ler mais do que
+   esta escrito. (Para visionamento a serio seria preciso o historico do
+   `progress`, que a API do perfil nao traz.)
+
+   Por omissao devolve uma serie vazia: a UI esconde o bloco, em vez de mostrar
+   um eixo vazio. */
+
+const MESES_PT = [
+  "Jan", "Fev", "Mar", "Abr", "Mai", "Jun",
+  "Jul", "Ago", "Set", "Out", "Nov", "Dez",
+];
+
+/**
+ * Chave "AAAA-MM" de uma data, ou null se nao der para ler. Aceita o que a API
+ * devolve (ISO com ou sem horas) e tambem so "AAAA-MM" — a biblioteca pode ter
+ * datas assim vindas da importacao.
+ */
+function chaveMes(valor) {
+  const m = /^(\d{4})-(\d{2})/.exec(String(valor || ""));
+  return m ? `${m[1]}-${m[2]}` : null;
+}
+
+/**
+ * Titulos mexidos por mes, nos ultimos `meses` meses, incluindo o mes corrente.
+ *
+ * @param items  a biblioteca (o mesmo array que o resto de `detalheStats`)
+ * @param meses  quantos meses para tras; por omissao 12
+ * @returns {{chave:string, rotulo:string, n:number, mes:number, ano:number}[]}
+ *          sempre com `meses` entradas, para o eixo nunca ter buracos
+ */
+export function serieMensal(items, meses = 12) {
+  const agora = new Date();
+  // Os ultimos N meses, do mais antigo ao mes corrente. Constroi-se a partir do
+  // ano/mes e nao de "agora - 30 dias", para o eixo cair sempre em meses
+  // inteiros: um grafico com o ultimo corte a meio do mes e' um mes e' meio.
+  const chaves = [];
+  for (let i = meses - 1; i >= 0; i--) {
+    const d = new Date(agora.getFullYear(), agora.getMonth() - i, 1);
+    chaves.push({
+      chave: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`,
+      rotulo: MESES_PT[d.getMonth()],
+      mes: d.getMonth(),
+      ano: d.getFullYear(),
+      n: 0,
+    });
+  }
+
+  const pos = new Map(chaves.map((c, i) => [c.chave, i]));
+  for (const it of Array.isArray(items) ? items : []) {
+    const k = chaveMes(it && (it.updatedAt ?? it.updated_at));
+    if (k === null) continue;
+    // Uma data fora da janela conta para o mes certo (se existir) ou e' ignorada.
+    // `pos` tem so' as chaves da janela, por isso o `if` e' o filtro.
+    const i = pos.get(k);
+    if (i !== undefined) chaves[i].n++;
+  }
+  return chaves;
+}
+
+/** Rotulo do eixo quando muda o ano: "Jan 25". Sem mudanca: so' "Jan". */
+export function rotuloEixo(ponto, mostrarAno) {
+  return mostrarAno ? `${ponto.rotulo} ${String(ponto.ano).slice(2)}` : ponto.rotulo;
+}
