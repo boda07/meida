@@ -9,6 +9,70 @@ Instruções e contexto duradouro para assistentes de IA que trabalhem neste rep
 - `electron/` — app desktop (Electron) que arranca o backend com o Node embutido.
 - UI em português (pt-PT). `#c90303` é a cor de destaque.
 
+## Onde ir buscar inspiração: o projeto antigo do utilizador (só neste portátil)
+
+> **O utilizador autorizou explicitamente (2026-10-09): sempre que precisares de
+> inspiração para uma funcionalidade, vai ver o projeto antigo dele.**
+
+**Caminho:** `C:\Users\white\Documents\RAI PAP`
+
+**Só existe neste portátil.** Não está no repo, não vai com o git, e não está no
+desktop do Boda. Se noutra máquina a pasta não estiver lá, o caminho é só uma
+sugestão — não faças código que dependa de a encontrar.
+
+### O que é
+
+O **ProdSound** — o projeto da escola do utilizador. PHP + MySQL, não tem nada a
+ver com a MEIDA em código. Está organizado assim:
+
+| Onde | O quê |
+| --- | --- |
+| `PSI/Backend/` | PHP por área — `Tickets/`, `Denuncias/`, `Utilizadores/`, `Publicacoes/`, `Badges/`, `Logs/`, `Dashboard/` |
+| `PSI/FrontEnd/` | As páginas, cada uma com o seu `cmd=` |
+| `PSI/Comum/` |includes partilhados, `menu.php`, notificações, preferências |
+| `ProdSoundDB.sql` | O schema **e** os dados — o ficheiro mais útil dos quatro |
+| `*.docx` / `Em PDF/` | Caderno de análise, relatório e manual do utilizador |
+
+**PHP com SQL dentro do código** (`$lig->query("SELECT ... WHERE id='$id'")`),
+o `$_SESSION` para o login, e render no servidor. **Não copies o estilo** — o que
+interessa é o que ele já resolveu.
+
+### Porque é que vale a pena ir lá
+
+**Porque já resolveu coisas que a MEIDA ainda não resolveu.** Foi exactamente
+assim que se descobriu o bug dos comentários aninhados (ver "Bugs corrigidos"):
+ele tem respostas a respostas a três níveis e a MEIDA não conseguia nem com duas.
+
+Coisas que lá já estão feitas e que na MEIDA foram pensadas do zero:
+
+- **Comentários aninhados de profundidade livre.** `CodCP_Pai` aponta para o
+  próprio pai, sem achatar. Os dados no dump mostram os três níveis reais
+  (o comentário 6 responde ao 5, e o 5 responde ao 3).
+- **Como se lê um fio fundo:** `exibirComentarios($parent_id, …, $nivel = 0)`
+  recursivo, e cada resposta mostra uma **citação do pai** — `vp-comment-quote`,
+  com autor e até 120 caracteres, com link para `#com-<id>`. É o truque que
+  sustenta o aninhamento quando a indentação já não ajuda. **Copiado para a
+  MEIDA** como `.comment-cita`.
+- **Notificações** com `ENUM` de tipo (`comentario`, `resposta`, `like_comentario`,
+  `like_post`, `seguir`, `repost`, `ticket_aceite`, `ticket_recusado`), cada
+  evento com a sua linha e o `CodUtilizadorOrigem`.
+- **Seguir, gostos, listas/coleções, etiquetas, denúncias, moderação por
+  hierarquia** (`podeModerar()` — um admin não apaga o comentário de um
+  superadmin), **badges**, e o `rate limit` (1 comentário / 5 s por utilizador,
+  guardado na sessão).
+
+### Como usar
+
+- **Só ler.** É trabalho da escola dele — nunca escrever, nunca "limpar", nunca
+  formatar. Uma alteração acidental seria trabalho perdido dele sem forma de
+  recuperar pelo git, porque **este directório também não é um repo**.
+- Lê o `ProdSoundDB.sql` para o schema e o `FrontEnd/` para a lógica da página.
+- E repara que, como é PHP e não tem encoding nenhum, os acentos aparecem
+  estragados quando lês do terminal (`olá` sai `ol`). **Não tires conclusões
+  disso** — é a leitura, não o ficheiro.
+- O que trouxeres para a MEIDA traz a **decisão** (o truque da citação, o
+  `refId` da notificação), não o código.
+
 ## Numeração das versões (NUNCA saltar números)
 
 A escala é **1–10**, não semver. O último número é um contador que vai de 0 a 9:
@@ -270,7 +334,7 @@ definidos, porque so foi empacotado arm64. Logo `$packageArch` fica **vazio** e
 continua: escreve o registo, deixa o `Uninstall MEIDA.exe`, cria os atalhos
 (apontando para um `MEIDA.exe` inexistente, o que faz o Windows mostrar *"o
 Windows esta a procurar MEIDA.exe"*), e sai com **codigo 0**. Sem registo no
-CodeIntegrity, sem evento de 논 Defender, sem aviso nenhum.
+CodeIntegrity, sem evento de Defender, sem aviso nenhum.
 
 **Afeta as tres ultimas releases** (1.2.0, 1.2.1, 1.2.2) e a toda a gente em
 x64 — nao e so ao PC do utilizador. Como o `prune-releases` so mantem 3, todas
