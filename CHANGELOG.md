@@ -1,5 +1,51 @@
 # Changelog
 
+## Por publicar
+
+### Seguranca: cinco dependencias transitivas actualizadas
+No log do deploy do servidor partilhado aparece `npm audit` a dizer **9
+vulnerabilidades, uma crítica**. Auditoria feita a 2026-10-09.
+
+**Nao se correu `npm audit fix`, de proposito.** Alem de exigir `--force` para o
+`ip`, instalava tambem `utp-native`, `bufferutil` e `utf-8-validate` — modulos
+**nativos** (`.node`). Cada `.node` novo no `server/` e' mais um ficheiro que o
+empacotamento tem de trocar por arquitectura correcta antes de entrar no pacote, e
+foi exactamente assim que os instaladores ARM sairam partidos (ver AGENTS.md). O
+`utp-native` ainda nem e' preciso: o aviso dele e' inofensivo e o WebTorrent
+funciona por TCP.
+
+Em vez disso, `overrides` em `server/package.json` para as actualizacoes uteis:
+
+| pacote | de | para | aviso |
+| --- | --- | --- | --- |
+| `proxy-addr` | 2.0.7 | **2.0.8** | **critico** — IP spoofing |
+| `express` | 4.22.2 | 4.22.3 | patch (directa) |
+| `body-parser` | 1.20.5 | 1.20.8 | DoS com `limit` invalido |
+| `qs` | 6.15.2 | 6.16.0 | bypass do limite de arrays |
+| `ip-address` | 10.2.0 | 10.7.3 | 7 avisos de SSRF/trust-boundary |
+
+Todas sao JavaScript puro, sem quebras e **sem modulos nativos**. `npm install`
+mudou 5 pacotes e **nao adicionou nenhum**.
+
+Duas notas sobre o alcance real, para nao exagerar o que isto resolve:
+
+- **A crítica nao e' exploravel hoje.** O `proxy-addr` so' entra no caminho de IP
+  spoofing com `trust proxy` activo, e o servidor **nunca o activa**. Actualizar
+  nao e' urgente; e' o patch que a pagina de seguranca pede.
+- **O `body-parser` tambem nao e' alcançavel**: o aviso e' sobre um `limit`
+  invalido desligar a verificacao de tamanho, e aqui o `limit` e' `'4mb'`
+  (fixo no `src/index.js`).
+
+**Fica por resolver** o `ip` (high, SSRF em `isPublic`). A correcao obriga a
+`webtorrent@0.7.3`, quando estamos na **2.8.5** — um downgrade com quebras. Nao foi
+feito. O `npm audit` continuara a dizer "4 high" por causa disso, e isso e'
+esperado.
+
+### Corrigido: a cache do AniList deixava um anime partido para sempre
+Reportado a 2026-10-09 em `/details/anime/223`. **Isto e' do servidor, por isso
+precisa de push para o servidor partilhado, nao de release** — o 1.3.8 ja foi
+publicado. Detalhes no commit `9011f32`.
+
 ## 1.3.8
 
 ### Novo: "@mencoes" nos comentarios

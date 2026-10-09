@@ -19,8 +19,15 @@
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
-    "express": "^4.21.2",
+    "express": "^4.22.3",
     "jsonwebtoken": "^9.0.2",
     "webtorrent": "^2.5.1"
+  },
+  "//overrides": "Actualiza dependencias TRANSITIVAS com avisos de seguranca conhecidos, sem usar `npm audit fix` (2026-10-09). O `audit fix` tambem instalava utp-native, bufferutil e utf-8-validate: modulos NATIVOS (.node). Nao sao preciso — o aviso do utp-native e' inofensivo e o WebTorrent funciona por TCP — e cada .node novo no server/ e' mais um ficheiro que o empacotamento tem de trocar por arquitectura certa, que foi assim que os instaladores ARM sairam partidos (ver AGENTS.md). Aqui sao apenas actualizacoes de JavaScript puro, sem quebras e sem binarios. O express e' dependencia DIRECTA, por isso muda em `dependencies` e nao pode estar aqui: o npm da' EOVERRIDE quando um override conflita com a dependencia directa. proxy-addr: CRITICO (IP spoofing); so' e' viavel com 'trust proxy' activo e o servidor nunca o activa, mas e' um patch de uma versao e e' o que a pagina de seguranca pede. body-parser: DoS quando um 'limit' invalido desliga a verificacao de tamanho; aqui o limit e' '4mb' (src/index.js), por isso o caminho nao e' alcançavel, mas e' patch. qs: bypass do limite de arrays. ip-address: 7 avisos de SSRF/trust-boundary, vem do webtorrent (load-ip-set, torrent-discovery); o servidor nao faz filtragem SSRF de addresses de peers, mas a actualizacao e' JS puro e sem quebras. NOTA: o `npm audit` continuara a reclamar do `ip` (high) porque a correcao obria um downgrade do webtorrent de 2.8.5 para 0.7.3 — nao foi feito, de proposito. NOTA 2: o `overrides` nao aceita chaves de comentario (`npm error Override without name`), por isso a explicacao toda esta aqui em cima.",
+  "overrides": {
+    "proxy-addr": "2.0.8",
+    "body-parser": "1.20.8",
+    "qs": "6.16.0",
+    "ip-address": "10.7.3"
   }
 }
