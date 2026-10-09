@@ -317,16 +317,21 @@ test("comentarios: thread com respostas, gostos e apagar", () => {
   });
   assert.equal(resp.parentId, raiz.id);
 
-  // Responder a uma resposta cola na raiz (um nivel so').
+  // Responder a uma RESPOSTA fica nessa resposta. Antes colava na raiz
+  // ("aninhamento a um nivel"), e era por isso que o botao "Responder" das
+  // respostas nao fazia nada ao clicar — o formulario so' sabia desenhar ao
+  // nivel de topo. Este `assert` foi mudado de proposito: codificava o bug.
   const resp2 = store.addComment({
     userId: a.id, type: "tv", tmdbId: 100, season: 1, episode: 2,
     parentId: resp.id, body: "Mesmo",
   });
-  assert.equal(resp2.parentId, raiz.id, "resposta a resposta fica pendurada na raiz");
+  assert.equal(resp2.parentId, resp.id, "resposta a resposta fica na resposta, nao na raiz");
 
   let thread = store.listComments({ type: "tv", tmdbId: 100, season: 1, episode: 2, viewerId: b.id });
   assert.equal(thread.length, 1, "so' um comentario raiz");
-  assert.equal(thread[0].replies.length, 2);
+  assert.equal(thread[0].replies.length, 1, "a raiz so' tem a resp como filho");
+  assert.equal(thread[0].replies[0].replies.length, 1, "a resp tem a resp2 como filho");
+  assert.equal(thread[0].replies[0].replies[0].body, "Mesmo");
 
   // Gostos.
   store.likeComment(b.id, raiz.id);
@@ -335,7 +340,7 @@ test("comentarios: thread com respostas, gostos e apagar", () => {
   thread = store.listComments({ type: "tv", tmdbId: 100, season: 1, episode: 2, viewerId: b.id });
   assert.equal(thread[0].likes, 2);
   assert.equal(thread[0].likedByMe, true);
-  assert.equal(thread[0].replies[1].likedByMe, false);
+  assert.equal(thread[0].replies[0].likedByMe, false);
   store.unlikeComment(b.id, raiz.id);
   assert.equal(store.listComments({ type: "tv", tmdbId: 100, season: 1, episode: 2, viewerId: b.id })[0].likes, 1);
 
@@ -343,7 +348,9 @@ test("comentarios: thread com respostas, gostos e apagar", () => {
   assert.deepEqual(store.deleteComment(b.id, raiz.id), { ok: false, error: "forbidden" });
   assert.deepEqual(store.deleteComment(a.id, resp.id), { ok: false, error: "forbidden" });
   assert.deepEqual(store.deleteComment(a.id, resp2.id), { ok: true });
-  assert.equal(store.listComments({ type: "tv", tmdbId: 100, season: 1, episode: 2, viewerId: a.id })[0].replies.length, 1);
+  const depois = store.listComments({ type: "tv", tmdbId: 100, season: 1, episode: 2, viewerId: a.id })[0];
+  assert.equal(depois.replies.length, 1, "a resp continua la");
+  assert.equal(depois.replies[0].replies.length, 0, "a resp2 saiu mesmo, por ser folha");
 });
 
 test("comentario com respostas fica como apagado (a thread sobrevive)", () => {
@@ -376,4 +383,79 @@ test("comentarios separam-se por episodio e por tipo", () => {
   assert.equal(store.listComments({ type: "movie", tmdbId: 9 })[0].body, "Filme");
   // Corpo vazio e' rejeitado.
   assert.deepEqual(store.addComment({ userId: u.id, type: "tv", tmdbId: 9, body: "   " }), { error: "empty" });
+});
+
+test("fio de respostas: fundo sem limite, e cada um responde a quem esta' em cima", () => {
+  // Reportado a 2026-10-09: "nao da' para responder a respostas do meu
+  // comentario". Duas metades do bug, e as duas tem de estar neste teste:
+  // o pai guardado (store.js) e o formulario que desce com o fio (Comments.jsx).
+  // O mesmo desenho do `CodCP_Pai` do projeto antigo (RAI PAP / ProdSound), onde
+  // o comentario 6 responde ao 5 e o 5 responde ao 3.
+  const a = store.createUser("wanda", "h");
+  const b = store.createUser("xpto", "h");
+
+  // Quatro niveis alternando entre as duas pessoas. Se algum nivel colasse na
+  // raiz, a contagem de filhos denunciava.
+  const nomes = ["n0", "n1", "n2", "n3", "n4", "n5"];
+  const autores = [a, b, a, b, a, b];
+  const p = [];
+  for (let i = 0; i < nomes.length; i++) {
+    p.push(
+      store.addComment({
+        userId: autores[i].id, type: "tv", tmdbId: 4242, season: 2, episode: 7,
+        parentId: i === 0 ? null : p[i - 1].id, body: nomes[i],
+      })
+    );
+  }
+
+  // 1) O pai guardado e' mesmo o comentario imediatamente acima, nivel a nivel.
+  assert.equal(p[0].parentId, null, "a raiz nao tem pai");
+  for (let i = 1; i < p.length; i++) {
+    assert.equal(p[i].parentId, p[i - 1].id, `${nomes[i]} tem de responder a ${nomes[i - 1]}`);
+  }
+
+  // 2) A arvore que a UI recebe tem mesmo seis niveis, um em cada.
+  const raiz = store.listComments({ type: "tv", tmdbId: 4242, season: 2, episode: 7, viewerId: a.id });
+  assert.equal(raiz.length, 1, "um so' comentario de topo");
+  assert.equal(raiz[0].body, "n0");
+  let n = raiz[0];
+  let nivel = 0;
+  while (n.replies.length) {
+    assert.equal(n.replies.length, 1, `no nivel ${nivel} nao pode haver irmaos: o fio e' uma cadeia`);
+    n = n.replies[0];
+    nivel++;
+    assert.equal(n.body, `n${nivel}`, `no nivel ${nivel} esta o comentario errado`);
+  }
+  assert.equal(nivel, 5, "cinco respostas a seguir — a cadeia tem de ir ate ao fim");
+  assert.equal(n.replies.length, 0);
+});
+
+test("responder a uma resposta avisa QUEM esta' a ser respondido, nao a raiz", () => {
+  // Efeito secundario de largar o achatamento, e o mais justo dos dois: antes,
+  // responder a uma resposta notificava o autor do comentario de topo, que e'
+  // alguem que nao esta' a ser respondido.
+  const raiz = store.createUser("bruna", "h");
+  const meio = store.createUser("caio", "h");
+  const fundo = store.createUser("dinis", "h");
+
+  const r = store.addComment({ userId: raiz.id, type: "movie", tmdbId: 314, body: "Raiz" });
+  const m = store.addComment({ userId: meio.id, type: "movie", tmdbId: 314, parentId: r.id, body: "Meio" });
+  store.addComment({ userId: fundo.id, type: "movie", tmdbId: 314, parentId: m.id, body: "Fundo" });
+
+  const de = (id) => store.listNotifications(id).filter((n) => n.kind === "reply");
+
+  // A raiz foi avisada da resposta do caio. Isso e' certo e anterior a esta
+  // mudanca, por isso nao se testa aqui.
+  assert.equal(de(raiz.id).length, 1);
+  assert.equal(de(raiz.id)[0].refId, r.id);
+
+  // O que mudou: o aviso do caio aponta para A RESPOSTA DELA, que e' quem foi
+  // respondido. Antes, com o achatamento, o `parentId` gravado era o id da raiz
+  // e o aviso apontava para um comentario onde ninguem estava a falar.
+  assert.equal(de(meio.id).length, 1);
+  assert.equal(de(meio.id)[0].refId, m.id, "o aviso aponta para a resposta, nao para a raiz");
+  assert.notEqual(de(meio.id)[0].refId, r.id, "isto e' exactamente o que o achatamento estragava");
+
+  // O dinis nao recebeu nada: ninguem lhe respondeu.
+  assert.equal(de(fundo.id).length, 0);
 });

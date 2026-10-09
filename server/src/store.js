@@ -779,8 +779,10 @@ export function canViewProfile(viewerId, profile) {
 
 /* ===== Comentarios por episodio =====
    Chave: (media_type, external_id, season, episode). Para filmes e comentarios
-   do titulo inteiro, season e episode sao NULL. As respostas (parent_id) ficam
-   a um so' nivel: responder a uma resposta pendura no comentario raiz. */
+   do titulo inteiro, season e episode sao NULL. As respostas (parent_id) fazem
+   um fio de profundidade livre: responder a uma resposta pendura nela, como no
+   `CodCP_Pai` do projeto antigo. A UI limita a indentacao e cita quem se
+   responde, que e' o que torna o fio legivel quando ja vai fundo. */
 
 function commentLikes(id) {
   return db.prepare("SELECT COUNT(*) c FROM comment_likes WHERE comment_id = ?").get(id).c;
@@ -973,12 +975,21 @@ export function addComment(entry) {
 
   let parentId = null;
   if (entry.parentId != null) {
-    const p = db
-      .prepare("SELECT id, parent_id FROM comments WHERE id = ? AND deleted_at IS NULL")
-      .get(entry.parentId);
+    const p = db.prepare("SELECT id FROM comments WHERE id = ? AND deleted_at IS NULL").get(entry.parentId);
     if (!p) return { error: "parent" };
-    // Aninhamento a um nivel: responder a uma resposta cola na raiz.
-    parentId = p.parent_id ?? p.id;
+    // Aninhamento real: responder a uma resposta e' responder A ESSA resposta.
+    //
+    // Antes isto era `p.parent_id ?? p.id`, que colava a resposta na raiz. Era
+    // deliberado ("aninhamento a um nivel") e a UI afectava, porque o formulario
+    // de resposta so' sabia desenhar ao nivel de topo: o botao "Responder"
+    // aparecia nas respostas e nao acontecia nada ao clicar. Agora que o
+    // formulario desce com o fio, o limite nao tem razao de ser. O mesmo que o
+    // `CodCP_Pai` do projeto antigo (RAI PAP / ProdSound).
+    //
+    // Ciclo e' impossivel: o pai tem de existir antes de lhe responder, e uma
+    // resposta nunca muda de pai. Ainda assim `listComments` corta a recursao
+    // pela profundidade, para um dia um bug de dados nao prender o browser.
+    parentId = p.id;
   }
 
   const r = db

@@ -2,6 +2,48 @@
 
 ## Por publicar
 
+### Corrigido: dava para nao responder a uma resposta
+O botao **"Responder" aparecia nas respostas e nao acontecia nada ao clicar.**
+Nao dava erro, nao aparecia formulario nenhum — clicas e nada.
+
+Tinha **duas metades**, uma em cada lado:
+
+- **O store achata o aninhamento.** `addComment` gravava
+  `parentId = p.parent_id ?? p.id`: responder a uma resposta pendurava o
+  comentario **na raiz**. Era deliberado ("aninhamento a um nivel") e estava
+  escrito no codigo.
+- **O formulario so' sabia desenhar ao nivel de topo.** Vivia no `comments.map`,
+  ao lado do comentario de topo. Mas o `CommentItem` desenha as respostas
+  **recursivamente** — por isso o botao aparecia em todos os niveis e nao tinha
+  onde abrir. Era esta metade que via a pessoa; a outra era silenciosa.
+
+Agora o aninhamento e' real, sem limite, como o `CodCP_Pai` do projeto antigo
+(RAI PAP / ProdSound) — que ja' o fazia a tres niveis e nunca teve o problema.
+
+**Como se lee um fio fundo.** A indentacao para depois do terceiro nivel: cada
+nivel comia 14px de margem e um fio de dez respostas deixava o texto numa tira
+estreita, pior no telefone. A partir dai, todas as respostas ficam no mesmo recuo
+e **cada uma cita quem se esta' a responder** — autor e um pedaco do texto, com
+ligacao para o comentario. E' o mesmo truque do `vp-comment-quote` do projeto
+antigo.
+
+**Alem disso, a notificacao passou a ir para a pessoa certa.** O aviso de
+"respondeu-te" apontava para o comentario de topo, porque era esse o `parent_id`
+guardado — ou seja, notificava alguem que nao estava a ser respondido. Agora
+aponta para a resposta.
+
+Verificacoes: 50 testes do servidor (2 novos, um deles de um fio de 6 niveis com
+os pais conferidos um a um), 16 verificacoes de ligacao da UI e 18 de
+renderizacao — estas ultimas renderizam o componente de verdade com
+`react-dom/server` e leem o HTML, sem jsdom. Todas as tres foram verificadas com
+mutacao: reintroduzir o achatamento, tirar o formulario do `CommentItem`, ou
+parar de passar o `parent` na recursao faz cada uma falhar com a mensagem certa.
+
+O limite de seguranca (NIVEL_MAXIMO = 30) tambem foi verificado com um ciclo de
+`parent_id` a apontar para si mesmo. **A primeira versao nao o impedia** — a
+frase de aviso aparecia mas a recursao continuava, e rebentava com "Maximum call
+stack size exceeded". O `!cortado` na guarda do `map` e' o que corta.
+
 ### Seguranca: cinco dependencias transitivas actualizadas
 No log do deploy do servidor partilhado aparece `npm audit` a dizer **9
 vulnerabilidades, uma crítica**. Auditoria feita a 2026-10-09.

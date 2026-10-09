@@ -4716,10 +4716,72 @@ h2 {
   gap: 12px;
 }
 
+/* Depois de uns niveis a indentacao come o espaco todo e o texto fica numa tira
+   estreita (no telefone, pior). A partir daqui todas as respostas ficam no
+   mesmo recuo, e quem diz a quem se responde passa a ser a citacao do pai
+   (`.comment-cita`). A borda esquerda continua, para o fio se ver. */
+.comment-replies-fundo {
+  padding-left: 6px;
+}
+
+/* Citacao de quem se responde. Mesmo nome que a `vp-comment-quote` do projeto
+   antigo (RAI PAP / ProdSound), que e' onde a ideia veio. */
+.comment-cita {
+  display: flex;
+  gap: 6px;
+  align-items: baseline;
+  margin: 0 0 6px;
+  padding: 3px 8px;
+  border-left: 2px solid rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 0 4px 4px 0;
+  font-size: 12.5px;
+  color: rgba(255, 255, 255, 0.62);
+  text-decoration: none;
+  min-width: 0;
+}
+
+.comment-cita:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.comment-cita-seta {
+  flex: 0 0 auto;
+  opacity: 0.6;
+}
+
+.comment-cita-quem {
+  flex: 0 0 auto;
+  font-weight: 600;
+  color: var(--accent, #c90303);
+}
+
+/* O texto vai cortado para uma linha: e' para lembrar de quem e', nao para ler.
+   A barra de scroll em vez de "..." quando nao cabe, para se poder selectionar a
+   parte que falta. */
+.comment-cita-texto {
+  flex: 1 1 auto;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Responder a uma resposta: o formulario desce dentro do comentario, ao lado de
+   onde a resposta vai aparecer. Sem margem esquerda de 46px como antes — essa
+   era para o `<li>` ir alinhado com o texto do comentario de topo, e aqui ja
+   esta dentro do `.comment-body`, que ja passou o avatar. */
 .comment-reply-form {
-  list-style: none;
-  margin-left: 46px;
-  margin-top: -4px;
+  margin: 10px 0 2px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.comment-corte {
+  margin: 8px 0 0;
+  font-size: 12.5px;
 }
 
 /* ===== Perfis e pessoas ===== */
