@@ -5,6 +5,7 @@ import { Link } from "react-router-dom";
 import { api } from "../api/client.js";
 import { useAuth } from "../auth/AuthContext.jsx";
 import Avatar from "./Avatar.jsx";
+import { TextoComMencoes, CorpoDoComentario } from "./TextoComMencoes.jsx";
 import { haQuanto, quandoCompleto, paraTempo, paraSegundos } from "../lib/tempo.js";
 
 // O tempo no video e a data sao os dois de web/src/lib/tempo.js (com testes).
@@ -34,7 +35,13 @@ function CommentItem({ c, user, onLike, onDelete, onReply }) {
           </span>
         </div>
         <p className="comment-text">
-          {c.deleted ? <em className="muted">Comentário apagado</em> : c.body}
+          {c.deleted ? (
+            <em className="muted">Comentário apagado</em>
+          ) : (
+            // Componentes, nao texto solto: e' o que faz "@fulano" virar link
+            // para o perfil sem meter marcacao no que o utilizador escreveu.
+            <CorpoDoComentario body={c.body} />
+          )}
         </p>
         {!c.deleted && (
           <div className="comment-actions">
@@ -175,11 +182,10 @@ export default function Comments({ type, tmdbId, season = null, episode = null, 
         <form className="comment-form" onSubmit={submit}>
           <Avatar avatar={user.avatar} name={user.username} size={36} />
           <div className="comment-form-main">
-            <textarea
-              className="comment-input"
+            <TextoComMencoes
               value={body}
-              onChange={(e) => setBody(e.target.value)}
-              placeholder="Diz o que achaste..."
+              onChange={setBody}
+              placeholder="Diz o que achaste...  (escreve @ para chamar alguém)"
               rows={2}
               maxLength={2000}
             />
@@ -246,11 +252,10 @@ export default function Comments({ type, tmdbId, season = null, episode = null, 
               />
               {replyTo === c.id && user && (
                 <li className="comment-reply-form">
-                  <textarea
-                    className="comment-input"
+                  <TextoComMencoes
                     value={replyBody}
-                    onChange={(e) => setReplyBody(e.target.value)}
-                    placeholder={`Responder a ${c.author.username}...`}
+                    onChange={setReplyBody}
+                    placeholder={`Responder a ${c.author.username}...  (escreve @ para chamar alguém)`}
                     rows={2}
                     maxLength={2000}
                   />

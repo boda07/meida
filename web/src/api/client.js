@@ -244,6 +244,10 @@ export const api = {
   userFollowers: (username) => get(`/api/users/${encodeURIComponent(username)}/followers`),
   userFollowing: (username) => get(`/api/users/${encodeURIComponent(username)}/following`),
   searchUsers: (q) => get("/api/users", { q }),
+  // Quem sugerir para uma "@mencao". Query vazia e' valida de proposito: e' o que
+  // se pede logo apos escrever o "@", e devolve a primeira pagina de toda a gente
+  // com quem tem ligacao connosco no topo.
+  sugerirUsers: (q) => get("/api/users/suggest", { q: q ?? "" }),
   follow: (id) => post(`/api/users/${id}/follow`, {}),
   unfollow: (id) => del(`/api/users/${id}/follow`),
 

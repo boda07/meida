@@ -14,6 +14,9 @@ function frase(n) {
   if (n.kind === "reply") return { texto: `${quem} respondeu ao teu comentário`, forte: quem };
   if (n.kind === "like") return { texto: `${quem} gostou do teu comentário`, forte: quem };
   if (n.kind === "follow") return { texto: `${quem} começou a seguir-te`, forte: quem };
+  // "@fulano" num comentario. Wording diferente do "respondeu" de proposito:
+  // a mencao pode ser num comentario que nao responde a nada da pessoa.
+  if (n.kind === "mention") return { texto: `${quem} chamou-te num comentário`, forte: quem };
   return { texto: "Novidade", forte: "Novidade" };
 }
 

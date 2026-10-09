@@ -15,6 +15,7 @@ import {
   listFollowers,
   listFollowing,
   searchUsers,
+  sugerirUsers,
   canViewProfile,
   listLibrary,
   listLists,
@@ -33,6 +34,18 @@ socialRouter.get("/users", optionalAuth, (req, res) => {
   const q = String(req.query.q || "").trim();
   if (!q) return res.json({ users: [] });
   res.json({ users: searchUsers(q, 20) });
+});
+
+// Quem sugerir para uma "@mencao": toda a gente, mas quem tem ligacao connosco
+// primeiro. E' uma rota separada e nao um parametro de `/users` porque e' outro
+// trabalho — precisa de saber quem e' quem ve, e a `/users` e' para procurar
+// alguem a seguir.
+socialRouter.get("/users/suggest", optionalAuth, (req, res) => {
+  const q = String(req.query.q || "").trim();
+  // Sem query devolve a lista toda, porque acabaste de escrever "@" e a lista
+  // tem de aparecer logo (com `q === ""`, `searchUsers` devolvia vazio).
+  const { users, linked } = sugerirUsers(q, req.user?.id ?? null, 20);
+  res.json({ users, linked });
 });
 
 // Perfil publico. Sem login tambem funciona (para perfis publicos).

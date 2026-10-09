@@ -210,7 +210,7 @@ export const MIGRATIONS = [
         CREATE TABLE notifications (
           id          INTEGER PRIMARY KEY AUTOINCREMENT,
           user_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-          kind        TEXT    NOT NULL,   -- reply | like | follow
+          kind        TEXT    NOT NULL,   -- reply | like | follow | mention
           actor_id    INTEGER REFERENCES users(id) ON DELETE CASCADE,
           ref_id      INTEGER,            -- comentario (reply/like) ou pessoa (follow)
           media_type  TEXT,               -- contexto: onde ir quando se clica

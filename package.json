@@ -21,7 +21,7 @@
     "app": "npm run build && electron .",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "test": "npm --prefix server test && node scripts/testar-adblock.cjs && node scripts/testar-autoplay.mjs && node scripts/testar-estados.mjs && node scripts/testar-ganchos-deps.mjs && node scripts/testar-notificacoes.mjs && node scripts/testar-presenca-discord.mjs && node scripts/testar-tempo.mjs && node scripts/testar-player-fonte.mjs",
+    "test": "npm --prefix server test && node scripts/testar-adblock.cjs && node scripts/testar-autoplay.mjs && node scripts/testar-estados.mjs && node scripts/testar-ganchos-deps.mjs && node scripts/testar-mencoes.mjs && node scripts/testar-notificacoes.mjs && node scripts/testar-presenca-discord.mjs && node scripts/testar-tempo.mjs && node scripts/testar-player-fonte.mjs",
     "test:adblock": "node scripts/testar-adblock.cjs",
     "test:autoplay": "node scripts/testar-autoplay.mjs",
     "test:estados": "node scripts/testar-estados.mjs",
@@ -30,6 +30,8 @@
     "test:player": "node scripts/testar-player-fonte.mjs",
     "test:deps": "node scripts/testar-ganchos-deps.mjs",
     "test:presenca": "node scripts/testar-presenca-discord.mjs",
+    "test:mencoes": "node scripts/testar-mencoes.mjs",
+    "test:mencoes:fumo": "node scripts/testar-mencoes-fumo.mjs",
     "app:pack": "npm run build && electron-builder --x64",
     "app:pack:zip": "npm run build && electron-builder --win zip --x64",
     "app:publish": "npm run build && electron-builder --x64 --publish always && node scripts/prune-releases.mjs"

@@ -4429,6 +4429,91 @@ h2 {
   margin-top: 8px;
 }
 
+/* ==================== @mencoes nos comentarios ==================== */
+
+/* O wrapper existe para o `<ul>` da lista ficar posicionado a partir da caixa e
+   nao da pagina. `position: relative` e o que faz a lista aparecer logo abaixo
+   do campo onde se esta a escrever. */
+.mencao-wrap {
+  position: relative;
+}
+
+.mencao-lista {
+  position: absolute;
+  z-index: 30;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  max-height: 232px;
+  overflow-y: auto;
+  background: var(--bg-dark);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 12px;
+  /* A sombra tem de ser forte: a lista passa por cima do resto da pagina e sem
+     ela parece um bloco solto. */
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+}
+
+.mencao-opcao {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 7px 9px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+}
+
+/* A opcao sob o cursor tem de ser visivel mesmo sem rato: quem escolhe com as
+   setas do teclado nao tem nenhum rato por perto. */
+.mencao-opcao.on,
+.mencao-opcao:hover {
+  background: rgba(201, 3, 3, 0.16);
+  outline: 1px solid var(--accent);
+  outline-offset: -1px;
+}
+
+.mencao-nome {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Marca discreta de quem tem ligacao connosco. Nao e' essential — quem segue
+   alguem reconhece o nome — mas explica porque essa pessoa esta la em cima. */
+.mencao-ligacao {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--text-secondary);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+  padding: 1px 7px;
+  white-space: nowrap;
+}
+
+/* A "@mencao" dentro do comentario ja escrito. Usa a cor de destaque, que e' o
+   que distingue o link do resto do texto sem precisar de sublinhado (que num
+   bloco de texto fica feio). */
+.mencao-link {
+  color: var(--accent);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.mencao-link:hover {
+  text-decoration: underline;
+}
+
 /* Momento do video. Era <input type="number"> com "seg" ao lado: pedia 125 para
    dizer 2:05. Agora e' texto em m:ss, do tamanho de um momento. */
 .comment-at {

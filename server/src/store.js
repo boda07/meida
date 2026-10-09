@@ -10,6 +10,7 @@
 // UPDATE indexado, o que permite varios utilizadores a escrever ao mesmo tempo
 // sem se sobrescreerem.
 import { db, tx } from "./db/index.js";
+import { usernamesMencionados } from "./services/mencoes.js";
 
 const now = () => new Date().toISOString();
 
@@ -725,6 +726,50 @@ export function searchUsers(query, limit = 20) {
     .map(toUserCard);
 }
 
+// Quem sugerir para uma "@mencao". A lista e' de toda a gente (como no TikTok e
+// no Instagram: escreves @ e aparece qualquer pessoa), mas quem tem ligacao
+// connosco sobe para o topo — e' o que torna a lista util em vez de um
+// directorio alfabetico.
+//
+// A ordenacao e' feita aqui, e nao no frontend: "quem comeca por o que
+// escreveste" e' assunto deste. O `porPrioridade` do web/src/lib/mencoes.js so
+// preserva a ordem que vier.
+export function sugerirUsers(query, viewerId, limit = 20) {
+  const q = String(query || "").trim();
+  // Query vazia e' o caso normal logo apos escrever o "@": tem de aparecer
+  // alguem. `searchUsers("")` devolve vazio de proposito (para a pagina de
+  // procurar amigos), por isso aqui a lista sem filtro e' a primeira pagina
+  // por ordem alfabetica.
+  const lista = q
+    ? searchUsers(q, limit)
+    : db
+        .prepare("SELECT id, username, avatar FROM users ORDER BY username LIMIT ?")
+        .all(Math.max(1, Math.min(50, Number(limit) || 20)))
+        .map(toUserCard);
+  if (!viewerId || lista.length === 0) return { users: lista, linked: [] };
+  const ids = lista.map((u) => u.id);
+  const marcas = new Set();
+  // Blocos de 400: o SQLite tem limite de parametros (~999) e uma lista maior
+  // rebentava a query em vez de devolver so os primeiros.
+  for (let i = 0; i < ids.length; i += 400) {
+    const bloco = ids.slice(i, i + 400);
+    const marcasSql = bloco.map(() => "?").join(",");
+    const linhas = db
+      .prepare(
+        `SELECT follower_id, followee_id FROM follows
+         WHERE (follower_id = ? AND followee_id IN (${marcasSql}))
+            OR (followee_id = ? AND follower_id IN (${marcasSql}))`
+      )
+      .all(viewerId, ...bloco, viewerId, ...bloco);
+    for (const l of linhas) {
+      marcas.add(Number(l.followee_id === viewerId ? l.follower_id : l.followee_id));
+    }
+  }
+  const dentro = lista.filter((u) => marcas.has(Number(u.id)));
+  const fora = lista.filter((u) => !marcas.has(Number(u.id)));
+  return { users: [...dentro, ...fora], linked: [...marcas] };
+}
+
 // Regra de privacidade: perfil publico -> todos veem; privado -> so o proprio.
 // (Seguir nao da' acesso; quem quer partilhar poem o perfil publico.)
 export function canViewProfile(viewerId, profile) {
@@ -973,6 +1018,28 @@ export function addComment(entry) {
     } catch {
       /* a notificacao nunca pode impedir o comentario */
     }
+  }
+
+  // "@mencoes": avisar quem foi citado no texto. Corre mesmo que a pessoa nao
+  // esteja a responder a ninguem — e' esse o ponto de escrever "@fulano".
+  //
+  // `criarNotificacao` ja corta duas situacoes por nos: notificar-se a si
+  // proprio, e nao duplicar (a regra e' por destinatario + kind + ref, por isso
+  // o mesmo "@fulano @fulano" so avisa uma vez).
+  try {
+    for (const nome of usernamesMencionados(body)) {
+      const alvo = getUserByUsername(nome);
+      if (!alvo) continue;
+      criarNotificacao({
+        userId: alvo.id,
+        kind: "mention",
+        actorId: entry.userId,
+        refId: novoId,
+        preview: body,
+      });
+    }
+  } catch {
+    /* a notificacao nunca pode impedir o comentario */
   }
 
   const row = db
