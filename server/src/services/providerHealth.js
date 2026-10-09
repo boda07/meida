@@ -109,10 +109,19 @@ async function probe(url) {
     if (ms > SLOW_MS) return { ok: false, status: res.status, error: `lento (${ms}ms)`, ms };
     return { ok: true, status: res.status, ms };
   } catch (e) {
+    const err = e.cause?.code === "UND_ERR_ABORTED" ? "timeout" : e.cause?.code || e.message;
+    // O vidcore.org tem o certificado SSL quebrado (UNABLE_TO_VERIFY_LEAF_SIGNATURE)
+    // mas ainda serve o player e o video passa (verificado no browser e no
+    // adblock.cjs). Ignora-se esse erro especifico para nao marcar como morto
+    // um provider que funciona — o stream resolve-se por JS (SPA) e o auto-fallback
+    // de 15 s cobre falhas.
+    if (err === "UNABLE_TO_VERIFY_LEAF_SIGNATURE" && url.includes("vidcore")) {
+      return { ok: true, ms: Date.now() - t0, error: "certificado (ignorado)" };
+    }
     return {
       ok: false,
       ms: Date.now() - t0,
-      error: e.cause?.code === "UND_ERR_ABORTED" ? "timeout" : e.cause?.code || e.message,
+      error: err,
     };
   } finally {
     clearTimeout(timer);
