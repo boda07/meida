@@ -5015,32 +5015,58 @@ h2 {
 .st-cabecalho {
   grid-column: 1 / -1;
   display: flex;
-  gap: 40px;
+  gap: 0;
   flex-wrap: wrap;
   margin: 0;
   padding: 0 0 22px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
+/* Uma linha vertical entre numeros, como no projecto antigo. Faz-se com borda
+   no elemento em vez de um `<span>` separador: menos markup e nao se desalinha
+   quando um numero tem tres digitos e outro dois. A ultima nao leva, por isso
+   `:not(:last-child)`. */
 .st-cifra {
   display: flex;
   flex-direction: column-reverse;
-  gap: 2px;
+  gap: 3px;
+  padding: 0 30px 0 0;
+  margin-right: 30px;
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
 }
 
+.st-cifra:last-child {
+  border-right: 0;
+  padding-right: 0;
+  margin-right: 0;
+}
+
+/* O rotulo em maiusculas pequenas, com entreletra aberta. Medido no projecto
+   antigo: 11px, `letter-spacing` de 0.88px, `text-transform: uppercase`. E' o que
+   separa o numero do que ele conta — sem isto, "736" e "79" ficam dois numeros
+   soltos na mesma linha. A guia de design diz para evitar maiusculas em rotulos,
+   mas aqui o brief e' o aspecto do projecto do utilizador, e a regra perde. */
 .st-cifra dt {
-  font-size: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.085em;
+  text-transform: uppercase;
   color: var(--text-secondary);
 }
 
+/* O numero na cor de destaque, e nao branco. Branco e' o que a app usa em todo o
+   lado, e por isso os numeros nao se distinguiam do resto do texto; na cor de
+   destaque eles tornam-se o que se olha primeiro, e a ligacao com o lavado do
+   perfil fecha. */
 .st-cifra dd {
   margin: 0;
   font-family: "Archivo", sans-serif;
-  font-size: 26px;
+  font-size: 27px;
   font-weight: 700;
   line-height: 1;
   letter-spacing: -0.02em;
   font-variant-numeric: tabular-nums;
+  color: color-mix(in srgb, var(--accent) 82%, #ffffff);
 }
 
 /* A frase: uma leitura em portugues do que os numeros querem dizer. E' o que
