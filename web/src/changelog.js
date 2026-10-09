@@ -2,6 +2,14 @@
 // "o que mudou" depois de o utilizador atualizar a app. Mais recente em cima.
 export const CHANGELOG = [
   {
+    version: "1.3.8",
+    items: [
+      "Novo: podes chamar alguém num comentário, como no TikTok ou no Instagram. Escreves @ e aparece uma lista; escolhes com as setas e o Enter. Quem é chamado leva um aviso no sino.",
+      "Novo: na lista de quem aparece, quem segues ou quem te segue aparece primeiro, marcado como “segues”.",
+      "Novo: dentro de um comentário, o @fulano fica a vermelho e podes clicar para ir ao perfil. Um email como a@b.com não é confundido com uma chamada.",
+    ],
+  },
+  {
     version: "1.3.7",
     items: [
       "Corrigido: ao abrir a ficha de um anime, série ou filme, aparecia o ecrã de erro “Algo correu mal”. A app não abria nenhum título — era preciso reiniciar depois de atualizar para 1.3.6. Desculpa: foi um erro meu na 1.3.6.",

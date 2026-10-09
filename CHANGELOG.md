@@ -1,5 +1,94 @@
 # Changelog
 
+## 1.3.8
+
+### Novo: "@mencoes" nos comentarios
+Como no TikTok e no Instagram: escreve-se `@`, aparece uma lista, escolhe-se com
+as setas e o Enter, e o nome fica escrito no texto. Quem e' mencionado leva
+notificacao no sino.
+
+**Frontend** (`web/src/lib/mencoes.js`, sem React, testado):
+- `mencaoEmCurso(texto, cursor)` — o que a pessoa esta a escrever depois do `@`, e
+  onde. E' a regra mais sensible: devolve `null` em quase todos os casos, porque um
+  falso positivo mostra a lista no sitio errado. Regras: o `@` tem de estar no
+  inicio ou depois de espaco/pontuacao (assim `a@b.com` e `ola@ana` nao contam), so'
+  pode haver caracteres de username entre o `@` e o cursor, e um username a
+  comecar por ponto nao vale. O `@` sozinho **tem** de abrir a lista — com `+` em
+  vez de `*` no teste de caracteres, nao abria, e a pessoa via que estava partido.
+- `insereMencao` — escreve `@fulano ` e deixa o cursor depois do espaco.
+- `pedacosComMencoes` — divide o corpo em texto e mencoes, para desenhar.
+- `porPrioridade` — quem tem ligacao connosco sobe. Normaliza os ids para `Number`
+  dos dois lados: com um `Set` de textos e ids numericos, `set.has(2)` e' falso e
+  nao subia ninguem — **em silencio, sem erro nenhum**.
+
+`web/src/components/TextoComMencoes.jsx`: a caixa com a lista. Dois cuidados que
+custaram:
+- o `onBlur` do textarea chega **antes** do `click` da opcao e fechava o menu; por
+  isso o clique usa `mousedown` com `preventDefault`, e o `onBlur` tem um
+  `setTimeout` de 120 ms.
+- o cursor so pode ser posto depois do React escrever o novo valor; antes disso o
+  textarea ainda tem o texto antigo e a selecao cai no sitio errado. Fica num
+  `requestAnimationFrame`.
+
+`web/src/components/Comments.jsx` usa o componente nos dois sitios (comentario e
+resposta) e desenha o corpo com `<CorpoDoComentario>`, que devolve **elementos e
+nao HTML** — o texto do utilizador vai tal e qual para a base de dados, por isso
+nao ha nada ali que possa injectar marcacao.
+
+**Servidor**:
+- `GET /api/users/suggest?q=` devolve a lista de sugestoes ja ordenada (quem tem
+  ligacao connosco primeiro) e o campo `linked`, com os ids marcados. Query vazia
+  e' valida de proposito: e' o que se pede logo apos o `@`, e `searchUsers("")`
+  devolve vazio. A ordenacao e' feita aqui e nao no frontend, porque "quem comeca
+  por 'an'" e' assunto deste. Os ids vao em blocos de 400 — o SQLite tem limite de
+  parametros e uma lista maior rebentava a query.
+- `addComment` extrai os usernames mencionados e notifica cada um, com
+  `kind: "mention"`. **Nao houve migracao**: a coluna `kind` e' `TEXT` sem `CHECK`.
+  As duas regras da `criarNotificacao` resolvem o resto sem codigo novo — nunca
+  notificar-se a si proprio, e nao duplicar (o indice unico e' por
+  destinatario+kind+ref, por isso `@fulano @fulano` no mesmo comentario avisa uma
+  vez so).
+- `NotificationBell` sabe escrever a frase: "fulano chamou-te num comentario".
+  Distinta do "respondeu" de proposito, porque a mencao pode ser num comentario
+  que nao responde a nada da pessoa.
+
+### Duas implementacoes das mesmas regras, de proposito
+`mencaoEmCurso` (web) trabalha sobre o cursor; `usernamesMencionados` (servidor)
+sobre o texto todo. Nao se podiam fundir: o `server/` e' um pacote separado e no
+pacote instalado **nao existe `resources/web/src`**, portanto o `store.js` nao
+conseguia importar do `web/` — o import rebentava a app instalada.
+
+Tendo de ser duas, a divergencia e' o perigo: se o servidor tratasse `a@b.com` como
+mencao e o frontend nao, aparecia uma notificacao a partir de um `@` que a
+interface nunca mostrou. A seccao 7 do `testar-mencoes.mjs` compara as duas nas
+frases que costumam dar problemas e fixa tambem a **diferenca conhecida** do ponto
+final (o servidor corta, o frontend filtra por "ana." e a lista fica vazia — nao e'
+bug, mas fica escrito para se saber porque).
+
+### Testes
+- `scripts/testar-mencoes.mjs`, 61 verificacoes, ligado ao `npm test` (130 -> 191).
+- `scripts/testar-mencoes-fumo.mjs`, 19 verificacoes, precisa de servidor a correr
+  (`npm run test:mencoes:fumo`). Prova que a rota responde, que quem se segue sobe,
+  e as tres regras: notifica, nao notifica a si proprio, nao duplica.
+- O verificador de mutacao (`/tmp`) confirma que o teste falha com o codigo
+  partido: `@` sozinho a nao abrir, ponto final a ser parte do nome, email a contar
+  como mencao, ligacoes a nao subir. **Primeiro corrigiu-se o verificador** para
+  abortar quando o teste ja falha em codigo bom — a primeira versao dava "o teste
+  apanha o bug" sobre um teste que ja estava roto.
+
+### Verificado no browser
+Escrever `@` abre a lista (8 sugestoes); `@an` filtra so os Ana; seta + Enter
+insere `@ana30phat ` com o cursor no sitio certo; o comentario publicado mostra a
+mencao como link para `/u/ana2zrbz1`; `a@b.com` **nao** vira link; o sino mostra
+"bentoumo4g8 chamou-te num comentario" com **uma** notificacao apesar de duas
+mencoes.
+
+### Por publicar
+`/api/comments`, `/api/auth` e `/api/users` **nao** estao em `LOCAL_API_PREFIXES`,
+por isso vao para o servidor partilhado. Ate o FadeHost fazer deploy desta
+versao, a lista de mencoes da a 404 com o servidor partilhado ligado e na versao
+web. **Na app de desktop com o modo "servidor" desligado ja funciona.**
+
 ## 1.3.7
 
 ### Corrigido: a app nao abria nenhum titulo depois da 1.3.6
