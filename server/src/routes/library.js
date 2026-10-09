@@ -5,6 +5,7 @@ import {
   upsertLibrary,
   setLibraryRating,
   setLibraryGenres,
+  setLibraryYear,
   clearWatchlist,
   deleteLibrary,
   listLists,
@@ -240,7 +241,7 @@ libraryRouter.get("/library/item", (req, res) => {
 
 // Cria/atualiza visto e/ou nota. Faz merge com o estado existente.
 libraryRouter.post("/library", (req, res) => {
-  const { tmdbId, type, title, poster, watched, watchlist, score, genres, rating } =
+  const { tmdbId, type, title, poster, watched, watchlist, score, genres, rating, year } =
     req.body || {};
   const { status } = req.body || {};
   if (!tmdbId || (type !== "movie" && type !== "tv" && type !== "anime")) {
@@ -272,6 +273,10 @@ libraryRouter.post("/library", (req, res) => {
     title: title ?? existing?.title ?? null,
     poster: poster ?? existing?.poster ?? null,
     genres: Array.isArray(genres) ? genres : existing?.genres ?? [],
+    // O ano, quando vem. Sem isto, marcar um titulo como visto perderia o ano que
+    // a ficha tinha gravado — o `COALESCE` no store protege o valor guardado, mas
+    // sem o campo a chegar aqui nunca se escrevia pela primeira vez.
+    year: year ?? existing?.year ?? null,
     rating: rating != null ? Number(rating) : existing?.rating ?? null,
     watched: temEstado ? 0 : watched != null ? (watched ? 1 : 0) : existing?.watched ?? 0,
     watchlist: temEstado ? 0 : watchlist != null ? (watchlist ? 1 : 0) : existing?.watchlist ?? 0,
@@ -279,6 +284,20 @@ libraryRouter.post("/library", (req, res) => {
     score: score !== undefined ? score : existing?.score ?? null,
   });
   res.json({ item: normalizeRow(getLibraryItem(req.user.id, Number(tmdbId), type)) });
+});
+
+// Guarda so' o ano de um titulo que ja esta' na biblioteca.
+//
+// Rota separada do POST /library de proposito: aquele faz
+// `watched = excluded.watched`, portanto um pedido so' para gravar o ano
+// desmarcaria o titulo como visto. Aqui so' o ano e' tocado.
+libraryRouter.patch("/library/year", (req, res) => {
+  const { tmdbId, type, year } = req.body || {};
+  if (!tmdbId || (type !== "movie" && type !== "tv" && type !== "anime")) {
+    return res.status(400).json({ error: "tmdbId e type (movie|tv|anime) sao obrigatorios" });
+  }
+  const written = setLibraryYear(req.user.id, Number(tmdbId), type, year);
+  res.json({ ok: true, written });
 });
 
 // Limpa a watchlist por tipo (movie|tv|anime|all).

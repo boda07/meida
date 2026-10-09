@@ -5373,6 +5373,75 @@ h2 {
   max-width: 62ch;
 }
 
+/* ===== Pagina /stats =====
+   Reaproveita o `.st-*` do perfil (mesmos numeros, mesmos rotulos) e acrescenta
+   so' o que e' desta pagina. */
+.stats-page {
+  max-width: 980px;
+}
+
+.stats-sub {
+  margin: 4px 0 26px;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+/* O numero pode levar um eco pequeno por baixo (o total exato de um genero, os
+   segundos por baixo das horas). `font-size` menor e cor apagada — nao e' uma
+   segunda figura, e' o detalhe. */
+.st-cifra-de {
+  display: block;
+  margin-top: 3px;
+  font-family: "Manrope", system-ui, sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* As ressalvas. Sao o mais importante desta pagina: sao o que impede de ler um
+   numero parcial como se fosse completo. Deliberadamente mais apagadas que o
+   texto normal — sao notas de rodape, nao conclusoes. */
+.stats-nota {
+  margin: 14px 0 0;
+  padding: 10px 13px;
+  border-left: 2px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 0 6px 6px 0;
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--text-secondary);
+  max-width: 68ch;
+}
+
+/* O histograma reusa as classes do grafico de meses; so' a figura precisa de
+   espacamento proprio. */
+.hs {
+  margin: 0;
+}
+
+.hs svg {
+  display: block;
+  overflow: visible;
+}
+
+/* A legenda e' a ultima coisa da figura, e a frase das notas vem logo a seguir.
+   O `.st-frase` puxa para cima com `margin-top: -8px` porque normalmente segue
+   uma linha de numeros, e nao um grafico com legenda — aqui isso fazia as duas
+   texto ficarem sobrepostos. O `margin` normal e' o certo depois de uma figura. */
+.stats-page .st-frase {
+  margin: 16px 0 0;
+}
+
+/* Espaco entre os blocos. O `.st-bloco` do perfil nao tem margin entre ele e o
+   seguinte porque no perfil estao lado a lado numa grelha; aqui sao empilhados e
+   precisavam de ar. */
+.stats-page .st-bloco {
+  margin-top: 34px;
+}
+
 .profile-locked {
   padding: 24px 0;
 }

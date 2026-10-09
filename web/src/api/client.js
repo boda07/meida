@@ -269,6 +269,8 @@ export const api = {
   library: () => get("/api/library", langParams()),
   libraryItem: (type, tmdb) => get("/api/library/item", { type, tmdb }),
   saveLibrary: (entry) => post("/api/library", entry),
+  saveLibraryYear: (type, tmdb, year) =>
+    patch_("/api/library/year", { type, tmdbId: tmdb, year }),
   removeLibrary: (type, tmdb) => del("/api/library/item", { type, tmdb }),
   clearWatchlist: (type) => del("/api/library/watchlist", { type }),
 
@@ -334,6 +336,7 @@ export const api = {
 
   // Gamificação (badges + streak)
   achievements: () => get("/api/achievements"),
+  stats: () => get("/api/stats"),
 
   // Importar dados exportados anteriormente (merge conservador)
   importData: (payload) =>

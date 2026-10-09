@@ -334,6 +334,20 @@ const animeAudio = localAudio || settings.animeAudio;
       .details(type, id)
       .then((d) => {
         setDetails(d);
+        // O ano do titulo (a "decada favorita" da pagina /stats precisa dele). O
+        // catalogo ja o traz nos detalhes, portanto aqui nao custa nenhum pedido
+        // extra — so' gravar. E so' para quem esta' com a sessao iniciada: sem
+        // token a chamada da 401 e nao vale a pena tentar.
+        //
+        // O servidor so' escreve se o titulo estiver na biblioteca e o ano ainda
+        // nao estiver la, por isso repetir isto numa ficha ja visitada nao faz
+        // trabalho nenhum.
+        const ano = Number(d.year);
+        if (user && Number.isFinite(ano) && ano > 0) {
+          api.saveLibraryYear(d.type || type, id, ano).catch(() => {
+            /* e' um extra opcional: falhar aqui nao pode atrapalhar a ficha */
+          });
+        }
         if (d.type === "tv" && d.seasons?.length) {
           const r = resumeRef.current;
           const wanted =
@@ -344,7 +358,7 @@ const animeAudio = localAudio || settings.animeAudio;
         }
       })
       .catch((e) => setError(e.message));
-  }, [type, id, settings.titleLang, settings.overviewLang]);
+  }, [type, id, settings.titleLang, settings.overviewLang, user]);
 
   // Carregar episódios quando a temporada muda
   useEffect(() => {

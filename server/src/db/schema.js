@@ -231,4 +231,48 @@ export const MIGRATIONS = [
       `);
     },
   },
+
+  {
+    version: 6,
+    name: "estatisticas",
+    up(db) {
+      // Duas colunas para a pagina /stats (2026-10-09). As duas nascem de coisas
+      // que o catalogo ja sabia e que nao se guardavam.
+      //
+      // `library.year` — o ano do titulo. O catalogo sempre o devolveu
+      // (`tmdb.js`: `year: release_date.slice(0,4)`) mas a biblioteca so' guardava
+      // o titulo e o cartaz. Sem isto a "decada favorita" nao tinha de onde sair,
+      // porque para 700 titulos nao se vai pedir o ano ao TMDB um a um.
+      //
+      // NOTA HONESTA: esta coluna so' fica preenchida a partir de agora. Os titulos
+      // que ja la estavam ficam a NULL, e por isso a decada favorites so' conta os
+      // que a pessoa voltar a mexer. Um backfill pela API seria 700 pedidos.
+      //
+      // `progress.seconds_watched` — quantos segundos a pessoa realmente viu.
+      // A app NUNCA mediu tempo: guardava so' `position` (aonde parou) e `duration`
+      // (o comprimento), e da' nao se sabe quanto tempo passou a ver. Soma-se o
+      // avanco a cada gravacao de posicao (ver `setProgressPosition`).
+      //
+      // E' uma ESTIMATIVA e vale a pena dizer o que nao conta:
+      //   - advancing no video (saltar a frente) conta como se tivesse visto;
+      //   - recuar e ver de novo nao conta (o delta negativo e' ignorado);
+      //   - mudar de episodio conta so' o avanco dentro do episodio anterior.
+      // A alternativa — um evento por tick do player — dava o mesmo numero com
+      // muito mais escrita na base, e nao resolvia o salto para a frente.
+      //
+      // 0 e' o mesmo que "nao medido": a pagina /stats esconde a figura quando o
+      // total e' 0, em vez de mostrar "0 horas" a quem so' importou tres titulos.
+      db.exec(`
+        ALTER TABLE library ADD COLUMN year INTEGER;
+        ALTER TABLE progress ADD COLUMN seconds_watched INTEGER NOT NULL DEFAULT 0;
+      `);
+
+      // A consulta da decada e' por ano, sobre a biblioteca toda, uma vez por
+      // pagina. Sem indice era uma leitura de 700 linhas — insignificante — mas
+      // com o indice tambem ajuda o filtro "vistos" que ja agrupava por isto.
+      db.exec(`
+        CREATE INDEX idx_library_year ON library(year);
+      `);
+    },
+  },
 ];

@@ -64,6 +64,10 @@ letterboxdRouter.post("/letterboxd/import", async (req, res, next) => {
         type: "movie",
         title: f.title,
         poster: f.poster,
+        // O ano vem do `letterboxd:filmYear` do RSS, ou do Titulo (AAAA) da
+        // pagina /films/ (ver `importFilms`). Guardava-o para a "decada favorita"
+        // da pagina /stats, que antes nao tinha de onde tirar o ano.
+        year: f.year || null,
         watched: 1,
         watchlist: 0,
         score: f.rating != null ? Math.round(f.rating * 10) : null, // a tua nota (1-10 -> 0-100)
@@ -81,6 +85,10 @@ letterboxdRouter.post("/letterboxd/import", async (req, res, next) => {
         type: "movie",
         title: f.title,
         poster: f.poster,
+        // Mesma razao do bloco de cima: o ano do Letterboxd alimenta a decada
+        // favorita. A watchlist vem das paginas /watchlist/, que da o ano do
+        // Titulo (AAAA) ou nada.
+        year: f.year || null,
         watched: 0,
         watchlist: 1,
         score: existing?.score ?? null,

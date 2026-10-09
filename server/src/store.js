@@ -191,6 +191,10 @@ function toApi(r) {
     titleRomaji: r.title_romaji ?? null, // anime: titulo em romaji
     genres: parseGenres(r.genres), // generos/temas (para filtrar a lista)
     poster: r.poster,
+    // Ano do titulo. NULL nos titulos que ja estavam na biblioteca antes da
+    // migracao 6 — por isso qualquer consumidor tem de tratar o null como
+    // "desconhecido" e nao como 0.
+    year: r.year ?? null,
     watched: r.watched,
     watchlist: r.watchlist,
     status: r.status ?? null, // "paused" | "dropped" | null (ver estadoDe)
@@ -224,14 +228,20 @@ export function upsertLibrary(entry) {
   db.prepare(
     `INSERT INTO library
        (user_id, media_type, external_id, title, title_en, title_romaji, poster,
-        genres, watched, watchlist, status, score, rating, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        genres, year, watched, watchlist, status, score, rating, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
      ON CONFLICT(user_id, media_type, external_id) DO UPDATE SET
        title        = excluded.title,
        title_en     = COALESCE(excluded.title_en, library.title_en),
        title_romaji = COALESCE(excluded.title_romaji, library.title_romaji),
        poster       = excluded.poster,
        genres       = COALESCE(excluded.genres, library.genres),
+       -- O ano so' se escreve quando vem. Um excluded.year = NULL apagaria o
+       -- ano de um titulo que ja o tinha, porque qualquer chamada que nao mande
+       -- year (marcar como visto, por exemplo) gravaria NULL por cima. O
+       -- COALESCE e' o que impede a "decada favorita" de perder metade da
+       -- biblioteca a cada clique.
+       year         = COALESCE(excluded.year, library.year),
        watched      = excluded.watched,
        watchlist    = excluded.watchlist,
        status       = excluded.status,
@@ -247,6 +257,10 @@ export function upsertLibrary(entry) {
     entry.titleRomaji ?? null,
     entry.poster ?? null,
     entry.genres === undefined ? null : JSON.stringify(entry.genres),
+    // `year` pode vir como "2005" (string do catalogo) ou 2005 (numero). Aceita
+    // os dois e rejeita o que nao e' um ano: um `""` viraria 0 e o titulo
+    // contaria para a decada 0.
+    anoDe(entry.year),
     (entry.watched ? 1 : 0),
     (entry.watchlist ? 1 : 0),
     entry.status === undefined || entry.status === null ? null : String(entry.status),
@@ -254,6 +268,16 @@ export function upsertLibrary(entry) {
     entry.rating ?? null,
     now()
   );
+}
+
+/** Normaliza um ano para numero, ou null se nao der. */
+function anoDe(v) {
+  if (v === null || v === undefined || v === "") return null;
+  const n = Number(v);
+  // 1870 e 2100 sao limites folgados de proposito: um anime antigo e' mais antigo
+  // que isso e para a frente nao interessa. O que se quer e' rejeitar "" e lixo,
+  // nao ser um validador de datas.
+  return Number.isFinite(n) && n >= 1870 && n <= 2100 ? Math.trunc(n) : null;
 }
 
 /**
@@ -344,6 +368,33 @@ export function setLibraryGenres(userId, tmdbId, type, genres) {
   ).run(JSON.stringify(genres), userId, tmdbId, type);
 }
 
+/**
+ * Guarda o ano do titulo, e so' este campo.
+ *
+ * Existe uma funcao propria em vez de reutilizar `upsertLibrary` porque o ano
+ * chega de um sitio diferente (a ficha do titulo) e sem os outros campos. Passar
+ * pelo `upsertLibrary` apagaria `watched` e `watchlist`: aquele faz
+ * `watched = excluded.watched`, e um `undefined` aqui viraria 0 — ou seja, abrir
+ * a ficha de um filme visto desmarca-lo como visto. Foi por isso que nao se
+ * reaproveitou.
+ *
+ * Devolve `true` so' se escreveu alguma coisa. Nao escreve quando o ano ja estava
+ * la (evita o `updated_at` mexer a cada visita) nem quando nao vem nada.
+ */
+export function setLibraryYear(userId, tmdbId, type, year) {
+  const ano = anoDe(year);
+  if (ano === null) return false;
+  const r = db
+    .prepare(
+      `UPDATE library SET year = ?
+        WHERE user_id = ? AND external_id = ? AND media_type = ? AND year IS NOT ?`
+    )
+    .run(ano, userId, tmdbId, type, ano);
+  // `IS NOT` (e nao `<>`) porque o `year` pode ser NULL, e em SQLite `NULL <> 5`
+  // devolve NULL em vez de verdadeiro — o UPDATE nao correria na primeira vez.
+  return r.changes > 0;
+}
+
 export function deleteLibrary(userId, tmdbId, type) {
   db.prepare(
     "DELETE FROM library WHERE user_id = ? AND external_id = ? AND media_type = ?"
@@ -382,6 +433,9 @@ function toApiProgress(r) {
     startedAt: r.started_at ?? null,
     finishedAt: r.finished_at ?? null,
     status: r.status ?? "watching",
+    // Tempo visto acumulado. 0 nos progressos que ja existiam antes da migracao
+    // 6 — a UI esconde a figura quando o total e' 0, em vez de mostrar "0 horas".
+    secondsWatched: r.seconds_watched ?? 0,
     updatedAt: r.updated_at,
   };
 }
@@ -441,6 +495,14 @@ function patchProgress(userId, type, tmdbId, patch) {
       cols.push(`${col} = ?`);
       params.push(patch[key]);
     }
+  }
+  // O tempo visto e' um ACUMULO, por isso nao se escreve como as outras colunas:
+  // `seconds_watched = seconds_watched + ?`. Escrever `seconds_watched = ?`
+  // substituiria o total por um intervalo e o "tempo total" seria sempre o do
+  // ultimo save.
+  if (patch.secondsWatched !== undefined) {
+    cols.push("seconds_watched = COALESCE(seconds_watched, 0) + ?");
+    params.push(patch.secondsWatched);
   }
   if (!cols.length) return;
   cols.push("updated_at = ?");
@@ -557,9 +619,47 @@ export function setProgressPosition(userId, type, tmdbId, { position, duration, 
       duration: duration != null ? Math.floor(duration) : undefined,
       startedAt: cur.startedAt ?? now(),
       status: !cur.status || cur.status === "finished" ? "watching" : cur.status,
+      // Quanto tempo viu desde a ultima gravacao (ver `avancoVisto`). VAZIO quando
+      // nao da para afirmar nada — que e' o caso normal quando o player so grava a
+      // cada 10-20 s e o utilizador recuou.
+      secondsWatched: avancoVisto(cur, position),
     });
     return readProgress(userId, type, tmdbId);
   });
+}
+
+/**
+ * Quantos segundos a contar, dado o que se sabia antes e a posicao de agora.
+ *
+ * Regra, e o que ela deixa de fora esta' escrito de proposito:
+ *
+ *   - sem posicao anterior, ou sem `duration`: 0. Nao se sabe o intervalo entre
+ *     duas gravacoes se nao se sabe onde estavam.
+ *   - delta <= 0: 0. Voltar atras para ver de novo NAO conta. E' a decisao que
+ *     evita contar a mesma cena tres vezes so' porque a pessoa saltou para tras.
+ *   - delta > `TETO`: 0. Salto para a frente. Ninguem viu os 10 minutos que
+ *     saltou, e somar o salto e' pior do que nao contar nada — distorca o total
+ *     para cima todas as vezes que alguem usa a barra de procura.
+ *   - delta normal: conta.
+ *
+ * O TETO e' a largura de um intervalo de gravacao com folga. O player grava a
+ * cada 10-20 s, mas um `save` perdido ou um separador de rede atrasado pode
+ * passar 30 s sem gravar nada, e nesse intervalo assiste-se legitimamente a mais
+ * do que o tecto. Por isso o tecto e' bem acima do intervalo normal: e' preferivel
+ * perder um intervalo de verdade a contar um salto.
+ */
+const TETO_AVANCO = 120; // segundos
+
+function avancoVisto(cur, position) {
+  if (position == null) return undefined;
+  const nova = Math.max(0, Math.floor(position));
+  // `cur.duration` e' o comprimento do episodio. Sem ele nao se sabe se um salto
+  // de 400 s era para a frente (o resto) ou para tras (a rever).
+  if (cur.position == null || !cur.duration) return 0;
+  const delta = nova - cur.position;
+  if (delta <= 0) return 0;
+  if (delta > TETO_AVANCO) return 0;
+  return delta;
 }
 
 export function deleteProgress(userId, type, tmdbId) {

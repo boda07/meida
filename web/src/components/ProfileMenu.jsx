@@ -69,6 +69,9 @@ export default function ProfileMenu() {
            <Link to="/achievements" onClick={() => setOpen(false)}>
              Conquistas
            </Link>
+           <Link to="/stats" onClick={() => setOpen(false)}>
+             Estatísticas
+           </Link>
            <Link to="/compare" onClick={() => setOpen(false)}>
              Compara as tuas notas
            </Link>

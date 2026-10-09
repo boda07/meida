@@ -2,6 +2,15 @@
 // "o que mudou" depois de o utilizador atualizar a app. Mais recente em cima.
 export const CHANGELOG = [
   {
+    version: "1.3.9",
+    items: [
+      "Nova aba Estatisticas (`/stats`): as seis figuras da biblioteca, mais tempo visto, mais um histograma das notas e a decada favorita. O tempo so' conta a partir de agora — antes nao se media. A decada so' conta os titulos com ano guardado; abre a ficha de alguns e ela fica mais firme.",
+      "Quando abres uma ficha, o ano guarda-se automaticamente. O import do MAL e do Letterboxd tambem traz o ano. Corre `scripts/preencher-anos.mjs` se quiseres preencher o resto.",
+      "Corrigido: responder a uma resposta agora funciona (o fio e' real, com citacao do pai e limite de 30 niveis). A notificacao vai para a pessoa certa.",
+      "Corrigido: o tempo visto nao contava saltos para a frente nem recuos para ver de novo. O limite de 120 s impede contar o que nao se viu.",
+    ],
+  },
+  {
     version: "1.3.8",
     items: [
       "Novo: podes chamar alguém num comentário, como no TikTok ou no Instagram. Escreves @ e aparece uma lista; escolhes com as setas e o Enter. Quem é chamado leva um aviso no sino.",

@@ -262,6 +262,10 @@ export async function importMalList(userId) {
       titleRomaji: titleRomaji || null,
       genres: (node.genres || []).map((g) => g.name),
       poster,
+      // Ano de estreia. Veem em `start_season.year`, que ja estava pedido no
+      // `fields` acima desde antes de existir a coluna — so' agora e' guardado, e
+      // e' o que alimenta a "decada favorita" da pagina /stats.
+      year: node.start_season?.year ?? null,
       watched: watched ? 1 : 0,
       watchlist: watchlist ? 1 : 0,
       score: ls.score ? Math.round(Number(ls.score) * 10) : null, // nota pessoal 0-10 -> 0-100

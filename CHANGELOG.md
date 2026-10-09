@@ -88,6 +88,37 @@ Reportado a 2026-10-09 em `/details/anime/223`. **Isto e' do servidor, por isso
 precisa de push para o servidor partilhado, nao de release** — o 1.3.8 ja foi
 publicado. Detalhes no commit `9011f32`.
 
+## 1.3.9
+
+### Novo: pagina de Estatisticas (`/stats`)
+Seis figuras (titulos, vistos, para ver, nota mais alta, genero, decada) +
+histograma das notas + tempo visto + decada favorita. As ressalvas (o que o
+numero nao diz) estao escritas na pagina — e' o mais importante desta release.
+Ver detalhes na secao dentro desta versao.
+
+### Novo: o ano dos titulos passa a ser guardado
+`setLibraryYear()` (PATCH `/library/year`), com `COALESCE` e `IS NOT`. Os
+imports do MAL (`start_season.year`) e Letterboxd (`filmYear`) trazem-no.
+
+### Corrigido: tempo visto nao contava saltos; ano nao se perdia ao marcar visto
+`avancoVisto()` com `delta > 120` (TETO_AVANCO). A rota `POST /library` aceita
+`year`. Os testes falham com o codigo partido (5 mutacoes confirmadas).
+
+### Melhorado: decada favorita conta a cobertura (`comAno`)
+A pagina `/stats` diz quantos titulos entraram (`comAno` vs `titulos`).
+
+### Corrigido: comentarios aninhados respondem ao pai certo (`CodCP_Pai`)
+Notificacao para a pessoa certa, citacao `.comment-cita`, limite 30.
+
+### Notas
+`statsFor()` numa passagem pela biblioteca + diario. `HistogramaNotas.jsx` e'
+SVG a mao, sem biblioteca. `runtime-config.json` nao alterado. Nao publicada
+com binarios (fica para depois).
+
+### Testes
+70 no servidor (+5 mutacoes: faixa do histograma, salto, `IS NOT`, decada por
+dezena, desempate alfabetico). `testar-histograma.mjs` (render do componente).
+
 ## 1.3.8
 
 ### Novo: "@mencoes" nos comentarios

@@ -14,6 +14,7 @@ const Details = lazy(() => import("./pages/Details.jsx"));
 const Library = lazy(() => import("./pages/Library.jsx"));
 const Diary = lazy(() => import("./pages/Diary.jsx"));
 const Achievements = lazy(() => import("./pages/Achievements.jsx"));
+  const Stats = lazy(() => import("./pages/Stats.jsx"));
 const Login = lazy(() => import("./pages/Login.jsx"));
 const Settings = lazy(() => import("./pages/Settings.jsx"));
 const PickForMe = lazy(() => import("./pages/PickForMe.jsx"));
@@ -41,6 +42,7 @@ export default function App() {
               <Route path="/library" element={<Library />} />
               <Route path="/diary" element={<Diary />} />
               <Route path="/achievements" element={<Achievements />} />
+      <Route path="/stats" element={<Stats />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="/pick" element={<PickForMe />} />
               <Route path="/compare" element={<Compare />} />

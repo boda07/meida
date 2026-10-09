@@ -23,6 +23,7 @@ import { commentsRouter } from "./routes/comments.js";
 import { watchPartyRouter } from "./routes/watchparty.js";
 import { adminRouter } from "./routes/admin.js";
 import { notificationsRouter } from "./routes/notifications.js";
+import { statsRouter } from "./routes/stats.js";
 import { log } from "./services/log.js";
 
 const app = express();
@@ -70,6 +71,7 @@ app.use("/api", debridRouter);
 app.use("/api", progressRouter);
 app.use("/api", exportRouter);
 app.use("/api", achievementsRouter);
+app.use("/api", statsRouter);
 app.use("/api", libraryRouter);
 
 // Em producao (app desktop), serve o frontend ja compilado (web/dist).
