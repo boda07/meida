@@ -6,6 +6,7 @@
 import { findTmdbMatch, getExternalImdb, getGenreVocab } from "./tmdb.js";
 import { cacheGet, cacheSet } from "./cache.js";
 import { netFetch } from "./net.js";
+import { log } from "./log.js";
 
 const JIKAN = "https://api.jikan.moe/v4";
 const JIKAN_MIRROR = "https://api.tenrai.org/v1"; // espelho do schema v4 do Jikan
@@ -607,11 +608,40 @@ export async function getAnimeBannersBatch(malIds) {
 }
 
 // Converte um id do MyAnimeList no id do AniList (alguns providers de anime
-// usam AniList). Cache em memoria; falha em silencio (devolve null).
+// usam AniList).
+//
+// Duas coisas importantes aqui, ambas corrigidas a 2026-10-09 depois de um
+// utilizador relatar que um anime ficava sem fontes:
+//
+// 1. **Uma falha NAO pode ficar em cache para sempre.** A versao anterior fazia
+//    `anilistCache.set(key, id)` mesmo quando `id` era `null`, e o `Map` nao tem
+//    prazo. Uma falha da AniList — timeout, 500, ou um `{"errors":[...]}` com
+//    HTTP 200 — deixava aquele titulo sem fontes ate o servidor reiniciar, mesmo
+//    com a rede ja boa. Por isso so se guarda o id quando existe; a falha fica
+//    uns 30 segundos e depois tenta de novo.
+//
+// 2. **A falha tem de aparecer no log.** O `catch` era mudo, e o unico sintoma
+//    era um 400 "falta o parametro tmdb" na pagina — que nao diz nada sobre o
+//    AniList e levou a uma investigacao inteira sem pistas.
 const anilistCache = new Map();
+// Quanto tempo uma falha fica guardada antes de se tentar de novo. Curto o
+// suficiente para que a rede volte a ser notada, longo o suficiente para nao
+// martelar a AniList com pedidos iguais enquanto ela esta a cair.
+const FALHA_TTL_MS = 30000;
+const agora = () => Date.now();
+
 export async function malToAnilist(malId) {
   const key = Number(malId);
-  if (anilistCache.has(key)) return anilistCache.get(key);
+  if (!Number.isFinite(key) || key <= 0) return null;
+
+  const guardado = anilistCache.get(key);
+  if (guardado) {
+    // `{ id }` para sempre, ou `{ id: null, ate }` para as falhas.
+    if (guardado.id != null) return guardado.id;
+    if (guardado.ate > agora()) return null;
+    anilistCache.delete(key);
+  }
+
   try {
     const res = await netFetch("https://graphql.anilist.co", {
       method: "POST",
@@ -621,11 +651,26 @@ export async function malToAnilist(malId) {
         variables: { m: key },
       }),
     });
+    if (!res.ok) throw new Error(`AniList respondeu HTTP ${res.status}`);
     const j = await res.json();
-    const id = j?.data?.Media?.id || null;
-    anilistCache.set(key, id);
-    return id;
-  } catch {
+    // A AniList pode responder 200 com `errors` e `data: null`. Antes isso era
+    // guardado como "sem id" para sempre.
+    if (j?.errors?.length) throw new Error(j.errors[0]?.message || "erro da AniList");
+    const id = j?.data?.Media?.id ?? null;
+    if (id != null) {
+      anilistCache.set(key, { id, ate: Infinity });
+      return id;
+    }
+    // Nem erro nem id: pode ser um id que a AniList nao conhece. Nao vale a pena
+    // guardar — e mais barato voltar a perguntar do que guardar um "nao existe".
+    log.warn("anilist", "AniList nao devolveu id para um anime do MyAnimeList", { malId: key });
+    anilistCache.set(key, { id: null, ate: agora() + FALHA_TTL_MS });
+    return null;
+  } catch (e) {
+    // Guarda a falha por pouco tempo, para a proxima pagina tentar de novo, e
+    // deixa rasto. Sem este log o sintoma e' um 400 sem pistas.
+    log.warn("anilist", "malToAnilist falhou", { malId: key, error: String(e?.message || e) });
+    anilistCache.set(key, { id: null, ate: agora() + FALHA_TTL_MS });
     return null;
   }
 }

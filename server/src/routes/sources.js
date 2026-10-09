@@ -56,6 +56,17 @@ sourcesRouter.get("/sources", async (req, res, next) => {
     // Sem TMDB so faz sentido para anime. Devolve essas fontes.
     if (!tmdb) {
       if (animeSources.length) return res.json({ embeds: animeSources });
+      // A mensagem anterior era "falta o parametro tmdb" para tudo. Num anime o
+      // tmdb e' irrelevante — o que falta e' o id do AniList, e dizer "tmdb"
+      // mandava quem investigasse para o lado errado (foi o que aconteceu a
+      // 2026-10-08 com o Dragon Ball, que fica sem fontes quando a AniList nao
+      // responde).
+      if (type === "anime") {
+        return res.status(400).json({
+          error:
+            "Nao consegui obter as fontes deste anime agora. Tenta outra vez daqui a pouco — a AniList pode estar a responder mal.",
+        });
+      }
       return res.status(400).json({ error: "falta o parametro tmdb" });
     }
 

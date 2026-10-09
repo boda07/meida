@@ -21,7 +21,7 @@
     "app": "npm run build && electron .",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "test": "npm --prefix server test && node scripts/testar-adblock.cjs && node scripts/testar-autoplay.mjs && node scripts/testar-estados.mjs && node scripts/testar-ganchos-deps.mjs && node scripts/testar-mencoes.mjs && node scripts/testar-notificacoes.mjs && node scripts/testar-presenca-discord.mjs && node scripts/testar-tempo.mjs && node scripts/testar-player-fonte.mjs",
+    "test": "npm --prefix server test && node scripts/testar-adblock.cjs && node scripts/testar-anilist-cache.mjs && node scripts/testar-autoplay.mjs && node scripts/testar-estados.mjs && node scripts/testar-ganchos-deps.mjs && node scripts/testar-mencoes.mjs && node scripts/testar-notificacoes.mjs && node scripts/testar-presenca-discord.mjs && node scripts/testar-tempo.mjs && node scripts/testar-player-fonte.mjs",
     "test:adblock": "node scripts/testar-adblock.cjs",
     "test:autoplay": "node scripts/testar-autoplay.mjs",
     "test:estados": "node scripts/testar-estados.mjs",
@@ -35,7 +35,8 @@
     "app:pack": "npm run build && electron-builder --x64",
     "app:pack:zip": "npm run build && electron-builder --win zip --x64",
     "app:publish": "npm run build && electron-builder --x64 --publish always && node scripts/prune-releases.mjs",
-    "test:mencoes:producao": "node scripts/testar-mencoes-producao.mjs"
+    "test:mencoes:producao": "node scripts/testar-mencoes-producao.mjs",
+    "test:anilist": "node scripts/testar-anilist-cache.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
