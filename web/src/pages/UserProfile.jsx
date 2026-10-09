@@ -386,7 +386,7 @@ export default function UserProfile() {
       ) : tab === "library" ? (
         <PosterGrid items={items} empty="A biblioteca está vazia." romaji={romaji} />
       ) : tab === "stats" ? (
-        <ProfileStats items={items} aVerAgora={aVerAgora} />
+        <ProfileStats items={items} />
       ) : tab === "lists" ? (
         <div className="profile-lists">
           {lists === null ? (

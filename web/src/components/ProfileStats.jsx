@@ -55,7 +55,9 @@ function Bloco({ titulo, nota, linhas, maior }) {
 /**
  * @param items  a biblioteca completa (`null` enquanto carrega)
  */
-export default function ProfileStats({ items, aVerAgora }) {
+// `aVerAgora` foi removido daqui: o "a ver agora" e' identidade, e identidade esta
+// no header do perfil. Passar a prop era so' contexto morto.
+export default function ProfileStats({ items }) {
   if (items === null) return <p className="muted st-vazio">A carregar...</p>;
   if (!items.length) {
     return (
@@ -88,24 +90,17 @@ export default function ProfileStats({ items, aVerAgora }) {
 
   return (
     <div className="st">
-      {/* As tres medidas que resumem a biblioteca, como numeros e nao como
-          grafico — porque sao tres valores, e tres valores leem-se melhor
-          escritos. */}
+      {/* Aqui so' o que o HEADER do perfil NAO mostra. "titulos / vistos / para
+          ver / media" e' a identidade da biblioteca e ja esta no header, duas
+          linhas acima — repetir os mesmos numeros a uns centimetros de distancia
+          faz a pagina parecer mais longa sem acrescentar nada.
+
+          Fica o que e' especifico das NOTAS, que e' o que esta aba analisa. */}
       <dl className="st-cabecalho">
         <div className="st-cifra">
-          <dt>títulos</dt>
-          <dd>{s.total}</dd>
+          <dt>com nota</dt>
+          <dd>{s.comNota}</dd>
         </div>
-        <div className="st-cifra">
-          <dt>vistos</dt>
-          <dd>{s.vistos}</dd>
-        </div>
-        {aVerAgora !== null && (
-          <div className="st-cifra">
-            <dt>a ver agora</dt>
-            <dd>{aVerAgora}</dd>
-          </div>
-        )}
         {s.emPausa > 0 && (
           <div className="st-cifra">
             <dt>em pausa</dt>
@@ -116,20 +111,6 @@ export default function ProfileStats({ items, aVerAgora }) {
           <div className="st-cifra">
             <dt>abandonados</dt>
             <dd>{s.abandonados}</dd>
-          </div>
-        )}
-        <div className="st-cifra">
-          <dt>para ver</dt>
-          <dd>{s.aVer}</dd>
-        </div>
-        <div className="st-cifra">
-          <dt>com nota</dt>
-          <dd>{s.comNota}</dd>
-        </div>
-        {s.media !== null && (
-          <div className="st-cifra">
-            <dt>média</dt>
-            <dd>{s.media}</dd>
           </div>
         )}
         {s.mediana !== null && (
