@@ -130,9 +130,11 @@ export const MIGRATIONS = [
         -- episode). Para filmes e para comentarios do titulo inteiro,
         -- season/episode ficam NULL.
         --
-        -- A coluna parent_id permite respostas a outros comentarios (uma so
-        -- nivel de aninhamento: a resposta a uma resposta fica pendurada no
-        -- comentario da raiz, para a UI nao ter de lidar com arvores fundas).
+        -- A coluna parent_id permite respostas a outros comentarios, com
+        -- aninhamento de profundidade livre: a resposta a uma resposta fica
+        -- pendurada NESSA resposta, como o `CodCP_Pai` do projeto antigo. A UI
+        -- limita a indentacao e cita quem se responde, que e' o que torna o fio
+        -- legivel quando ja vai fundo (ver web/src/components/Comments.jsx).
         CREATE TABLE comments (
           id          INTEGER PRIMARY KEY AUTOINCREMENT,
           user_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
