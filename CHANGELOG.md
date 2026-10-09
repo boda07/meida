@@ -83,11 +83,22 @@ mencao como link para `/u/ana2zrbz1`; `a@b.com` **nao** vira link; o sino mostra
 "bentoumo4g8 chamou-te num comentario" com **uma** notificacao apesar de duas
 mencoes.
 
-### Por publicar
+### Nos dois servidores, ja verificado
 `/api/comments`, `/api/auth` e `/api/users` **nao** estao em `LOCAL_API_PREFIXES`,
-por isso vao para o servidor partilhado. Ate o FadeHost fazer deploy desta
-versao, a lista de mencoes da a 404 com o servidor partilhado ligado e na versao
-web. **Na app de desktop com o modo "servidor" desligado ja funciona.**
+por isso vao para o servidor partilhado — que e' o caminho que interessa.
+
+Este texto estava escrito antes do push, com a ideia de que a funcionalidade ia dar
+404 ate o servidor fazer deploy. **Nao foi preciso**: o deploy foi automatico e
+rapido, e antes de publicar a 1.3.8 ja se confirmou contra o servidor a correr.
+
+`testar-mencoes-producao.mjs` (15 verificacoes, so' contra o servidor partilhado)
+prova o ciclo completo em producao: registar duas contas, `/api/users/suggest`
+responde e filtra, quem se segue sobe com a marca `linked`, um `@fulano` gera uma
+notificacao e aponta para o comentario certo, tres `@fulano` num comentario dao
+uma so, e `a@b.com` nao gera nada.
+
+As contas que o teste cria ficam no servidor (`tan...` e `tbento...`, com sufixo
+aleatorio). Nao ha rota de apagar conta, por isso ficam la.
 
 ## 1.3.7
 
