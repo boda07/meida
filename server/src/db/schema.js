@@ -132,7 +132,7 @@ export const MIGRATIONS = [
         --
         -- A coluna parent_id permite respostas a outros comentarios, com
         -- aninhamento de profundidade livre: a resposta a uma resposta fica
-        -- pendurada NESSA resposta, como o `CodCP_Pai` do projeto antigo. A UI
+        -- pendurada NESSA resposta, como o CodCP_Pai do projeto antigo. A UI
         -- limita a indentacao e cita quem se responde, que e' o que torna o fio
         -- legivel quando ja vai fundo (ver web/src/components/Comments.jsx).
         CREATE TABLE comments (

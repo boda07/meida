@@ -213,6 +213,105 @@ falta só a pré-visualização. Duas linhas.
 
 ---
 
+## O CSS e as estatísticas — o que o ProdSound faz melhor
+
+O utilizador gostou do aspecto do projecto antigo. Analisei as duas coisas: o
+`style.css` (749 linhas) e a forma como as estatísticas são mostradas no perfil e
+no dashboard.
+
+### O problema: o CSS da MEIDA não tem sistema
+
+Medido, não estimado:
+
+| | ProdSound | MEIDA |
+| --- | --- | --- |
+| `styles.css` / `style.css` | 749 linhas | **5609 linhas** |
+| tokens com nome | ~30 | **15** |
+| valores de cor crus | poucos | **158 `rgba(255,255,255,…)` + 74 hex** |
+
+Os 158 valores de branco aparecem **18 vezes** com alfa `0.08`, 17 com `0.1`, 13
+com `0.14` — e **nenhum passa por um token**. A MEIDA não tem `--line`,
+`--surface-3`, `--radius-sm`, nem `--danger` / `--success` / `--warning`. São
+valores repetidos à mão, o que significa que mudar a cor de uma borda é procurar
+158 sítios.
+
+### O que lá está bem pensado, e vale bring
+
+**1. Um sistema com intenção escrita.** O `style.css` abre com uma frase que
+decide tudo o que vem a seguir:
+
+> *Dark-first, monochrome + one signal accent. Flat surfaces, hairline borders,
+> no gradients, no glow, no scale/translate hovers. Minimal, deliberate motion.*
+
+Isso é o que a MEIDA **não** tem: tokens sem uma regra que diga porque existem. E a
+MEIDA hoje tem gradientes e glows (`--shadow-nav`, `--shadow-card-hover`) que o
+outro projeto decide não ter.
+
+**2. `--ps-fill`, um fundo que aguenta texto nos dois temas.** O comentário
+explica: substituiu uns roxos que só se liam bem num dos temas, e o novo valor é
+**igual em claro e em escuro** por isso o texto claro carrega sempre.
+
+**3. Aliases velhos que apontam para os novos.** `--primary-color`,
+`--shadow-light`, `--transition-smooth` são reapontados para os tokens do sistema.
+Assim os estilos inline antigos herdam o aspecto novo **sem editar página por
+página** — essencial durante uma remodelação.
+
+**4. O gráfico do perfil é CSS puro, sem biblioteca.** Seis meses em colunas
+flex: `flex: 1`, barra com `height: X%`, topo arredondado, número em cima, mês em
+baixo. E o detalhe que faz funcionar: `min-height: 4px` — um mês a zero mostra
+risca, não desaparece. (A MEIDA já pensa assim no `ProfileStats.jsx`, com o
+comentário do "Series 12 que virava um risco de 1px". O raciocínio é o mesmo.)
+
+**5. A faixa de números do perfil.** Cinco números grandes na cor de destaque, com
+o rótulo em maiúsculas minúsculas de 11px por baixo, separados por **linhas
+verticais de 1px**, e os dois interactivos (seguidores / a seguir) são links que
+abrem modal. Simples e lê-se de relance.
+
+**6. As métricas privadas só aparecem no perfil de quem é dono.** O gráfico está
+dentro de `if ($idPerfil == $meuID)`. Separar "o que os outros veem" de "o que eu
+vejo" na mesma página é o que impede a MEIDA de mostrar um número de biblioteca a
+quem não deve.
+
+### O que a MEIDA já faz e não há que trazer
+
+- **`prefers-reduced-motion`** — a MEIDA já tem, em três sítios.
+- **Barras em vez de gráficos circulares**, com o motivo escrito
+  (`ProfileStats.jsx`): cinco a oito categorias com contagens muito diferentes
+  comparam-se melhor em barra.
+- **A barra cresce contra o maior do bloco, não contra o total** — já está feito e
+  documentado.
+
+Ou seja: o **raciocínio** já é o mesmo que o do outro projeto. O que falta é o
+**sistema visual**.
+
+### O trabalho, por ordem
+
+- [ ] **Tokens de superfície e de traço**: `--line`, `--line-soft`, `--bg-surface3`,
+      `--radius-sm`, e `--danger` / `--success` / `--warning`. Substituir os 158
+      valores crus por referências. **Não muda o aspecto** — é o que torna o
+      próximo passo possível.
+- [ ] **Escrever a regra do aspecto** num sítio único (um comentário em cima do
+      `:root`), para as decisões deixarem de ser implícitas.
+- [ ] **Faixa de números no perfil** com os tokens acima — o número grande na cor
+      de destaque, o rótulo em maiúsculas, a linha vertical de 1px entre eles, e
+      seguidores / a seguir a abrir a lista em vez de só mostrarem um número.
+- [ ] **Página `/stats` com o gráfico de meses** em CSS puro. O `/stats` já está nas
+      ideias de estatística, mas com outro conteúdo (histograma de notas, Tempo
+      total, género mais visto). Falta-lhe a dimensão **"ao longo do tempo"**, que
+      é a que o outro projeto mostra.
+- [ ] **Separar o público do privado** nas estatísticas do perfil: números de
+      biblioteca e seguidores são públicos; o gráfico de meses e a distribuição por
+      estado de visionamento são só de quem é dono.
+
+### Uma nota sobre o dashboard
+
+O dashboard de admin do ProdSound usa **Chart.js** (linha do tempo de registos,
+circular por tipo). Para a MEIDA isso **não** vale a pena: seria uma dependência
+nova para um ecrã que ninguém vai ver. O que se aproveita é a ideia da grelha de
+cartões com número em destaque, se algum dia houver um painel de administração.
+
+---
+
 ## O que **não** há que ir buscar lá (anotado para não voltar)
 
 Regra geral: **copiar a decisão, nunca o código.** O ProdSound é PHP com SQL
@@ -227,8 +326,8 @@ dentro do código, passwords em `md5` sem sal, e há código morto espalhado.
 | **Níveis / progresso dos badges** | Lá o badge é binário ("tens 50 seguidores, já cá está"). Falta mostrar "faltam 2" — que é o que dá vontade de continuar. |
 | **Comentários aninhados** | Já cá está (`.comment-cita`). |
 | **Notificações com `ENUM`** | Já cá está, em `kind` + `refId`. |
-| **Upload de ficheiros** | Os validadores são bons (extensão **e** MIME, `random_bytes`), mas uma app de media não tem porque guardar o media. |
-| **Tipos de publicação como interruptor de formulário** | Là são 2 tipos com números mágicos escritos em 4 ficheiros. Na MEIDA `anime`/`filme`/`manga` é uma faceta de filtro, não uma regra de validade. |
+| **Upload de ficheiros** | Os validadores são bons (extensão **e** MIME, `random_bytes`), mas uma app defilms não tem porque guardar o filme. |
+| **Tipos de publicação como interruptor de formulário** | Lá são 2 tipos com números mágicos escritos em 4 ficheiros. Na MEIDA `anime`/`filme`/`manga` é uma faceta de filtro, não uma regra de validade. |
 | **`md5()` sem sal** | A MEIDA usa bcrypt. Nunca voltar atrás. |
 | **Acções destrutivas em `?action=` de GET sem CSRF** | Um `<img src="perfil?action=bloquear">` num site terceiro bloqueia outra pessoa. Em React o CSRF está resolvido por defeito, mas o padrão de origem importa. |
 | **Preferências que não fazem nada** | Ver a secção de cima. É o contra-exemplo mais útil de lá. |
