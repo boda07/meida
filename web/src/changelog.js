@@ -1,5 +1,8 @@
 // Novidades por versao, em linguagem simples (sem termos tecnicos). Mostradas no
 // "o que mudou" depois de o utilizador atualizar a app. Mais recente em cima.
+//
+// O changelog tambem tem versao em ingles (`en`). Quem so' fala ingles ve a sua
+// versao; quem nao encontra a sua ve o portugues (a lingua original).
 export const CHANGELOG = [
   {
     version: "1.3.9",
@@ -9,9 +12,20 @@ export const CHANGELOG = [
       "Corrigido: responder a uma resposta agora funciona (o fio e' real, com citacao do pai e limite de 30 niveis). A notificacao vai para a pessoa certa.",
       "Corrigido: o tempo visto nao contava saltos para a frente nem recuos para ver de novo. O limite de 120 s impede contar o que nao se viu.",
     ],
+    items_en: [
+      "New Statistics tab (`/stats`): the six figures from your library, plus time watched, a histogram of your ratings and your favourite decade. Time only counts from now on — it wasn't measured before. The decade only counts titles that have a year saved; open a few more and it gets firmer.",
+      "When you open a title page, its year is now saved automatically. Importing from MyAnimeList or Letterboxd brings the year too. Run `scripts/preencher-anos.mjs` if you want to fill in the rest.",
+      "Fixed: replying to a reply now works (the thread is real, with a quote of what you're replying to and a 30-level limit). The notification goes to the right person.",
+      "Fixed: time watched wasn't counting forward seeks or rewinds. The 120-second limit stops counting what you didn't watch.",
+    ],
   },
   {
     version: "1.3.8",
+    items_en: [
+      "New: you can @mention someone in a comment, like on TikTok or Instagram. Type @ and a list appears; choose with the arrow keys and Enter. Whoever you mention gets a notification in the bell.",
+      "New: in the list of people, the ones you follow or who follow you come first, marked as \"you follow\".",
+      "New: inside a comment, @name is now red and clickable to go to their profile. An email like a@b.com isn't mistaken for a mention.",
+    ],
     items: [
       "Novo: podes chamar alguém num comentário, como no TikTok ou no Instagram. Escreves @ e aparece uma lista; escolhes com as setas e o Enter. Quem é chamado leva um aviso no sino.",
       "Novo: na lista de quem aparece, quem segues ou quem te segue aparece primeiro, marcado como “segues”.",

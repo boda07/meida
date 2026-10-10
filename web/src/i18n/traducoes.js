@@ -390,6 +390,8 @@ export const DICIONARIO = {
     "Nada por aqui. Quando alguém responder a um comentário teu ou gostar dele, aparece aqui.":
       "Nada por aqui. Quando alguém responder a um comentário teu ou gostar dele, aparece aqui.",
     "A procurar \"{q}\" em categorias...": "A procurar \"{q}\" em categorias...",
+    // --- changelog ---
+    "Fixe!": "Fixe!",
   },
 
   en: {
@@ -746,6 +748,8 @@ export const DICIONARIO = {
     "Nada por aqui. Quando alguém responder a um comentário teu ou gostar dele, aparece aqui.":
       "Nothing here. When someone replies to your comment or likes it, a notice shows up here.",
     "A procurar \"{q}\" em categorias...": "Searching categories for \"{q}\"...",
+    // --- changelog ---
+    "Fixe!": "Got it!",
   },
 };
 

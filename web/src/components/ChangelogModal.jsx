@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { createPortal } from "react-dom";
 import { CHANGELOG, cmpVersion } from "../changelog.js";
+import { useT } from "../i18n/I18nContext.jsx";
 
 // Modal das novidades, com uma barra lateral para ver tambem as versoes antigas.
 // `initialVersion` define a versao mostrada por defeito (a mais recente, ou a que
@@ -16,8 +17,14 @@ function initialChangelogVersion(initialVersion) {
 }
 
 export default function ChangelogModal({ initialVersion, subtitle, onClose }) {
+  const t = useT();
   const [selected, setSelected] = useState(() => initialChangelogVersion(initialVersion));
   const entry = CHANGELOG.find((c) => c.version === selected) || CHANGELOG[0];
+  // Os textos da versao na lingua da interface. Uma versao pode nao estar
+  // traduzida (as antigas ainda nao estao) — nesse caso sai o portugues, que e'
+  // a lingua original e nao fica um buraco noecra.
+  const itens =
+    (t.idioma === "pt" ? entry?.items : entry?.items_en) || entry?.items || [];
 
   return createPortal(
     <div className="modal-overlay" onClick={onClose}>
@@ -26,8 +33,8 @@ export default function ChangelogModal({ initialVersion, subtitle, onClose }) {
         onClick={(e) => e.stopPropagation()}
       >
         <div className="modal-head">
-          <h3>✨ Novidades{entry ? ` · v${entry.version}` : ""}</h3>
-          <button className="modal-close" aria-label="Fechar" onClick={onClose}>
+          <h3>✨ {t("Novidades")}{entry ? ` · v${entry.version}` : ""}</h3>
+          <button className="modal-close" aria-label={t("Fechar")} onClick={onClose}>
             ✕
           </button>
         </div>
@@ -51,14 +58,14 @@ export default function ChangelogModal({ initialVersion, subtitle, onClose }) {
             ))}
           </nav>
           <ul className="whatsnew-list changelog-items">
-            {(entry?.items || []).map((t, i) => (
-              <li key={i}>{t}</li>
+            {itens.map((texto, i) => (
+              <li key={i}>{texto}</li>
             ))}
           </ul>
         </div>
         <div className="modal-actions">
           <button className="modal-btn" onClick={onClose}>
-            Fixe!
+            {t("Fixe!")}
           </button>
         </div>
       </div>
