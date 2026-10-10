@@ -6,6 +6,7 @@ import { AuthProvider } from "./auth/AuthContext.jsx";
 import { LibraryProvider } from "./library/LibraryContext.jsx";
 import { SettingsProvider } from "./settings/SettingsContext.jsx";
 import { WatchPartyProvider } from "./watchparty/WatchPartyContext.jsx";
+import { I18nProvider } from "./i18n/I18nContext.jsx";
 import "./styles.css";
 
 async function loadRuntimeConfig() {
@@ -55,15 +56,20 @@ loadRuntimeConfig()
     root.render(
       <React.StrictMode>
         <BrowserRouter>
-           <SettingsProvider>
-             <AuthProvider>
-               <WatchPartyProvider>
-                 <LibraryProvider>
-                   <App />
-                 </LibraryProvider>
-               </WatchPartyProvider>
-             </AuthProvider>
-           </SettingsProvider>
+           {/* O i18n e' o mais exterior de todos: os outros contextos
+               (Definições, Conta, Biblioteca) tambem mostram texto, por isso
+               precisam do `t()` ja montado. */}
+           <I18nProvider>
+             <SettingsProvider>
+               <AuthProvider>
+                 <WatchPartyProvider>
+                   <LibraryProvider>
+                     <App />
+                   </LibraryProvider>
+                 </WatchPartyProvider>
+               </AuthProvider>
+             </SettingsProvider>
+           </I18nProvider>
         </BrowserRouter>
       </React.StrictMode>
     );

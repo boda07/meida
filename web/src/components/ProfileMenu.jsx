@@ -3,9 +3,11 @@ import { Link } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext.jsx";
 import { UserIcon } from "./icons.jsx";
 import Avatar from "./Avatar.jsx";
+import { useT } from "../i18n/I18nContext.jsx";
 
 export default function ProfileMenu() {
   const { user, logout } = useAuth();
+  const t = useT();
   const [open, setOpen] = useState(false);
   const [updMsg, setUpdMsg] = useState(null);
   const ref = useRef(null);
@@ -13,19 +15,19 @@ export default function ProfileMenu() {
   async function checkUpdate() {
     // Fora da app instalada (browser) nao ha atualizacao automatica.
     if (!window.electronAPI?.checkForUpdates) {
-      setUpdMsg("Atualizações automáticas só na app instalada.");
+      setUpdMsg(t("Atualizações automáticas só na app instalada."));
       return;
     }
-    setUpdMsg("A procurar...");
+    setUpdMsg(t("A procurar..."));
     try {
       const r = await window.electronAPI.checkForUpdates();
       if (r?.status === "available")
-        setUpdMsg(`Nova versão ${r.version} — a descarregar...`);
-      else if (r?.status === "latest") setUpdMsg("Já tens a versão mais recente. ✓");
-      else if (r?.status === "dev") setUpdMsg("Indisponível em desenvolvimento.");
-      else setUpdMsg("Não foi possível verificar agora.");
+        setUpdMsg(t("Nova versão {v} — a descarregar...", { v: r.version }));
+      else if (r?.status === "latest") setUpdMsg(t("Já tens a versão mais recente. ✓"));
+      else if (r?.status === "dev") setUpdMsg(t("Indisponível em desenvolvimento."));
+      else setUpdMsg(t("Não foi possível verificar agora."));
     } catch {
-      setUpdMsg("Não foi possível verificar agora.");
+      setUpdMsg(t("Não foi possível verificar agora."));
     }
   }
 
@@ -42,7 +44,7 @@ export default function ProfileMenu() {
   // Definis > Avancado, que tambem tem o botao e nao pede login.
   if (!user) {
     return (
-      <Link to="/login" className="icon-btn" title="Entrar" aria-label="Entrar">
+      <Link to="/login" className="icon-btn" title={t("Entrar")} aria-label={t("Entrar")}>
         <UserIcon />
       </Link>
     );
@@ -53,7 +55,7 @@ export default function ProfileMenu() {
       <button
         className="avatar"
         onClick={() => setOpen((o) => !o)}
-        aria-label="Conta"
+        aria-label={t("Conta")}
       >
         <Avatar avatar={user.avatar} name={user.username} size={38} />
       </button>
@@ -61,32 +63,32 @@ export default function ProfileMenu() {
         <div className="profile-menu">
           <span className="profile-name">{user.username}</span>
           <Link to="/library" onClick={() => setOpen(false)}>
-            A minha lista
+            {t("A minha lista")}
           </Link>
            <Link to="/diary" onClick={() => setOpen(false)}>
-             Diário
+             {t("Diário")}
            </Link>
            <Link to="/achievements" onClick={() => setOpen(false)}>
-             Conquistas
+             {t("Conquistas")}
            </Link>
            <Link to="/stats" onClick={() => setOpen(false)}>
-             Estatísticas
+             {t("Estatísticas")}
            </Link>
            <Link to="/compare" onClick={() => setOpen(false)}>
-             Compara as tuas notas
+             {t("Compara as tuas notas")}
            </Link>
            <Link to={`/u/${encodeURIComponent(user.username)}`} onClick={() => setOpen(false)}>
-             O meu perfil
+             {t("O meu perfil")}
            </Link>
            <Link to="/users" onClick={() => setOpen(false)}>
-             Encontrar pessoas
+             {t("Encontrar pessoas")}
            </Link>
           <Link to="/settings" onClick={() => setOpen(false)}>
-            Definições
+            {t("Definições")}
           </Link>
-          <button onClick={checkUpdate}>Procurar atualização</button>
+          <button onClick={checkUpdate}>{t("Procurar atualização")}</button>
           {updMsg && <span className="profile-upd-msg">{updMsg}</span>}
-          <button onClick={logout}>Sair</button>
+          <button onClick={logout}>{t("Sair")}</button>
         </div>
       )}
     </div>

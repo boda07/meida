@@ -3,6 +3,7 @@ import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import NotificationBell from "./NotificationBell.jsx";
 import ProfileMenu from "./ProfileMenu.jsx";
 import WatchParty from "./WatchParty.jsx";
+import { useT } from "../i18n/I18nContext.jsx";
 
 function HomeIcon() {
   return (
@@ -66,6 +67,7 @@ function SearchIcon() {
 export default function Header() {
   const navigate = useNavigate();
   const location = useLocation();
+  const t = useT();
   const onSearchPage = location.pathname === "/search";
 
   const [searchOpen, setSearchOpen] = useState(onSearchPage);
@@ -110,23 +112,23 @@ export default function Header() {
     <header className={`nav-bar ${searchOpen ? "pesquisa-aberta" : ""}`}>
       <div className="nav-left">
         <nav className="nav-links">
-          <NavLink to="/" end title="Início">
+          <NavLink to="/" end title={t("Início")}>
             <HomeIcon />
-            <span>Início</span>
+            <span>{t("Início")}</span>
           </NavLink>
-          <NavLink to="/movies" title="Filmes">
+          <NavLink to="/movies" title={t("Filmes")}>
             <FilmIcon />
-            <span>Filmes</span>
+            <span>{t("Filmes")}</span>
           </NavLink>
-          <NavLink to="/series" title="Séries">
+          <NavLink to="/series" title={t("Séries")}>
             <TVIcon />
-            <span>Séries</span>
+            <span>{t("Séries")}</span>
           </NavLink>
-          <NavLink to="/anime" title="Anime">
+          <NavLink to="/anime" title={t("Anime")}>
             <StarIcon />
-            <span>Anime</span>
+            <span>{t("Anime")}</span>
           </NavLink>
-          <NavLink to="/pick" title="Escolhe algo para mim" className="nav-dice" aria-label="Escolhe algo para mim">
+          <NavLink to="/pick" title={t("Escolhe algo para mim")} className="nav-dice" aria-label={t("Escolhe algo para mim")}>
             <DiceIcon />
           </NavLink>
         </nav>
@@ -137,8 +139,8 @@ export default function Header() {
           <button
             type="button"
             className="icon-btn"
-            aria-label="Pesquisar"
-            title="Pesquisar"
+            aria-label={t("Pesquisar")}
+            title={t("Pesquisar")}
             onClick={() => {
               if (searchOpen) submitSearch({ preventDefault: () => {} });
               else setSearchOpen(true);
@@ -149,7 +151,7 @@ export default function Header() {
           <input
             ref={inputRef}
             type="text"
-            placeholder="Títulos, pessoas, géneros"
+            placeholder={t("Títulos, pessoas, géneros")}
             value={query}
             onChange={(e) => onChange(e.target.value)}
             onBlur={() => { if (!query.trim() && !onSearchPage) setSearchOpen(false); }}

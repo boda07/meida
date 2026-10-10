@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useSettings } from "../settings/SettingsContext.jsx";
 import { useAuth } from "../auth/AuthContext.jsx";
+import { useT } from "../i18n/I18nContext.jsx";
+import { NOMES_IDIOMA } from "../i18n/traducoes.js";
 import { api, openExternal } from "../api/client.js";
 import Avatar, { AVATAR_EMOJIS } from "../components/Avatar.jsx";
 import { clearPresence, presenceSupported } from "../discord.js";
@@ -581,6 +583,9 @@ function Choice({ value, current, onPick, children }) {
 // (ver `.settings-page[data-active-tab]` em styles.css) — assim não foi preciso
 // mexer no envelope nem na ordem dos blocos. O `id` de cada aba é o mesmo
 // string nos dois lados, por isso convém não os escrever à mão.
+// O `label` e' o TEXTO EM PORTUGUES, nao um rotulo ja' traduzido. Assim o `t()`
+// consegue traduzi-lo no render (esta' const fora do componente, por isso nao
+// pode chamar o `useT()` aqui).
 const TABS = [
   { id: "perfil", label: "Perfil" },
   { id: "aparencia", label: "Aparência" },
@@ -594,6 +599,7 @@ const TAB_KEY = "meida:settings-tab";
 
 export default function Settings() {
   const { settings, update } = useSettings();
+  const t = useT();
   const { user, updateAvatar, updateProfile } = useAuth();
   const [imgUrl, setImgUrl] = useState("");
   const [bio, setBio] = useState("");
@@ -856,17 +862,19 @@ export default function Settings() {
       <h2 className="row-title">Definições</h2>
 
       {/* Abas: uma secção de cada vez, para não teres de rolar a página toda. */}
-      <nav className="mode-tabs settings-tabs" role="tablist" aria-label="Secções das definições">
-        {TABS.map((t) => (
+      <nav className="mode-tabs settings-tabs" role="tablist" aria-label={t("Secções das definições")}>
+        {/* A variavel chama-se `tabDef` e nao `t`: `t` ja e' a funcao de traducao
+            (do `useT()`), e um `t` dentro do map a tapava. */}
+        {TABS.map((tabDef) => (
           <button
-            key={t.id}
+            key={tabDef.id}
             type="button"
             role="tab"
-            aria-selected={tab === t.id}
-            className={tab === t.id ? "active" : ""}
-            onClick={() => setTab(t.id)}
+            aria-selected={tab === tabDef.id}
+            className={tab === tabDef.id ? "active" : ""}
+            onClick={() => setTab(tabDef.id)}
           >
-            {t.label}
+            {t(tabDef.label)}
           </button>
         ))}
       </nav>
@@ -934,8 +942,25 @@ export default function Settings() {
       )}
 
       {/* ===== Idiomas ===== */}
+      {/* O idioma da INTERFACE, que e' uma coisa diferente do idioma dos
+          titulos (o de baixo). Este e' o que traduz os botoes e os menus; aquele
+          so' muda "Inception" -> "A Origem" no catalogo.
+          Fica em primeiro porque e' o que torna a app legivel para quem nao
+          fala portugues. */}
       <section className="set-section" data-tab="conteudo">
-        <h3>Títulos</h3>
+        <h3>{t("Idioma da interface")}</h3>
+        <p className="muted">{t("A lingua dos botoes, menus e textos da app.")}</p>
+        <div className="set-row">
+          {t.linguas.map((l) => (
+            <Choice key={l} value={l} current={t.idioma} onPick={t.mudarIdioma}>
+              {NOMES_IDIOMA[l]}
+            </Choice>
+          ))}
+        </div>
+      </section>
+
+      <section className="set-section" data-tab="conteudo">
+        <h3>{t("Títulos")}</h3>
         <p className="muted">Idioma dos nomes de filmes, séries e anime.</p>
         <div className="set-row">
           <Choice value="pt" current={settings.titleLang} onPick={(v) => update({ titleLang: v })}>
