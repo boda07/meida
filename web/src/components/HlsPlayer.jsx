@@ -5,10 +5,12 @@ import FullscreenButton from "./FullscreenButton.jsx";
 import { usePlayerShortcuts } from "./usePlayerShortcuts.js";
 import { useVideoSync } from "../watchparty/useVideoSync.js";
 import { useSettings } from "../settings/SettingsContext.jsx";
+import { useT } from "../i18n/I18nContext.jsx";
 
 // Player HLS próprio (sem anúncios) com legendas.
 // `startAt` (s): retoma nessa posicao. `onProgress(p, d)`: chamado ~1x/5s.
 export default function HlsPlayer({ sources = [], subtitles = [], startAt, onProgress }) {
+  const t = useT();
   const videoRef = useRef(null);
   const containerRef = useRef(null);
   const { settings } = useSettings();
@@ -61,7 +63,7 @@ export default function HlsPlayer({ sources = [], subtitles = [], startAt, onPro
     return () => video.removeEventListener("timeupdate", onTime);
   }, [src, onProgress]);
 
-  if (!src) return <p className="muted">Sem fonte.</p>;
+  if (!src) return <p className="muted">{t("Sem fonte.")}</p>;
 
   return (
     <div className="vplayer">

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import FullscreenButton from "./FullscreenButton.jsx";
 import { useSettings } from "../settings/SettingsContext.jsx";
+import { useT } from "../i18n/I18nContext.jsx";
 
 // Um provider pode devolver um `data:` URL (vi um a servir
 // `data:application/pdf;base64,...` — um PDF disfarçado de página). Não é um
@@ -39,6 +40,7 @@ const TIMEOUT_MS = 15000;
 const TIMEOUT_MANUAL_MS = 45000;
 
 export default function Player({ embeds, deadIds, title, startIndex = 0, manual = false }) {
+  const t = useT();
   const iframeRef = useRef(null);
   const { settings } = useSettings();
   const [reloadKey, setReloadKey] = useState(0);
@@ -227,20 +229,20 @@ export default function Player({ embeds, deadIds, title, startIndex = 0, manual 
           type="button"
           className="player-arrancar"
           onClick={() => setArrancado(true)}
-          title="Carregar o video"
+          title={t("Carregar o video")}
         >
           <svg aria-hidden="true" viewBox="0 0 24 24" width="34" height="34" fill="currentColor">
             <path d="M8 5v14l11-7z" />
           </svg>
-          <span>Carregar video</span>
+          <span>{t("Carregar video")}</span>
         </button>
       )}
       {arrancado && (
         <button
           type="button"
           className="player-reload"
-          title="Recarregar fonte (se nao carregar / erro 520)"
-          aria-label="Recarregar fonte"
+          title={t("Recarregar fonte (se nao carregar / erro 520)")}
+          aria-label={t("Recarregar fonte")}
           onClick={() => {
             setReloadKey((k) => k + 1);
             setLoaded(false);

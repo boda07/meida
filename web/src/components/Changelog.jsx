@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { CHANGELOG, getAppVersion, cmpVersion } from "../changelog.js";
 import ChangelogModal from "./ChangelogModal.jsx";
+import { useT } from "../i18n/I18nContext.jsx";
 
 const KEY = "meida_seen_version";
 
@@ -18,6 +19,7 @@ function MegaphoneIcon() {
 // trata do aviso automatico quando a app foi mesmo atualizada (mostra o que mudou
 // desde a ultima versao vista) e poe um ponto vermelho enquanto nao for visto.
 export default function Changelog() {
+  const t = useT();
   const [version, setVersion] = useState(null);
   const [view, setView] = useState(null); // { initialVersion, subtitle } | null
   const [hasNew, setHasNew] = useState(false);
@@ -65,8 +67,8 @@ export default function Changelog() {
     <>
       <button
         className="app-news-btn"
-        title="Novidades"
-        aria-label="Novidades"
+        title={t("Novidades")}
+        aria-label={t("Novidades")}
         onClick={openLatest}
       >
         <MegaphoneIcon />

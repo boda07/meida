@@ -4,8 +4,10 @@ import { api } from "../api/client.js";
 import { useAuth } from "../auth/AuthContext.jsx";
 import { BadgeIcon } from "../components/icons.jsx";
 import LoadingStatus from "../components/LoadingStatus.jsx";
+import { useT } from "../i18n/I18nContext.jsx";
 
 export default function Achievements() {
+  const t = useT();
   const { user, ready } = useAuth();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -29,7 +31,7 @@ export default function Achievements() {
       </p>
     );
   }
-  if (loading) return <LoadingStatus>A carregar conquistas</LoadingStatus>;
+  if (loading) return <LoadingStatus>{t("A carregar conquistas")}</LoadingStatus>;
 
   const badges = data?.badges || [];
   const unlocked = badges.filter((b) => b.unlocked);
@@ -42,7 +44,7 @@ export default function Achievements() {
         <h2 className="row-title">Conquistas</h2>
         <div className="ach-streak">
           <span className="ach-streak-num">{streak}</span>
-          <span className="ach-streak-label">dias de racha</span>
+          <span className="ach-streak-label">{t("dias de racha")}</span>
           <span className="ach-streak-best">melhor: {bestStreak}</span>
         </div>
       </div>

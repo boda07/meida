@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { imageUrl } from "../api/client.js";
+import { useT } from "../i18n/I18nContext.jsx";
 
 function PlayIcon() {
   return (
@@ -53,6 +54,7 @@ const titleSize = (t = "") => {
 // para navegar. Aceita `items` (lista) ou `item` (um so). So entram os que tem
 // imagem de fundo.
 export default function Hero({ items, item }) {
+  const t = useT();
   const list = (items && items.length ? items : item ? [item] : []).filter(
     (i) => i && heroBg(i)
   );
@@ -127,7 +129,7 @@ export default function Hero({ items, item }) {
           <div className="meta">
             {current.year ? <span>{current.year}</span> : null}
             {current.type === "tv" ? <span>·</span> : null}
-            {current.type === "tv" ? <span>Série</span> : null}
+            {current.type === "tv" ? <span>{t("Série")}</span> : null}
             {current.rating ? <span>·</span> : null}
             {current.rating ? <span>⭐ {current.rating}</span> : null}
           </div>
@@ -151,14 +153,14 @@ export default function Hero({ items, item }) {
           <button
             className="hero-arrow hero-arrow-left"
             onClick={() => go(-1)}
-            aria-label="Anterior"
+            aria-label={t("Anterior")}
           >
             <ChevronLeftIcon />
           </button>
           <button
             className="hero-arrow hero-arrow-right"
             onClick={() => go(1)}
-            aria-label="Seguinte"
+            aria-label={t("Seguinte")}
           >
             <ChevronRightIcon />
           </button>

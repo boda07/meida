@@ -4,11 +4,13 @@ import FullscreenButton from "./FullscreenButton.jsx";
 import { usePlayerShortcuts } from "./usePlayerShortcuts.js";
 import { useVideoSync } from "../watchparty/useVideoSync.js";
 import { useSettings } from "../settings/SettingsContext.jsx";
+import { useT } from "../i18n/I18nContext.jsx";
 
 // Player HTML5 próprio para streams de torrent (sem anúncios).
 // `startAt` (s): retoma nessa posicao. `onProgress(p, d)`: chamado ~1x/5s com a
 // posicao e duracao atuais (para o "continua a ver" retomar a meio).
 export default function VideoPlayer({ src, infoHash, subtitles = [], startAt, onProgress, onRemoved }) {
+  const t = useT();
   const videoRef = useRef(null);
   const containerRef = useRef(null);
   const { settings } = useSettings();
@@ -103,7 +105,7 @@ export default function VideoPlayer({ src, infoHash, subtitles = [], startAt, on
           </span>
           {status.progress}% · 👤 {status.peers} peers · ⬇ {mb(status.downloadSpeed)} MB/s
           <button className="vstop" onClick={stop} disabled={removing}>
-            {removing ? "A parar..." : "✕ Parar torrent"}
+            {removing ? t("A parar...") : "✕ Parar torrent"}
           </button>
         </div>
       )}

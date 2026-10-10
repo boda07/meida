@@ -4,6 +4,7 @@ import { api } from "../api/client.js";
 import { useSettings } from "../settings/SettingsContext.jsx";
 import MediaRow from "../components/MediaRow.jsx";
 import LoadingStatus from "../components/LoadingStatus.jsx";
+import { useT } from "../i18n/I18nContext.jsx";
 
 const TYPE_FILTERS = [
   { id: "all", label: "Tudo" },
@@ -13,6 +14,7 @@ const TYPE_FILTERS = [
 ];
 
 export default function Search() {
+  const t = useT();
   const [params] = useSearchParams();
   const { settings } = useSettings();
   const q = params.get("q") || "";
@@ -38,11 +40,11 @@ export default function Search() {
     return () => clearTimeout(t);
   }, [q, settings.titleLang, settings.overviewLang]);
 
-  if (!q) return <p className="status muted">Escreve algo na pesquisa.</p>;
-  if (loading) return <LoadingStatus>A procurar "{q}"</LoadingStatus>;
+  if (!q) return <p className="status muted">{t("Escreve algo na pesquisa.")}</p>;
+  if (loading) return <LoadingStatus>{t('A procurar "{q}"', { q })}</LoadingStatus>;
   if (error) return <p className="status error">{error}</p>;
   if (!results.length)
-    return <p className="status muted">Sem resultados para "{q}".</p>;
+    return <p className="status muted">{t('Sem resultados para "{q}".', { q })}</p>;
 
   // Agrupa por tipo (estilo Stremio): Filmes / Séries / Anime.
   const groups = [
@@ -56,7 +58,7 @@ export default function Search() {
 
   return (
     <div className="sub-page">
-      <h2 className="row-title">Resultados para "{q}"</h2>
+      <h2 className="row-title">{t('Resultados para "{q}"', { q })}</h2>
       <div className="lib-filters">
         {TYPE_FILTERS.map((f) => (
           <button

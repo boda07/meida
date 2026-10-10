@@ -7,6 +7,7 @@ import { useAuth } from "../auth/AuthContext.jsx";
 import Avatar from "./Avatar.jsx";
 import { TextoComMencoes, CorpoDoComentario } from "./TextoComMencoes.jsx";
 import { haQuanto, quandoCompleto, paraTempo, paraSegundos } from "../lib/tempo.js";
+import { useT } from "../i18n/I18nContext.jsx";
 
 // O tempo no video e a data sao os dois de web/src/lib/tempo.js (com testes).
 // Aqui so' se decide o que se mostra.
@@ -53,6 +54,7 @@ export function CommentItem({
   onCancelReply,
   busy,
 }) {
+  const t = useT();
   const mine = user && c.author.id === user.id;
   const clock = paraTempo(c.atSeconds);
   const aResponder = replyTo === c.id;
@@ -85,7 +87,7 @@ export function CommentItem({
         {/* A quem se responde. Nos primeiros niveis a indentacao ja o diz; mais
             abaixo so' este bloco. Liga ao comentario do pai. */}
         {parent && (
-          <a className="comment-cita" href={`#comentario-${parent.id}`} title="Ir para esse comentário">
+          <a className="comment-cita" href={`#comentario-${parent.id}`} title={t("Ir para esse comentário")}>
             <span className="comment-cita-seta" aria-hidden="true">
               ↩
             </span>
@@ -95,7 +97,7 @@ export function CommentItem({
         )}
         <p className="comment-text">
           {c.deleted ? (
-            <em className="muted">Comentário apagado</em>
+            <em className="muted">{t("Comentário apagado")}</em>
           ) : (
             // Componentes, nao texto solto: e' o que faz "@fulano" virar link
             // para o perfil sem meter marcacao no que o utilizador escreveu.
@@ -122,7 +124,7 @@ export function CommentItem({
             {/* Este botao aparece em TODOS os niveis, e antes nao fazia nada nas
                 respostas: o formulario so' sabia desenhar ao nivel de topo, que
                 era o que impedia de responder a uma resposta. */}
-            {user && <button className="comment-link" onClick={() => onReply(c.id)}>Responder</button>}
+            {user && <button className="comment-link" onClick={() => onReply(c.id)}>{t("Responder")}</button>}
             {mine && <button className="comment-link danger" onClick={() => onDelete(c.id)}>Apagar</button>}
           </div>
         )}
@@ -198,6 +200,7 @@ function whenTitle(seg) {
 // `posAtual` e' a posicao do player em segundos, quando ha player nosso a dar
 // progresso. Nos providers (iframe) nao ha — dai o botao so aparecer com valor.
 export default function Comments({ type, tmdbId, season = null, episode = null, posAtual = null }) {
+  const t = useT();
   const { user } = useAuth();
   const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -276,7 +279,7 @@ export default function Comments({ type, tmdbId, season = null, episode = null, 
   }
 
   async function remove(id) {
-    if (!window.confirm("Apagar este comentário?")) return;
+    if (!window.confirm(t("Apagar este comentário?"))) return;
     try {
       await api.deleteComment(id);
       if (replyTo === id) setReplyTo(null);
@@ -288,7 +291,7 @@ export default function Comments({ type, tmdbId, season = null, episode = null, 
 
   return (
     <section className="comments">
-      <h3 className="comments-title">Comentários</h3>
+      <h3 className="comments-title">{t("Comentários")}</h3>
 
       {user ? (
         <form className="comment-form" onSubmit={submit}>
@@ -309,7 +312,7 @@ export default function Comments({ type, tmdbId, season = null, episode = null, 
                   value={atTime}
                   onChange={(e) => setAtTime(e.target.value)}
                   placeholder="0:00"
-                  title="Momento do vídeo (opcional). Aceita 2:05 ou 125."
+                  title={t("Momento do vídeo (opcional). Aceita 2:05 ou 125.")}
                   maxLength={8}
                 />
                 <span>momento</span>
@@ -322,7 +325,7 @@ export default function Comments({ type, tmdbId, season = null, episode = null, 
                   type="button"
                   className="comment-link"
                   onClick={() => setAtTime(paraTempo(posAtual))}
-                  title="Usar o momento em que estás"
+                  title={t("Usar o momento em que estás")}
                 >
                   ⏱ neste momento
                 </button>
@@ -348,9 +351,9 @@ export default function Comments({ type, tmdbId, season = null, episode = null, 
       {error && <p className="auth-error">{error}</p>}
 
       {loading ? (
-        <p className="muted">A carregar comentários...</p>
+        <p className="muted">{t("A carregar comentários...")}</p>
       ) : comments.length === 0 ? (
-        <p className="muted">Ainda sem comentários. Sê o primeiro.</p>
+        <p className="muted">{t("Ainda sem comentários. Sê o primeiro.")}</p>
       ) : (
         <ul className="comment-list">
           {comments.map((c) => (

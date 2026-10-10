@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useWatchParty } from "../watchparty/WatchPartyContext.jsx";
+import { useT } from "../i18n/I18nContext.jsx";
 
 function PeopleIcon() {
   return (
@@ -13,6 +14,7 @@ function PeopleIcon() {
 }
 
 export default function WatchParty() {
+  const t = useT();
   const party = useWatchParty();
   const [open, setOpen] = useState(false);
   // Lembra o nome entre sessoes (para nao o teres de escrever sempre).
@@ -70,7 +72,7 @@ export default function WatchParty() {
               <div className="wp-code">
                 <span>{party.room}</span>
                 <button className="set-choice" onClick={copy}>
-                  {copied ? "Copiado!" : "Copiar codigo"}
+                  {copied ? t("Copiado!") : "Copiar codigo"}
                 </button>
               </div>
               <div className="wp-members">
@@ -90,10 +92,10 @@ export default function WatchParty() {
                 Escreve o teu nome, depois cria uma sala e envia o codigo ao teu
                 amigo — ou entra com o codigo dele.
               </p>
-              <label className="wp-label">O teu nome</label>
+              <label className="wp-label">{t("O teu nome")}</label>
               <input
                 className="wp-input"
-                placeholder="Como queres aparecer"
+                placeholder={t("Como queres aparecer")}
                 value={nick}
                 onChange={(e) => setNick(e.target.value)}
               />
@@ -106,11 +108,11 @@ export default function WatchParty() {
               >
                 Criar sala
               </button>
-              <div className="wp-or">ou entrar numa sala</div>
+              <div className="wp-or">{t("ou entrar numa sala")}</div>
               <div className="wp-join">
                 <input
                   className="wp-input"
-                  placeholder="Codigo da sala"
+                  placeholder={t("Codigo da sala")}
                   value={code}
                   onChange={(e) => setCode(e.target.value.toUpperCase())}
                   maxLength={5}

@@ -6,6 +6,7 @@ import { useSettings } from "../settings/SettingsContext.jsx";
 import LoadingStatus from "../components/LoadingStatus.jsx";
 import { CheckIcon } from "../components/icons.jsx";
 import { estadoDe } from "../components/profileStats.js";
+import { useT } from "../i18n/I18nContext.jsx";
 
 const FILTERS = [
   { id: "all", label: "Tudo" },
@@ -39,6 +40,7 @@ function displayTitle(it, romaji) {
 }
 
 export default function Library() {
+  const t = useT();
   const { user, ready } = useAuth();
   const { settings } = useSettings();
   const [items, setItems] = useState([]);
@@ -310,7 +312,7 @@ export default function Library() {
         <h2 className="row-title">A minha lista</h2>
         <div className="lib-toolbar">
         <div className="lib-sort">
-          <label htmlFor="lib-sort-sel">Ordenar por</label>
+          <label htmlFor="lib-sort-sel">{t("Ordenar por")}</label>
           <select
             id="lib-sort-sel"
             value={sort}
@@ -389,7 +391,7 @@ export default function Library() {
               <span className="lib-list-actions">
                 <button
                   className="lib-list-btn"
-                  title="Renomear"
+                  title={t("Renomear")}
                   aria-label={`Renomear lista ${l.name}`}
                   onClick={() => openListModal("rename", l.id, l.name)}
                 >
@@ -397,7 +399,7 @@ export default function Library() {
                 </button>
                 <button
                   className="lib-list-btn danger"
-                  title="Apagar lista"
+                  title={t("Apagar lista")}
                   aria-label={`Apagar lista ${l.name}`}
                   onClick={() => openListModal("delete", l.id)}
                 >
@@ -467,7 +469,7 @@ export default function Library() {
                     autoFocus
                     onChange={(e) => setListName(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && submitListModal()}
-                    placeholder="Ex.: Para ver com amigos"
+                    placeholder={t("Ex.: Para ver com amigos")}
                   />
                 </div>
                 <div className="modal-actions">
@@ -496,7 +498,7 @@ export default function Library() {
         <div className="modal-overlay" onClick={() => setWlOpen(false)}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-head">
-              <h3>Limpar watchlist</h3>
+              <h3>{t("Limpar watchlist")}</h3>
               <button className="modal-close" aria-label="Fechar" onClick={() => setWlOpen(false)}>
                 ✕
               </button>
@@ -530,7 +532,7 @@ export default function Library() {
         <div className="modal-overlay" onClick={() => setGenreOpen(false)}>
           <div className="modal lib-genre-modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-head">
-              <h3>Filtrar por género/tema</h3>
+              <h3>{t("Filtrar por género/tema")}</h3>
               <button
                 className="modal-close"
                 aria-label="Fechar"
@@ -578,7 +580,7 @@ export default function Library() {
           {selList != null
             ? "Esta lista esta vazia. Abre um filme/série e usa o botao \"+ Lista\"."
             : items.length
-            ? "Nada nesta categoria."
+            ? t("Nada nesta categoria.")
             : "A tua lista esta vazia. Abre um filme/série e adiciona a watchlist, marca como visto ou da nota."}
         </p>
       ) : (
@@ -601,7 +603,7 @@ export default function Library() {
                 <div className="card-scrim" />
                 {it.score ? <span className="card-rating">{it.score}/100</span> : null}
                 {it.watched ? (
-                  <span className="card-watched" title="Visto">
+                  <span className="card-watched" title={t("Visto")}>
                     <CheckIcon />
                   </span>
                 ) : null}

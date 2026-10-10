@@ -4,6 +4,7 @@ import { api } from "../api/client.js";
 import { useSettings } from "../settings/SettingsContext.jsx";
 import MangaCard from "../components/MangaCard.jsx";
 import LoadingStatus from "../components/LoadingStatus.jsx";
+import { useT } from "../i18n/I18nContext.jsx";
 
 // Filtros client-side (a lista "Para ler" ja vem toda — filtra/ordena no browser).
 const clientTypeMatch = (mediaType, types) => {
@@ -88,6 +89,7 @@ const toggleInSet = (setter) => (id) =>
 // `embedded`: renderizado dentro de outra página (ex.: "Escolhe algo para mim"),
 // sem o invólucro/título próprios.
 export default function Manga({ embedded = false }) {
+  const t = useT();
   const { settings } = useSettings();
   const [tab, setTab] = useState("forYou"); // forYou | toRead | filters
 
@@ -123,7 +125,7 @@ export default function Manga({ embedded = false }) {
   if (embedded) return <div className="manga-page">{body}</div>;
   return (
     <div className="sub-page manga-page">
-      <h2 className="row-title">Mangá, Manhwa &amp; Manhua</h2>
+      <h2 className="row-title">{t("Mangá, Manhwa &amp; Manhua")}</h2>
       {body}
     </div>
   );
@@ -131,6 +133,7 @@ export default function Manga({ embedded = false }) {
 
 // --- Recomendacoes com base na lista do MAL ---
 function ForYou() {
+  const t = useT();
   const [types, setTypes] = useState(() => new Set());
   const [items, setItems] = useState([]);
   const [topGenres, setTopGenres] = useState([]);
@@ -196,7 +199,7 @@ function ForYou() {
     });
   }
 
-  if (loading && !items.length) return <LoadingStatus>A ver o que andas a ler</LoadingStatus>;
+  if (loading && !items.length) return <LoadingStatus>{t("A ver o que andas a ler")}</LoadingStatus>;
   if (error) return <p className="status error">{error}</p>;
 
   if (!linked) {
@@ -222,13 +225,13 @@ function ForYou() {
       </p>
 
       <div className="manga-filter-block">
-        <label className="manga-filter-label">Tipo (vazio = todos)</label>
+        <label className="manga-filter-label">{t("Tipo (vazio = todos)")}</label>
         <MultiChips options={TYPES} value={types} onToggle={onToggle} />
       </div>
 
       {topGenres.length ? (
         <div className="manga-toptags">
-          <span className="muted">Com base em:</span>
+          <span className="muted">{t("Com base em:")}</span>
           {topGenres.map((g) => (
             <span key={g} className="genre-chip want">
               {g}
@@ -238,7 +241,7 @@ function ForYou() {
       ) : null}
 
       {loading ? (
-        <LoadingStatus compact>A escolher recomendações</LoadingStatus>
+        <LoadingStatus compact>{t("A escolher recomendações")}</LoadingStatus>
       ) : items.length ? (
         <>
           <div className="grid" style={{ marginTop: 18 }}>
@@ -249,7 +252,7 @@ function ForYou() {
           {hasMore && (
             <div className="load-more-wrap">
               <button className="load-more" onClick={loadMore} disabled={loadingMore}>
-                {loadingMore ? "A procurar mais..." : "Mais recomendações"}
+                {loadingMore ? t("A procurar mais...") : "Mais recomendações"}
               </button>
             </div>
           )}
@@ -271,6 +274,7 @@ const TOREAD_SORTS = [
 ];
 
 function ToRead() {
+  const t = useT();
   const [data, setData] = useState(null); // { linked, items }
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -327,7 +331,7 @@ function ToRead() {
   const toggleStatus = toggleInSet(setStatuses);
   const toggleGenre = toggleInSet(setGenreSel);
 
-  if (loading) return <LoadingStatus>A carregar a tua lista</LoadingStatus>;
+  if (loading) return <LoadingStatus>{t("A carregar a tua lista")}</LoadingStatus>;
   if (error) return <p className="status error">{error}</p>;
 
   if (data && !data.linked) {
@@ -360,17 +364,17 @@ function ToRead() {
       </p>
 
       <div className="manga-filter-block">
-        <label className="manga-filter-label">Tipo (vazio = todos)</label>
+        <label className="manga-filter-label">{t("Tipo (vazio = todos)")}</label>
         <MultiChips options={TYPES} value={types} onToggle={toggleType} />
       </div>
 
       <div className="manga-filter-block">
-        <label className="manga-filter-label">Estado (vazio = qualquer)</label>
+        <label className="manga-filter-label">{t("Estado (vazio = qualquer)")}</label>
         <MultiChips options={STATUSES} value={statuses} onToggle={toggleStatus} />
       </div>
 
       <div className="manga-filter-block">
-        <label className="manga-filter-label">Ordenar</label>
+        <label className="manga-filter-label">{t("Ordenar")}</label>
         <div className="lib-sort">
           <select value={sort} onChange={(e) => setSort(e.target.value)}>
             {TOREAD_SORTS.map((s) => (
@@ -398,14 +402,14 @@ function ToRead() {
             <button
               className={`tf-chip ${genreMode === "and" ? "active" : ""}`}
               onClick={() => setGenreMode("and")}
-              title="Tem de ter todos os géneros escolhidos"
+              title={t("Tem de ter todos os géneros escolhidos")}
             >
               Todos (E)
             </button>
             <button
               className={`tf-chip ${genreMode === "or" ? "active" : ""}`}
               onClick={() => setGenreMode("or")}
-              title="Basta ter um dos géneros escolhidos"
+              title={t("Basta ter um dos géneros escolhidos")}
             >
               Qualquer (OU)
             </button>
@@ -442,6 +446,7 @@ function ToRead() {
 
 // --- Procura por filtros ---
 function Filters() {
+  const t = useT();
   const { settings } = useSettings();
   const [types, setTypes] = useState(() => new Set(["manhwa"]));
   const [statuses, setStatuses] = useState(() => new Set());
@@ -505,17 +510,17 @@ function Filters() {
       </p>
 
       <div className="manga-filter-block">
-        <label className="manga-filter-label">Tipo (vazio = todos)</label>
+        <label className="manga-filter-label">{t("Tipo (vazio = todos)")}</label>
         <MultiChips options={TYPES} value={types} onToggle={toggleType} />
       </div>
 
       <div className="manga-filter-block">
-        <label className="manga-filter-label">Estado (vazio = qualquer)</label>
+        <label className="manga-filter-label">{t("Estado (vazio = qualquer)")}</label>
         <MultiChips options={STATUSES} value={statuses} onToggle={toggleStatus} />
       </div>
 
       <div className="manga-filter-block">
-        <label className="manga-filter-label">Ordenar</label>
+        <label className="manga-filter-label">{t("Ordenar")}</label>
         <div className="lib-sort">
           <select value={sort} onChange={(e) => setSort(e.target.value)}>
             {SORTS.map((s) => (
@@ -535,12 +540,12 @@ function Filters() {
       </div>
 
       <div className="manga-filter-block">
-        <label className="manga-filter-label">Opções</label>
+        <label className="manga-filter-label">{t("Opções")}</label>
         <div className="lib-filters">
           <button
             className={`tf-chip ${notInList ? "active" : ""}`}
             onClick={() => setNotInList((v) => !v)}
-            title="Precisa de teres o MyAnimeList ligado"
+            title={t("Precisa de teres o MyAnimeList ligado")}
           >
             {notInList ? "✓ " : ""}Esconder o que já tenho na lista
           </button>
@@ -554,7 +559,7 @@ function Filters() {
         <input
           className="manga-genre-search"
           type="text"
-          placeholder="Procurar género/tema (ex.: time travel)"
+          placeholder={t("Procurar género/tema (ex.: time travel)")}
           value={genreFilter}
           onChange={(e) => setGenreFilter(e.target.value)}
         />
@@ -569,7 +574,7 @@ function Filters() {
               {g.name}
             </button>
           ))}
-          {!allGenres.length && <p className="muted">A carregar géneros...</p>}
+          {!allGenres.length && <p className="muted">{t("A carregar géneros...")}</p>}
         </div>
       </div>
 

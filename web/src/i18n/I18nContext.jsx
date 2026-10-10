@@ -22,7 +22,9 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { DICIONARIO, IDIOMAS } from "./traducoes.js";
 
-const I18nContext = createContext(null);
+// Exportado para o `ErrorBoundary`, que e' uma `class` e por isso nao pode usar
+// o hook `useT()`: uma class le' o contexto por `static contextType`.
+export const I18nContext = createContext(null);
 
 const CHAVE_IDIOMA = "meida:idioma";
 

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { api } from "../api/client.js";
 import VideoPlayer from "./VideoPlayer.jsx";
+import { useT } from "../i18n/I18nContext.jsx";
 
 const QUALITY_ORDER = ["4K", "1080P", "720P", "480P", "360P", "?"];
 
@@ -23,6 +24,7 @@ function matchAudio(t, mode) {
 // Se o Real-Debrid estiver ligado, os torrents em cache reproduzem logo (sem
 // esperar por peers); os outros caem para o WebTorrent local.
 export default function Torrents({ type, imdb, title, season, episode, anime, defaultAudio, startAt, onProgress, onAudioChange }) {
+  const t = useT();
   const [list, setList] = useState(null);
   const [error, setError] = useState(null);
   const [selected, setSelected] = useState(null);
@@ -170,10 +172,10 @@ export default function Torrents({ type, imdb, title, season, episode, anime, de
   }
 
   if (!imdb)
-    return <p className="muted">Este título não tem IMDB id — torrents indisponiveis.</p>;
+    return <p className="muted">{t("Este título não tem IMDB id — torrents indisponiveis.")}</p>;
   if (error) return <p className="auth-error">{error}</p>;
-  if (!list) return <p className="muted">A procurar torrents...</p>;
-  if (!list.length) return <p className="muted">Nenhum torrent encontrado.</p>;
+  if (!list) return <p className="muted">{t("A procurar torrents...")}</p>;
+  if (!list.length) return <p className="muted">{t("Nenhum torrent encontrado.")}</p>;
 
   const haveInstant = debrid?.linked && [...(debrid.instant || [])].length > 0;
 
@@ -181,7 +183,7 @@ export default function Torrents({ type, imdb, title, season, episode, anime, de
     <div className="torrents">
       {selected && (streaming || streamErr || videoSrc) && (
         <>
-          {streaming && <p className="muted">A preparar stream no Real-Debrid...</p>}
+          {streaming && <p className="muted">{t("A preparar stream no Real-Debrid...")}</p>}
           {streamErr && (
             <p className="muted" style={{ fontSize: 12 }}>
               Debrid indisponível, a tocar via torrent local — {streamErr}
@@ -241,10 +243,10 @@ export default function Torrents({ type, imdb, title, season, episode, anime, de
         <label className="tf-sort">
           Ordenar:
           <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
-            <option value="seeders">Mais seeders</option>
-            <option value="quality">Qualidade</option>
-            <option value="size">Maior tamanho</option>
-            <option value="sizeAsc">Menor tamanho</option>
+            <option value="seeders">{t("Mais seeders")}</option>
+            <option value="quality">{t("Qualidade")}</option>
+            <option value="size">{t("Maior tamanho")}</option>
+            <option value="sizeAsc">{t("Menor tamanho")}</option>
           </select>
         </label>
         <div className="tf-compat">
@@ -258,7 +260,7 @@ export default function Torrents({ type, imdb, title, season, episode, anime, de
             <button
               className={`tf-chip ${compat === "instant" ? "active" : ""}`}
               onClick={() => setCompat(compat === "instant" ? "all" : "instant")}
-              title="Só torrents que já estão em cache no Real-Debrid (reproduzem logo)"
+              title={t("Só torrents que já estão em cache no Real-Debrid (reproduzem logo)")}
             >
               ⚡ Debrid
             </button>
@@ -272,14 +274,14 @@ export default function Torrents({ type, imdb, title, season, episode, anime, de
           <button
             className={`tf-chip ${codec === "x264" ? "active" : ""}`}
             onClick={() => setCodec(codec === "x264" ? "all" : "x264")}
-            title="Só torrents x264 (mais compatíveis com o browser)"
+            title={t("Só torrents x264 (mais compatíveis com o browser)")}
           >
             x264
           </button>
           <button
             className={`tf-chip ${codec === "x265" ? "active" : ""}`}
             onClick={() => setCodec(codec === "x265" ? "all" : "x265")}
-            title="Só torrents x265/HEVC (mais pequenos, mas o browser não reproduz)"
+            title={t("Só torrents x265/HEVC (mais pequenos, mas o browser não reproduz)")}
           >
             x265
           </button>
@@ -301,7 +303,7 @@ export default function Torrents({ type, imdb, title, season, episode, anime, de
               <span className="tt">
                 {t.title}
                 {isInstant && (
-                  <span className="tinstant" title="Já está em cache no Real-Debrid — reproduz logo">⚡ Debrid</span>
+                  <span className="tinstant" title={t("Já está em cache no Real-Debrid — reproduz logo")}>⚡ Debrid</span>
                 )}
                 {t.provider && (
                   <span className="tprovider" title={`Fonte: ${t.provider}`}>
@@ -314,11 +316,11 @@ export default function Torrents({ type, imdb, title, season, episode, anime, de
               </span>
               <span className="tmeta">
                 {t.playable ? (
-                  <span className="tplay" title="Reproduz nativamente no browser (mp4/webm)">✓ browser</span>
+                  <span className="tplay" title={t("Reproduz nativamente no browser (mp4/webm)")}>✓ browser</span>
                 ) : (
                   <span
                     className="tnoplay"
-                    title={t.codec === "x265" ? ".mkv x265 — o Chrome/Safari não reproduzem este codec. Prefere .mp4 x264." : `${t.ext || ""} ${t.codec || ""} — pode não reproduzir no browser. Prefere .mp4.`}
+                    title={t.codec === "x265" ? t(".mkv x265 — o Chrome/Safari não reproduzem este codec. Prefere .mp4 x264.") : `${t.ext || ""} ${t.codec || ""} — pode não reproduzir no browser. Prefere .mp4.`}
                   >
                     ⚠ {t.ext ? t.ext.slice(1).toUpperCase() : "?"}
                   </span>
@@ -330,7 +332,7 @@ export default function Torrents({ type, imdb, title, season, episode, anime, de
           );
         })}
         {!shown.length && (
-          <p className="muted">Nenhum torrent nesta qualidade.</p>
+          <p className="muted">{t("Nenhum torrent nesta qualidade.")}</p>
         )}
       </div>
     </div>

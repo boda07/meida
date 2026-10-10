@@ -10,6 +10,7 @@ import { clearPresence, presenceSupported } from "../discord.js";
 
 // Seccao de ligacao ao MyAnimeList.
 function MalSection({ user }) {
+  const t = useT();
   const [enabled, setEnabled] = useState(false);
   const [linked, setLinked] = useState(false);
   const [username, setUsername] = useState(null);
@@ -41,7 +42,7 @@ function MalSection({ user }) {
     try {
       const { authUrl } = await api.malLogin();
       openExternal(authUrl);
-      setMsg("Autoriza no browser e volta a esta janela.");
+      setMsg(t("Autoriza no browser e volta a esta janela."));
     } catch (e) {
       setMsg(e.message);
     }
@@ -69,7 +70,7 @@ function MalSection({ user }) {
   if (!user) {
     return (
       <p className="muted">
-        <Link to="/login">Entra</Link> para ligares o MyAnimeList.
+        <Link to="/login">{t("Entra")}</Link> para ligares o MyAnimeList.
       </p>
     );
   }
@@ -91,9 +92,9 @@ function MalSection({ user }) {
           </p>
           <div className="set-row">
             <button className="set-choice active" onClick={importList} disabled={busy}>
-              {busy ? "A importar..." : "Importar lista do MAL"}
+              {busy ? t("A importar...") : t("Importar lista do MAL")}
             </button>
-            <button className="set-clear" onClick={unlink}>Desligar conta</button>
+            <button className="set-clear" onClick={unlink}>{t("Desligar conta")}</button>
           </div>
         </>
       ) : (
@@ -114,6 +115,7 @@ function MalSection({ user }) {
 // Seccao de ligacao ao AniList (anime). Fonte de verdade da lista quando o MAL
 // nao esta ligado: importa estado/nota/progresso e marca episodios vistos.
 function AniListSection({ user }) {
+  const t = useT();
   const [enabled, setEnabled] = useState(false);
   const [linked, setLinked] = useState(false);
   const [username, setUsername] = useState(null);
@@ -157,7 +159,7 @@ function AniListSection({ user }) {
     try {
       const { authUrl } = await api.anilistLogin();
       openExternal(authUrl);
-      setMsg("Autoriza no browser e volta a esta janela.");
+      setMsg(t("Autoriza no browser e volta a esta janela."));
     } catch (e) {
       setMsg(e.message);
     }
@@ -189,7 +191,7 @@ function AniListSection({ user }) {
       const d = await api.anilistSync();
       setMsg(`Cross-sync concluído: +${d.malUpdated} no MAL, +${d.aniUpdated} no AniList.`);
     } catch (e) {
-      setMsg(e.message || "Falha na sincronização.");
+      setMsg(e.message || t("Falha na sincronização."));
     } finally {
       setSyncing(false);
     }
@@ -198,7 +200,7 @@ function AniListSection({ user }) {
   if (!user) {
     return (
       <p className="muted">
-        <Link to="/login">Entra</Link> para ligares o AniList.
+        <Link to="/login">{t("Entra")}</Link> para ligares o AniList.
       </p>
     );
   }
@@ -223,14 +225,14 @@ function AniListSection({ user }) {
             </p>
           <div className="set-row">
             <button className="set-choice active" onClick={importList} disabled={busy}>
-              {busy ? "A importar..." : "Importar lista do AniList"}
+              {busy ? t("A importar...") : "Importar lista do AniList"}
             </button>
             {malLinked && (
               <button className="set-choice" onClick={syncCross} disabled={syncing}>
-                {syncing ? "A sincronizar..." : "Sincronizar com MAL"}
+                {syncing ? t("A sincronizar...") : "Sincronizar com MAL"}
               </button>
             )}
-            <button className="set-clear" onClick={unlink}>Desligar conta</button>
+            <button className="set-clear" onClick={unlink}>{t("Desligar conta")}</button>
           </div>
         </>
       ) : (
@@ -250,6 +252,7 @@ function AniListSection({ user }) {
 
 // Seccao de ligacao ao Letterboxd (filmes).
 function LetterboxdSection({ user }) {
+  const t = useT();
   const [username, setUsername] = useState(null);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
@@ -273,7 +276,7 @@ function LetterboxdSection({ user }) {
       const d = await api.letterboxdLink(input.trim());
       setUsername(d.username);
       setInput("");
-      setMsg("Conta ligada. Carrega em Importar para trazer os teus filmes.");
+      setMsg(t("Conta ligada. Carrega em Importar para trazer os teus filmes."));
     } catch (e) {
       setMsg(e.message);
     } finally {
@@ -305,7 +308,7 @@ function LetterboxdSection({ user }) {
   if (!user) {
     return (
       <p className="muted">
-        <Link to="/login">Entra</Link> para ligares o Letterboxd.
+        <Link to="/login">{t("Entra")}</Link> para ligares o Letterboxd.
       </p>
     );
   }
@@ -320,13 +323,13 @@ function LetterboxdSection({ user }) {
           </p>
           <div className="set-row">
             <button className="set-choice active" onClick={() => importList("films")} disabled={busy}>
-              {busy ? "A importar..." : "Importar vistos"}
+              {busy ? t("A importar...") : "Importar vistos"}
             </button>
             <button className="set-choice active" onClick={() => importList("watchlist")} disabled={busy}>
-              {busy ? "A importar..." : "Importar watchlist"}
+              {busy ? t("A importar...") : "Importar watchlist"}
             </button>
             <button className="set-choice" onClick={() => importList("all")} disabled={busy}>
-              {busy ? "A importar..." : "Importar tudo"}
+              {busy ? t("A importar...") : "Importar tudo"}
             </button>
           </div>
           <div className="set-row" style={{ marginTop: 8 }}>
@@ -350,7 +353,7 @@ function LetterboxdSection({ user }) {
           <div className="set-img-url">
             <input
               type="text"
-              placeholder="username do Letterboxd"
+              placeholder={t("username do Letterboxd")}
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && input.trim() && link()}
@@ -360,7 +363,7 @@ function LetterboxdSection({ user }) {
               onClick={link}
               disabled={busy || !input.trim()}
             >
-              {busy ? "A ligar..." : "Ligar"}
+              {busy ? t("A ligar...") : "Ligar"}
             </button>
           </div>
         </>
@@ -372,6 +375,7 @@ function LetterboxdSection({ user }) {
 
 // Seccao de ligacao ao Real-Debrid (streaming de torrents instantaneo).
 function DebridSection({ user }) {
+  const t = useT();
   const [status, setStatus] = useState(null);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
@@ -395,7 +399,7 @@ function DebridSection({ user }) {
       const d = await api.debridLink(input.trim());
       setStatus({ linked: true, account: d.account });
       setInput("");
-      setMsg("Real-Debrid ligado. Os torrents em cache no DeBrid reproduzem logo.");
+      setMsg(t("Real-Debrid ligado. Os torrents em cache no DeBrid reproduzem logo."));
     } catch (e) {
       setMsg(e.message);
     } finally {
@@ -412,7 +416,7 @@ function DebridSection({ user }) {
   if (!user) {
     return (
       <p className="muted">
-        <Link to="/login">Entra</Link> para ligares o Real-Debrid.
+        <Link to="/login">{t("Entra")}</Link> para ligares o Real-Debrid.
       </p>
     );
   }
@@ -448,7 +452,7 @@ function DebridSection({ user }) {
           <div className="set-img-url">
             <input
               type="password"
-              placeholder="token do Real-Debrid"
+              placeholder={t("token do Real-Debrid")}
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && input.trim() && link()}
@@ -458,7 +462,7 @@ function DebridSection({ user }) {
               onClick={link}
               disabled={busy || !input.trim()}
             >
-              {busy ? "A ligar..." : "Ligar"}
+              {busy ? t("A ligar...") : "Ligar"}
             </button>
           </div>
         </>
@@ -626,16 +630,16 @@ export default function Settings() {
   async function checkUpdate() {
     if (updBusy) return;
     setUpdBusy(true);
-    setUpdMsg("A procurar...");
+    setUpdMsg(t("A procurar..."));
     try {
       const r = await window.electronAPI.checkForUpdates();
       if (r?.status === "available")
         setUpdMsg(`Nova versão ${r.version} — a descarregar...`);
       else if (r?.status === "latest") setUpdMsg("Já tens a versão mais recente. ✓");
-      else if (r?.status === "dev") setUpdMsg("Indisponível em desenvolvimento.");
-      else setUpdMsg("Não foi possível verificar agora.");
+      else if (r?.status === "dev") setUpdMsg(t("Indisponível em desenvolvimento."));
+      else setUpdMsg(t("Não foi possível verificar agora."));
     } catch {
-      setUpdMsg("Não foi possível verificar agora.");
+      setUpdMsg(t("Não foi possível verificar agora."));
     } finally {
       setUpdBusy(false);
     }
@@ -727,12 +731,12 @@ export default function Settings() {
     }
     if (!r || r.ok === false) {
       setSrvErr(true);
-      setSrvMsg(r?.error || "Não foi possível guardar.");
+      setSrvMsg(r?.error || t("Não foi possível guardar."));
       setSrvBusy(false);
       return;
     }
     setSrv(r.config);
-    setSrvMsg("Guardado. A reiniciar...");
+    setSrvMsg(t("Guardado. A reiniciar..."));
     // Deixa a mensagem aparecer antes de reiniciar.
     setTimeout(() => desktop.restartApp?.(), 600);
   }
@@ -814,9 +818,9 @@ export default function Settings() {
       a.click();
       a.remove();
       URL.revokeObjectURL(url);
-      setExportMsg("Ficheiro descarregado. Vai à pasta de downloads do teu sistema.");
+      setExportMsg(t("Ficheiro descarregado. Vai à pasta de downloads do teu sistema."));
     } catch (e) {
-      setExportMsg(e.message || "Não foi possível exportar.");
+      setExportMsg(e.message || t("Não foi possível exportar."));
     } finally {
       setExporting(null);
     }
@@ -850,7 +854,7 @@ export default function Settings() {
       setImportMsg(`Importados ${d.imported.library} títulos e ${d.imported.diary} entradas do diário.`);
       setImportFile(null);
     } catch (e) {
-      setImportMsg(e.message || "Não foi possível importar.");
+      setImportMsg(e.message || t("Não foi possível importar."));
       setImportError(true);
     } finally {
       setImporting(false);
@@ -859,7 +863,7 @@ export default function Settings() {
 
   return (
     <div className="sub-page settings-page" data-active-tab={tab}>
-      <h2 className="row-title">Definições</h2>
+      <h2 className="row-title">{t("Definições")}</h2>
 
       {/* Abas: uma secção de cada vez, para não teres de rolar a página toda. */}
       <nav className="mode-tabs settings-tabs" role="tablist" aria-label={t("Secções das definições")}>
@@ -882,10 +886,10 @@ export default function Settings() {
       {/* ===== Servidor (so no desktop Electron) ===== */}
       {desktop?.getServerConfig && (
         <section className="set-section" data-tab="dados">
-          <h3>Servidor</h3>
+          <h3>{t("Servidor")}</h3>
           <p className="muted">
-            Onde ficam os teus dados. <strong>Este computador</strong> guarda tudo localmente.{" "}
-            <strong>Servidor remoto</strong> liga a app a um MEIDA alojado noutro sítio, para
+            Onde ficam os teus dados. <strong>{t("Este computador")}</strong> guarda tudo localmente.{" "}
+            <strong>{t("Servidor remoto")}</strong> liga a app a um MEIDA alojado noutro sítio, para
             partilhares conta, biblioteca, seguidores e comentários entre dispositivos.
           </p>
           {srv && !srv.packaged && (
@@ -909,7 +913,7 @@ export default function Settings() {
           </div>
           {srvMode === "remote" && (
             <label className="set-field">
-              <span>Endereço do servidor</span>
+              <span>{t("Endereço do servidor")}</span>
               <input
                 className="set-text"
                 type="url"
@@ -924,7 +928,7 @@ export default function Settings() {
             </label>
           )}
           <button className="lib-watched" onClick={saveServer} disabled={srvBusy}>
-            {srvBusy ? "A guardar..." : "Guardar e reiniciar"}
+            {srvBusy ? t("A guardar...") : t("Guardar e reiniciar")}
           </button>
           {srv && (
             <p className="muted">
@@ -936,7 +940,7 @@ export default function Settings() {
           )}
           {srvMsg && <p className={srvErr ? "status error" : "muted"}>{srvMsg}</p>}
           <p className="muted">
-            O servidor remoto tem de correr o MEIDA com a web incluída (ex.: <code>npm run start:pwa</code>).
+            {t("O servidor remoto tem de correr o MEIDA com a web incluída (ex.: {cmd}).", { cmd: "npm run start:pwa" })}
           </p>
         </section>
       )}
@@ -961,7 +965,7 @@ export default function Settings() {
 
       <section className="set-section" data-tab="conteudo">
         <h3>{t("Títulos")}</h3>
-        <p className="muted">Idioma dos nomes de filmes, séries e anime.</p>
+        <p className="muted">{t("Idioma dos nomes de filmes, séries e anime.")}</p>
         <div className="set-row">
           <Choice value="pt" current={settings.titleLang} onPick={(v) => update({ titleLang: v })}>
             Português
@@ -973,8 +977,8 @@ export default function Settings() {
       </section>
 
       <section className="set-section" data-tab="conteudo">
-        <h3>Sinopses</h3>
-        <p className="muted">Idioma das descrições/sinopses.</p>
+        <h3>{t("Sinopses")}</h3>
+        <p className="muted">{t("Idioma das descrições/sinopses.")}</p>
         <div className="set-row">
           <Choice value="pt" current={settings.overviewLang} onPick={pickOverview}>
             Português
@@ -986,8 +990,8 @@ export default function Settings() {
       </section>
 
       <section className="set-section" data-tab="conteudo">
-        <h3>Géneros</h3>
-        <p className="muted">Idioma dos géneros e temas (na tua lista, filtros e detalhes).</p>
+        <h3>{t("Géneros")}</h3>
+        <p className="muted">{t("Idioma dos géneros e temas (na tua lista, filtros e detalhes).")}</p>
         <div className="set-row">
           <Choice
             value="pt"
@@ -1007,7 +1011,7 @@ export default function Settings() {
       </section>
 
       <section className="set-section" data-tab="reproducao">
-        <h3>Legendas</h3>
+        <h3>{t("Legendas")}</h3>
         <p className="muted">
           Legenda preferida (ativada automaticamente nos players sem anúncios e
           de torrents).
@@ -1026,7 +1030,7 @@ export default function Settings() {
       </section>
 
       <section className="set-section" data-tab="reproducao">
-        <h3>Anime: áudio</h3>
+        <h3>{t("Anime: áudio")}</h3>
         <p className="muted">
           Legendado (sub) ou dobrado (dub). Aplica-se às fontes dedicadas de anime
           (MegaPlay/VidLink/VidSrc.cc por MyAnimeList).
@@ -1042,7 +1046,7 @@ export default function Settings() {
       </section>
 
       <section className="set-section" data-tab="conteudo">
-        <h3>Anime: títulos</h3>
+        <h3>{t("Anime: títulos")}</h3>
         <p className="muted">
           Como mostrar os nomes dos animes (catálogo, pesquisa e a tua lista).
         </p>
@@ -1057,7 +1061,7 @@ export default function Settings() {
       </section>
 
       <section className="set-section" data-tab="conteudo">
-        <h3>Conteúdo adulto (anime)</h3>
+        <h3>{t("Conteúdo adulto (anime)")}</h3>
         <p className="muted">
           Mostrar anime adulto (NSFW/hentai) na pesquisa, nos filtros de género e no
           "Escolhe algo para mim". Desligado por defeito.
@@ -1073,8 +1077,8 @@ export default function Settings() {
       </section>
 
       <section className="set-section" data-tab="reproducao">
-        <h3>Separador inicial</h3>
-        <p className="muted">Onde abrir por defeito ao ver um título.</p>
+        <h3>{t("Separador inicial")}</h3>
+        <p className="muted">{t("Onde abrir por defeito ao ver um título.")}</p>
         <div className="set-row">
           <Choice value="providers" current={settings.defaultTab} onPick={(v) => update({ defaultTab: v })}>
             Providers
@@ -1090,7 +1094,7 @@ export default function Settings() {
 
       {/* ===== Reprodução ===== */}
       <section className="set-section" data-tab="reproducao">
-        <h3>Reprodução</h3>
+        <h3>{t("Reprodução")}</h3>
         <p className="muted">
           Autoplay liga/desliga o arranque automático. Autoskip tenta saltar a
           intro/genéricos (funciona nos nossos players; nos providers externos
@@ -1116,13 +1120,13 @@ export default function Settings() {
 
       {/* ===== Tamanho dos cartazes ===== */}
       <section className="set-section" data-tab="aparencia">
-        <h3>Tamanho dos cartazes</h3>
+        <h3>{t("Tamanho dos cartazes")}</h3>
         <p className="muted">
           Ajusta a largura e a altura dos posters (útil em ecrãs pequenos).
         </p>
         <div className="set-slider">
           <label>
-            <span>Largura</span>
+            <span>{t("Largura")}</span>
             <b>{settings.cardW || 184}px</b>
           </label>
           <input
@@ -1136,7 +1140,7 @@ export default function Settings() {
         </div>
         <div className="set-slider">
           <label>
-            <span>Altura</span>
+            <span>{t("Altura")}</span>
             <b>{settings.cardH || 272}px</b>
           </label>
           <input
@@ -1158,7 +1162,7 @@ export default function Settings() {
 
       {/* ===== Cor da UI ===== */}
       <section className="set-section" data-tab="aparencia">
-        <h3>Cor de destaque</h3>
+        <h3>{t("Cor de destaque")}</h3>
         <p className="muted">
           Cor dos botões e realces. Predefinidas, as tuas últimas escolhas, ou o
           picker.
@@ -1175,7 +1179,7 @@ export default function Settings() {
 
       {/* ===== Cor de fundo ===== */}
       <section className="set-section" data-tab="aparencia">
-        <h3>Cor de fundo</h3>
+        <h3>{t("Cor de fundo")}</h3>
         <p className="muted">
           Fundo da app. Predefinidas (escuras, texto legível), as tuas últimas
           escolhas, ou o picker.
@@ -1192,7 +1196,7 @@ export default function Settings() {
 
       {/* ===== Estilo de fundo ===== */}
       <section className="set-section" data-tab="aparencia">
-        <h3>Estilo de fundo</h3>
+        <h3>{t("Estilo de fundo")}</h3>
         <p className="muted">
           Simples (só a cor), um padrão por cima, ou uma imagem tua (como o fundo
           do WhatsApp). O padrão usa a tua cor de destaque.
@@ -1223,7 +1227,7 @@ export default function Settings() {
               <input
                 className="set-input"
                 type="text"
-                placeholder="Cola o URL de uma imagem (https://...)"
+                placeholder={t("Cola o URL de uma imagem (https://...)")}
                 value={settings.bgImage?.startsWith("data:") ? "" : settings.bgImage || ""}
                 onChange={(e) => update({ bgImage: e.target.value.trim() })}
               />
@@ -1269,19 +1273,19 @@ export default function Settings() {
 
       {/* ===== MyAnimeList ===== */}
       <section className="set-section" data-tab="contas">
-        <h3>MyAnimeList</h3>
+        <h3>{t("MyAnimeList")}</h3>
         <MalSection user={user} />
       </section>
 
       {/* ===== AniList ===== */}
       <section className="set-section" data-tab="contas">
-        <h3>AniList</h3>
+        <h3>{t("AniList")}</h3>
         <AniListSection user={user} />
       </section>
 
       {/* ===== Os teus dados ===== */}
       <section className="set-section" data-tab="dados">
-        <h3>Os teus dados</h3>
+        <h3>{t("Os teus dados")}</h3>
         <p className="muted">
           Descarrega a tua biblioteca e diário. Em JSON (para fazer backup ou
           voltar a usar depois) ou CSV (para abrir no Excel/Sheets).
@@ -1292,14 +1296,14 @@ export default function Settings() {
             onClick={() => exportData("json")}
             disabled={exporting !== null}
           >
-            {exporting === "json" ? "A exportar..." : "Exportar JSON"}
+            {exporting === "json" ? t("A exportar...") : "Exportar JSON"}
           </button>
           <button
             className="set-choice"
             onClick={() => exportData("csv")}
             disabled={exporting !== null}
           >
-            {exporting === "csv" ? "A exportar..." : "Exportar CSV"}
+            {exporting === "csv" ? t("A exportar...") : "Exportar CSV"}
           </button>
         </div>
         {exportMsg && <span className="muted" style={{ display: "block", marginTop: 8 }}>{exportMsg}</span>}
@@ -1307,7 +1311,7 @@ export default function Settings() {
 
       {/* ===== Discord ===== */}
       <section className="set-section" data-tab="dados">
-        <h3>Discord</h3>
+        <h3>{t("Discord")}</h3>
         <p className="muted">
           Aparece ao lado do teu nome no Discord o que estás a ver, como no
           Stremio. Só funciona com a app do Discord aberta neste computador, e
@@ -1325,7 +1329,7 @@ export default function Settings() {
                 if (!e.target.checked) clearPresence();
               }}
             />
-            <span>Mostrar no Discord o que estou a ver</span>
+            <span>{t("Mostrar no Discord o que estou a ver")}</span>
           </label>
         ) : (
           <p className="muted">
@@ -1336,7 +1340,7 @@ export default function Settings() {
 
       {/* ===== Importar dados ===== */}
       <section className="set-section" data-tab="dados">
-        <h3>Importar dados</h3>
+        <h3>{t("Importar dados")}</h3>
         <p className="muted">
           Carrega um ficheiro JSON ou CSV exportado da MEIDA para voltar a
           carregar a tua biblioteca e diário. É um merge: não apaga notas nem
@@ -1370,7 +1374,7 @@ export default function Settings() {
         </div>
         {importFile && (
           <button className="set-choice" onClick={runImport} disabled={importing}>
-            {importing ? "A importar..." : "Importar"}
+            {importing ? t("A importar...") : "Importar"}
           </button>
         )}
         {importMsg && <span className={`muted ${importError ? "auth-error" : ""}`}>{importMsg}</span>}
@@ -1378,22 +1382,22 @@ export default function Settings() {
 
       {/* ===== Letterboxd ===== */}
       <section className="set-section" data-tab="contas">
-        <h3>Letterboxd</h3>
+        <h3>{t("Letterboxd")}</h3>
         <LetterboxdSection user={user} />
       </section>
 
       {/* ===== Real-Debrid ===== */}
       <section className="set-section" data-tab="contas">
-        <h3>Real-Debrid</h3>
+        <h3>{t("Real-Debrid")}</h3>
         <DebridSection user={user} />
       </section>
 
       {/* ===== Perfil público ===== */}
       <section className="set-section" data-tab="perfil">
-        <h3>Perfil</h3>
+        <h3>{t("Perfil")}</h3>
         {!user ? (
           <p className="muted">
-            <Link to="/login">Entra</Link> para editares o teu perfil.
+            <Link to="/login">{t("Entra")}</Link> para editares o teu perfil.
           </p>
         ) : (
           <>
@@ -1402,13 +1406,13 @@ export default function Settings() {
               listas só aparecem se o perfil estiver público.
             </p>
             <label className="set-field">
-              <span>Bio</span>
+              <span>{t("Bio")}</span>
               <textarea
                 className="set-bio"
                 value={bio}
                 maxLength={300}
                 rows={3}
-                placeholder="Uma frase sobre os teus gostos..."
+                placeholder={t("Uma frase sobre os teus gostos...")}
                 onChange={(e) => setBio(e.target.value)}
               />
             </label>
@@ -1437,10 +1441,10 @@ export default function Settings() {
 
       {/* ===== Avatar ===== */}
       <section className="set-section" data-tab="perfil">
-        <h3>Avatar</h3>
+        <h3>{t("Avatar")}</h3>
         {!user ? (
           <p className="muted">
-            <Link to="/login">Entra</Link> para escolheres um avatar.
+            <Link to="/login">{t("Entra")}</Link> para escolheres um avatar.
           </p>
         ) : (
           <>
@@ -1468,7 +1472,7 @@ export default function Settings() {
             <div className="set-img-url">
               <input
                 type="url"
-                placeholder="...ou cola o URL de uma imagem (https://...)"
+                placeholder={t("...ou cola o URL de uma imagem (https://...)")}
                 value={imgUrl}
                 onChange={(e) => setImgUrl(e.target.value)}
               />
@@ -1516,15 +1520,15 @@ export default function Settings() {
 
       {/* ===== Estado dos providers ===== */}
       <section className="set-section" data-tab="avancado">
-        <h3>Estado dos providers</h3>
+        <h3>{t("Estado dos providers")}</h3>
         <p className="muted">
           Fontes de stream usadas no player (embeds). Quando um está morto fica
           riscado e é saltado na escolha automática.
         </p>
         {provHealth?.checking && !provHealth?.providers ? (
-          <p className="muted">A testar providers...</p>
+          <p className="muted">{t("A testar providers...")}</p>
         ) : !provHealth?.providers ? (
-          <p className="muted">Sem informação.</p>
+          <p className="muted">{t("Sem informação.")}</p>
         ) : (
           <div className="provider-health-list">
             {provHealth.providers.map((p) => (
@@ -1539,7 +1543,7 @@ export default function Settings() {
             ))}
           </div>
         )}
-        {provHealth?.stale && <span className="ph-stale">Atualizado há 24h+</span>}
+        {provHealth?.stale && <span className="ph-stale">{t("Atualizado há 24h+")}</span>}
         <div className="set-row" style={{ marginTop: 8 }}>
           <button
             className="set-choice"
@@ -1560,15 +1564,15 @@ export default function Settings() {
       {/* ===== App (só na app instalada) ===== */}
       {typeof window !== "undefined" && window.electronAPI?.uninstall && (
         <section className="set-section" data-tab="avancado">
-          <h3>Atualizações</h3>
+          <h3>{t("Atualizações")}</h3>
           <p className="muted">
             Procura uma versão nova da MEIDA. Não precisas de ter conta.
           </p>
           <button onClick={checkUpdate} disabled={updBusy}>
-            {updBusy ? "A procurar..." : "Procurar atualização"}
+            {updBusy ? t("A procurar...") : "Procurar atualização"}
           </button>
           {updMsg && <p className="muted">{updMsg}</p>}
-          <h3 style={{ marginTop: 22 }}>Desinstalar</h3>
+          <h3 style={{ marginTop: 22 }}>{t("Desinstalar")}</h3>
           <p className="muted">
             Remove a MEIDA do computador. A app fecha e o desinstalador abre.
           </p>

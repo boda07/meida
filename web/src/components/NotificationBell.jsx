@@ -5,6 +5,7 @@ import { api } from "../api/client.js";
 import { useAuth } from "../auth/AuthContext.jsx";
 import Avatar from "./Avatar.jsx";
 import { haQuanto } from "../lib/tempo.js";
+import { useT } from "../i18n/I18nContext.jsx";
 
 const INTERVALO_MS = 60 * 1000; // um minuto chega: notifica-se para outra coisa
 
@@ -34,6 +35,7 @@ function destinoDe(n) {
 }
 
 export default function NotificationBell() {
+  const t = useT();
   const { user } = useAuth();
   const navegar = useNavigate();
   const [aberto, setAberto] = useState(false);
@@ -126,7 +128,7 @@ export default function NotificationBell() {
         aria-label={
           naoLidas > 0 ? `Notificações: ${naoLidas} por ler` : "Notificações"
         }
-        title="Notificações"
+        title={t("Notificações")}
       >
         <svg
           aria-hidden="true"
@@ -150,12 +152,12 @@ export default function NotificationBell() {
       </button>
 
       {aberto && (
-        <div className="notif-painel" role="dialog" aria-label="Notificações">
+        <div className="notif-painel" role="dialog" aria-label={t("Notificações")}>
           <div className="notif-topo">
             <strong>Notificações</strong>
           </div>
           {items.length === 0 ? (
-            <p className="notif-vazio">Nada por aqui. Quando alguém responder a um comentário teu ou gostar dele, aparece aqui.</p>
+            <p className="notif-vazio">{t("Nada por aqui. Quando alguém responder a um comentário teu ou gostar dele, aparece aqui.")}</p>
           ) : (
             <ul className="notif-lista">
               {items.map((n) => {

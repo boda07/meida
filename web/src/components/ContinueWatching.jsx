@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { api, imageUrl } from "../api/client.js";
 import { useAuth } from "../auth/AuthContext.jsx";
+import { useT } from "../i18n/I18nContext.jsx";
 
 // Link de detalhe que retoma na posição guardada (?s=temporada&e=episódio&t=seg).
 function resumeLink(it) {
@@ -34,6 +35,7 @@ function cwProgress(it) {
 }
 
 export default function ContinueWatching() {
+  const t = useT();
   const { user } = useAuth();
   const [items, setItems] = useState([]);
 
@@ -60,7 +62,7 @@ export default function ContinueWatching() {
   return (
     <section className="row">
       <div className="row-header">
-        <h2 className="row-title">Continua a ver</h2>
+        <h2 className="row-title">{t("Continua a ver")}</h2>
       </div>
       <div className="row-scroll">
         {items.map((it) => (
@@ -80,7 +82,7 @@ export default function ContinueWatching() {
                 className="cw-remove"
                 onClick={(e) => remove(e, it)}
                 title="Remover"
-                aria-label="Remover de Continua a ver"
+                aria-label={t("Remover de Continua a ver")}
               >
                 ✕
               </button>

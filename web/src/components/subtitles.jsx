@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useSettings } from "../settings/SettingsContext.jsx";
+import { useT } from "../i18n/I18nContext.jsx";
 
 // Normaliza codigos de idioma variados (pt, pt-BR, por, en, eng...).
 // Devolve 0 (nao corresponde), 1 (corresponde) ou 2 (corresponde em
@@ -56,6 +57,7 @@ export function SubtitleTracks({ subtitles = [] }) {
 // Ativa automaticamente a legenda do idioma preferido das definições.
 export function SubtitleMenu({ videoRef, subtitles = [] }) {
   const { settings } = useSettings();
+  const t = useT();
   const [val, setVal] = useState("-1");
 
   function apply(idx) {
@@ -81,9 +83,9 @@ export function SubtitleMenu({ videoRef, subtitles = [] }) {
   if (!subtitles.length) return null;
   return (
     <div className="sub-menu">
-      <label>Legendas:</label>
+      <label>{t("Legendas:")}</label>
       <select value={val} onChange={(e) => apply(Number(e.target.value))}>
-        <option value="-1">Desligadas</option>
+        <option value="-1">{t("Desligadas")}</option>
         {subtitles.map((s, i) => (
           <option key={i} value={i}>
             {s.label}

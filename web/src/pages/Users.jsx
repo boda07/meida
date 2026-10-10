@@ -4,8 +4,10 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../api/client.js";
 import Avatar from "../components/Avatar.jsx";
+import { useT } from "../i18n/I18nContext.jsx";
 
 export default function Users() {
+  const t = useT();
   const [q, setQ] = useState("");
   const [results, setResults] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -39,7 +41,7 @@ export default function Users() {
       <input
         className="users-search"
         type="search"
-        placeholder="Escreve um nome de utilizador..."
+        placeholder={t("Escreve um nome de utilizador...")}
         value={q}
         onChange={(e) => setQ(e.target.value)}
         autoFocus
@@ -48,7 +50,7 @@ export default function Users() {
       {loading && <p className="muted">A procurar...</p>}
 
       {!loading && results !== null && results.length === 0 && (
-        <p className="muted">Nenhum utilizador encontrado.</p>
+        <p className="muted">{t("Nenhum utilizador encontrado.")}</p>
       )}
 
       {results !== null && results.length > 0 && (

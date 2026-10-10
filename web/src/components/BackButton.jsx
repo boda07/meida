@@ -1,7 +1,9 @@
 import { useNavigate } from "react-router-dom";
+import { useT } from "../i18n/I18nContext.jsx";
 
 // Botoes fixos no topo esquerdo: voltar atras / avancar no historico de navegacao.
 export default function BackButton() {
+  const t = useT();
   const navigate = useNavigate();
   return (
     <>
@@ -18,8 +20,8 @@ export default function BackButton() {
       <button
         className="app-fwd-btn"
         onClick={() => navigate(1)}
-        title="Avançar"
-        aria-label="Avançar"
+        title={t("Avançar")}
+        aria-label={t("Avançar")}
       >
         <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
           <polyline points="9 18 15 12 9 6" />

@@ -15,6 +15,7 @@ import { Link } from "react-router-dom";
 import { imageUrl } from "../api/client.js";
 import { detalheStats, rotuloGenero, serieMensal } from "./profileStats.js";
 import GraficoMensal from "./GraficoMensal.jsx";
+import { useT } from "../i18n/I18nContext.jsx";
 
 /** Uma linha: rotulo, barra, numero. A barra cresce contra o maior do bloco. */
 function Linha({ nome, n, maior }) {
@@ -58,6 +59,7 @@ function Bloco({ titulo, nota, linhas, maior }) {
 // `aVerAgora` foi removido daqui: o "a ver agora" e' identidade, e identidade esta
 // no header do perfil. Passar a prop era so' contexto morto.
 export default function ProfileStats({ items }) {
+  const t = useT();
   if (items === null) return <p className="muted st-vazio">A carregar...</p>;
   if (!items.length) {
     return (
@@ -98,7 +100,7 @@ export default function ProfileStats({ items }) {
           Fica o que e' especifico das NOTAS, que e' o que esta aba analisa. */}
       <dl className="st-cabecalho">
         <div className="st-cifra">
-          <dt>com nota</dt>
+          <dt>{t("com nota")}</dt>
           <dd>{s.comNota}</dd>
         </div>
         {s.emPausa > 0 && (
@@ -143,7 +145,7 @@ export default function ProfileStats({ items }) {
       {serie.length >= 3 && (
         <section className="st-bloco">
           <div className="st-bloco-topo">
-            <h3 className="st-titulo">Ao longo do ano</h3>
+            <h3 className="st-titulo">{t("Ao longo do ano")}</h3>
           </div>
           <GraficoMensal serie={serie} />
         </section>
@@ -176,7 +178,7 @@ export default function ProfileStats({ items }) {
       {s.maisBaixa !== null && (
         <section className="st-bloco">
           <div className="st-bloco-topo">
-            <h3 className="st-titulo">As tuas notas</h3>
+            <h3 className="st-titulo">{t("As tuas notas")}</h3>
             <span className="st-nota">{s.comNota} com nota</span>
           </div>
           <div className="st-espectro">
@@ -223,7 +225,7 @@ export default function ProfileStats({ items }) {
                   {it.score ? (
                     <span className="st-top-nota">{it.score}</span>
                   ) : (
-                    <span className="st-top-nota muted">sem nota</span>
+                    <span className="st-top-nota muted">{t("sem nota")}</span>
                   )}
                 </Link>
               </li>

@@ -1,9 +1,18 @@
 import { Component } from "react";
+import { I18nContext } from "../i18n/I18nContext.jsx";
 
 // Error boundary a nivel da app: se uma pagina/componente lancar um erro de
 // render, mostra uma mensagem com opcao de recarregar em vez de ficar um ecra
 // branco (o comportamento default do React sem boundary).
+//
+// NOTA: isto e' uma `class`, e classes NAO podem usar hooks (`useT`). O `t` vem
+// pelo `contextType`, que e' o equivalente para classes. (A primeira versao
+// tinha `useT()` aqui e o build quebrava.)
 export default class ErrorBoundary extends Component {
+  // Faz o `this.context` ser o valor do I18nProvider — ou seja, o objecto com
+  // o `t`. Ver https://react.dev/reference/react/Component#static-contexttype
+  static contextType = I18nContext;
+
   constructor(props) {
     super(props);
     this.state = { error: null };
@@ -17,9 +26,9 @@ export default class ErrorBoundary extends Component {
     if (this.state.error) {
       return (
         <div className="error-boundary">
-          <h2>Algo correu mal</h2>
+          <h2>{this.context.t("Algo correu mal")}</h2>
           <p className="muted">
-            Ocorreu um erro ao mostrar esta página. Recarrega para tentar de novo.
+            {this.context.t("Ocorreu um erro ao mostrar esta página. Recarrega para tentar de novo.")}
           </p>
           {this.props.dev && (
             <pre className="error-boundary-detail">{String(this.state.error)}</pre>
@@ -40,10 +49,10 @@ export default class ErrorBoundary extends Component {
                 }
               }}
             >
-              ‹ Voltar atrás
+              ‹ {this.context.t("Voltar atrás")}
             </button>
             <button className="btn" onClick={() => window.location.reload()}>
-              Recarregar
+              {this.context.t("Recarregar")}
             </button>
           </div>
         </div>

@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { api, imageUrl } from "../api/client.js";
 import { useAuth } from "../auth/AuthContext.jsx";
 import LoadingStatus from "../components/LoadingStatus.jsx";
+import { useT } from "../i18n/I18nContext.jsx";
 
 const FILTERS = [
   { id: "all", label: "Tudo" },
@@ -41,6 +42,7 @@ function pos(it) {
 }
 
 export default function Diary() {
+  const t = useT();
   const { user, ready } = useAuth();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -112,7 +114,7 @@ export default function Diary() {
         <Link to="/login">Entra</Link> para veres o teu diário.
       </p>
     );
-  if (loading) return <LoadingStatus>A carregar o diário</LoadingStatus>;
+  if (loading) return <LoadingStatus>{t("A carregar o diário")}</LoadingStatus>;
 
   const shown = filter === "all" ? items : items.filter((i) => i.status === filter);
 
@@ -161,7 +163,7 @@ export default function Diary() {
                     {it.status === "finished" ? (
                       <span>Acabou: {fmt(it.finishedAt) || "data não disponível"}</span>
                     ) : (
-                      <span className="diary-watching">A ver</span>
+                      <span className="diary-watching">{t("A ver")}</span>
                     )}
                   </div>
                 </div>
@@ -193,7 +195,7 @@ export default function Diary() {
         <div className="modal-overlay" onClick={() => setEdit(null)}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-head">
-              <h3>Editar — {edit.title}</h3>
+              <h3>{t("Editar —")} {edit.title}</h3>
               <button className="modal-close" aria-label="Fechar" onClick={() => setEdit(null)}>
                 ✕
               </button>
@@ -205,8 +207,8 @@ export default function Diary() {
                   value={form.status}
                   onChange={(e) => setForm({ ...form, status: e.target.value })}
                 >
-                  <option value="watching">A ver</option>
-                  <option value="finished">Terminado</option>
+                  <option value="watching">{t("A ver")}</option>
+                  <option value="finished">{t("Terminado")}</option>
                 </select>
               </label>
               <label>

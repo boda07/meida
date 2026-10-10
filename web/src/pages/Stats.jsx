@@ -21,6 +21,7 @@ import { api } from "../api/client.js";
 import { useAuth } from "../auth/AuthContext.jsx";
 import HistogramaNotas from "../components/HistogramaNotas.jsx";
 import LoadingStatus from "../components/LoadingStatus.jsx";
+import { useT } from "../i18n/I18nContext.jsx";
 
 /** 7320 -> "2 h 2 min". 45 -> "45 s". Zero -> null (o chamador trata). */
 function duracao(segundos) {
@@ -38,6 +39,7 @@ function decadaTexto(dec) {
 }
 
 export default function Stats() {
+  const t = useT();
   const { user, ready } = useAuth();
   const [data, setData] = useState(null);
   const [erro, setErro] = useState(null);
@@ -114,7 +116,7 @@ export default function Stats() {
               Notas entre <strong>{data.notaMaisBaixa}</strong> e{" "}
               <strong>{data.notaMaisAlta}</strong>, em {data.comNota} títulos.{" "}
               {data.media === data.mediana
-                ? "A média bate certo com a mediana, por isso as notas estão todas pela mesma banda."
+                ? t("A média bate certo com a mediana, por isso as notas estão todas pela mesma banda.")
                 : data.media > data.mediana
                   ? "A média está acima da mediana: poucos títulos com nota muito alta estão a puxar a média para cima."
                   : "A média está abaixo da mediana: há muitos títulos bem avaliados a puxar a média para baixo."}

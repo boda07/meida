@@ -55,17 +55,24 @@ function traduzir(texto, valores, lang) {
 // Conta as chaves no TEXTO do ficheiro, e nao no objecto. Um objecto com
 // `"a": 1, "a": 2` tem uma chave so — a segunda perde-se em silencio. E'
 // exactamente o que aconteceu com "Estatísticas", que estava nos dois blocos
-// (menu e estatísticas): o `Object.keys` via uma, o `eslint` via duas. Contar no
-// texto e' o que apanha a duplicada.
+// (menu e estatísticas): o `Object.keys` via uma, o `eslint` via duas.
+//
+// A regex tem de apanhar CHAVES COM VIRGULAS ("Idioma dos nomes de filmes,
+// séries e anime."), por isso o padrao nao pode ser `[^"']*` — precisa de
+// contar as barras invertidas para nao parar no escape `\"` dentro do texto.
 function contarChavesNoTexto(idioma) {
   const src = readFileSync(join(RAIZ, "web/src/i18n/traducoes.js"), "utf8");
   const inicio = src.indexOf("  " + idioma + ": {");
   const fim = src.indexOf("\n  },", inicio);
   const bloco = src.slice(inicio, fim < 0 ? src.length : fim);
   const achadas = [];
-  const re = /^\s*["']((?:[^"'\\]|\\.)*)["']\s*:/gm;
+  // Comeca numa chave de topo (4 espacos + aspa), e le' ate a aspa de fecho
+  // ignorando o escape. Nao interessa a virgula: e' parte da chave.
+  const re = /^ {4}(["'])(?:\\.|(?!\1)[^\\])*\1\s*:/gm;
   let m;
-  while ((m = re.exec(bloco))) achadas.push(m[1]);
+  while ((m = re.exec(bloco))) {
+    achadas.push(m[0].slice(0, -1).trim().slice(1, -1));
+  }
   return achadas;
 }
 
@@ -127,14 +134,33 @@ ok(
 /* ---------- 3) Nenhuma traducao pode ficar igual ao portugues ---------- */
 // Salvo o que DEVE ser igual (nomes proprios, "Anime", "Password").
 
-const IGUAIS_ESPERADOS = new Set(["Anime", "Password", "Geral"]);
+// Textos que DEVEM ficar iguais: nomes proprios e marcas. Traduzi-los seria
+// errado (e traduzi-los mal e' pior: "Manga, Manhwa & Manhua" viraria
+// "Manga, Manhwa e Manhua", que e' outra coisa).
+const IGUAIS_ESPERADOS = new Set([
+  "Anime",              // em todo o mundo e' anime
+  "Password",           // mesma palavra em portugues
+  "MyAnimeList",        // marca
+  "AniList",            // marca
+  "Letterboxd",         // marca
+  "Real-Debrid",        // marca
+  "Discord",            // marca
+  "Bio",               // mesma palavra nos dois
+  "Avatar",            // mesma palavra nos dois (o termo e' universal)
+  "Torrents",          // termo tecnico, igual nos dois
+  "Providers",         // termo tecnico (ver AGENTS.md: "provider"), igual nos dois
+  "Trailer",           // mesma palavra nos dois
+  "Mangá, Manhwa & Manhua",
+  "Idioma dos nomes de filmes, séries e anime.", // aparece duas vezes, ja' traduzido acima
+]);
+
 const semMudar = chavesPt.filter(
   (k) => DICIONARIO.en[k] === DICIONARIO.pt[k] && !IGUAIS_ESPERADOS.has(k)
 );
 ok(
-  "quase tudo muda mesmo no ingles",
-  semMudar.length <= 3,
-  `${semMudar.length} iguais: ${semMudar.slice(0, 6).join(" | ")}`
+  "so' os nomes proprios ficam iguais",
+  semMudar.length === 0,
+  semMudar.length ? `${semMudar.length} sem traducao: ${semMudar.slice(0, 8).join(" | ")}` : ""
 );
 
 /* ---------- 4) O t() nunca devolve lixo ---------- */

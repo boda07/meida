@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { api } from "../api/client.js";
 import MediaCard from "../components/MediaCard.jsx";
 import Manga from "./Manga.jsx";
+import { useT } from "../i18n/I18nContext.jsx";
 
 const TYPES = [
   { id: "movie", label: "Filmes" },
@@ -11,6 +12,7 @@ const TYPES = [
 ];
 
 export default function PickForMe() {
+  const t = useT();
   const [type, setType] = useState("anime");
   const [genres, setGenres] = useState([]);
   // estado por género: 1 = quero, 2 = não quero (ausente = indiferente)
@@ -60,7 +62,7 @@ export default function PickForMe() {
         exclude: exclude.join(","),
       });
       if (d.item) setResult(d.item);
-      else setMsg("Nada encontrado com esses filtros. Tira alguns e tenta de novo.");
+      else setMsg(t("Nada encontrado com esses filtros. Tira alguns e tenta de novo."));
     } catch (e) {
       setMsg(e.message);
     } finally {
@@ -90,7 +92,7 @@ export default function PickForMe() {
         <>
           <p className="muted" style={{ marginTop: 14 }}>
             Toca nos géneros: 1x = <b className="want">quero</b>, 2x ={" "}
-            <b className="avoid">não quero</b>. Depois carrega no botao.
+            <b className="avoid">{t("não quero")}</b>. Depois carrega no botao.
           </p>
 
           <div className="genre-grid">
@@ -111,7 +113,7 @@ export default function PickForMe() {
           </div>
 
           <button className="pick-btn" onClick={pick} disabled={loading}>
-            {loading ? "A escolher..." : "🎲 Escolhe algo para mim"}
+            {loading ? t("A escolher...") : "🎲 Escolhe algo para mim"}
           </button>
 
           {msg && (
@@ -122,7 +124,7 @@ export default function PickForMe() {
 
           {result && (
             <div className="pick-result">
-              <h3 className="row-title">A tua escolha</h3>
+              <h3 className="row-title">{t("A tua escolha")}</h3>
               <div className="pick-result-row">
                 <MediaCard item={result} />
                 <button className="set-choice" onClick={pick}>

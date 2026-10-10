@@ -13,6 +13,7 @@ import LoadingStatus from "../components/LoadingStatus.jsx";
 import { CheckIcon } from "../components/icons.jsx";
 import ProfileStats from "../components/ProfileStats.jsx";
 import { statsFrom } from "../components/profileStats.js";
+import { useT } from "../i18n/I18nContext.jsx";
 
 // Título a mostrar: para anime respeita a opção ingles/romaji guardada no servidor.
 function displayTitle(it, romaji) {
@@ -30,6 +31,7 @@ function displayTitle(it, romaji) {
 // 60 por pagina e' o mesmo que a biblioteca principal, para o dedo saber onde
 // esta o "Seguinte" sem o procurar.
 function PosterGrid({ items, empty, romaji, porPagina = 60 }) {
+  const t = useT();
   // Os hooks ficam ANTES de qualquer return. "A carregar" e' null, nao lista
   // vazia, e devolver mais cedo mudaria a ordem dos hooks entre renders — o que
   // o React nao perdoa e mostra como "os hooks mudaram de ordem entre renders".
@@ -62,7 +64,7 @@ function PosterGrid({ items, empty, romaji, porPagina = 60 }) {
     grelhaRef.current?.scrollIntoView({ block: "start", behavior: "auto" });
   }
 
-  if (!items) return <p className="muted">A carregar...</p>;
+  if (!items) return <p className="muted">{t("A carregar...")}</p>;
   if (!items.length) return <p className="muted">{empty}</p>;
   return (
     <>
@@ -84,7 +86,7 @@ function PosterGrid({ items, empty, romaji, porPagina = 60 }) {
               <div className="card-scrim" />
               {it.score ? <span className="card-rating">{it.score}/100</span> : null}
               {it.watched ? (
-                <span className="card-watched" title="Visto">
+                <span className="card-watched" title={t("Visto")}>
                   <CheckIcon />
                 </span>
               ) : null}
@@ -126,6 +128,7 @@ function PosterGrid({ items, empty, romaji, porPagina = 60 }) {
 }
 
 export default function UserProfile() {
+  const t = useT();
   const { username } = useParams();
   const { user } = useAuth();
   const { settings } = useSettings();
@@ -253,7 +256,7 @@ export default function UserProfile() {
     }
   }
 
-  if (loading) return <LoadingStatus>A carregar o perfil</LoadingStatus>;
+  if (loading) return <LoadingStatus>{t("A carregar o perfil")}</LoadingStatus>;
   if (error) return <p className="status error">{error}</p>;
   if (!profile) return null;
 
@@ -284,7 +287,7 @@ export default function UserProfile() {
             <button className="profile-social-link" onClick={() => switchTab("following")}>
               {profile.following} a seguir
             </button>
-            {!u.isPublic && <span className="profile-private">Perfil privado</span>}
+            {!u.isPublic && <span className="profile-private">{t("Perfil privado")}</span>}
           </div>
         </div>
         <div className="profile-actions">
@@ -319,7 +322,7 @@ export default function UserProfile() {
             <dt>vistos</dt>
             <dd>{stats.vistos}</dd>
           </div>
-          {/* "A ver agora" e' outra coisa que "para ver", e e' o que o
+          {/* {t("A ver agora")} e' outra coisa que "para ver", e e' o que o
               utilizador espera ler em "a ver": o diario guarda um
               `status: watching`, que so passa a existir depois de arrancar um
               titulo. A watchlist e' a intencao. Sao numeros separados.
@@ -327,7 +330,7 @@ export default function UserProfile() {
               publico, e mostrar 0 ai seria mentira. */}
           {aVerAgora !== null && (
             <div className="profile-stat">
-              <dt>a ver agora</dt>
+              <dt>{t("a ver agora")}</dt>
               <dd>{aVerAgora}</dd>
             </div>
           )}
@@ -339,7 +342,7 @@ export default function UserProfile() {
               espaco e chateia. */}
           {stats.emPausa > 0 && (
             <div className="profile-stat">
-              <dt>em pausa</dt>
+              <dt>{t("em pausa")}</dt>
               <dd>{stats.emPausa}</dd>
             </div>
           )}
@@ -351,7 +354,7 @@ export default function UserProfile() {
           )}
           {stats.media !== null && (
             <div className="profile-stat">
-              <dt>média</dt>
+              <dt>{t("média")}</dt>
               <dd>{stats.media}</dd>
             </div>
           )}
@@ -381,18 +384,18 @@ export default function UserProfile() {
       {!canView ? (
         <p className="muted profile-locked">
           🔒 Este perfil é privado.{" "}
-          {user ? "Segue o utilizador, mas a biblioteca só ele a vê." : "Entra para o adicionares."}
+          {user ? t("Segue o utilizador, mas a biblioteca só ele a vê.") : t("Entra para o adicionares.")}
         </p>
       ) : tab === "library" ? (
-        <PosterGrid items={items} empty="A biblioteca está vazia." romaji={romaji} />
+        <PosterGrid items={items} empty={t("A biblioteca está vazia.")} romaji={romaji} />
       ) : tab === "stats" ? (
         <ProfileStats items={items} />
       ) : tab === "lists" ? (
         <div className="profile-lists">
           {lists === null ? (
-            <p className="muted">A carregar...</p>
+            <p className="muted">{t("A carregar...")}</p>
           ) : lists.length === 0 ? (
-            <p className="muted">Ainda sem listas.</p>
+            <p className="muted">{t("Ainda sem listas.")}</p>
           ) : (
             <div className="profile-list-chips">
               {lists.map((l) => (
@@ -407,15 +410,15 @@ export default function UserProfile() {
             </div>
           )}
           {openList != null && (
-            <PosterGrid items={openListItems} empty="Esta lista está vazia." romaji={romaji} />
+            <PosterGrid items={openListItems} empty={t("Esta lista está vazia.")} romaji={romaji} />
           )}
         </div>
       ) : (
         <div className="profile-people">
           {people === null ? (
-            <p className="muted">A carregar...</p>
+            <p className="muted">{t("A carregar...")}</p>
           ) : people.length === 0 ? (
-            <p className="muted">Ninguém por aqui.</p>
+            <p className="muted">{t("Ninguém por aqui.")}</p>
           ) : (
             <ul className="people-list">
               {people.map((p) => (

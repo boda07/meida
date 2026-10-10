@@ -1,3 +1,5 @@
+import { useT } from "../i18n/I18nContext.jsx";
+
 // Seletor de provider de embed + atalhos para sites externos.
 //
 // Para adicionar/remover um site basta editar a lista `EXTERNAL_SITES`. Cada
@@ -57,6 +59,7 @@ export default function SourceSelector({
   season,
   episode,
 }) {
+  const t = useT();
   const extSites = buildExternal(title, isMovie, season, episode);
 
   const searchQuery = encodeURIComponent(
@@ -73,7 +76,7 @@ export default function SourceSelector({
     <div className="sources-container">
       {hasEmbeds ? (
         <div className="sources">
-          <span className="sources-label">Fonte:</span>
+          <span className="sources-label">{t("Fonte:")}</span>
           <div className="sources-list">
             {embeds.map((e) => {
               const isDead = deadIds?.has(e.provider);
@@ -87,7 +90,7 @@ export default function SourceSelector({
                   title={isDead ? `${e.name}: em baixo (último teste falhou)` : e.name}
                 >
                   {e.name}
-                  {isDead && <span className="source-dead-tag">em baixo</span>}
+                  {isDead && <span className="source-dead-tag">{t("em baixo")}</span>}
                 </button>
               );
             })}
@@ -101,7 +104,7 @@ export default function SourceSelector({
 
       {(extSites.length || googleUrl) && (
         <div className="sources-external">
-          <span className="sources-label">Site externo:</span>
+          <span className="sources-label">{t("Site externo:")}</span>
           <div className="sources-list">
             {extSites.map((s) => (
               <a
@@ -121,7 +124,7 @@ export default function SourceSelector({
                 target="_blank"
                 rel="noopener noreferrer"
                 className="source-btn external-btn"
-                title="Procurar este filme/episódio no Google"
+                title={t("Procurar este filme/episódio no Google")}
               >
                 🔍 Pesquisar no Google ↗
               </a>

@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import { api } from "../api/client.js";
 import HlsPlayer from "./HlsPlayer.jsx";
+import { useT } from "../i18n/I18nContext.jsx";
 
 // Reprodução "sem anúncios": extrai o stream direto e junta legendas.
 export default function Extract({ details, season, episode, startAt, onProgress }) {
+  const t = useT();
   const [data, setData] = useState(null);
   const [subs, setSubs] = useState([]);
   const [error, setError] = useState(null);
@@ -46,14 +48,14 @@ export default function Extract({ details, season, episode, startAt, onProgress 
       .catch(() => setSubs([]));
   }, [details, season, episode]);
 
-  if (loading) return <p className="muted">A extrair stream sem anúncios...</p>;
+  if (loading) return <p className="muted">{t("A extrair stream sem anúncios...")}</p>;
   if (error)
     return (
       <div className="extract-empty">
-        <p>Sem stream direto para este título de momento.</p>
+        <p>{t("Sem stream direto para este título de momento.")}</p>
         <p className="muted">
           Os extractores gratuitos são instaveis. Usa o separador{" "}
-          <b>Providers</b> (com anúncios) ou <b>Torrents</b>. Para reprodução sem
+          <b>{t("Providers")}</b> (com anúncios) ou <b>Torrents</b>. Para reprodução sem
           anúncios fiavel, liga um extractor (Consumet) em{" "}
           <code>EXTRACTOR_API_BASE</code> no <code>server/.env</code>.
         </p>

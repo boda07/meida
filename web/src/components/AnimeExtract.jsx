@@ -2,10 +2,12 @@ import { useEffect, useState } from "react";
 import { api } from "../api/client.js";
 import { useSettings } from "../settings/SettingsContext.jsx";
 import HlsPlayer from "./HlsPlayer.jsx";
+import { useT } from "../i18n/I18nContext.jsx";
 
 // Reprodução de anime "sem anúncios" no nosso player (via extrator alojado).
 // Da legendas soft (toggle no player) e sync no watch party (HlsPlayer).
 export default function AnimeExtract({ details, episode, startAt, onProgress, audio }) {
+  const t = useT();
   const { settings } = useSettings();
   const animeAudio = audio || settings.animeAudio;
   const [data, setData] = useState(null);
@@ -37,10 +39,10 @@ export default function AnimeExtract({ details, episode, startAt, onProgress, au
   if (error || !data?.sources?.length)
     return (
       <div className="extract-empty">
-        <p>Sem stream sem anúncios para este episódio de momento.</p>
+        <p>{t("Sem stream sem anúncios para este episódio de momento.")}</p>
         <p className="muted">
-          {error || "O extrator não devolveu fontes."} — usa o separador{" "}
-          <b>Fontes</b>.
+          {error || t("O extrator não devolveu fontes.")} — usa o separador{" "}
+          <b>{t("Fontes")}</b>.
         </p>
       </div>
     );

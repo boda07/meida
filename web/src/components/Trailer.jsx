@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
+import { useT } from "../i18n/I18nContext.jsx";
 
 // Botao "Trailer" nos detalhes: abre um modal com o trailer (YouTube) embutido.
 export default function Trailer({ src }) {
+  const t = useT();
   const [open, setOpen] = useState(false);
 
   // Fecha com Escape.
@@ -38,7 +40,7 @@ export default function Trailer({ src }) {
             <div className="trailer-frame">
               <iframe
                 src={src}
-                title="Trailer"
+                title={t("Trailer")}
                 allow="autoplay; encrypted-media; picture-in-picture"
                 allowFullScreen
               />

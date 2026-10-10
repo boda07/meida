@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { api } from "../api/client.js";
+import { useT } from "../i18n/I18nContext.jsx";
 
 // Botao "Adicionar a lista": abre um menu com as listas do utilizador (+ criar
 // nova). Ao escolher uma lista, adiciona o titulo atual a essa lista.
 export default function AddToList({ details }) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const [lists, setLists] = useState([]);
   const [newName, setNewName] = useState("");
@@ -50,7 +52,7 @@ export default function AddToList({ details }) {
         setMsg(null);
       }, 900);
     } catch {
-      setMsg("Falhou ao adicionar.");
+      setMsg(t("Falhou ao adicionar."));
     } finally {
       setBusy(false);
     }
@@ -67,7 +69,7 @@ export default function AddToList({ details }) {
       setNewName("");
       await add(list.id, list.name);
     } catch {
-      setMsg("Falhou ao criar a lista.");
+      setMsg(t("Falhou ao criar a lista."));
       setBusy(false);
     }
   }
@@ -88,7 +90,7 @@ export default function AddToList({ details }) {
             <p className="addtolist-msg">{msg}</p>
           ) : (
             <>
-              <p className="addtolist-hint">Adicionar a que lista?</p>
+              <p className="addtolist-hint">{t("Adicionar a que lista?")}</p>
               {lists.length ? (
                 <div className="addtolist-lists">
                   {lists.map((l) => (
@@ -104,14 +106,14 @@ export default function AddToList({ details }) {
                   ))}
                 </div>
               ) : (
-                <p className="muted">Ainda nao tens listas.</p>
+                <p className="muted">{t("Ainda nao tens listas.")}</p>
               )}
               <div className="addtolist-new">
                 <input
                   value={newName}
                   onChange={(e) => setNewName(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && createAndAdd()}
-                  placeholder="Nome da nova lista"
+                  placeholder={t("Nome da nova lista")}
                   maxLength={60}
                 />
                 <button

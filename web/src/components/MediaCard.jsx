@@ -4,8 +4,10 @@ import { imageUrl } from "../api/client.js";
 import { useAuth } from "../auth/AuthContext.jsx";
 import { useLibrary } from "../library/LibraryContext.jsx";
 import { CheckIcon } from "./icons.jsx";
+import { useT } from "../i18n/I18nContext.jsx";
 
 export default function MediaCard({ item, landscape = false }) {
+  const t = useT();
   const { user } = useAuth();
   const lib = useLibrary();
   // Prefer the user's library state (se existir) — senão, o estado vem do catálogo.
@@ -77,7 +79,7 @@ export default function MediaCard({ item, landscape = false }) {
           )}
          {watchlist && !watched && <div className="card-watchlist">+</div>}
          {entry?.score != null && (
-           <div className="card-score" title="A tua nota">
+           <div className="card-score" title={t("A tua nota")}>
              <svg
                aria-hidden="true"
                width="12"

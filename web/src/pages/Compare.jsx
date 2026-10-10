@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { api, imageUrl } from "../api/client.js";
 import { useAuth } from "../auth/AuthContext.jsx";
 import { useSettings } from "../settings/SettingsContext.jsx";
+import { useT } from "../i18n/I18nContext.jsx";
 
 // Título a mostrar: para anime respeita a opção ingles/romaji.
 function displayTitle(it, romaji) {
@@ -47,6 +48,7 @@ function SideCard({ it, label, settings }) {
 // Controlos no meio: nota exata + botões ↑/↓/= para um dos itens.
 // A nota é escrita à vontade e guardada quando se sai do campo (blur).
 function CenterControls({ it, label, busy, onScore, onAdjust }) {
+  const t = useT();
   const [draft, setDraft] = useState(it.score ?? "");
   useEffect(() => {
     setDraft(it.score ?? "");
@@ -81,13 +83,13 @@ function CenterControls({ it, label, busy, onScore, onAdjust }) {
         />
       </label>
       <div className="compare-btns">
-        <button className="cmp-btn cmp-down" disabled={busy} onClick={() => onAdjust(-1)} title="Baixar 1">
+        <button className="cmp-btn cmp-down" disabled={busy} onClick={() => onAdjust(-1)} title={t("Baixar 1")}>
           <span className="cmp-ico" aria-hidden="true">↓</span>
-          <span>Baixar</span>
+          <span>{t("Baixar")}</span>
         </button>
-        <button className="cmp-btn cmp-up" disabled={busy} onClick={() => onAdjust(1)} title="Subir 1">
+        <button className="cmp-btn cmp-up" disabled={busy} onClick={() => onAdjust(1)} title={t("Subir 1")}>
           <span className="cmp-ico" aria-hidden="true">↑</span>
-          <span>Aumentar</span>
+          <span>{t("Aumentar")}</span>
         </button>
       </div>
     </div>
@@ -95,6 +97,7 @@ function CenterControls({ it, label, busy, onScore, onAdjust }) {
 }
 
 export default function Compare() {
+  const t = useT();
   const { user } = useAuth();
   const { settings } = useSettings();
   const [items, setItems] = useState([]);
@@ -250,7 +253,7 @@ export default function Compare() {
     return (
       <div className="sub-page compare-page">
         <h2 className="row-title">Compara as tuas notas</h2>
-        <p className="muted">A carregar a tua lista...</p>
+        <p className="muted">{t("A carregar a tua lista...")}</p>
       </div>
     );
   }
@@ -274,11 +277,11 @@ export default function Compare() {
       </p>
 
       <div className="compare-filters">
-        <span className="muted">Filtra por tipo:</span>
+        <span className="muted">{t("Filtra por tipo:")}</span>
         <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)}>
           <option value="all">todos</option>
           <option value="movie">filmes</option>
-          <option value="tv">séries</option>
+          <option value="tv">{t("séries")}</option>
           <option value="anime">animes</option>
         </select>
       </div>
@@ -305,10 +308,10 @@ export default function Compare() {
                 className="cmp-btn cmp-keep cmp-keep-all"
                 disabled={busy}
                 onClick={next}
-                title="Estão bem assim — vai para o próximo par"
+                title={t("Estão bem assim — vai para o próximo par")}
               >
                 <span className="cmp-ico" aria-hidden="true">=</span>
-                <span>Manter e próximo</span>
+                <span>{t("Manter e próximo")}</span>
               </button>
               <div className="cmp-divider">VS</div>
               <CenterControls

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { api, imageUrl } from "../api/client.js";
 import { useAuth } from "../auth/AuthContext.jsx";
 import { useSettings } from "../settings/SettingsContext.jsx";
+import { useT } from "../i18n/I18nContext.jsx";
 
 // Título a mostrar: para anime respeita a opção ingles/romaji.
 function displayTitle(it, romaji) {
@@ -96,6 +97,7 @@ function CenterControls({ it, busy, onScore, onAdjust }) {
 // aqui) e um título que já viste do outro, como referência. Podes trocar a
 // referência para continuares a comparar.
 export default function CompareRating({ details, onClose }) {
+  const t = useT();
   const { user } = useAuth();
   const { settings } = useSettings();
   const [items, setItems] = useState([]);
@@ -182,7 +184,7 @@ export default function CompareRating({ details, onClose }) {
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal compare-modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-head">
-          <h3>Comparar avaliação</h3>
+          <h3>{t("Comparar avaliação")}</h3>
           <button className="modal-close" aria-label="Fechar" onClick={onClose}>
             ✕
           </button>
@@ -205,7 +207,7 @@ export default function CompareRating({ details, onClose }) {
                     onAdjust={adjust}
                   />
                   <div className="cmp-divider">VS</div>
-                  <span className="cmp-label cmp-ref-label">Já viste</span>
+                  <span className="cmp-label cmp-ref-label">{t("Já viste")}</span>
                   <button
                     className="pick-btn"
                     onClick={swapRef}
@@ -214,7 +216,7 @@ export default function CompareRating({ details, onClose }) {
                     Trocar referência ↻
                   </button>
                 </div>
-                <CompareCard it={other} settings={settings} tag="A tua nota" />
+                <CompareCard it={other} settings={settings} tag={t("A tua nota")} />
               </div>
               {msg && <p className="auth-error" style={{ marginTop: 12 }}>{msg}</p>}
               <p className="muted" style={{ marginTop: 12, fontSize: 13 }}>

@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
+import { useT } from "../i18n/I18nContext.jsx";
 
 // Botao fixo no topo esquerdo: mete a APP inteira (a janela) em ecra inteiro,
 // sem precisar do F11. Funciona no browser e na app Electron.
 export default function AppFullscreen() {
+  const t = useT();
   const [isFs, setIsFs] = useState(false);
 
   useEffect(() => {
@@ -25,7 +27,7 @@ export default function AppFullscreen() {
       className="app-fs-btn"
       onClick={toggle}
       title={isFs ? "Sair de ecra inteiro" : "Ecra inteiro"}
-      aria-label="Ecra inteiro"
+      aria-label={t("Ecra inteiro")}
     >
       <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
         {isFs ? (

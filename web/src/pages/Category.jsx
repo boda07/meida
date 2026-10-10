@@ -5,6 +5,7 @@ import MediaRow from "../components/MediaRow.jsx";
 import MediaCard from "../components/MediaCard.jsx";
 import Hero from "../components/Hero.jsx";
 import LoadingStatus from "../components/LoadingStatus.jsx";
+import { useT } from "../i18n/I18nContext.jsx";
 
 // "Destaques" = as linhas curadas (estado inicial); as restantes usam /discover.
 const SORTS = [
@@ -31,6 +32,7 @@ function pickHeroes(rows, n = 6) {
 }
 
 export default function Category({ category, title }) {
+  const t = useT();
   const { settings } = useSettings();
   const type = TYPE_OF[category] || "movie";
 
@@ -150,7 +152,7 @@ export default function Category({ category, title }) {
 
       <div className="cat-controls">
         <div className="lib-sort">
-          <label htmlFor="cat-sort">Ordenar por</label>
+          <label htmlFor="cat-sort">{t("Ordenar por")}</label>
           <select id="cat-sort" value={sort} onChange={(e) => setSort(e.target.value)}>
             {SORTS.map((s) => (
               <option key={s.id} value={s.id}>
@@ -186,9 +188,9 @@ export default function Category({ category, title }) {
               ))}
             </div>
           )}
-          {discLoading && <LoadingStatus>A carregar</LoadingStatus>}
+          {discLoading && <LoadingStatus>{t("A carregar")}</LoadingStatus>}
           {!discLoading && !items.length && (
-            <p className="muted">Nada encontrado com estes filtros.</p>
+            <p className="muted">{t("Nada encontrado com estes filtros.")}</p>
           )}
           {hasMore && !discLoading && (
             <div className="load-more-wrap">

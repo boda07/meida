@@ -2,9 +2,11 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { api, openExternal } from "../api/client.js";
 import { useAuth } from "../auth/AuthContext.jsx";
+import { useT } from "../i18n/I18nContext.jsx";
 
 // Controlos de biblioteca para a página de detalhe: marcar como visto e nota 1-100.
 export default function LibraryControls({ details }) {
+  const t = useT();
   const { user } = useAuth();
   const [entry, setEntry] = useState(null);
   const [error, setError] = useState(null);
@@ -88,7 +90,7 @@ export default function LibraryControls({ details }) {
       <button
         className={`lib-estado pausa ${estado === "paused" ? "on" : ""}`}
         onClick={() => save({ status: estado === "paused" ? null : "paused" })}
-        title="Comecei mas parei"
+        title={t("Comecei mas parei")}
       >
         {estado === "paused" ? "✓ Em pausa" : "Pausar"}
       </button>
@@ -96,7 +98,7 @@ export default function LibraryControls({ details }) {
       <button
         className={`lib-estado largado ${estado === "dropped" ? "on" : ""}`}
         onClick={() => save({ status: estado === "dropped" ? null : "dropped" })}
-        title="Não vou acabar isto"
+        title={t("Não vou acabar isto")}
       >
         {estado === "dropped" ? "✓ Abandonado" : "Abandonar"}
       </button>
@@ -105,7 +107,7 @@ export default function LibraryControls({ details }) {
         <button
           className="lib-letterboxd"
           onClick={() => openExternal(`https://letterboxd.com/tmdb/${details.id}/`)}
-          title="Abrir no Letterboxd"
+          title={t("Abrir no Letterboxd")}
         >
           Letterboxd
         </button>
@@ -122,6 +124,7 @@ export default function LibraryControls({ details }) {
 // Barra comparativa de notas: comunidade (detalhe) vs a tua nota (library).
 // Ambas convertdas para a mesma escala 0-100 para se sobrepor na mesma barra.
 function CommunityRatingBar({ community, user }) {
+  const t = useT();
   const comm = community != null ? Math.round(Number(community) * 10) : null; // 0-10 → 0-100
   const me = user != null ? Number(user) : null;
   if (comm == null && me == null) return null;
@@ -129,7 +132,7 @@ function CommunityRatingBar({ community, user }) {
   return (
     <div className="lib-rating-bar">
       <div className="lib-rating-head">
-        <span>Comparar com a comunidade</span>
+        <span>{t("Comparar com a comunidade")}</span>
         <span className="lib-rating-values">
           {comm != null && <span className="lib-rating-comm">Comunidade: {comm}</span>}
           {me != null && <span className="lib-rating-mine">Tu: {me}</span>}

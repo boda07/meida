@@ -18,8 +18,10 @@ import LoadingStatus from "../components/LoadingStatus.jsx";
 import MediaRow from "../components/MediaRow.jsx";
 import Comments from "../components/Comments.jsx";
 import { clearPresence, showPresence } from "../discord.js";
+import { useT } from "../i18n/I18nContext.jsx";
 
 export default function Details() {
+  const t = useT();
   const { type, id } = useParams();
   const [searchParams] = useSearchParams();
   const { settings } = useSettings();
@@ -583,9 +585,9 @@ api
           api.anilistScrobble(details.malId, episode).catch(() => {});
         }
       }
-      setFinishMsg("Guardado no diário.");
+      setFinishMsg(t("Guardado no diário."));
     } catch {
-      setFinishMsg("Não foi possível guardar.");
+      setFinishMsg(t("Não foi possível guardar."));
     } finally {
       setFinishing(false);
     }
@@ -630,7 +632,7 @@ api
   }, [episode]);
 
   if (error) return <p className="status error">{error}</p>;
-  if (!details) return <LoadingStatus>A carregar</LoadingStatus>;
+  if (!details) return <LoadingStatus>{t("A carregar")}</LoadingStatus>;
 
   const backdrop = imageUrl(details.backdrop, "w1280");
 
@@ -676,7 +678,7 @@ api
               </span>
             ))}
           </div>
-          <p className="details-overview">{details.overview || "Sem sinopse."}</p>
+          <p className="details-overview">{details.overview || t("Sem sinopse.")}</p>
           <div className="details-actions">
             <Trailer src={details.trailer} />
             <AddToList details={details} />
@@ -700,7 +702,7 @@ api
             ? details.seasons?.length
             : animeSeasons.length > 1) && (
             <div className="season-picker">
-              <label>Temporada:</label>
+              <label>{t("Temporada:")}</label>
               <select
                 value={season}
                 onChange={(e) => {
@@ -857,7 +859,7 @@ api
                 manual={fonteManual}
               />
             ) : (
-              <p className="muted">A carregar fontes...</p>
+              <p className="muted">{t("A carregar fontes...")}</p>
             )}
 <p className="muted" style={{ fontSize: 12, marginTop: 8 }}>
                 Fontes dedicadas de anime (sub/dub via MyAnimeList). O seletor de
@@ -866,7 +868,7 @@ api
               {party?.active && (
                 <p className="muted" style={{ fontSize: 12, marginTop: 4 }}>
                   🔴 Watch Party: estas fontes são em iframe, o play/pausa <b>não</b>{" "}
-                  sincroniza — usem <b>Torrents</b> para verem em sincronia.
+                  sincroniza — usem <b>{t("Torrents")}</b> para verem em sincronia.
                 </p>
               )}
             </>
@@ -924,17 +926,17 @@ api
                 manual={fonteManual}
               />
             ) : (
-              <p className="muted">A carregar fontes...</p>
+              <p className="muted">{t("A carregar fontes...")}</p>
             )}
             <p className="muted" style={{ fontSize: 12, marginTop: 8 }}>
               As legendas próprias (incl. português) só funcionam no separador{" "}
-              <b>Torrents</b>{extractOn ? <> e <b>Sem anúncios</b></> : null} (os
+              <b>{t("Torrents")}</b>{extractOn ? <> e <b>{t("Sem anúncios")}</b></> : null} (os
               Providers são páginas externas em iframe).
             </p>
             {party?.active && (
               <p className="muted" style={{ fontSize: 12, marginTop: 4 }}>
                 🔴 Watch Party: aqui (Providers) o play/pausa <b>não</b> sincroniza
-                — usem <b>Torrents</b>{extractOn ? <> ou <b>Sem anúncios</b></> : null}{" "}
+                — usem <b>{t("Torrents")}</b>{extractOn ? <> ou <b>{t("Sem anúncios")}</b></> : null}{" "}
                 para verem em sincronia.
               </p>
             )}
@@ -964,7 +966,7 @@ api
       )}
 
       {similar.length > 0 && (
-        <MediaRow title="Se gostaste disto" items={similar} />
+        <MediaRow title={t("Se gostaste disto")} items={similar} />
       )}
 
       {user && (

@@ -1,7 +1,9 @@
 import { useRef } from "react";
 import MediaCard from "./MediaCard.jsx";
+import { useT } from "../i18n/I18nContext.jsx";
 
 export default function MediaRow({ title, items }) {
+  const t = useT();
   const scrollRef = useRef(null);
 
   if (!items?.length) return null;
@@ -24,14 +26,14 @@ export default function MediaRow({ title, items }) {
           <button
             className="row-arrow"
             onClick={() => scroll("left")}
-            aria-label="Scroll esquerda"
+            aria-label={t("Scroll esquerda")}
           >
             ‹
           </button>
           <button
             className="row-arrow"
             onClick={() => scroll("right")}
-            aria-label="Scroll direita"
+            aria-label={t("Scroll direita")}
           >
             ›
           </button>
