@@ -93,9 +93,7 @@ export default function VideoPlayer({ src, infoHash, subtitles = [], startAt, on
       <SubtitleMenu videoRef={videoRef} subtitles={subtitles} />
       {err && (
         <p className="vhint">
-          O browser não consegue reproduzir este ficheiro (provavelmente .mkv ou
-          codec x265). Usa o filtro <b>✓ Reproduz no browser</b> na lista de
-          torrents e escolhe um <b>.mp4 / x264</b>.
+          {t("O browser não consegue reproduzir este ficheiro (provavelmente .mkv ou codec x265). Usa o filtro {filtro} na lista de torrents e escolhe um {formato}.")}
         </p>
       )}
       {status && (

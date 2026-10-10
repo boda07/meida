@@ -26,7 +26,7 @@ export default function AppFullscreen() {
     <button
       className="app-fs-btn"
       onClick={toggle}
-      title={isFs ? "Sair de ecra inteiro" : "Ecra inteiro"}
+      title={isFs ? t("Sair de ecra inteiro") : t("Ecra inteiro")}
       aria-label={t("Ecra inteiro")}
     >
       <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">

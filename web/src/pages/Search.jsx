@@ -66,7 +66,7 @@ export default function Search() {
             className={`tf-chip ${typeFilter === f.id ? "active" : ""}`}
             onClick={() => setTypeFilter(f.id)}
           >
-            {f.label}
+            {t(f.label)}
           </button>
         ))}
       </div>
@@ -74,7 +74,7 @@ export default function Search() {
         {groups.map((g) => (
           <MediaRow
             key={g.type}
-            title={`${g.label} (${g.items.length})`}
+            title={t("{r} ({n})", { r: t(g.label), n: g.items.length })}
             items={g.items}
           />
         ))}

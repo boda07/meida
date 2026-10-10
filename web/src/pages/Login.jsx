@@ -2,8 +2,10 @@ import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext.jsx";
 import LoadingStatus from "../components/LoadingStatus.jsx";
+import { useT } from "../i18n/I18nContext.jsx";
 
 export default function Login({ mode = "login" }) {
+  const t = useT();
   const isRegister = mode === "register";
   const { login, register } = useAuth();
   const navigate = useNavigate();
@@ -52,7 +54,7 @@ export default function Login({ mode = "login" }) {
         <button type="submit" disabled={busy}>
           {busy ? (
             <LoadingStatus compact muted>
-              A entrar
+              {t("A entrar")}
             </LoadingStatus>
           ) : isRegister ? (
             "Criar conta"
@@ -67,7 +69,7 @@ export default function Login({ mode = "login" }) {
             </>
           ) : (
             <>
-              Não tens conta? <Link to="/register">Criar conta</Link>
+              {t("Não tens conta?")} <Link to="/register">{t("Criar conta")}</Link>
             </>
           )}
         </p>

@@ -23,7 +23,7 @@ export default function LibraryControls({ details }) {
   if (!user) {
     return (
       <p className="muted lib-login-hint">
-        <Link to="/login">Entra</Link> para marcares como visto e dares nota.
+        <Link to="/login">{t("Entra")}</Link> {t("para marcares como visto e dares nota.")}
       </p>
     );
   }
@@ -64,11 +64,11 @@ export default function LibraryControls({ details }) {
         className={`lib-watched ${watched ? "on" : ""}`}
         onClick={() => save({ watched: !watched })}
       >
-        {watched ? "✓ Visto" : "Marcar como visto"}
+        {watched ? t("✓ Visto") : t("Marcar como visto")}
       </button>
 
       <label className="lib-score">
-        Nota:
+        {t("Nota:")}
         <select
           value={score}
           onChange={(e) =>

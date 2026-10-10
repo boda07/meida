@@ -430,7 +430,7 @@ const animeAudio = localAudio || settings.animeAudio;
       setEpisodes(
         Array.from({ length: n }, (_, i) => ({
           episodeNumber: i + 1,
-          name: `Episódio ${i + 1}`,
+          name: t("Episódio {n}", { n: i + 1 }),
         }))
       );
       // Usa o episódio de retoma capturado de forma síncrona (resistente a
@@ -453,7 +453,7 @@ const animeAudio = localAudio || settings.animeAudio;
         setEpisode(resumeEp || takeResumeEpisode());
       })
       .catch(() => fallback());
-  }, [details]);
+  }, [details, t]);
 
   // Carregar fontes quando temos contexto suficiente
   useEffect(() => {
@@ -689,7 +689,7 @@ api
                 className="lib-trailer"
                 onClick={() => setCompareOpen(true)}
               >
-                ⚖ Comparar avaliação
+                {t("⚖ Comparar avaliação")}
               </button>
             )}
           </div>
@@ -862,8 +862,7 @@ api
               <p className="muted">{t("A carregar fontes...")}</p>
             )}
 <p className="muted" style={{ fontSize: 12, marginTop: 8 }}>
-                Fontes dedicadas de anime (sub/dub via MyAnimeList). O seletor de
-                áudio em cima só afeta este título.
+  {t("Fontes dedicadas de anime (sub/dub via MyAnimeList). O seletor de áudio em cima só afeta este título.")}
               </p>
               {party?.active && (
                 <p className="muted" style={{ fontSize: 12, marginTop: 4 }}>
@@ -980,7 +979,7 @@ api
           </button>
           {!isMovieLike && (
             <span className="muted" style={{ fontSize: 12 }}>
-              Guarda no diário e avança o "Continua a ver" para o próximo episódio
+              {t("Guarda no diário e avança o {b} para o próximo episódio", { b: '"Continua a ver"' })}
               {details.isAnime ? " (e marca no MAL)" : ""}.
             </span>
           )}

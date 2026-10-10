@@ -73,7 +73,7 @@ export function CommentItem({
             {c.author.username}
           </Link>
           {clock && (
-            <span className="comment-clock" title={whenTitle(c.atSeconds)}>
+            <span className="comment-clock" title={whenTitle(c.atSeconds, t)}>
               ⏱ {clock}
             </span>
           )}
@@ -114,7 +114,13 @@ export function CommentItem({
               onClick={() => onLike(c)}
               disabled={!user}
               aria-pressed={c.likedByMe ? "true" : "false"}
-              title={user ? (c.likedByMe ? "Tirar o gosto" : "Gostar") : "Entra para gostar"}
+              title={
+            user
+              ? c.likedByMe
+                ? t("Tirar o gosto")
+                : t("Gostar")
+              : t("Entra para gosto")
+          }
             >
               <span className="comment-like-icone" aria-hidden="true">
                 {c.likedByMe ? "♥" : "♡"}
@@ -136,7 +142,7 @@ export function CommentItem({
             <TextoComMencoes
               value={replyBody}
               onChange={setReplyBody}
-              placeholder={`Responder a ${c.author.username}...  (escreve @ para chamar alguém)`}
+              placeholder={t("Responder a {u}...  (escreve @ para chamar alguém)", { u: c.author.username })}
               rows={2}
               maxLength={2000}
             />
@@ -182,7 +188,7 @@ export function CommentItem({
         )}
         {cortado && c.replies?.length > 0 && (
           <p className="muted comment-corte">
-            Há mais respostas aqui abaixo que não foi possível mostrar.
+            {t("Há mais respostas aqui abaixo que não foi possível mostrar.")}
           </p>
         )}
       </div>
@@ -191,10 +197,12 @@ export function CommentItem({
 }
 
 // Title do ⏱: "minuto 125 do video" em vez de repetir "2:05" ao lado de si.
-function whenTitle(seg) {
+// `t` entra como PARAMETRO: esta funcao nao e' um componente e nao pode usar o
+// hook `useT()`.
+function whenTitle(seg, t) {
   const n = Number(seg);
   if (!Number.isFinite(n)) return "";
-  return `Minuto do vídeo: ${paraTempo(n)} (${Math.round(n)} segundos)`;
+  return t("Minuto do vídeo: {t} ({s} segundos)", { t: paraTempo(n), s: Math.round(n) });
 }
 
 // `posAtual` e' a posicao do player em segundos, quando ha player nosso a dar
@@ -300,7 +308,7 @@ export default function Comments({ type, tmdbId, season = null, episode = null, 
             <TextoComMencoes
               value={body}
               onChange={setBody}
-              placeholder="Diz o que achaste...  (escreve @ para chamar alguém)"
+              placeholder={t("Diz o que achaste...  (escreve @ para chamar alguém)")}
               rows={2}
               maxLength={2000}
             />
@@ -327,7 +335,7 @@ export default function Comments({ type, tmdbId, season = null, episode = null, 
                   onClick={() => setAtTime(paraTempo(posAtual))}
                   title={t("Usar o momento em que estás")}
                 >
-                  ⏱ neste momento
+                  {t("⏱ neste momento")}
                 </button>
               )}
               <button className="lib-watched" disabled={busy || !body.trim() || atErrado}>
@@ -338,13 +346,13 @@ export default function Comments({ type, tmdbId, season = null, episode = null, 
         </form>
       ) : (
         <p className="muted">
-          <Link to="/login">Entra</Link> para comentar.
+          <Link to="/login">{t("Entra")}</Link> {t("para comentar.")}
         </p>
       )}
 
       {atErrado && (
         <p className="comment-aviso">
-          Esse momento não se percebe. Escreve 2:05 ou 125.
+          {t("Esse momento não se percebe. Escreve 2:05 ou 125.")}
         </p>
       )}
 

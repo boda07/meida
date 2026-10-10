@@ -9,16 +9,24 @@ import { useT } from "../i18n/I18nContext.jsx";
 
 const INTERVALO_MS = 60 * 1000; // um minuto chega: notifica-se para outra coisa
 
-/** Texto de cada tipo de notificacao. */
-function frase(n) {
-  const quem = n.actor ? n.actor.username : "alguém";
-  if (n.kind === "reply") return { texto: `${quem} respondeu ao teu comentário`, forte: quem };
-  if (n.kind === "like") return { texto: `${quem} gostou do teu comentário`, forte: quem };
-  if (n.kind === "follow") return { texto: `${quem} começou a seguir-te`, forte: quem };
+/** Texto de cada tipo de notificacao.
+ *
+ *  `t` entra como PARAMETRO, nao se busca com `useT()` aqui dentro: esta
+ *  funcao e' chamada dentro de `items.map()`, e um hook dentro de um `.map`
+ *  executa uma vez por notificacao — assim que chegasse uma notificacao nova
+ *  (ou saisse uma), o React contava mais hooks do que no render anterior e
+ *  rebentava com "Rendered more hooks than during the previous render".
+ *  Quem tem o hook e' o componente, e passa-o. */
+function frase(n, t) {
+  const quem = n.actor ? n.actor.username : t("alguém");
+  if (n.kind === "reply") return { texto: t("{quem} respondeu ao teu comentário", { quem }), forte: quem };
+  if (n.kind === "like") return { texto: t("{quem} gostou do teu comentário", { quem }), forte: quem };
+  if (n.kind === "follow") return { texto: t("{quem} começou a seguir-te", { quem }), forte: quem };
   // "@fulano" num comentario. Wording diferente do "respondeu" de proposito:
   // a mencao pode ser num comentario que nao responde a nada da pessoa.
-  if (n.kind === "mention") return { texto: `${quem} chamou-te num comentário`, forte: quem };
-  return { texto: "Novidade", forte: "Novidade" };
+  if (n.kind === "mention") return { texto: t("{quem} chamou-te num comentário", { quem }), forte: quem };
+  const novo = t("Novidade");
+  return { texto: novo, forte: novo };
 }
 
 /** Para onde leva cada notificacao. */
@@ -161,7 +169,7 @@ export default function NotificationBell() {
           ) : (
             <ul className="notif-lista">
               {items.map((n) => {
-                const { texto, forte } = frase(n);
+                const { texto, forte } = frase(n, t);
                 const d = destinoDe(n);
                 const conteudo = (
                   <>

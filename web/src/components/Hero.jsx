@@ -137,11 +137,11 @@ export default function Hero({ items, item }) {
           <div className="hero-actions">
             <Link className="btn-play" to={to}>
               <PlayIcon />
-              Reproduzir
+              {t("Reproduzir")}
             </Link>
             <Link className="btn-info" to={to}>
               <InfoIcon />
-              Mais info
+              {t("Mais info")}
             </Link>
           </div>
         </div>

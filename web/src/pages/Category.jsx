@@ -156,7 +156,7 @@ export default function Category({ category, title }) {
           <select id="cat-sort" value={sort} onChange={(e) => setSort(e.target.value)}>
             {SORTS.map((s) => (
               <option key={s.id} value={s.id}>
-                {s.label}
+                {t(s.label)}
               </option>
             ))}
           </select>
@@ -195,7 +195,7 @@ export default function Category({ category, title }) {
           {hasMore && !discLoading && (
             <div className="load-more-wrap">
               <button className="load-more" onClick={loadMore}>
-                Carregar mais
+                {t("Carregar mais")}
               </button>
             </div>
           )}

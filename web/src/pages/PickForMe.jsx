@@ -72,16 +72,16 @@ export default function PickForMe() {
 
   return (
     <div className="sub-page pick-page">
-      <h2 className="row-title">Escolhe algo para mim</h2>
+      <h2 className="row-title">{t("Escolhe algo para mim")}</h2>
 
       <div className="lib-filters" style={{ marginTop: 14 }}>
-        {TYPES.map((t) => (
+        {TYPES.map((tipo) => (
           <button
-            key={t.id}
-            className={`tf-chip ${type === t.id ? "active" : ""}`}
-            onClick={() => setType(t.id)}
+            key={tipo.id}
+            className={`tf-chip ${type === tipo.id ? "active" : ""}`}
+            onClick={() => setType(tipo.id)}
           >
-            {t.label}
+            {t(tipo.label)}
           </button>
         ))}
       </div>
@@ -92,7 +92,7 @@ export default function PickForMe() {
         <>
           <p className="muted" style={{ marginTop: 14 }}>
             Toca nos géneros: 1x = <b className="want">quero</b>, 2x ={" "}
-            <b className="avoid">{t("não quero")}</b>. Depois carrega no botao.
+            <b className="avoid">{t("não quero")}</b> {t(". Depois carrega no botao.")}
           </p>
 
           <div className="genre-grid">
@@ -109,11 +109,11 @@ export default function PickForMe() {
                 </button>
               );
             })}
-            {!genres.length && <p className="muted">A carregar géneros...</p>}
+            {!genres.length && <p className="muted">{t("A carregar géneros...")}</p>}
           </div>
 
           <button className="pick-btn" onClick={pick} disabled={loading}>
-            {loading ? t("A escolher...") : "🎲 Escolhe algo para mim"}
+            {loading ? t("A escolher...") : t("🎲 Escolhe algo para mim")}
           </button>
 
           {msg && (
@@ -128,7 +128,7 @@ export default function PickForMe() {
               <div className="pick-result-row">
                 <MediaCard item={result} />
                 <button className="set-choice" onClick={pick}>
-                  Escolhe outra
+                  {t("Escolhe outra")}
                 </button>
               </div>
             </div>

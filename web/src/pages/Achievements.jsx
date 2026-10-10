@@ -27,7 +27,7 @@ export default function Achievements() {
   if (ready && !user) {
     return (
       <p className="status muted">
-        <Link to="/login">Entra</Link> para veres as tuas conquistas.
+        <Link to="/login">{t("Entra")}</Link> {t("para veres as tuas conquistas.")}
       </p>
     );
   }
@@ -64,7 +64,10 @@ export default function Achievements() {
               <BadgeIcon id={b.icon} />
             </div>
             <div className="ach-body">
-              <h3 className="ach-name">{b.label}</h3>
+              <h3 className="ach-name">
+                {/* i18n: `label` e `desc` vem do servidor, nao sao texto local. */}
+                {b.label}
+              </h3>
               <p className="ach-desc muted">{b.desc}</p>
             </div>
           </div>

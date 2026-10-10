@@ -262,14 +262,14 @@ export default function Torrents({ type, imdb, title, season, episode, anime, de
               onClick={() => setCompat(compat === "instant" ? "all" : "instant")}
               title={t("Só torrents que já estão em cache no Real-Debrid (reproduzem logo)")}
             >
-              ⚡ Debrid
+              {t("⚡ Debrid")}
             </button>
           )}
           <button
             className={`tf-chip ${compat === "playable" ? "active" : ""}`}
             onClick={() => setCompat("playable")}
           >
-            ✓ Reproduz no browser
+            {t("✓ Reproduz no browser")}
           </button>
           <button
             className={`tf-chip ${codec === "x264" ? "active" : ""}`}
@@ -289,44 +289,51 @@ export default function Torrents({ type, imdb, title, season, episode, anime, de
       </div>
 
       <div className="torrent-list">
-        {shown.map((t, i) => {
-          const isInstant = debrid?.instant?.has(t.infoHash);
+        {shown.map((tt, i) => {
+          const isInstant = debrid?.instant?.has(tt.infoHash);
           return (
             <button
-              key={`${t.infoHash}-${i}`}
+              key={`${tt.infoHash}-${i}`}
               className={`torrent-item ${
-                selected?.infoHash === t.infoHash ? "active" : ""
+                selected?.infoHash === tt.infoHash ? "active" : ""
               }`}
-              onClick={() => pick(t)}
+              onClick={() => pick(tt)}
             >
-              <span className="tq">{t.quality}</span>
+              <span className="tq">{tt.quality}</span>
               <span className="tt">
-                {t.title}
+                {tt.title}
                 {isInstant && (
                   <span className="tinstant" title={t("Já está em cache no Real-Debrid — reproduz logo")}>⚡ Debrid</span>
                 )}
-                {t.provider && (
-                  <span className="tprovider" title={`Fonte: ${t.provider}`}>
-                    {t.provider}
+                {tt.provider && (
+                  <span className="tprovider" title={t("Fonte: {p}", { p: tt.provider })}>
+                    {tt.provider}
                   </span>
                 )}
-                {anime && t.dub && (
-                  <span className="taudio">{t.dual ? "DUAL" : "DUB"}</span>
+                {anime && tt.dub && (
+                  <span className="taudio">{tt.dual ? t("DUB") : t("Legendado")}</span>
                 )}
               </span>
               <span className="tmeta">
-                {t.playable ? (
-                  <span className="tplay" title={t("Reproduz nativamente no browser (mp4/webm)")}>✓ browser</span>
+                {tt.playable ? (
+                  <span className="tplay" title={t("Reproduz nativamente no browser (mp4/webm)")}>{t("✓ browser")}</span>
                 ) : (
                   <span
                     className="tnoplay"
-                    title={t.codec === "x265" ? t(".mkv x265 — o Chrome/Safari não reproduzem este codec. Prefere .mp4 x264.") : `${t.ext || ""} ${t.codec || ""} — pode não reproduzir no browser. Prefere .mp4.`}
+                    title={
+                    tt.codec === "x265"
+                      ? t(".mkv x265 — o Chrome/Safari não reproduzem este codec. Prefere .mp4 x264.")
+                      : t("{e} {c} — pode não reproduzir no browser. Prefere .mp4.", {
+                          e: tt.ext || "",
+                          c: tt.codec || "",
+                        })
+                  }
                   >
-                    ⚠ {t.ext ? t.ext.slice(1).toUpperCase() : "?"}
+                    ⚠ {tt.ext ? tt.ext.slice(1).toUpperCase() : "?"}
                   </span>
                 )}
-                {t.size ? t.size : ""}
-                {t.seeders != null ? ` · 👤 ${t.seeders}` : ""}
+                {tt.size ? tt.size : ""}
+                {tt.seeders != null ? ` · 👤 ${tt.seeders}` : ""}
               </span>
             </button>
           );

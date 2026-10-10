@@ -109,7 +109,7 @@ function PosterGrid({ items, empty, romaji, porPagina = 60 }) {
             disabled={safePage <= 1}
             onClick={() => mudarPara(safePage - 1)}
           >
-            ← Anterior
+            {t("← Anterior")}
           </button>
           <span className="lib-pager-info">
             Página {safePage} de {pageCount} · {lista.length} títulos
@@ -119,7 +119,7 @@ function PosterGrid({ items, empty, romaji, porPagina = 60 }) {
             disabled={safePage >= pageCount}
             onClick={() => mudarPara(safePage + 1)}
           >
-            Seguinte →
+            {t("Seguinte →")}
           </button>
         </div>
       )}
@@ -293,7 +293,7 @@ export default function UserProfile() {
         <div className="profile-actions">
           {isMe ? (
             <Link className="modal-btn ghost" to="/settings">
-              Editar perfil
+              {t("Editar perfil")}
             </Link>
           ) : (
             user && (
@@ -335,7 +335,7 @@ export default function UserProfile() {
             </div>
           )}
           <div className="profile-stat">
-            <dt>para ver</dt>
+            <dt>{t("para ver")}</dt>
             <dd>{stats.aVer}</dd>
           </div>
           {/* So aparecem quando ha. Um "0 em pausa" fixo no perfil so ocupa

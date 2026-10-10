@@ -53,7 +53,7 @@ function MalSection({ user }) {
     setMsg(null);
     try {
       const d = await api.malImport();
-      setMsg(`Importados ${d.imported} animes para a tua lista.`);
+      setMsg(t("Importados {n} animes para a tua lista.", { n: d.imported }));
     } catch (e) {
       setMsg(e.message);
     } finally {
@@ -70,14 +70,14 @@ function MalSection({ user }) {
   if (!user) {
     return (
       <p className="muted">
-        <Link to="/login">{t("Entra")}</Link> para ligares o MyAnimeList.
+        <Link to="/login">{t("Entra")}</Link> {t("para ligares o MyAnimeList.")}
       </p>
     );
   }
   if (!enabled) {
     return (
       <p className="muted">
-        O servidor não tem o MyAnimeList configurado (falta MAL_CLIENT_ID).
+        {t("O servidor não tem o MyAnimeList configurado (falta MAL_CLIENT_ID).")}
       </p>
     );
   }
@@ -87,8 +87,7 @@ function MalSection({ user }) {
       {linked ? (
         <>
           <p className="muted">
-            Ligado como <b>{username || "?"}</b>. Os episódios de anime que vires
-            são marcados no teu MAL automaticamente.
+            {t("Ligado como {u}. Os episódios de anime que vires são marcados no teu MAL automaticamente.", { u: <b>{username || "?"}</b> })}
           </p>
           <div className="set-row">
             <button className="set-choice active" onClick={importList} disabled={busy}>
@@ -100,10 +99,10 @@ function MalSection({ user }) {
       ) : (
         <>
           <p className="muted">
-            Liga a tua conta para importar a tua lista e marcar episódios vistos.
+            {t("Liga a tua conta para importar a tua lista e marcar episódios vistos.")}
           </p>
           <button className="set-choice active" onClick={link}>
-            Ligar MyAnimeList
+            {t("Ligar MyAnimeList")}
           </button>
         </>
       )}
@@ -170,7 +169,7 @@ function AniListSection({ user }) {
     setMsg(null);
     try {
       const d = await api.anilistImport();
-      setMsg(`Importados ${d.imported} animes para a tua lista.`);
+      setMsg(t("Importados {n} animes para a tua lista.", { n: d.imported }));
     } catch (e) {
       setMsg(e.message);
     } finally {
@@ -189,7 +188,7 @@ function AniListSection({ user }) {
     setMsg(null);
     try {
       const d = await api.anilistSync();
-      setMsg(`Cross-sync concluído: +${d.malUpdated} no MAL, +${d.aniUpdated} no AniList.`);
+      setMsg(t("Cross-sync concluído: +{m} no MAL, +{a} no AniList.", { m: d.malUpdated, a: d.aniUpdated }));
     } catch (e) {
       setMsg(e.message || t("Falha na sincronização."));
     } finally {
@@ -200,14 +199,14 @@ function AniListSection({ user }) {
   if (!user) {
     return (
       <p className="muted">
-        <Link to="/login">{t("Entra")}</Link> para ligares o AniList.
+        <Link to="/login">{t("Entra")}</Link> {t("para ligares o AniList.")}
       </p>
     );
   }
   if (!enabled) {
     return (
       <p className="muted">
-        O servidor não tem o AniList configurado (falta ANILIST_CLIENT_ID).
+        {t("O servidor não tem o AniList configurado (falta ANILIST_CLIENT_ID).")}
       </p>
     );
   }
@@ -217,7 +216,7 @@ function AniListSection({ user }) {
       {linked ? (
         <>
             <p className="muted">
-              Ligado como <b>{username || "?"}</b>. Quando não tens o MyAnimeList
+              {t("Ligado como {u}. Quando não tens o MyAnimeList", { u: <b>{username || "?"}</b> })}
               ligado, os episódios de anime que vires são marcados no teu AniList
               automaticamente. Se tens o MAL também ligado, podes fazer cross-sync
               manual (Sincronizar com MAL) ou ela corre automaticamente ao abrir a
@@ -225,11 +224,11 @@ function AniListSection({ user }) {
             </p>
           <div className="set-row">
             <button className="set-choice active" onClick={importList} disabled={busy}>
-              {busy ? t("A importar...") : "Importar lista do AniList"}
+              {busy ? t("A importar...") : t("Importar lista do AniList")}
             </button>
             {malLinked && (
               <button className="set-choice" onClick={syncCross} disabled={syncing}>
-                {syncing ? t("A sincronizar...") : "Sincronizar com MAL"}
+                {syncing ? t("A sincronizar...") : t("Sincronizar com MAL")}
               </button>
             )}
             <button className="set-clear" onClick={unlink}>{t("Desligar conta")}</button>
@@ -238,10 +237,10 @@ function AniListSection({ user }) {
       ) : (
         <>
           <p className="muted">
-            Liga a tua conta para importar a tua lista e marcar episódios vistos.
+            {t("Liga a tua conta para importar a tua lista e marcar episódios vistos.")}
           </p>
           <button className="set-choice active" onClick={link}>
-            Ligar AniList
+            {t("Ligar AniList")}
           </button>
         </>
       )}
@@ -289,9 +288,9 @@ function LetterboxdSection({ user }) {
     setMsg(null);
     try {
       const d = await api.letterboxdImport(what);
-      if (what === "films") setMsg(`Importados ${d.imported} filmes vistos.`);
-      else if (what === "watchlist") setMsg(`Importados ${d.watchlist} da watchlist.`);
-      else setMsg(`Importados ${d.imported} vistos + ${d.watchlist} da watchlist.`);
+      if (what === "films") setMsg(t("Importados {n} filmes vistos.", { n: d.imported }));
+      else if (what === "watchlist") setMsg(t("Importados {n} da watchlist.", { n: d.watchlist }));
+      else setMsg(t("Importados {n} vistos + {w} da watchlist.", { n: d.imported, w: d.watchlist }));
     } catch (e) {
       setMsg(e.message);
     } finally {
@@ -308,7 +307,7 @@ function LetterboxdSection({ user }) {
   if (!user) {
     return (
       <p className="muted">
-        <Link to="/login">{t("Entra")}</Link> para ligares o Letterboxd.
+        <Link to="/login">{t("Entra")}</Link> {t("para ligares o Letterboxd.")}
       </p>
     );
   }
@@ -318,37 +317,33 @@ function LetterboxdSection({ user }) {
       {username ? (
         <>
           <p className="muted">
-            Ligado como <b>{username}</b>. A nota da comunidade dos teus filmes
+            {t("Ligado como {u}. A nota da comunidade dos teus filmes", { u: <b>{username}</b> })}
             (na tua lista) passa a vir do Letterboxd.
           </p>
           <div className="set-row">
             <button className="set-choice active" onClick={() => importList("films")} disabled={busy}>
-              {busy ? t("A importar...") : "Importar vistos"}
+              {busy ? t("A importar...") : t("Importar vistos")}
             </button>
             <button className="set-choice active" onClick={() => importList("watchlist")} disabled={busy}>
-              {busy ? t("A importar...") : "Importar watchlist"}
+              {busy ? t("A importar...") : t("Importar watchlist")}
             </button>
             <button className="set-choice" onClick={() => importList("all")} disabled={busy}>
-              {busy ? t("A importar...") : "Importar tudo"}
+              {busy ? t("A importar...") : t("Importar tudo")}
             </button>
           </div>
           <div className="set-row" style={{ marginTop: 8 }}>
             <button className="set-clear" onClick={unlink}>
-              Desligar conta
+              {t("Desligar conta")}
             </button>
           </div>
           <p className="muted" style={{ fontSize: 12, marginTop: 8 }}>
-            Importa todos os filmes vistos (com as tuas notas) e/ou a watchlist
-            completa. Em listas grandes pode demorar alguns segundos. Em cada
-            filme tens um botao para o abrir no Letterboxd.
+            {t("Importa todos os filmes vistos (com as tuas notas) e/ou a watchlist completa. Em listas grandes pode demorar alguns segundos. Em cada filme tens um botao para o abrir no Letterboxd.")}
           </p>
         </>
       ) : (
         <>
           <p className="muted">
-            Indica o teu username do Letterboxd para importar a tua watchlist e
-            os filmes vistos (com as tuas notas), e usar a nota da comunidade do
-            Letterboxd.
+            {t("Indica o teu username do Letterboxd para importar a tua watchlist e os filmes vistos (com as tuas notas), e usar a nota da comunidade do Letterboxd.")}
           </p>
           <div className="set-img-url">
             <input
@@ -416,7 +411,7 @@ function DebridSection({ user }) {
   if (!user) {
     return (
       <p className="muted">
-        <Link to="/login">{t("Entra")}</Link> para ligares o Real-Debrid.
+        <Link to="/login">{t("Entra")}</Link> {t("para ligares o Real-Debrid.")}
       </p>
     );
   }
@@ -426,8 +421,10 @@ function DebridSection({ user }) {
       {status?.linked ? (
         <>
           <p className="muted">
-            Ligado como <b>{status.account}</b>. Nos torrents, os que estiverem em
-            cache no Real-Debrid reproduzem <b>logo</b> (sem esperar por peers).
+            {t("Ligado como {u}. Nos torrents, os que estiverem em cache no Real-Debrid reproduzem {logo} (sem esperar por peers).", {
+              u: <b>{status.account}</b>,
+              logo: <b>logo</b>,
+            })}
           </p>
           <div className="set-row" style={{ marginTop: 8 }}>
             <button className="set-clear" onClick={unlink}>
@@ -446,8 +443,7 @@ function DebridSection({ user }) {
             >
               real-debrid.com/apitoken
             </a>
-            ). É um serviço pago (mas barato) que guarda os torrents em cache —
-            por isso o stream começa imediatamente, como no Stremio.
+            {t("). É um serviço pago (mas barato) que guarda os torrents em cache — por isso o stream começa imediatamente, como no Stremio.")}
           </p>
           <div className="set-img-url">
             <input
@@ -634,8 +630,8 @@ export default function Settings() {
     try {
       const r = await window.electronAPI.checkForUpdates();
       if (r?.status === "available")
-        setUpdMsg(`Nova versão ${r.version} — a descarregar...`);
-      else if (r?.status === "latest") setUpdMsg("Já tens a versão mais recente. ✓");
+        setUpdMsg(t("Nova versão {v} — a descarregar...", { v: r.version }));
+      else if (r?.status === "latest") setUpdMsg(t("Já tens a versão mais recente. ✓"));
       else if (r?.status === "dev") setUpdMsg(t("Indisponível em desenvolvimento."));
       else setUpdMsg(t("Não foi possível verificar agora."));
     } catch {
@@ -697,7 +693,7 @@ export default function Settings() {
     setProfileMsg(null);
     try {
       await updateProfile({ bio, isPublic });
-      setProfileMsg("Perfil atualizado. ✓");
+      setProfileMsg(t("Perfil atualizado. ✓"));
     } catch (e) {
       setProfileMsg(e.message);
     } finally {
@@ -851,7 +847,12 @@ export default function Settings() {
         payload = { format: "json", library: parsed.library || [], diary: parsed.diary || [] };
       }
       const d = await api.importData(payload);
-      setImportMsg(`Importados ${d.imported.library} títulos e ${d.imported.diary} entradas do diário.`);
+      setImportMsg(
+      t("Importados {n} títulos e {d} entradas do diário.", {
+        n: d.imported.library,
+        d: d.imported.diary,
+      })
+    );
       setImportFile(null);
     } catch (e) {
       setImportMsg(e.message || t("Não foi possível importar."));
@@ -888,13 +889,16 @@ export default function Settings() {
         <section className="set-section" data-tab="dados">
           <h3>{t("Servidor")}</h3>
           <p className="muted">
-            Onde ficam os teus dados. <strong>{t("Este computador")}</strong> guarda tudo localmente.{" "}
-            <strong>{t("Servidor remoto")}</strong> liga a app a um MEIDA alojado noutro sítio, para
-            partilhares conta, biblioteca, seguidores e comentários entre dispositivos.
+            {t("Onde ficam os teus dados. {a} guarda tudo localmente.", {
+              a: <strong>{t("Este computador")}</strong>,
+            })}{" "}
+            {t("{a} liga a app a um MEIDA alojado noutro sítio, para partilhares conta, biblioteca, seguidores e comentários entre dispositivos.", {
+              a: <strong>{t("Servidor remoto")}</strong>,
+            })}
           </p>
           {srv && !srv.packaged && (
             <p className="muted">
-              Estás em desenvolvimento — esta opção só se aplica à app instalada.
+              {t("Estás em desenvolvimento — esta opção só se aplica à app instalada.")}
             </p>
           )}
           <div className="set-row set-server-row">
@@ -902,13 +906,13 @@ export default function Settings() {
               className={`set-server-choice ${srvMode === "local" ? "active" : ""}`}
               onClick={() => setSrvMode("local")}
             >
-              Este computador
+              {t("Este computador")}
             </button>
             <button
               className={`set-server-choice ${srvMode === "remote" ? "active" : ""}`}
               onClick={() => setSrvMode("remote")}
             >
-              Servidor remoto
+              {t("Servidor remoto")}
             </button>
           </div>
           {srvMode === "remote" && (
@@ -1013,8 +1017,7 @@ export default function Settings() {
       <section className="set-section" data-tab="reproducao">
         <h3>{t("Legendas")}</h3>
         <p className="muted">
-          Legenda preferida (ativada automaticamente nos players sem anúncios e
-          de torrents).
+          {t("Legenda preferida (ativada automaticamente nos players sem anúncios e de torrents).")}
         </p>
         <div className="set-row">
           <Choice value="pt" current={settings.subtitleLang} onPick={(v) => update({ subtitleLang: v })}>
@@ -1032,8 +1035,7 @@ export default function Settings() {
       <section className="set-section" data-tab="reproducao">
         <h3>{t("Anime: áudio")}</h3>
         <p className="muted">
-          Legendado (sub) ou dobrado (dub). Aplica-se às fontes dedicadas de anime
-          (MegaPlay/VidLink/VidSrc.cc por MyAnimeList).
+          {t("Legendado (sub) ou dobrado (dub). Aplica-se às fontes dedicadas de anime (MegaPlay/VidLink/VidSrc.cc por MyAnimeList).")}
         </p>
         <div className="set-row">
           <Choice value="sub" current={settings.animeAudio} onPick={(v) => update({ animeAudio: v })}>
@@ -1048,7 +1050,7 @@ export default function Settings() {
       <section className="set-section" data-tab="conteudo">
         <h3>{t("Anime: títulos")}</h3>
         <p className="muted">
-          Como mostrar os nomes dos animes (catálogo, pesquisa e a tua lista).
+          {t("Como mostrar os nomes dos animes (catálogo, pesquisa e a tua lista).")}
         </p>
         <div className="set-row">
           <Choice value="en" current={settings.animeTitleLang} onPick={(v) => update({ animeTitleLang: v })}>
@@ -1064,7 +1066,7 @@ export default function Settings() {
         <h3>{t("Conteúdo adulto (anime)")}</h3>
         <p className="muted">
           Mostrar anime adulto (NSFW/hentai) na pesquisa, nos filtros de género e no
-          "Escolhe algo para mim". Desligado por defeito.
+          {t('"Escolhe algo para mim". Desligado por defeito.')}
         </p>
         <div className="set-row">
           <Choice value={false} current={settings.showAdult} onPick={(v) => update({ showAdult: v })}>
@@ -1084,7 +1086,7 @@ export default function Settings() {
             Providers
           </Choice>
           <Choice value="extract" current={settings.defaultTab} onPick={(v) => update({ defaultTab: v })}>
-            Sem anúncios
+            {t("Sem anúncios")}
           </Choice>
           <Choice value="torrents" current={settings.defaultTab} onPick={(v) => update({ defaultTab: v })}>
             Torrents
@@ -1096,24 +1098,22 @@ export default function Settings() {
       <section className="set-section" data-tab="reproducao">
         <h3>{t("Reprodução")}</h3>
         <p className="muted">
-          Autoplay liga/desliga o arranque automático. Autoskip tenta saltar a
-          intro/genéricos (funciona nos nossos players; nos providers externos
-          depende do site).
+          {t("Autoplay liga/desliga o arranque automático. Autoskip tenta saltar a intro/genéricos (funciona nos nossos players; nos providers externos depende do site).")}
         </p>
         <div className="set-row">
           <Choice value={true} current={settings.autoplay} onPick={(v) => update({ autoplay: v })}>
-            Autoplay ligado
+            {t("Autoplay ligado")}
           </Choice>
           <Choice value={false} current={settings.autoplay} onPick={(v) => update({ autoplay: v })}>
-            Autoplay desligado
+            {t("Autoplay desligado")}
           </Choice>
         </div>
         <div className="set-row" style={{ marginTop: 8 }}>
           <Choice value={true} current={settings.autoskip} onPick={(v) => update({ autoskip: v })}>
-            Autoskip ligado
+            {t("Autoskip ligado")}
           </Choice>
           <Choice value={false} current={settings.autoskip} onPick={(v) => update({ autoskip: v })}>
-            Autoskip desligado
+            {t("Autoskip desligado")}
           </Choice>
         </div>
       </section>
@@ -1122,7 +1122,7 @@ export default function Settings() {
       <section className="set-section" data-tab="aparencia">
         <h3>{t("Tamanho dos cartazes")}</h3>
         <p className="muted">
-          Ajusta a largura e a altura dos posters (útil em ecrãs pequenos).
+          {t("Ajusta a largura e a altura dos posters (útil em ecrãs pequenos).")}
         </p>
         <div className="set-slider">
           <label>
@@ -1156,7 +1156,7 @@ export default function Settings() {
           className="set-clear"
           onClick={() => update({ cardW: 184, cardH: 272 })}
         >
-          Repor tamanho
+          {t("Repor tamanho")}
         </button>
       </section>
 
@@ -1164,8 +1164,7 @@ export default function Settings() {
       <section className="set-section" data-tab="aparencia">
         <h3>{t("Cor de destaque")}</h3>
         <p className="muted">
-          Cor dos botões e realces. Predefinidas, as tuas últimas escolhas, ou o
-          picker.
+          {t("Cor dos botões e realces. Predefinidas, as tuas últimas escolhas, ou o picker.")}
         </p>
         <ColorField
           presets={ACCENT_PRESETS}
@@ -1181,8 +1180,7 @@ export default function Settings() {
       <section className="set-section" data-tab="aparencia">
         <h3>{t("Cor de fundo")}</h3>
         <p className="muted">
-          Fundo da app. Predefinidas (escuras, texto legível), as tuas últimas
-          escolhas, ou o picker.
+          {t("Fundo da app. Predefinidas (escuras, texto legível), as tuas últimas escolhas, ou o picker.")}
         </p>
         <ColorField
           presets={BG_PRESETS}
@@ -1198,8 +1196,7 @@ export default function Settings() {
       <section className="set-section" data-tab="aparencia">
         <h3>{t("Estilo de fundo")}</h3>
         <p className="muted">
-          Simples (só a cor), um padrão por cima, ou uma imagem tua (como o fundo
-          do WhatsApp). O padrão usa a tua cor de destaque.
+          {t("Simples (só a cor), um padrão por cima, ou uma imagem tua (como o fundo do WhatsApp). O padrão usa a tua cor de destaque.")}
         </p>
         <div className="set-row">
           {[
@@ -1232,7 +1229,7 @@ export default function Settings() {
                 onChange={(e) => update({ bgImage: e.target.value.trim() })}
               />
               <label className="lib-watched" style={{ cursor: "pointer" }}>
-                Escolher do PC
+                {t("Escolher do PC")}
                 <input
                   type="file"
                   accept="image/*"
@@ -1259,11 +1256,11 @@ export default function Settings() {
                 />
                 <span className="muted" style={{ fontSize: 12 }}>
                   {settings.bgImage.startsWith("data:")
-                    ? "Imagem do computador"
-                    : "Imagem por URL"}
+                    ? t("Imagem do computador")
+                    : t("Imagem por URL")}
                 </span>
                 <button className="set-clear" onClick={() => update({ bgImage: "" })}>
-                  Remover imagem
+                  {t("Remover imagem")}
                 </button>
               </div>
             )}
@@ -1287,8 +1284,7 @@ export default function Settings() {
       <section className="set-section" data-tab="dados">
         <h3>{t("Os teus dados")}</h3>
         <p className="muted">
-          Descarrega a tua biblioteca e diário. Em JSON (para fazer backup ou
-          voltar a usar depois) ou CSV (para abrir no Excel/Sheets).
+          {t("Descarrega a tua biblioteca e diário. Em JSON (para fazer backup ou voltar a usar depois) ou CSV (para abrir no Excel/Sheets).")}
         </p>
         <div className="set-row">
           <button
@@ -1313,10 +1309,7 @@ export default function Settings() {
       <section className="set-section" data-tab="dados">
         <h3>{t("Discord")}</h3>
         <p className="muted">
-          Aparece ao lado do teu nome no Discord o que estás a ver, como no
-          Stremio. Só funciona com a app do Discord aberta neste computador, e
-          nada é enviado para a internet — a MEIDA escreve directamente no
-          Discord do teu PC.
+          {t("Aparece ao lado do teu nome no Discord o que estás a ver, como no Stremio. Só funciona com a app do Discord aberta neste computador, e nada é enviado para a internet — a MEIDA escreve directamente no Discord do teu PC.")}
         </p>
         {presenceSupported() ? (
           <label className="set-toggle">
@@ -1333,7 +1326,7 @@ export default function Settings() {
           </label>
         ) : (
           <p className="muted">
-            Isto só funciona na app de computador (Electron), não na versão web.
+            {t("Isto só funciona na app de computador (Electron), não na versão web.")}
           </p>
         )}
       </section>
@@ -1342,9 +1335,7 @@ export default function Settings() {
       <section className="set-section" data-tab="dados">
         <h3>{t("Importar dados")}</h3>
         <p className="muted">
-          Carrega um ficheiro JSON ou CSV exportado da MEIDA para voltar a
-          carregar a tua biblioteca e diário. É um merge: não apaga notas nem
-          visto que o ficheiro não traga.
+          {t("Carrega um ficheiro JSON ou CSV exportado da MEIDA para voltar a carregar a tua biblioteca e diário. É um merge: não apaga notas nem visto que o ficheiro não traga.")}
         </p>
         <div className="set-row">
           <label className="lib-watched" style={{ cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6 }}>
@@ -1360,7 +1351,7 @@ export default function Settings() {
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h6" />
               <polyline points="18 1 11 8 13 8 13 22 18 22 18 8 21 8 18 1 18 1" />
             </svg>
-            Escolher ficheiro
+            {t("Escolher ficheiro")}
             <input
               type="file"
               accept=".json,.csv,text/csv,text/anytext,.bak"
@@ -1369,7 +1360,7 @@ export default function Settings() {
             />
           </label>
           <span className="muted" style={{ fontSize: 12 }}>
-            {importFile ? importFile.name : "Sem ficheiro"}
+            {importFile ? importFile.name : t("Sem ficheiro")}
           </span>
         </div>
         {importFile && (
@@ -1397,13 +1388,12 @@ export default function Settings() {
         <h3>{t("Perfil")}</h3>
         {!user ? (
           <p className="muted">
-            <Link to="/login">{t("Entra")}</Link> para editares o teu perfil.
+            <Link to="/login">{t("Entra")}</Link> {t("para editares o teu perfil.")}
           </p>
         ) : (
           <>
             <p className="muted">
-              É o que os outros veem quando visitam o teu perfil. A biblioteca e as
-              listas só aparecem se o perfil estiver público.
+              {t("É o que os outros veem quando visitam o teu perfil. A biblioteca e as listas só aparecem se o perfil estiver público.")}
             </p>
             <label className="set-field">
               <span>{t("Bio")}</span>
@@ -1424,7 +1414,7 @@ export default function Settings() {
               />
               <span>
                 Perfil público — qualquer pessoa pode ver a tua biblioteca e listas.
-                {!isPublic && " (agora está privado: só tu vês)"}
+                {!isPublic && t(" (agora está privado: só tu vês)")}
               </span>
             </label>
             <button
@@ -1432,7 +1422,7 @@ export default function Settings() {
               onClick={saveProfile}
               disabled={profileSaving}
             >
-              {profileSaving ? "A guardar..." : "Guardar perfil"}
+              {profileSaving ? t("A guardar...") : t("Guardar perfil")}
             </button>
             {profileMsg && <p className="muted">{profileMsg}</p>}
           </>
@@ -1444,7 +1434,7 @@ export default function Settings() {
         <h3>{t("Avatar")}</h3>
         {!user ? (
           <p className="muted">
-            <Link to="/login">{t("Entra")}</Link> para escolheres um avatar.
+            <Link to="/login">{t("Entra")}</Link> {t("para escolheres um avatar.")}
           </p>
         ) : (
           <>
@@ -1481,10 +1471,10 @@ export default function Settings() {
                 onClick={() => pickAvatar(imgUrl)}
                 disabled={saving || !imgUrl.trim()}
               >
-                Usar URL
+                {t("Usar URL")}
               </button>
               <label className="lib-watched" style={{ cursor: "pointer" }}>
-                Escolher do PC
+                {t("Escolher do PC")}
                 <input
                   type="file"
                   accept="image/*"
@@ -1510,7 +1500,7 @@ export default function Settings() {
                 onClick={() => pickAvatar("")}
                 disabled={saving}
               >
-                Remover avatar
+                {t("Remover avatar")}
               </button>
             )}
             {error && <p className="auth-error">{error}</p>}
@@ -1522,8 +1512,7 @@ export default function Settings() {
       <section className="set-section" data-tab="avancado">
         <h3>{t("Estado dos providers")}</h3>
         <p className="muted">
-          Fontes de stream usadas no player (embeds). Quando um está morto fica
-          riscado e é saltado na escolha automática.
+          {t("Fontes de stream usadas no player (embeds). Quando um está morto fica riscado e é saltado na escolha automática.")}
         </p>
         {provHealth?.checking && !provHealth?.providers ? (
           <p className="muted">{t("A testar providers...")}</p>
@@ -1556,7 +1545,7 @@ export default function Settings() {
               }
             }}
           >
-            Rever agora
+            {t("Rever agora")}
           </button>
         </div>
       </section>
@@ -1566,21 +1555,21 @@ export default function Settings() {
         <section className="set-section" data-tab="avancado">
           <h3>{t("Atualizações")}</h3>
           <p className="muted">
-            Procura uma versão nova da MEIDA. Não precisas de ter conta.
+            {t("Procura uma versão nova da MEIDA. Não precisas de ter conta.")}
           </p>
           <button onClick={checkUpdate} disabled={updBusy}>
-            {updBusy ? t("A procurar...") : "Procurar atualização"}
+            {updBusy ? t("A procurar...") : t("Procurar atualização")}
           </button>
           {updMsg && <p className="muted">{updMsg}</p>}
           <h3 style={{ marginTop: 22 }}>{t("Desinstalar")}</h3>
           <p className="muted">
-            Remove a MEIDA do computador. A app fecha e o desinstalador abre.
+            {t("Remove a MEIDA do computador. A app fecha e o desinstalador abre.")}
           </p>
           <button
             className="set-clear danger"
             onClick={() => window.electronAPI.uninstall()}
           >
-            Desinstalar MEIDA
+            {t("Desinstalar MEIDA")}
           </button>
         </section>
       )}

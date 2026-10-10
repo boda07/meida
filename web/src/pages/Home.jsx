@@ -5,6 +5,7 @@ import MediaRow from "../components/MediaRow.jsx";
 import ContinueWatching from "../components/ContinueWatching.jsx";
 import Hero from "../components/Hero.jsx";
 import LoadingStatus from "../components/LoadingStatus.jsx";
+import { useT } from "../i18n/I18nContext.jsx";
 
 // Escolhe varios destaques (com imagem de fundo) para o slideshow do banner.
 function pickHeroes(rows, n = 6) {
@@ -20,6 +21,7 @@ function pickHeroes(rows, n = 6) {
 }
 
 export default function Home() {
+  const t = useT();
   const { settings } = useSettings();
   const [rows, setRows] = useState([]);
   const [heroes, setHeroes] = useState([]);
@@ -38,13 +40,15 @@ export default function Home() {
       .finally(() => setLoading(false));
   }, [settings.titleLang, settings.overviewLang]);
 
-  if (loading) return <LoadingStatus>A carregar</LoadingStatus>;
+  if (loading) return <LoadingStatus>{t("A carregar")}</LoadingStatus>;
   if (error)
     return (
       <div className="status error">
         <p>Não consegui carregar o catálogo: {error}</p>
         <p className="muted">
-          Verifica que criaste <code>server/.env</code> com a tua chave do TMDB.
+          {t("Verifica que criaste {ficheiro} com a tua chave do TMDB.", {
+            ficheiro: <code>server/.env</code>,
+          })}
         </p>
       </div>
     );

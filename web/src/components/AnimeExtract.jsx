@@ -32,8 +32,7 @@ export default function AnimeExtract({ details, episode, startAt, onProgress, au
   if (loading)
     return (
       <p className="muted">
-        A extrair stream sem anúncios (a 1a vez pode demorar ~30s a acordar o
-        servidor)...
+        {t("A extrair stream sem anúncios (a 1a vez pode demorar ~30s a acordar o servidor)...")}
       </p>
     );
   if (error || !data?.sources?.length)

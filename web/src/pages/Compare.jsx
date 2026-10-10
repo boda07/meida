@@ -65,7 +65,7 @@ function CenterControls({ it, label, busy, onScore, onAdjust }) {
     <div className="compare-center">
       <span className="cmp-label">{label}</span>
       <label className="compare-score">
-        Nota:
+        {t("Nota:")}
         <input
           type="number"
           min={1}
@@ -241,9 +241,9 @@ export default function Compare() {
   if (!user) {
     return (
       <div className="sub-page compare-page">
-        <h2 className="row-title">Compara as tuas notas</h2>
+        <h2 className="row-title">{t("Compara as tuas notas")}</h2>
         <p className="muted">
-          <Link to="/login">Entra</Link> para comparares as notas dos títulos que viste.
+          <Link to="/login">{t("Entra")}</Link> {t("para comparares as notas dos títulos que viste.")}
         </p>
       </div>
     );
@@ -252,7 +252,7 @@ export default function Compare() {
   if (loading) {
     return (
       <div className="sub-page compare-page">
-        <h2 className="row-title">Compara as tuas notas</h2>
+        <h2 className="row-title">{t("Compara as tuas notas")}</h2>
         <p className="muted">{t("A carregar a tua lista...")}</p>
       </div>
     );
@@ -261,7 +261,7 @@ export default function Compare() {
   if (error) {
     return (
       <div className="sub-page compare-page">
-        <h2 className="row-title">Compara as tuas notas</h2>
+        <h2 className="row-title">{t("Compara as tuas notas")}</h2>
         <p className="auth-error">{error}</p>
       </div>
     );
@@ -269,11 +269,9 @@ export default function Compare() {
 
   return (
     <div className="sub-page compare-page">
-      <h2 className="row-title">Compara as tuas notas</h2>
+      <h2 className="row-title">{t("Compara as tuas notas")}</h2>
       <p className="muted">
-        Vês as notas da comunidade de 2 coisas que já viste. No meio podes ajustar a
-        tua nota de cada uma: nota exata na caixa, ou ↑/↓ (↑/↓ no teclado ajustam a
-        esquerda). Espaço ou "Manter e próximo" passa ao próximo par.
+        {t('Vês as notas da comunidade de 2 coisas que já viste. No meio podes ajustar a tua nota de cada uma: nota exata na caixa, ou ↑/↓ (↑/↓ no teclado ajustam a esquerda). Espaço ou "Manter e próximo" passa ao próximo par.')}
       </p>
 
       <div className="compare-filters">
@@ -288,8 +286,7 @@ export default function Compare() {
 
       {seen.length < 2 ? (
         <p className="muted" style={{ marginTop: 14 }}>
-          Ainda não tens pelo menos 2 títulos marcados como vistos. Marca algo
-          como visto na ficha do título (ou na "A minha lista") e volta aqui.
+{t('Ainda não tens pelo menos 2 títulos marcados como vistos. Marca algo como visto na ficha do título (ou na "A minha lista") e volta aqui.')}
         </p>
       ) : pair ? (
         <>
@@ -327,7 +324,7 @@ export default function Compare() {
           {msg && <p className="auth-error" style={{ marginTop: 12 }}>{msg}</p>}
           <div className="compare-nav">
             <button className="pick-btn" onClick={next} disabled={busy}>
-              Próximo par →
+              {t("Próximo par →")}
             </button>
           </div>
         </>

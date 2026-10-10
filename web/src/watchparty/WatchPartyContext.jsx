@@ -7,6 +7,7 @@ import {
   useState,
 } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { useT } from "../i18n/I18nContext.jsx";
 
 const WatchPartyContext = createContext(null);
 
@@ -25,6 +26,7 @@ function fullUrl(path) {
 }
 
 export function WatchPartyProvider({ children }) {
+  const t = useT();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -126,7 +128,7 @@ export function WatchPartyProvider({ children }) {
         // Se nunca chegou a ligar (server em baixo), avisa uma vez.
         if (!openedRef.current) {
           setTimeout(() => {
-            if (!openedRef.current) setError("Sem ligação ao Watch Party.");
+            if (!openedRef.current) setError(t("Sem ligação ao Watch Party."));
           }, 4000);
         }
       };
@@ -134,7 +136,7 @@ export function WatchPartyProvider({ children }) {
 
       if (!host) send("hello", {});
     },
-    [handleStream, send]
+    [handleStream, send, t]
   );
 
   const createRoom = useCallback(

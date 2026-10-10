@@ -55,7 +55,7 @@ export default function Extract({ details, season, episode, startAt, onProgress 
         <p>{t("Sem stream direto para este título de momento.")}</p>
         <p className="muted">
           Os extractores gratuitos são instaveis. Usa o separador{" "}
-          <b>{t("Providers")}</b> (com anúncios) ou <b>Torrents</b>. Para reprodução sem
+          <b>{t("Providers")}</b> {t("(com anúncios) ou")} <b>Torrents</b>. Para reprodução sem
           anúncios fiavel, liga um extractor (Consumet) em{" "}
           <code>EXTRACTOR_API_BASE</code> no <code>server/.env</code>.
         </p>
@@ -68,7 +68,9 @@ export default function Extract({ details, season, episode, startAt, onProgress 
       <HlsPlayer sources={data.sources} subtitles={allSubs} startAt={startAt} onProgress={onProgress} />
       <p className="muted" style={{ fontSize: 12 }}>
         Fonte: {data.provider}
-        {allSubs.length ? ` · ${allSubs.length} legendas` : " · sem legendas"}
+        {allSubs.length
+            ? " · " + t("{n} legendas", { n: allSubs.length })
+            : " · " + t("sem legendas")}
       </p>
     </>
   );

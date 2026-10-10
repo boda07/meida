@@ -5,6 +5,17 @@
 // versao; quem nao encontra a sua ve o portugues (a lingua original).
 export const CHANGELOG = [
   {
+    version: "1.4.0",
+    items: [
+      "Tradução completa da interface para português e inglês (284 textos de interface + 46 mensagens de erro do servidor).",
+      "Correção: comentários aninhados aceitam respostas a respostas (até 30 níveis), com citação do pai.",
+    ],
+    items_en: [
+      "Complete interface translation (284 texts + 46 server errors).",
+      "Fix: nested comments accept replies to replies (up to 30 levels), with quote of parent.",
+    ],
+  },
+  {
     version: "1.3.9",
     items: [
       "Nova aba Estatisticas (`/stats`): as seis figuras da biblioteca, mais tempo visto, mais um histograma das notas e a decada favorita. O tempo so' conta a partir de agora — antes nao se media. A decada so' conta os titulos com ano guardado; abre a ficha de alguns e ela fica mais firme.",

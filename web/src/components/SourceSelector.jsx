@@ -98,7 +98,7 @@ export default function SourceSelector({
         </div>
       ) : (
         <p className="muted" style={{ marginBottom: 12 }}>
-          Sem fontes internas disponíveis.
+          {t("Sem fontes internas disponíveis.")}
         </p>
       )}
 
@@ -113,7 +113,10 @@ export default function SourceSelector({
                 target="_blank"
                 rel="noopener noreferrer"
                 className="source-btn external-btn"
-                title={`${s.name}: abrir ${isMovie ? "o filme" : "o episódio"} num novo separador`}
+                title={t("{nome}: abrir {o} num novo separador", {
+          nome: s.name,
+          o: isMovie ? t("o filme") : t("o episódio"),
+        })}
               >
                 {s.icon} {s.name} ↗
               </a>
@@ -126,7 +129,7 @@ export default function SourceSelector({
                 className="source-btn external-btn"
                 title={t("Procurar este filme/episódio no Google")}
               >
-                🔍 Pesquisar no Google ↗
+                {t("🔍 Pesquisar no Google ↗")}
               </a>
             )}
           </div>

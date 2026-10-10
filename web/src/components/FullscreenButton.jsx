@@ -1,6 +1,10 @@
+import { useT } from "../i18n/I18nContext.jsx";
+
 // Botao de ecra inteiro: poe em fullscreen o elemento (container do player)
 // passado por ref. Funciona com iframe e com <video>.
 export default function FullscreenButton({ targetRef }) {
+  const t = useT();
+
   function toggle() {
     const el = targetRef.current;
     if (!el) return;
@@ -12,7 +16,7 @@ export default function FullscreenButton({ targetRef }) {
   }
 
   return (
-    <button className="fs-btn" onClick={toggle} title="Ecra inteiro" aria-label="Ecra inteiro">
+    <button className="fs-btn" onClick={toggle} title={t("Ecra inteiro")} aria-label={t("Ecra inteiro")}>
       <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
         <path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M8 21H5a2 2 0 0 1-2-2v-3M16 21h3a2 2 0 0 0 2-2v-3" />
       </svg>

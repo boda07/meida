@@ -187,11 +187,11 @@ function idiomaAtual() {
 // `traduzir` vem do mesmo sitio que o resto do i18n. Importado de `traduzir.js`
 // (e nao do contexto) porque este modulo nao e' um componente React e nao pode
 // usar o hook `useT()`.
-import { traduzir } from "../i18n/traduzir.js";
+import { traduzir, t as tt } from "../i18n/traduzir.js";
 
 async function handle(res) {
   if (!res.ok) {
-    let msg = `Erro ${res.status}`;
+    let msg = tt("Erro {n}", { n: res.status });
     try {
       const body = await res.json();
       if (body.error) {

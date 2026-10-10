@@ -295,21 +295,21 @@ export default function Library() {
   if (ready && !user)
     return (
       <p className="status muted">
-        <Link to="/login">Entra</Link> para veres a tua lista.
+        <Link to="/login">{t("Entra")}</Link> {t("para veres a tua lista.")}
       </p>
     );
-  if (loading) return <LoadingStatus>A carregar a tua lista</LoadingStatus>;
+  if (loading) return <LoadingStatus>{t("A carregar a tua lista")}</LoadingStatus>;
   if (error) return <p className="status error">{error}</p>;
 
   return (
     <div className="sub-page">
       {offline && (
         <p className="lib-offline" role="status">
-          Sem internet — a mostrar os dados guardados.
+          {t("Sem internet — a mostrar os dados guardados.")}
         </p>
       )}
       <div className="lib-header">
-        <h2 className="row-title">A minha lista</h2>
+        <h2 className="row-title">{t("A minha lista")}</h2>
         <div className="lib-toolbar">
         <div className="lib-sort">
           <label htmlFor="lib-sort-sel">{t("Ordenar por")}</label>
@@ -320,7 +320,7 @@ export default function Library() {
           >
             {SORTS.map((s) => (
               <option key={s.id} value={s.id}>
-                {s.label}
+                {t(s.label)}
               </option>
             ))}
           </select>
@@ -339,7 +339,7 @@ export default function Library() {
               className={`tf-chip ${filter === f.id ? "active" : ""}`}
               onClick={() => setFilter(f.id)}
             >
-              {f.label}
+              {t(f.label)}
             </button>
           ))}
           <span className="lib-filters-sep" />
@@ -349,7 +349,7 @@ export default function Library() {
               className={`tf-chip ${typeFilter === f.id ? "active" : ""}`}
               onClick={() => setTypeFilter(f.id)}
             >
-              {f.label}
+              {t(f.label)}
             </button>
           ))}
           {hasGenres && (
@@ -365,7 +365,7 @@ export default function Library() {
           )}
           <span className="lib-filters-sep" />
           <button className="tf-chip lib-wl-clear" onClick={() => setWlOpen(true)}>
-            Limpar watchlist
+            {t("Limpar watchlist")}
           </button>
         </div>
         </div>
@@ -410,7 +410,7 @@ export default function Library() {
           </span>
         ))}
         <button className="tf-chip lib-list-new" onClick={() => openListModal("create")}>
-          + Nova lista
+          {t("+ Nova lista")}
         </button>
       </div>
 
@@ -420,10 +420,10 @@ export default function Library() {
             <div className="modal-head">
               <h3>
                 {listModal.action === "delete"
-                  ? "Apagar lista"
+                  ? t("Apagar lista")
                   : listModal.action === "rename"
-                  ? "Renomear lista"
-                  : "Nova lista"}
+                  ? t("Renomear lista")
+                  : t("Nova lista")}
               </h3>
               <button
                 className="modal-close"
@@ -436,8 +436,7 @@ export default function Library() {
             {listModal.action === "delete" ? (
               <>
                 <p className="muted" style={{ padding: "0 20px" }}>
-                  Apagar esta lista? Os títulos continuam na biblioteca, só saem
-                  da lista.
+                  {t("Apagar esta lista? Os títulos continuam na biblioteca, só saem da lista.")}
                 </p>
                 <div className="modal-actions">
                   <button
@@ -459,7 +458,7 @@ export default function Library() {
             ) : (
               <>
                 <p className="muted" style={{ padding: "0 20px" }}>
-                  Nome da lista:
+                  {t("Nome da lista:")}
                 </p>
                 <div style={{ padding: "0 20px" }}>
                   <input
@@ -504,8 +503,7 @@ export default function Library() {
               </button>
             </div>
             <p className="muted" style={{ padding: "0 20px" }}>
-              Remove os títulos da watchlist (os que já viste ou avaliaste ficam,
-              só perdem a marca de watchlist). Que watchlist queres apagar?
+              {t("Remove os títulos da watchlist (os que já viste ou avaliaste ficam, só perdem a marca de watchlist). Que watchlist queres apagar?")}
             </p>
             <div className="wl-clear-opts">
               {[
@@ -520,7 +518,7 @@ export default function Library() {
                   disabled={clearing}
                   onClick={() => clearWatchlist(o.id)}
                 >
-                  {o.label}
+                  {t(o.label)}
                 </button>
               ))}
             </div>
@@ -544,7 +542,7 @@ export default function Library() {
             <div className="lib-genre-groups">
               {genreGroups.map((grp) => (
                 <div key={grp.id} className="lib-genre-group">
-                  <h4 className="lib-genre-group-title">{grp.label}</h4>
+                  <h4 className="lib-genre-group-title">{t(grp.label)}</h4>
                   <div className="lib-genre-tags">
                     {grp.genres.map((g) => (
                       <button
@@ -578,16 +576,17 @@ export default function Library() {
       {!shown.length ? (
         <p className="muted">
           {selList != null
-            ? "Esta lista esta vazia. Abre um filme/série e usa o botao \"+ Lista\"."
+            ? t('Esta lista esta vazia. Abre um filme/série e usa o botao "+ Lista".')
             : items.length
             ? t("Nada nesta categoria.")
-            : "A tua lista esta vazia. Abre um filme/série e adiciona a watchlist, marca como visto ou da nota."}
+            : t("A tua lista esta vazia. Abre um filme/série e adiciona a watchlist, marca como visto ou da nota.")}
         </p>
       ) : (
         <>
         <div className="grid">
           {paged.map((it) => {
-            const t = displayTitle(it, settings.animeTitleLang === "romaji");
+            // `titulo`, e nao `t`: `t` ja e' a funcao de traducao (useT()).
+            const titulo = displayTitle(it, settings.animeTitleLang === "romaji");
             return (
             <Link
               key={`${it.type}-${it.tmdbId}`}
@@ -613,8 +612,8 @@ export default function Library() {
                 {selList != null && (
                   <button
                     className="card-remove"
-                    title="Remover da lista"
-                    aria-label={`Remover ${t} da lista`}
+                    title={t("Remover da lista")}
+                    aria-label={t("Remover {titulo} da lista", { titulo })}
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
@@ -639,7 +638,7 @@ export default function Library() {
               disabled={safePage <= 1}
               onClick={() => setPage(safePage - 1)}
             >
-              ← Anterior
+              {t("← Anterior")}
             </button>
             <span className="lib-pager-info">
               Página {safePage} de {pageCount} · {shown.length} títulos
@@ -649,7 +648,7 @@ export default function Library() {
               disabled={safePage >= pageCount}
               onClick={() => setPage(safePage + 1)}
             >
-              Seguinte →
+              {t("Seguinte →")}
             </button>
           </div>
         )}

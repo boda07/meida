@@ -82,7 +82,7 @@ export default function AddToList({ details }) {
         disabled={busy}
         onClick={() => setOpen((o) => !o)}
       >
-        + Lista
+        {t("+ Lista")}
       </button>
       {open && (
         <div className="addtolist-menu">
@@ -121,7 +121,7 @@ export default function AddToList({ details }) {
                   disabled={busy || !newName.trim()}
                   onClick={createAndAdd}
                 >
-                  Criar e adicionar
+                  {t("Criar e adicionar")}
                 </button>
               </div>
             </>

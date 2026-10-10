@@ -64,6 +64,9 @@ const SORTS = [
 
 // Chips de multi-seleção (Set).
 function MultiChips({ options, value, onToggle }) {
+  // Os `label` chegam em portugues (o `options` vem de um array de nivel de
+  // modulo, onde nao ha `useT()`); traduzem-se aqui, no momento de mostrar.
+  const t = useT();
   return (
     <div className="lib-filters">
       {options.map((o) => (
@@ -72,7 +75,7 @@ function MultiChips({ options, value, onToggle }) {
           className={`tf-chip ${value.has(o.id) ? "active" : ""}`}
           onClick={() => onToggle(o.id)}
         >
-          {o.label}
+          {t(o.label)}
         </button>
       ))}
     </div>
@@ -100,19 +103,19 @@ export default function Manga({ embedded = false }) {
           className={`tf-chip ${tab === "forYou" ? "active" : ""}`}
           onClick={() => setTab("forYou")}
         >
-          Para ti
+          {t("Para ti")}
         </button>
         <button
           className={`tf-chip ${tab === "toRead" ? "active" : ""}`}
           onClick={() => setTab("toRead")}
         >
-          Para ler
+          {t("Para ler")}
         </button>
         <button
           className={`tf-chip ${tab === "filters" ? "active" : ""}`}
           onClick={() => setTab("filters")}
         >
-          Procurar por filtros
+          {t("Procurar por filtros")}
         </button>
       </div>
 
@@ -206,11 +209,10 @@ function ForYou() {
     return (
       <div className="manga-empty">
         <p className="muted">
-          Liga a tua conta MyAnimeList para receberes recomendações com base no que
-          lês (e já leste).
+          {t("Liga a tua conta MyAnimeList para receberes recomendações com base no que lês (e já leste).")}
         </p>
         <Link className="pick-btn" to="/settings">
-          Ligar o MyAnimeList nas Definições
+          {t("Ligar o MyAnimeList nas Definições")}
         </Link>
       </div>
     );
@@ -252,15 +254,14 @@ function ForYou() {
           {hasMore && (
             <div className="load-more-wrap">
               <button className="load-more" onClick={loadMore} disabled={loadingMore}>
-                {loadingMore ? t("A procurar mais...") : "Mais recomendações"}
+                {loadingMore ? t("A procura mais...") : t("Mais recomendações")}
               </button>
             </div>
           )}
         </>
       ) : (
         <p className="muted" style={{ marginTop: 18 }}>
-          Não consegui recomendar nada com estes tipos. Tira alguns filtros, ou lê (e
-          marca no MAL) títulos com géneros, e tenta de novo.
+          {t("Não consegui recomendar nada com estes tipos. Tira alguns filtros, ou lê (e marca no MAL) títulos com géneros, e tenta de novo.")}
         </p>
       )}
     </>
@@ -338,11 +339,11 @@ function ToRead() {
     return (
       <div className="manga-empty">
         <p className="muted">
-          Liga a tua conta MyAnimeList para veres aqui a tua lista de "para ler"
+          {t('Liga a tua conta MyAnimeList para veres aqui a tua lista de "para ler"')}
           (plan to read).
         </p>
         <Link className="pick-btn" to="/settings">
-          Ligar o MyAnimeList nas Definições
+          {t("Ligar o MyAnimeList nas Definições")}
         </Link>
       </div>
     );
@@ -351,7 +352,7 @@ function ToRead() {
   if (!all.length) {
     return (
       <p className="muted" style={{ marginTop: 14 }}>
-        A tua lista de "para ler" está vazia. Adiciona mangá ao plan to read no MAL.
+        {t('A tua lista de "para ler" está vazia. Adiciona mangá ao plan to read no MAL.')}
       </p>
     );
   }
@@ -359,8 +360,9 @@ function ToRead() {
   return (
     <>
       <p className="muted" style={{ marginTop: 14 }}>
-        Os títulos que marcaste como "para ler" (plan to read) no MyAnimeList
-        {all.length ? ` (${all.length})` : ""}.
+        {t('Os títulos que marcaste como "para ler" (plan to read) no MyAnimeList{n}.', {
+          n: all.length ? ` (${all.length})` : "",
+        })}
       </p>
 
       <div className="manga-filter-block">
@@ -379,7 +381,7 @@ function ToRead() {
           <select value={sort} onChange={(e) => setSort(e.target.value)}>
             {TOREAD_SORTS.map((s) => (
               <option key={s.id} value={s.id}>
-                {s.label}
+                {t(s.label)}
               </option>
             ))}
           </select>
@@ -437,7 +439,7 @@ function ToRead() {
         </div>
       ) : (
         <p className="muted" style={{ marginTop: 18 }}>
-          Nada na tua lista com estes filtros.
+          {t("Nada na tua lista com estes filtros.")}
         </p>
       )}
     </>
@@ -505,8 +507,7 @@ function Filters() {
   return (
     <>
       <p className="muted" style={{ marginTop: 14 }}>
-        Escolhe um ou mais tipos, um ou mais estados e os géneros/temas (ex.:
-        Romance, Viagem no tempo) — eu trago títulos com essas tags.
+        {t("Escolhe um ou mais tipos, um ou mais estados e os géneros/temas (ex.: Romance, Viagem no tempo) — eu trago títulos com essas tags.")}
       </p>
 
       <div className="manga-filter-block">
@@ -525,7 +526,7 @@ function Filters() {
           <select value={sort} onChange={(e) => setSort(e.target.value)}>
             {SORTS.map((s) => (
               <option key={s.id} value={s.id}>
-                {s.label}
+                {t(s.label)}
               </option>
             ))}
           </select>
@@ -579,12 +580,12 @@ function Filters() {
       </div>
 
       <button className="pick-btn" onClick={() => search(1)} disabled={loading}>
-        {loading ? "A procurar..." : "📚 Recomendar"}
+        {loading ? t("A procurar...") : t("📚 Recomendar")}
       </button>
 
       {searched && !loading && !items.length && (
         <p className="muted" style={{ marginTop: 16 }}>
-          Nada encontrado com esses filtros. Tira alguns e tenta de novo.
+          {t("Nada encontrado com esses filtros. Tira alguns e tenta de novo.")}
         </p>
       )}
 
@@ -599,7 +600,7 @@ function Filters() {
       {hasMore && !loading && (
         <div className="load-more-wrap">
           <button className="load-more" onClick={() => search(page + 1)}>
-            Carregar mais
+            {t("Carregar mais")}
           </button>
         </div>
       )}

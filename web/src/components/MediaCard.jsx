@@ -41,11 +41,11 @@ export default function MediaCard({ item, landscape = false }) {
   const subtitle = item.type === "tv" ? `${item.year || ""} · Série` : item.year;
 
   // Ação do botão de quick-add (depende do estado actual).
-  let quickAria = "Adicionar à minha lista";
+  let quickAria = t("Adicionar à minha lista");
   if (watchlist && !watched) {
-    quickAria = "Marcar como visto";
+    quickAria = t("Marcar como visto");
   } else if (watched) {
-    quickAria = "Ver detalhes";
+    quickAria = t("Ver detalhes");
   }
 
   return (

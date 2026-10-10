@@ -460,6 +460,284 @@ export const DICIONARIO = {
     "MAL nao configurado no servidor.": "MAL nao configurado no servidor.",
     "entrada nao encontrada": "entrada nao encontrada",
     "este titulo nao tem IMDB id": "este titulo nao tem IMDB id",
+    // --- auditoria 2 ---
+    "Diz o que achaste...  (escreve @ para chamar alguém)":
+      "Diz o que achaste...  (escreve @ para chamar alguém)",
+    "Adicionar à minha lista": "Adicionar à minha lista",
+    "{quem} respondeu ao teu comentário": "{quem} respondeu ao teu comentário",
+    "{quem} gostou do teu comentário": "{quem} gostou do teu comentário",
+    "alguém": "alguém",
+    "como visto na ficha do título (ou na \"A minha lista\") e volta aqui.":
+      "como visto na ficha do título (ou na \"A minha lista\") e volta aqui.",
+    "Esta lista esta vazia. Abre um filme/série e usa o botao \"+ Lista\".":
+      "Esta lista esta vazia. Abre um filme/série e usa o botao \"+ Lista\".",
+    "A tua lista esta vazia. Abre um filme/série e adiciona a watchlist, marca como visto ou da nota.":
+      "A tua lista esta vazia. Abre um filme/série e adiciona a watchlist, marca como visto ou da nota.",
+    "Remover {t} da lista": "Remover {t} da lista",
+    "Importados {n} filmes vistos.": "Importados {n} filmes vistos.",
+    "Importados {n} vistos + {w} da watchlist.":
+      "Importados {n} vistos + {w} da watchlist.",
+    "Importados {n} títulos e {d} entradas do diário.":
+      "Importados {n} títulos e {d} entradas do diário.",
+    "Guardar perfil": "Guardar perfil",
+    "A média está acima da mediana: poucos títulos com nota muito alta estão a puxar a média para cima.":
+      "A média está acima da mediana: poucos títulos com nota muito alta estão a puxar a média para cima.",
+    "A média está abaixo da mediana: há muitos títulos bem avaliados a puxar a média para baixo.":
+      "A média está abaixo da mediana: há muitos títulos bem avaliados a puxar a média para baixo.",
+    "Sem ligação ao Watch Party.": "Sem ligação ao Watch Party.",
+    // --- auditoria 2 ---
+    "Ainda não tens pelo menos 2 títulos marcados como vistos. Marca algo como visto na ficha do título (ou na \"A minha lista\") e volta aqui.":
+      "Ainda não tens pelo menos 2 títulos marcados como vistos. Marca algo como visto na ficha do título (ou na \"A minha lista\") e volta aqui.",
+    // --- auditoria 2 ---
+    "Importados {n} animes para a tua lista.":
+      "Importados {n} animes para a tua lista.",
+    "✓ Marcar como visto": "✓ Marcar como visto",
+    "✓ Terminei o episódio {n}": "✓ Terminei o episódio {n}",
+    "{nome}: abrir {o} num novo separador":
+      "{nome}: abrir {o} num novo separador",
+    "o filme": "o filme",
+    "o episódio": "o episódio",
+    // --- textos das notificacoes ---
+    "{quem} começou a seguir-te": "{quem} começou a seguir-te",
+    "{quem} chamou-te num comentário": "{quem} chamou-te num comentário",
+    "Novidade": "Novidade",
+    // --- auditoria: textos de 1 palavra e atributos ---
+    "Sair de ecra inteiro": "Sair de ecra inteiro",
+    "Sem fontes internas disponíveis.": "Sem fontes internas disponíveis.",
+    "+ Lista": "+ Lista",
+    "Mais recentes": "Mais recentes",
+    "para veres as tuas conquistas.": "para veres as tuas conquistas.",
+    "Episódio {n}": "Episódio {n}",
+    "Atualizaste a MEIDA para a versão {v}. Novidades:":
+      "Atualizaste a MEIDA para a versão {v}. Novidades:",
+    "Destaques": "Destaques",
+    "Popularidade": "Popularidade",
+    "Nota": "Nota",
+    // --- auditoria completa ---
+    "(com anúncios) ou": "(com anúncios) ou",
+    "). É um serviço pago (mas barato) que guarda os torrents em cache — por isso o stream começa imediatamente, como no Stremio.":
+      "). É um serviço pago (mas barato) que guarda os torrents em cache — por isso o stream começa imediatamente, como no Stremio.",
+    "...": "...",
+    "A entrar": "A entrar",
+    "A extrair stream sem anúncios (a 1a vez pode demorar ~30s a acordar o servidor)...":
+      "A extrair stream sem anúncios (a 1a vez pode demorar ~30s a acordar o servidor)...",
+    "Ainda nao ha titulos na biblioteca, por isso ainda nao ha nada para contar.":
+      "Ainda nao ha titulos na biblioteca, por isso ainda nao ha nada para contar.",
+    "Ainda não tens outros títulos marcados como vistos para comparar. Marca algo como visto e volta aqui.":
+      "Ainda não tens outros títulos marcados como vistos para comparar. Marca algo como visto e volta aqui.",
+    "Apagar esta lista? Os títulos continuam na biblioteca, só saem da lista.":
+      "Apagar esta lista? Os títulos continuam na biblioteca, só saem da lista.",
+    "Aparece ao lado do teu nome no Discord o que estás a ver, como no Stremio. Só funciona com a app do Discord aberta neste computador, e nada é enviado para a internet — a MEIDA escreve directamente no Discord do teu PC.":
+      "Aparece ao lado do teu nome no Discord o que estás a ver, como no Stremio. Só funciona com a app do Discord aberta neste computador, e nada é enviado para a internet — a MEIDA escreve directamente no Discord do teu PC.",
+    "Autoplay liga/desliga o arranque automático. Autoskip tenta saltar a intro/genéricos (funciona nos nossos players; nos providers externos depende do site).":
+      "Autoplay liga/desliga o arranque automático. Autoskip tenta saltar a intro/genéricos (funciona nos nossos players; nos providers externos depende do site).",
+    "Carrega um ficheiro JSON ou CSV exportado da MEIDA para voltar a carregar a tua biblioteca e diário. É um merge: não apaga notas nem visto que o ficheiro não traga.":
+      "Carrega um ficheiro JSON ou CSV exportado da MEIDA para voltar a carregar a tua biblioteca e diário. É um merge: não apaga notas nem visto que o ficheiro não traga.",
+    "Carregar mais": "Carregar mais",
+    "Compara com o que já viste e ajusta a tua nota com ↑/↓ (ou escreve-a na caixa). A nota deste título é guardada de imediato.":
+      "Compara com o que já viste e ajusta a tua nota com ↑/↓ (ou escreve-a na caixa). A nota deste título é guardada de imediato.",
+    "Cor dos botões e realces. Predefinidas, as tuas últimas escolhas, ou o picker.":
+      "Cor dos botões e realces. Predefinidas, as tuas últimas escolhas, ou o picker.",
+    "Criar e adicionar": "Criar e adicionar",
+    "Cross-sync concluído: +{m} no MAL, +{a} no AniList.":
+      "Cross-sync concluído: +{m} no MAL, +{a} no AniList.",
+    "Descarrega a tua biblioteca e diário. Em JSON (para fazer backup ou voltar a usar depois) ou CSV (para abrir no Excel/Sheets).":
+      "Descarrega a tua biblioteca e diário. Em JSON (para fazer backup ou voltar a usar depois) ou CSV (para abrir no Excel/Sheets).",
+    "Episódio": "Episódio",
+    "Erro {n}": "Erro {n}",
+    "Escolhe outra": "Escolhe outra",
+    "Escolhe um ou mais tipos, um ou mais estados e os géneros/temas (ex.: Romance, Viagem no tempo) — eu trago títulos com essas tags.":
+      "Escolhe um ou mais tipos, um ou mais estados e os géneros/temas (ex.: Romance, Viagem no tempo) — eu trago títulos com essas tags.",
+    "Escolher do PC": "Escolher do PC",
+    "Escreve o teu nome, depois cria uma sala e envia o codigo ao teu amigo — ou entra com o codigo dele.":
+      "Escreve o teu nome, depois cria uma sala e envia o codigo ao teu amigo — ou entra com o codigo dele.",
+    "Esse momento não se percebe. Escreve 2:05 ou 125.":
+      "Esse momento não se percebe. Escreve 2:05 ou 125.",
+    "Fontes de stream usadas no player (embeds). Quando um está morto fica riscado e é saltado na escolha automática.":
+      "Fontes de stream usadas no player (embeds). Quando um está morto fica riscado e é saltado na escolha automática.",
+    "Fontes dedicadas de anime (sub/dub via MyAnimeList). O seletor de áudio em cima só afeta este título.":
+      "Fontes dedicadas de anime (sub/dub via MyAnimeList). O seletor de áudio em cima só afeta este título.",
+    "Fundo da app. Predefinidas (escuras, texto legível), as tuas últimas escolhas, ou o picker.":
+      "Fundo da app. Predefinidas (escuras, texto legível), as tuas últimas escolhas, ou o picker.",
+    "Importa todos os filmes vistos (com as tuas notas) e/ou a watchlist completa. Em listas grandes pode demorar alguns segundos. Em cada filme tens um botao para o abrir no Letterboxd.":
+      "Importa todos os filmes vistos (com as tuas notas) e/ou a watchlist completa. Em listas grandes pode demorar alguns segundos. Em cada filme tens um botao para o abrir no Letterboxd.",
+    "Importados {n} da watchlist.": "Importados {n} da watchlist.",
+    "Importar lista do AniList": "Importar lista do AniList",
+    "Importar vistos": "Importar vistos",
+    "Indica o teu username do Letterboxd para importar a tua watchlist e os filmes vistos (com as tuas notas), e usar a nota da comunidade do Letterboxd.":
+      "Indica o teu username do Letterboxd para importar a tua watchlist e os filmes vistos (com as tuas notas), e usar a nota da comunidade do Letterboxd.",
+    "Legenda preferida (ativada automaticamente nos players sem anúncios e de torrents).":
+      "Legenda preferida (ativada automaticamente nos players sem anúncios e de torrents).",
+    "Legendado (sub) ou dobrado (dub). Aplica-se às fontes dedicadas de anime (MegaPlay/VidLink/VidSrc.cc por MyAnimeList).":
+      "Legendado (sub) ou dobrado (dub). Aplica-se às fontes dedicadas de anime (MegaPlay/VidLink/VidSrc.cc por MyAnimeList).",
+    "Liga a tua conta MyAnimeList para receberes recomendações com base no que lês (e já leste).":
+      "Liga a tua conta MyAnimeList para receberes recomendações com base no que lês (e já leste).",
+    "Liga a tua conta para importar a tua lista e marcar episódios vistos.":
+      "Liga a tua conta para importar a tua lista e marcar episódios vistos.",
+    "Ligado como {u}. A nota da comunidade dos teus filmes":
+      "Ligado como {u}. A nota da comunidade dos teus filmes",
+    "Ligado como {u}. Nos torrents, os que estiverem em cache no Real-Debrid reproduzem {logo} (sem esperar por peers).":
+      "Ligado como {u}. Nos torrents, os que estiverem em cache no Real-Debrid reproduzem {logo} (sem esperar por peers).",
+    "Ligado como {u}. Os episódios de anime que vires são marcados no teu MAL automaticamente.":
+      "Ligado como {u}. Os episódios de anime que vires são marcados no teu MAL automaticamente.",
+    "Ligado como {u}. Quando não tens o MyAnimeList":
+      "Ligado como {u}. Quando não tens o MyAnimeList",
+    "Melhores notas": "Melhores notas",
+    "Na lista": "Na lista",
+    "Nota:": "Nota:",
+    "Notas entre {a} e {b}, em {n} títulos.":
+      "Notas entre {a} e {b}, em {n} títulos.",
+    "Notas entre {a} e {b}.": "Notas entre {a} e {b}.",
+    "Não consegui recomendar nada com estes tipos. Tira alguns filtros, ou lê (e marca no MAL) títulos com géneros, e tenta de novo.":
+      "Não consegui recomendar nada com estes tipos. Tira alguns filtros, ou lê (e marca no MAL) títulos com géneros, e tenta de novo.",
+    "Não tens conta?": "Não tens conta?",
+    "O browser não consegue reproduzir este ficheiro (provavelmente .mkv ou codec x265). Usa o filtro {filtro} na lista de torrents e escolhe um {formato}.":
+      "O browser não consegue reproduzir este ficheiro (provavelmente .mkv ou codec x265). Usa o filtro {filtro} na lista de torrents e escolhe um {formato}.",
+    "O servidor não tem o AniList configurado (falta ANILIST_CLIENT_ID).":
+      "O servidor não tem o AniList configurado (falta ANILIST_CLIENT_ID).",
+    "O servidor não tem o MyAnimeList configurado (falta MAL_CLIENT_ID).":
+      "O servidor não tem o MyAnimeList configurado (falta MAL_CLIENT_ID).",
+    "O tempo visto só conta a partir de agora — a app nunca mediu tempo, e não há como saber quanto viste antes disto. Volta a ver alguma coisa e o número começa a aparecer.":
+      "O tempo visto só conta a partir de agora — a app nunca mediu tempo, e não há como saber quanto viste antes disto. Volta a ver alguma coisa e o número começa a aparecer.",
+    "Ocorreu um erro ao mostrar esta página. Recarrega para tentar de novo.":
+      "Ocorreu um erro ao mostrar esta página. Recarrega para tentar de novo.",
+    "Procura uma versão nova da MEIDA. Não precisas de ter conta.":
+      "Procura uma versão nova da MEIDA. Não precisas de ter conta.",
+    "Remove a MEIDA do computador. A app fecha e o desinstalador abre.":
+      "Remove a MEIDA do computador. A app fecha e o desinstalador abre.",
+    "Remove os títulos da watchlist (os que já viste ou avaliaste ficam, só perdem a marca de watchlist). Que watchlist queres apagar?":
+      "Remove os títulos da watchlist (os que já viste ou avaliaste ficam, só perdem a marca de watchlist). Que watchlist queres apagar?",
+    "Remover avatar": "Remover avatar",
+    "Remover {titulo} da lista": "Remover {titulo} da lista",
+    "Rever agora": "Rever agora",
+    "Sair da sala": "Sair da sala",
+    "Sem internet — a mostrar os dados guardados.":
+      "Sem internet — a mostrar os dados guardados.",
+    "Simples (só a cor), um padrão por cima, ou uma imagem tua (como o fundo do WhatsApp). O padrão usa a tua cor de destaque.":
+      "Simples (só a cor), um padrão por cima, ou uma imagem tua (como o fundo do WhatsApp). O padrão usa a tua cor de destaque.",
+    "Sincronizar com MAL": "Sincronizar com MAL",
+    "Usar URL": "Usar URL",
+    "Verifica que criaste {ficheiro} com a tua chave do TMDB.":
+      "Verifica que criaste {ficheiro} com a tua chave do TMDB.",
+    "a mais alta": "a mais alta",
+    "a mais baixa": "a mais baixa",
+    "agora mesmo": "agora mesmo",
+    "data não disponível": "data não disponível",
+    "para comentar.": "para comentar.",
+    "para comparares as notas dos títulos que viste.":
+      "para comparares as notas dos títulos que viste.",
+    "para ligares o AniList.": "para ligares o AniList.",
+    "para ligares o Letterboxd.": "para ligares o Letterboxd.",
+    "para ligares o MyAnimeList.": "para ligares o MyAnimeList.",
+    "para ligares o Real-Debrid.": "para ligares o Real-Debrid.",
+    // --- auditoria completa 2 ---
+    "para marcares como visto e dares nota.":
+      "para marcares como visto e dares nota.",
+    "para veres a tua lista.": "para veres a tua lista.",
+    "para veres as tuas estatísticas. Só tu as vês.":
+      "para veres as tuas estatísticas. Só tu as vês.",
+    "para veres o teu diário.": "para veres o teu diário.",
+    "{n} {r} atras": "{n} {r} atras",
+    "{r} ({n})": "{r} ({n})",
+    "sem legendas": "sem legendas",
+    "{n} legendas": "{n} legendas",
+    // --- auditoria completa 3 ---
+    "É o que os outros veem quando visitam o teu perfil. A biblioteca e as listas só aparecem se o perfil estiver público.":
+      "É o que os outros veem quando visitam o teu perfil. A biblioteca e as listas só aparecem se o perfil estiver público.",
+    "🎲 Escolhe algo para mim": "🎲 Escolhe algo para mim",
+    "📚 Recomendar": "📚 Recomendar",
+    // --- textos encontrados pela regra de frase ---
+    "Criar sala": "Criar sala",
+    "Desinstalar MEIDA": "Desinstalar MEIDA",
+    "Este título": "Este título",
+    "Guarda no diário e avança o {b} para o próximo episódio":
+      "Guarda no diário e avança o {b} para o próximo episódio",
+    "Importar tudo": "Importar tudo",
+    "Importar watchlist": "Importar watchlist",
+    "Ligar AniList": "Ligar AniList",
+    "Ligar MyAnimeList": "Ligar MyAnimeList",
+    "Próximo par →": "Próximo par →",
+    "Seguinte →": "Seguinte →",
+    "Trocar referência ↻": "Trocar referência ↻",
+    "Ver detalhes": "Ver detalhes",
+    "Vês as notas da comunidade de 2 coisas que já viste. No meio podes ajustar a tua nota de cada uma: nota exata na caixa, ou ↑/↓ (↑/↓ no teclado ajustam a esquerda). Espaço ou \"Manter e próximo\" passa ao próximo par.":
+      "Vês as notas da comunidade de 2 coisas que já viste. No meio podes ajustar a tua nota de cada uma: nota exata na caixa, ou ↑/↓ (↑/↓ no teclado ajustam a esquerda). Espaço ou \"Manter e próximo\" passa ao próximo par.",
+    "Watch Party": "Watch Party",
+    "a mediana": "a mediana",
+    "← Anterior": "← Anterior",
+    "⏱ neste momento": "⏱ neste momento",
+    "⚖ Comparar avaliação": "⚖ Comparar avaliação",
+    "🔍 Pesquisar no Google ↗": "🔍 Pesquisar no Google ↗",
+    // --- placeholder de resposta ---
+    "Responder a {u}...  (escreve @ para chamar alguém)":
+      "Responder a {u}...  (escreve @ para chamar alguém)",
+    // --- audio do torrent ---
+    "DUB": "DUB",
+    "Legendado": "Legendado",
+    // --- chaves em falta 2 ---
+    "(agora está privado: só tu vês)": "(agora está privado: só tu vês)",
+    "\"Escolhe algo para mim\". Desligado por defeito.":
+      "\"Escolhe algo para mim\". Desligado por defeito.",
+    "+ Nova lista": "+ Nova lista",
+    ". Depois carrega no botao.": ". Depois carrega no botao.",
+    "A procura mais...": "A procura mais...",
+    "A tua lista de \"para ler\" está vazia. Adiciona mangá ao plan to read no MAL.":
+      "A tua lista de \"para ler\" está vazia. Adiciona mangá ao plan to read no MAL.",
+    "Ajusta a largura e a altura dos posters (útil em ecrãs pequenos).":
+      "Ajusta a largura e a altura dos posters (útil em ecrãs pequenos).",
+    "Autoplay desligado": "Autoplay desligado",
+    "Autoplay ligado": "Autoplay ligado",
+    "Autoskip desligado": "Autoskip desligado",
+    "Autoskip ligado": "Autoskip ligado",
+    "Como mostrar os nomes dos animes (catálogo, pesquisa e a tua lista).":
+      "Como mostrar os nomes dos animes (catálogo, pesquisa e a tua lista).",
+    "Editar perfil": "Editar perfil",
+    "Entra para gostar": "Entra para gostar",
+    "Escolher ficheiro": "Escolher ficheiro",
+    "Estás em desenvolvimento — esta opção só se aplica à app instalada.":
+      "Estás em desenvolvimento — esta opção só se aplica à app instalada.",
+    "Fonte: {p}": "Fonte: {p}",
+    "Gostar": "Gostar",
+    "Há mais respostas aqui abaixo que não foi possível mostrar.":
+      "Há mais respostas aqui abaixo que não foi possível mostrar.",
+    "Imagem do computador": "Imagem do computador",
+    "Imagem por URL": "Imagem por URL",
+    "Isto só funciona na app de computador (Electron), não na versão web.":
+      "Isto só funciona na app de computador (Electron), não na versão web.",
+    "Liga a tua conta MyAnimeList para veres aqui a tua lista de \"para ler\"":
+      "Liga a tua conta MyAnimeList para veres aqui a tua lista de \"para ler\"",
+    "Ligar o MyAnimeList nas Definições": "Ligar o MyAnimeList nas Definições",
+    "Mais info": "Mais info",
+    "Mais recomendações": "Mais recomendações",
+    "Minuto do vídeo: {t} ({s} segundos)": "Minuto do vídeo: {t} ({s} segundos)",
+    "Nada na tua lista com estes filtros.":
+      "Nada na tua lista com estes filtros.",
+    "Nome da lista:": "Nome da lista:",
+    "Nova lista": "Nova lista",
+    "Onde ficam os teus dados. {a} guarda tudo localmente.":
+      "Onde ficam os teus dados. {a} guarda tudo localmente.",
+    "Os títulos que marcaste como \"para ler\" (plan to read) no MyAnimeList{n}.":
+      "Os títulos que marcaste como \"para ler\" (plan to read) no MyAnimeList{n}.",
+    "Para ler": "Para ler",
+    "Para ti": "Para ti",
+    "Perfil atualizado. ✓": "Perfil atualizado. ✓",
+    "Procurar por filtros": "Procurar por filtros",
+    "Remover imagem": "Remover imagem",
+    "Renomear lista": "Renomear lista",
+    "Repor tamanho": "Repor tamanho",
+    "Reproduzir": "Reproduzir",
+    "Sem ficheiro": "Sem ficheiro",
+    "Tirar o gosto": "Tirar o gosto",
+    "para editares o teu perfil.": "para editares o teu perfil.",
+    "para escolheres um avatar.": "para escolheres um avatar.",
+    "{a} liga a app a um MEIDA alojado noutro sítio, para partilhares conta, biblioteca, seguidores e comentários entre dispositivos.":
+      "{a} liga a app a um MEIDA alojado noutro sítio, para partilhares conta, biblioteca, seguidores e comentários entre dispositivos.",
+    "{e} {c} — pode não reproduzir no browser. Prefere .mp4.":
+      "{e} {c} — pode não reproduzir no browser. Prefere .mp4.",
+    "⚡ Debrid": "⚡ Debrid",
+    "✓ Reproduz no browser": "✓ Reproduz no browser",
+    "✓ Visto": "✓ Visto",
+    "✓ browser": "✓ browser",
   },
 
   en: {
@@ -887,6 +1165,283 @@ export const DICIONARIO = {
       "MyAnimeList is not configured on the server.",
     "entrada nao encontrada": "entry not found",
     "este titulo nao tem IMDB id": "this title has no IMDB id",
+    // --- auditoria 2 ---
+    "Diz o que achaste...  (escreve @ para chamar alguém)":
+      "Say what you thought...  (type @ to mention someone)",
+    "Adicionar à minha lista": "Add to my list",
+    "{quem} respondeu ao teu comentário": "{quem} replied to your comment",
+    "{quem} gostou do teu comentário": "{quem} liked your comment",
+    "alguém": "someone",
+    "como visto na ficha do título (ou na \"A minha lista\") e volta aqui.":
+      "as watched on the title page (or in \"My list\") and come back here.",
+    "Esta lista esta vazia. Abre um filme/série e usa o botao \"+ Lista\".":
+      "This list is empty. Open a movie/series and use the \"+ List\" button.",
+    "A tua lista esta vazia. Abre um filme/série e adiciona a watchlist, marca como visto ou da nota.":
+      "Your library is empty. Open a movie/series and add it to your watchlist, mark it as watched or rate it.",
+    "Remover {t} da lista": "Remove {t} from the list",
+    "Importados {n} filmes vistos.": "Imported {n} watched films.",
+    "Importados {n} vistos + {w} da watchlist.":
+      "Imported {n} watched + {w} from the watchlist.",
+    "Importados {n} títulos e {d} entradas do diário.":
+      "Imported {n} titles and {d} diary entries.",
+    "Guardar perfil": "Save profile",
+    "A média está acima da mediana: poucos títulos com nota muito alta estão a puxar a média para cima.":
+      "The average is above the median: a few very highly rated titles are pulling the average up.",
+    "A média está abaixo da mediana: há muitos títulos bem avaliados a puxar a média para baixo.":
+      "The average is below the median: many well-rated titles are pulling the average down.",
+    "Sem ligação ao Watch Party.": "Not connected to the Watch Party.",
+    // --- auditoria 2 ---
+    "Ainda não tens pelo menos 2 títulos marcados como vistos. Marca algo como visto na ficha do título (ou na \"A minha lista\") e volta aqui.":
+      "You don't have at least 2 titles marked as watched yet. Mark something as watched on the title page (or in \"My list\") and come back here.",
+    // --- auditoria 2 ---
+    "Importados {n} animes para a tua lista.":
+      "Imported {n} anime to your library.",
+    "✓ Marcar como visto": "✓ Mark as watched",
+    "✓ Terminei o episódio {n}": "✓ I finished episode {n}",
+    "{nome}: abrir {o} num novo separador": "{nome}: open {o} in a new tab",
+    "o filme": "the movie",
+    "o episódio": "the episode",
+    // --- textos das notificacoes ---
+    "{quem} começou a seguir-te": "{quem} started following you",
+    "{quem} chamou-te num comentário": "{quem} mentioned you in a comment",
+    "Novidade": "Something new",
+    // --- auditoria: textos de 1 palavra e atributos ---
+    "Sair de ecra inteiro": "Exit fullscreen",
+    "Sem fontes internas disponíveis.": "No internal sources available.",
+    "+ Lista": "+ List",
+    "Mais recentes": "Most recent",
+    "para veres as tuas conquistas.": "to see your achievements.",
+    "Episódio {n}": "Episode {n}",
+    "Atualizaste a MEIDA para a versão {v}. Novidades:":
+      "You updated MEIDA to version {v}. What's new:",
+    "Destaques": "Featured",
+    "Popularidade": "Popularity",
+    "Nota": "Rating",
+    // --- auditoria completa ---
+    "(com anúncios) ou": "(with ads) or",
+    "). É um serviço pago (mas barato) que guarda os torrents em cache — por isso o stream começa imediatamente, como no Stremio.":
+      "). It's a paid service (but cheap) that keeps torrents in cache — so the stream starts right away, like in Stremio.",
+    "...": "...",
+    "A entrar": "Signing in",
+    "A extrair stream sem anúncios (a 1a vez pode demorar ~30s a acordar o servidor)...":
+      "Extracting an ad-free stream (the first time can take ~30s to wake the server)...",
+    "Ainda nao ha titulos na biblioteca, por isso ainda nao ha nada para contar.":
+      "There are no titles in your library yet, so there's nothing to count.",
+    "Ainda não tens outros títulos marcados como vistos para comparar. Marca algo como visto e volta aqui.":
+      "You don't have any other titles marked as watched to compare. Mark something as watched and come back here.",
+    "Apagar esta lista? Os títulos continuam na biblioteca, só saem da lista.":
+      "Delete this list? The titles stay in your library, they just leave the list.",
+    "Aparece ao lado do teu nome no Discord o que estás a ver, como no Stremio. Só funciona com a app do Discord aberta neste computador, e nada é enviado para a internet — a MEIDA escreve directamente no Discord do teu PC.":
+      "What you're watching shows next to your name on Discord, like in Stremio. It only works with the Discord app open on this computer, and nothing is sent to the internet — MEIDA writes directly to the Discord on your PC.",
+    "Autoplay liga/desliga o arranque automático. Autoskip tenta saltar a intro/genéricos (funciona nos nossos players; nos providers externos depende do site).":
+      "Autoplay turns automatic start on/off. Autoskip tries to skip the intro/opening (it works on our own players; on external providers it depends on the site).",
+    "Carrega um ficheiro JSON ou CSV exportado da MEIDA para voltar a carregar a tua biblioteca e diário. É um merge: não apaga notas nem visto que o ficheiro não traga.":
+      "Loads a JSON or CSV file exported from MEIDA to reload your library and diary. It's a merge: it doesn't delete ratings or watched entries the file doesn't have.",
+    "Carregar mais": "Load more",
+    "Compara com o que já viste e ajusta a tua nota com ↑/↓ (ou escreve-a na caixa). A nota deste título é guardada de imediato.":
+      "Compare with what you've already seen and adjust your rating with ↑/↓ (or type it in the box). The rating for this title is saved immediately.",
+    "Cor dos botões e realces. Predefinidas, as tuas últimas escolhas, ou o picker.":
+      "Button and highlight colours. The defaults, your recent choices, or the picker.",
+    "Criar e adicionar": "Create and add",
+    "Cross-sync concluído: +{m} no MAL, +{a} no AniList.":
+      "Cross-sync complete: +{m} on MAL, +{a} on AniList.",
+    "Descarrega a tua biblioteca e diário. Em JSON (para fazer backup ou voltar a usar depois) ou CSV (para abrir no Excel/Sheets).":
+      "Downloads your library and diary. As JSON (to back up or reuse later) or CSV (to open in Excel/Sheets).",
+    "Episódio": "Episode",
+    "Erro {n}": "Error {n}",
+    "Escolhe outra": "Pick another",
+    "Escolhe um ou mais tipos, um ou mais estados e os géneros/temas (ex.: Romance, Viagem no tempo) — eu trago títulos com essas tags.":
+      "Pick one or more types, one or more statuses and the genres/themes (e.g.: Romance, Time travel) — I'll bring titles with those tags.",
+    "Escolher do PC": "Choose from PC",
+    "Escreve o teu nome, depois cria uma sala e envia o codigo ao teu amigo — ou entra com o codigo dele.":
+      "Type your name, then create a room and send the code to your friend — or join with their code.",
+    "Esse momento não se percebe. Escreve 2:05 ou 125.":
+      "Can't tell what moment that is. Write 2:05 or 125.",
+    "Fontes de stream usadas no player (embeds). Quando um está morto fica riscado e é saltado na escolha automática.":
+      "Stream sources used in the player (embeds). When one is dead it gets struck through and is skipped by the automatic choice.",
+    "Fontes dedicadas de anime (sub/dub via MyAnimeList). O seletor de áudio em cima só afeta este título.":
+      "Dedicated anime sources (sub/dub via MyAnimeList). The audio selector above only affects this title.",
+    "Fundo da app. Predefinidas (escuras, texto legível), as tuas últimas escolhas, ou o picker.":
+      "App background. The defaults (dark, readable text), your recent choices, or the picker.",
+    "Importa todos os filmes vistos (com as tuas notas) e/ou a watchlist completa. Em listas grandes pode demorar alguns segundos. Em cada filme tens um botao para o abrir no Letterboxd.":
+      "Imports all watched films (with your ratings) and/or the full watchlist. On large lists it can take a few seconds. Every film has a button to open it on Letterboxd.",
+    "Importados {n} da watchlist.": "Imported {n} from the watchlist.",
+    "Importar lista do AniList": "Import AniList list",
+    "Importar vistos": "Import watched",
+    "Indica o teu username do Letterboxd para importar a tua watchlist e os filmes vistos (com as tuas notas), e usar a nota da comunidade do Letterboxd.":
+      "Enter your Letterboxd username to import your watchlist and watched films (with your ratings), and to use Letterboxd's community ratings.",
+    "Legenda preferida (ativada automaticamente nos players sem anúncios e de torrents).":
+      "Preferred subtitle language (enabled automatically on ad-free and torrent players).",
+    "Legendado (sub) ou dobrado (dub). Aplica-se às fontes dedicadas de anime (MegaPlay/VidLink/VidSrc.cc por MyAnimeList).":
+      "Subtitled (sub) or dubbed (dub). Applies to the dedicated anime sources (MegaPlay/VidLink/VidSrc.cc via MyAnimeList).",
+    "Liga a tua conta MyAnimeList para receberes recomendações com base no que lês (e já leste).":
+      "Connect your MyAnimeList account to get recommendations based on what you read (and have already read).",
+    "Liga a tua conta para importar a tua lista e marcar episódios vistos.":
+      "Connect your account to import your list and mark episodes as watched.",
+    "Ligado como {u}. A nota da comunidade dos teus filmes":
+      "Connected as {u}. The community rating of your films",
+    "Ligado como {u}. Nos torrents, os que estiverem em cache no Real-Debrid reproduzem {logo} (sem esperar por peers).":
+      "Connected as {u}. On torrents, the ones already in the Real-Debrid cache play {logo} (without waiting for peers).",
+    "Ligado como {u}. Os episódios de anime que vires são marcados no teu MAL automaticamente.":
+      "Connected as {u}. Anime episodes you watch are marked on your MAL automatically.",
+    "Ligado como {u}. Quando não tens o MyAnimeList":
+      "Connected as {u}. When you don't have MyAnimeList",
+    "Melhores notas": "Top ratings",
+    "Na lista": "On the list",
+    "Nota:": "Rating:",
+    "Notas entre {a} e {b}, em {n} títulos.":
+      "Ratings between {a} and {b}, across {n} titles.",
+    "Notas entre {a} e {b}.": "Ratings between {a} and {b}.",
+    "Não consegui recomendar nada com estes tipos. Tira alguns filtros, ou lê (e marca no MAL) títulos com géneros, e tenta de novo.":
+      "I couldn't recommend anything with these filters. Remove some filters, or read (and mark on MAL) titles with genres, and try again.",
+    "Não tens conta?": "Don't have an account?",
+    "O browser não consegue reproduzir este ficheiro (provavelmente .mkv ou codec x265). Usa o filtro {filtro} na lista de torrents e escolhe um {formato}.":
+      "The browser can't play this file (probably .mkv or x265 codec). Use the {filtro} filter in the torrent list and pick an {formato}.",
+    "O servidor não tem o AniList configurado (falta ANILIST_CLIENT_ID).":
+      "The server doesn't have AniList configured (ANILIST_CLIENT_ID is missing).",
+    "O servidor não tem o MyAnimeList configurado (falta MAL_CLIENT_ID).":
+      "The server doesn't have MyAnimeList configured (MAL_CLIENT_ID is missing).",
+    "O tempo visto só conta a partir de agora — a app nunca mediu tempo, e não há como saber quanto viste antes disto. Volta a ver alguma coisa e o número começa a aparecer.":
+      "Watch time only counts from now on — the app never measured time, and there's no way to know how much you watched before this. Watch something and the number starts showing.",
+    "Ocorreu um erro ao mostrar esta página. Recarrega para tentar de novo.":
+      "Something went wrong showing this page. Reload to try again.",
+    "Procura uma versão nova da MEIDA. Não precisas de ter conta.":
+      "Looks for a newer version of MEIDA. You don't need an account.",
+    "Remove a MEIDA do computador. A app fecha e o desinstalador abre.":
+      "Removes MEIDA from the computer. The app closes and the uninstaller opens.",
+    "Remove os títulos da watchlist (os que já viste ou avaliaste ficam, só perdem a marca de watchlist). Que watchlist queres apagar?":
+      "Removes the titles from the watchlist (the ones you've watched or rated stay, they just lose the watchlist flag). Which watchlist do you want to delete?",
+    "Remover avatar": "Remove avatar",
+    "Remover {titulo} da lista": "Remove {titulo} from the list",
+    "Rever agora": "Check again",
+    "Sair da sala": "Leave the room",
+    "Sem internet — a mostrar os dados guardados.":
+      "No internet — showing the saved data.",
+    "Simples (só a cor), um padrão por cima, ou uma imagem tua (como o fundo do WhatsApp). O padrão usa a tua cor de destaque.":
+      "Plain (colour only), a pattern on top, or your own image (like the WhatsApp wallpaper). The pattern uses your accent colour.",
+    "Sincronizar com MAL": "Sync with MAL",
+    "Usar URL": "Use URL",
+    "Verifica que criaste {ficheiro} com a tua chave do TMDB.":
+      "Check that you created {ficheiro} with your TMDB key.",
+    "a mais alta": "highest",
+    "a mais baixa": "lowest",
+    "agora mesmo": "just now",
+    "data não disponível": "date unavailable",
+    "para comentar.": "to comment.",
+    "para comparares as notas dos títulos que viste.":
+      "to compare the ratings of the titles you've seen.",
+    "para ligares o AniList.": "to connect AniList.",
+    "para ligares o Letterboxd.": "to connect Letterboxd.",
+    "para ligares o MyAnimeList.": "to connect MyAnimeList.",
+    "para ligares o Real-Debrid.": "to connect Real-Debrid.",
+    // --- auditoria completa 2 ---
+    "para marcares como visto e dares nota.":
+      "to mark as watched and give a rating.",
+    "para veres a tua lista.": "to see your list.",
+    "para veres as tuas estatísticas. Só tu as vês.":
+      "to see your statistics. Only you can see them.",
+    "para veres o teu diário.": "to see your diary.",
+    "{n} {r} atras": "{n} {r} ago",
+    "{r} ({n})": "{r} ({n})",
+    "sem legendas": "no subtitles",
+    "{n} legendas": "{n} subtitles",
+    // --- auditoria completa 3 ---
+    "É o que os outros veem quando visitam o teu perfil. A biblioteca e as listas só aparecem se o perfil estiver público.":
+      "What others see when they visit your profile. Your library and lists only show if the profile is public.",
+    "🎲 Escolhe algo para mim": "🎲 Pick something for me",
+    "📚 Recomendar": "📚 Recommend",
+    // --- textos encontrados pela regra de frase ---
+    "Criar sala": "Create room",
+    "Desinstalar MEIDA": "Uninstall MEIDA",
+    "Este título": "This title",
+    "Guarda no diário e avança o {b} para o próximo episódio":
+      "Saved to the diary and moves \"{b}\" to the next episode",
+    "Importar tudo": "Import everything",
+    "Importar watchlist": "Import watchlist",
+    "Ligar AniList": "Connect AniList",
+    "Ligar MyAnimeList": "Connect MyAnimeList",
+    "Próximo par →": "Next pair →",
+    "Seguinte →": "Next →",
+    "Trocar referência ↻": "Swap reference ↻",
+    "Ver detalhes": "See details",
+    "Vês as notas da comunidade de 2 coisas que já viste. No meio podes ajustar a tua nota de cada uma: nota exata na caixa, ou ↑/↓ (↑/↓ no teclado ajustam a esquerda). Espaço ou \"Manter e próximo\" passa ao próximo par.":
+      "You see the community ratings of 2 things you've already watched. In the middle you can adjust your own rating for each: the exact rating in the box, or ↑/↓ (↑/↓ on the keyboard adjust it leftwards). Space or \"Keep and next\" moves to the next pair.",
+    "Watch Party": "Watch Party",
+    "a mediana": "the median",
+    "← Anterior": "← Previous",
+    "⏱ neste momento": "⏱ at this moment",
+    "⚖ Comparar avaliação": "⚖ Compare rating",
+    "🔍 Pesquisar no Google ↗": "🔍 Search on Google ↗",
+    // --- placeholder de resposta ---
+    "Responder a {u}...  (escreve @ para chamar alguém)":
+      "Reply to {u}...  (type @ to mention someone)",
+    // --- audio do torrent ---
+    "DUB": "DUB",
+    "Legendado": "Subtitled",
+    // --- chaves em falta 2 ---
+    "(agora está privado: só tu vês)": "(now private: only you see it)",
+    "\"Escolhe algo para mim\". Desligado por defeito.":
+      "\"Pick something for me\". Off by default.",
+    "+ Nova lista": "+ New list",
+    ". Depois carrega no botao.": ". Then click the button.",
+    "A procura mais...": "Searching more...",
+    "A tua lista de \"para ler\" está vazia. Adiciona mangá ao plan to read no MAL.":
+      "Your \"plan to read\" list is empty. Add manga to the plan to read in MAL.",
+    "Ajusta a largura e a altura dos posters (útil em ecrãs pequenos).":
+      "Adjust the width and height of the posters (useful on small screens).",
+    "Autoplay desligado": "Autoplay off",
+    "Autoplay ligado": "Autoplay on",
+    "Autoskip desligado": "Autoskip off",
+    "Autoskip ligado": "Autoskip on",
+    "Como mostrar os nomes dos animes (catálogo, pesquisa e a tua lista).":
+      "How to show anime names (catalogue, search and your library).",
+    "Editar perfil": "Edit profile",
+    "Entra para gostar": "Log in to like",
+    "Escolher ficheiro": "Choose file",
+    "Estás em desenvolvimento — esta opção só se aplica à app instalada.":
+      "You're in development — this option only applies to the installed app.",
+    "Fonte: {p}": "Source: {p}",
+    "Gostar": "Like",
+    "Há mais respostas aqui abaixo que não foi possível mostrar.":
+      "There are more replies below that couldn't be shown.",
+    "Imagem do computador": "Image from computer",
+    "Imagem por URL": "Image by URL",
+    "Isto só funciona na app de computador (Electron), não na versão web.":
+      "This only works in the desktop app (Electron), not in the web version.",
+    "Liga a tua conta MyAnimeList para veres aqui a tua lista de \"para ler\"":
+      "Connect your MyAnimeList account to see your \"plan to read\" list here",
+    "Ligar o MyAnimeList nas Definições": "Connect MyAnimeList in Settings",
+    "Mais info": "More info",
+    "Mais recomendações": "More recommendations",
+    "Minuto do vídeo: {t} ({s} segundos)": "Video minute: {t} ({s} seconds)",
+    "Nada na tua lista com estes filtros.":
+      "Nothing on your list with these filters.",
+    "Nome da lista:": "List name:",
+    "Nova lista": "New list",
+    "Onde ficam os teus dados. {a} guarda tudo localmente.":
+      "Where your data is stored. {a} keeps everything locally.",
+    "Os títulos que marcaste como \"para ler\" (plan to read) no MyAnimeList{n}.":
+      "The titles you marked as \"plan to read\" (plan to read) in MyAnimeList{n}.",
+    "Para ler": "Plan to read",
+    "Para ti": "For you",
+    "Perfil atualizado. ✓": "Profile updated. ✓",
+    "Procurar por filtros": "Search by filters",
+    "Remover imagem": "Remove image",
+    "Renomear lista": "Rename list",
+    "Repor tamanho": "Reset size",
+    "Reproduzir": "Play",
+    "Sem ficheiro": "No file",
+    "Tirar o gosto": "Remove the like",
+    "para editares o teu perfil.": "to edit your profile.",
+    "para escolheres um avatar.": "to choose an avatar.",
+    "{a} liga a app a um MEIDA alojado noutro sítio, para partilhares conta, biblioteca, seguidores e comentários entre dispositivos.":
+      "{a} connects the app to a MEIDA hosted elsewhere, so you can share account, library, followers and comments across devices.",
+    "{e} {c} — pode não reproduzir no browser. Prefere .mp4.":
+      "{e} {c} — may not play in the browser. Prefer .mp4.",
+    "⚡ Debrid": "⚡ Debrid",
+    "✓ Reproduz no browser": "✓ Plays in browser",
+    "✓ Visto": "✓ Watched",
+    "✓ browser": "✓ browser",
   },
 };
 

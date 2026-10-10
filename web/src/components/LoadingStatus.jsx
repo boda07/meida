@@ -1,4 +1,10 @@
-export default function LoadingStatus({ children = "A carregar", compact = false, muted = false }) {
+import { useT } from "../i18n/I18nContext.jsx";
+
+export default function LoadingStatus({ children, compact = false, muted = false }) {
+  // O texto por omissao passa por `t()` e nao por um valor no `children`:
+  // uma constante nao se traduz, e o `LoadingStatus` sem texto nenhum
+  // aparecia em ingles como "A carregar".
+  const t = useT();
   return (
     <div
       className={`status loading-status${compact ? " compact" : ""}${muted ? " muted" : ""}`}
@@ -11,7 +17,7 @@ export default function LoadingStatus({ children = "A carregar", compact = false
         ))}
       </div>
       <div className="loading-copy">
-        <span>{children}</span>
+        <span>{children ?? t("A carregar")}</span>
         <span className="loading-dots" aria-hidden="true">
           <span>.</span>
           <span>.</span>

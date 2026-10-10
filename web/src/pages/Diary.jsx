@@ -111,7 +111,7 @@ export default function Diary() {
   if (ready && !user)
     return (
       <p className="status muted">
-        <Link to="/login">Entra</Link> para veres o teu diário.
+        <Link to="/login">{t("Entra")}</Link> {t("para veres o teu diário.")}
       </p>
     );
   if (loading) return <LoadingStatus>{t("A carregar o diário")}</LoadingStatus>;
@@ -121,7 +121,7 @@ export default function Diary() {
   return (
     <div className="sub-page">
       <div className="lib-header">
-        <h2 className="row-title">Diário</h2>
+        <h2 className="row-title">{t("Diário")}</h2>
         <div className="lib-toolbar">
           <div className="lib-filters">
             {FILTERS.map((f) => (
@@ -161,7 +161,7 @@ export default function Diary() {
                   <div className="diary-dates">
                     {fmt(it.startedAt) && <span>Começou: {fmt(it.startedAt)}</span>}
                     {it.status === "finished" ? (
-                      <span>Acabou: {fmt(it.finishedAt) || "data não disponível"}</span>
+                      <span>Acabou: {fmt(it.finishedAt) || t("data não disponível")}</span>
                     ) : (
                       <span className="diary-watching">{t("A ver")}</span>
                     )}
@@ -241,7 +241,7 @@ export default function Diary() {
                     </label>
                   )}
                   <label>
-                    Episódio
+                    {t("Episódio")}
                     <input
                       type="number"
                       min="1"
@@ -257,7 +257,7 @@ export default function Diary() {
                 Cancelar
               </button>
               <button className="modal-btn" onClick={saveEdit} disabled={saving}>
-                {saving ? "A guardar..." : "Guardar"}
+                {saving ? t("A guardar...") : t("Guardar")}
               </button>
             </div>
           </div>

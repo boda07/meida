@@ -6,6 +6,7 @@ import BackButton from "./components/BackButton.jsx";
 import Changelog from "./components/Changelog.jsx";
 import ErrorBoundary from "./components/ErrorBoundary.jsx";
 import LoadingStatus from "./components/LoadingStatus.jsx";
+import { useT } from "./i18n/I18nContext.jsx";
 
 const Home = lazy(() => import("./pages/Home.jsx"));
 const Category = lazy(() => import("./pages/Category.jsx"));
@@ -23,6 +24,7 @@ const Users = lazy(() => import("./pages/Users.jsx"));
 const UserProfile = lazy(() => import("./pages/UserProfile.jsx"));
 
 export default function App() {
+  const t = useT();
   return (
     <div className="app">
       <ErrorBoundary>
@@ -31,12 +33,12 @@ export default function App() {
         <Changelog />
         <Header />
         <main className="content">
-          <Suspense fallback={<LoadingStatus>A carregar</LoadingStatus>}>
+          <Suspense fallback={<LoadingStatus>{t("A carregar")}</LoadingStatus>}>
             <Routes>
               <Route path="/" element={<Home />} />
-              <Route path="/movies" element={<Category key="movies" category="movies" title="Filmes" />} />
-              <Route path="/series" element={<Category key="tv" category="tv" title="Séries" />} />
-              <Route path="/anime" element={<Category key="anime" category="anime" title="Anime" />} />
+              <Route path="/movies" element={<Category key="movies" category="movies" title={t("Filmes")} />} />
+              <Route path="/series" element={<Category key="tv" category="tv" title={t("Séries")} />} />
+              <Route path="/anime" element={<Category key="anime" category="anime" title={t("Anime")} />} />
               <Route path="/search" element={<Search />} />
               <Route path="/details/:type/:id" element={<Details />} />
               <Route path="/library" element={<Library />} />

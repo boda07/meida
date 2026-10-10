@@ -10,8 +10,8 @@ export default function BackButton() {
       <button
         className="app-back-btn"
         onClick={() => navigate(-1)}
-        title="Voltar atrás"
-        aria-label="Voltar atrás"
+        title={t("Voltar atrás")}
+        aria-label={t("Voltar atrás")}
       >
         <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
           <polyline points="15 18 9 12 15 6" />

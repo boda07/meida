@@ -19,19 +19,22 @@ function fmtRating(r) {
 
 // Cartão lateral: capa, título e notas de um item.
 function CompareCard({ it, settings, tag }) {
-  const t = displayTitle(it, settings.animeTitleLang === "romaji");
+  // `titulo`, e nao `t`: o `t` e' a funcao de traducao em todo o resto do
+  // ficheiro, e com o mesmo nome qualquer `t("...")` abaixo traduzia o titulo
+  // em vez de o traduzir.
+  const titulo = displayTitle(it, settings.animeTitleLang === "romaji");
   return (
     <div className="compare-side">
       <div className="compare-poster-link">
         <div className="compare-poster">
           {imageUrl(it.poster, "w342") ? (
-            <img src={imageUrl(it.poster, "w342")} alt={t} loading="lazy" />
+            <img src={imageUrl(it.poster, "w342")} alt={titulo} loading="lazy" />
           ) : (
-            <div className="card-noposter">{t}</div>
+            <div className="card-noposter">{titulo}</div>
           )}
         </div>
       </div>
-      <div className="compare-title">{t}</div>
+      <div className="compare-title">{titulo}</div>
       <div className="compare-ratings">
         <span className="compare-comm">⭐ {fmtRating(it.rating)}</span>
         <span className="compare-mine">
@@ -46,6 +49,7 @@ function CompareCard({ it, settings, tag }) {
 // Controlos no meio: nota exata + botões ↑/↓ para ajustar o título atual.
 // A nota é escrita à vontade e guardada quando se sai do campo (blur).
 function CenterControls({ it, busy, onScore, onAdjust }) {
+  const t = useT();
   const [draft, setDraft] = useState(it.score ?? "");
   useEffect(() => {
     setDraft(it.score ?? "");
@@ -60,9 +64,9 @@ function CenterControls({ it, busy, onScore, onAdjust }) {
 
   return (
     <div className="compare-center">
-      <span className="cmp-label">A tua nota</span>
+      <span className="cmp-label">{t("A tua nota")}</span>
       <label className="compare-score">
-        Nota:
+        {t("Nota:")}
         <input
           type="number"
           min={1}
@@ -80,11 +84,11 @@ function CenterControls({ it, busy, onScore, onAdjust }) {
         />
       </label>
       <div className="compare-btns">
-        <button className="cmp-btn cmp-down" disabled={busy} onClick={() => onAdjust(-1)} title="Baixar 1">
+        <button className="cmp-btn cmp-down" disabled={busy} onClick={() => onAdjust(-1)} title={t("Baixar 1")}>
           <span className="cmp-ico" aria-hidden="true">↓</span>
           <span>Baixar</span>
         </button>
-        <button className="cmp-btn cmp-up" disabled={busy} onClick={() => onAdjust(1)} title="Subir 1">
+        <button className="cmp-btn cmp-up" disabled={busy} onClick={() => onAdjust(1)} title={t("Subir 1")}>
           <span className="cmp-ico" aria-hidden="true">↑</span>
           <span>Aumentar</span>
         </button>
@@ -192,13 +196,12 @@ export default function CompareRating({ details, onClose }) {
         <div className="modal-body compare-modal-body">
           {refs.length === 0 ? (
             <p className="muted">
-              Ainda não tens outros títulos marcados como vistos para comparar.
-              Marca algo como visto e volta aqui.
+              {t("Ainda não tens outros títulos marcados como vistos para comparar. Marca algo como visto e volta aqui.")}
             </p>
           ) : other ? (
             <>
               <div className="compare-row">
-                <CompareCard it={curItem} settings={settings} tag="Este título" />
+                <CompareCard it={curItem} settings={settings} tag={t("Este título")} />
                 <div className="compare-center-col">
                   <CenterControls
                     it={curItem}
@@ -213,19 +216,18 @@ export default function CompareRating({ details, onClose }) {
                     onClick={swapRef}
                     disabled={busy || refs.length < 2}
                   >
-                    Trocar referência ↻
+                    {t("Trocar referência ↻")}
                   </button>
                 </div>
                 <CompareCard it={other} settings={settings} tag={t("A tua nota")} />
               </div>
               {msg && <p className="auth-error" style={{ marginTop: 12 }}>{msg}</p>}
               <p className="muted" style={{ marginTop: 12, fontSize: 13 }}>
-                Compara com o que já viste e ajusta a tua nota com ↑/↓ (ou
-                escreve-a na caixa). A nota deste título é guardada de imediato.
+                {t("Compara com o que já viste e ajusta a tua nota com ↑/↓ (ou escreve-a na caixa). A nota deste título é guardada de imediato.")}
               </p>
             </>
           ) : (
-            <p className="muted">A carregar a tua lista...</p>
+            <p className="muted">{t("A carregar a tua lista...")}</p>
           )}
         </div>
       </div>

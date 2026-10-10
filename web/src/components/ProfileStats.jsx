@@ -60,12 +60,11 @@ function Bloco({ titulo, nota, linhas, maior }) {
 // no header do perfil. Passar a prop era so' contexto morto.
 export default function ProfileStats({ items }) {
   const t = useT();
-  if (items === null) return <p className="muted st-vazio">A carregar...</p>;
+  if (items === null) return <p className="muted st-vazio">{t("A carregar...")}</p>;
   if (!items.length) {
     return (
       <p className="muted st-vazio">
-        Ainda nao ha titulos na biblioteca, por isso ainda nao ha nada para
-        contar.
+        {t("Ainda nao ha titulos na biblioteca, por isso ainda nao ha nada para contar.")}
       </p>
     );
   }
@@ -88,7 +87,7 @@ export default function ProfileStats({ items }) {
   const destaque = maisVistos.length ? maisVistos : emAlta;
   // Ordena por NOTA, nao por vezes vistas — nao ha contagem de reproducoes
   // em lado nenhum, por isso o nome antigo era mentira.
-  const rotuloDestaque = maisVistos.length ? "Melhores notas" : "Na lista";
+  const rotuloDestaque = maisVistos.length ? t("Melhores notas") : t("Na lista");
 
   return (
     <div className="st">
@@ -105,7 +104,7 @@ export default function ProfileStats({ items }) {
         </div>
         {s.emPausa > 0 && (
           <div className="st-cifra">
-            <dt>em pausa</dt>
+            <dt>{t("em pausa")}</dt>
             <dd>{s.emPausa}</dd>
           </div>
         )}
@@ -129,12 +128,12 @@ export default function ProfileStats({ items }) {
           dava. */}
       {s.comNota > 0 && (
         <p className="st-frase">
-          Notas entre <strong>{s.maisBaixa}</strong> e <strong>{s.maisAlta}</strong>.{" "}
+          {t("Notas entre {a} e {b}.", { a: s.maisBaixa, b: s.maisAlta })}{" "}
           {s.media === s.mediana
-            ? "A média bate certo com a mediana, por isso as notas estão todas pela mesma banda."
+            ? t("A média bate certo com a mediana, por isso as notas estão todas pela mesma banda.")
             : s.media > s.mediana
-              ? "A média está acima da mediana: poucos títulos com nota muito alta estão a puxar a média para cima."
-              : "A média está abaixo da mediana: há muitos títulos bem avaliados a puxar a média para baixo."}
+              ? t("A média está acima da mediana: poucos títulos com nota muito alta estão a puxar a média para cima.")
+              : t("A média está abaixo da mediana: há muitos títulos bem avaliados a puxar a média para baixo.")}
         </p>
       )}
 
@@ -189,13 +188,13 @@ export default function ProfileStats({ items }) {
             </div>
             <div className="st-espectro-legendas">
               <span>
-                <strong>{s.maisBaixa}</strong> a mais baixa
+                <strong>{s.maisBaixa}</strong> {t("a mais baixa")}
               </span>
               <span>
-                <strong>{s.mediana}</strong> a mediana
+                <strong>{s.mediana}</strong> {t("a mediana")}
               </span>
               <span>
-                <strong>{s.maisAlta}</strong> a mais alta
+                <strong>{s.maisAlta}</strong> {t("a mais alta")}
               </span>
             </div>
           </div>

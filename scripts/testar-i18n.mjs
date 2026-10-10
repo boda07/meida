@@ -145,11 +145,14 @@ const IGUAIS_ESPERADOS = new Set([
   "Letterboxd",         // marca
   "Real-Debrid",        // marca
   "Discord",            // marca
+  "Watch Party",        // nome da funcionalidade, igual nos dois (como "Live Chat")
   "Bio",               // mesma palavra nos dois
   "Avatar",            // mesma palavra nos dois (o termo e' universal)
   "Torrents",          // termo tecnico, igual nos dois
   "Providers",         // termo tecnico (ver AGENTS.md: "provider"), igual nos dois
   "Trailer",           // mesma palavra nos dois
+  "...",               // reticencias: iguais nos dois
+  "{r} ({n})",         // rotulo de um grupo de resultados: so' pontuacao e numeros
   "Mangá, Manhwa & Manhua",
   "Idioma dos nomes de filmes, séries e anime.", // aparece duas vezes, ja' traduzido acima
 ]);

@@ -39,13 +39,13 @@ export default function Changelog() {
       setHasNew(true);
       setView({
         initialVersion: v,
-        subtitle: `Atualizaste a MEIDA para a versão ${v}. Novidades:`,
+        subtitle: t("Atualizaste a MEIDA para a versão {v}. Novidades:", { v }),
       });
     })();
     return () => {
       alive = false;
     };
-  }, []);
+  }, [t]);
 
   function markSeen() {
     if (version) localStorage.setItem(KEY, version);

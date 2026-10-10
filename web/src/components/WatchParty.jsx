@@ -52,8 +52,8 @@ export default function WatchParty() {
     <div className="wp" ref={ref}>
       <button
         className={`icon-btn ${party.active ? "wp-on" : ""}`}
-        title="Watch Party"
-        aria-label="Watch Party"
+        title={t("Watch Party")}
+        aria-label={t("Watch Party")}
         onClick={() => setOpen((v) => !v)}
       >
         <PeopleIcon />
@@ -62,12 +62,12 @@ export default function WatchParty() {
 
       {open && (
         <div className="wp-panel">
-          <h4>Watch Party</h4>
+          <h4>{t("Watch Party")}</h4>
           {party.active ? (
             <>
               <p className="muted">
                 Veem o mesmo ao mesmo tempo. Pausa/play e sincronizado nos
-                separadores <b>Sem anúncios</b> e <b>Torrents</b>.
+                separadores <b>{t("Sem anúncios")}</b> e <b>Torrents</b>.
               </p>
               <div className="wp-code">
                 <span>{party.room}</span>
@@ -83,14 +83,13 @@ export default function WatchParty() {
                 ))}
               </div>
               <button className="set-clear" onClick={party.leave}>
-                Sair da sala
+                {t("Sair da sala")}
               </button>
             </>
           ) : (
             <>
               <p className="muted">
-                Escreve o teu nome, depois cria uma sala e envia o codigo ao teu
-                amigo — ou entra com o codigo dele.
+                {t("Escreve o teu nome, depois cria uma sala e envia o codigo ao teu amigo — ou entra com o codigo dele.")}
               </p>
               <label className="wp-label">{t("O teu nome")}</label>
               <input
@@ -106,7 +105,7 @@ export default function WatchParty() {
                   setOpen(true);
                 }}
               >
-                Criar sala
+                {t("Criar sala")}
               </button>
               <div className="wp-or">{t("ou entrar numa sala")}</div>
               <div className="wp-join">

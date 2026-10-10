@@ -1,3 +1,8 @@
+
+// Traducao com o `t()` puro (ver `i18n/traduzir.js`): este modulo calcula
+// estatisticas e nao e' um componente React, por isso nao pode usar o `useT()`.
+import { t as tt } from "../i18n/traduzir.js";
+
 // Estatisticas do perfil, calculadas no frontend a partir dos itens que a API
 // ja devolve (a biblioteca completa chega em /users/:username/library).
 //
@@ -95,38 +100,55 @@ export function statsFrom(items) {
 // As contagens sao de titulos, nao de generos: um anime de accao com fantasia
 // conta 1 em "titulos" e 1 em cada um dos dois generos. E' por isso que a soma
 // dos generos passa largamente o total -- e o correcto.
-const ROTULO_TIPO = { anime: "Anime", movie: "Filmes", tv: "Series" };
+const ROTULO_TIPO = { anime: "Anime", movie: "Filmes", tv: "Séries" }; // i18n: chave de 'rotuloTipo'
 
 // Genero em ingles -> rotulo em portugues (para mostrar). A BD guarda ingles
 // porque e' assim que vem da TMDB/AniList; a UI fala portugues. O que nao
 // estiver aqui aparece tal e qual — termos como "Isekai" ou "Shounen" nao tem
 // traducao usavel e troca-los so' confundia.
 export const ROTULO_GENERO = {
-  Action: "Ação",
+  Action: "Ação", // i18n: valor do mapa de generos, traduzido em rotuloGenero()
   Adventure: "Aventura",
-  Animation: "Animação",
-  Comedy: "Comédia",
+  Animation: "Animação", // i18n: valor do mapa de generos, traduzido em rotuloGenero()
+  Comedy: "Comédia", // i18n: valor do mapa de generos, traduzido em rotuloGenero()
   Crime: "Crime",
-  Documentary: "Documentário",
+  Documentary: "Documentário", // i18n: valor do mapa de generos, traduzido em rotuloGenero()
   Drama: "Drama",
-  Family: "Família",
+  Family: "Família", // i18n: valor do mapa de generos, traduzido em rotuloGenero()
   Fantasy: "Fantasia",
-  History: "História",
+  History: "História", // i18n: valor do mapa de generos, traduzido em rotuloGenero()
   Horror: "Terror",
-  Music: "Música",
-  Música: "Música",
-  Mystery: "Mistério",
+  Music: "Música", // i18n: valor do mapa de generos, traduzido em rotuloGenero()
+  Música: "Música", // i18n: valor do mapa de generos, traduzido em rotuloGenero()
+  Mystery: "Mistério", // i18n: valor do mapa de generos, traduzido em rotuloGenero()
   Romance: "Romance",
-  "Science Fiction": "Ficção Científica",
-  "Sci-Fi": "Ficção Científica",
+  "Science Fiction": "Ficção Científica", // i18n: valor do mapa de generos, traduzido em rotuloGenero()
+  "Sci-Fi": "Ficção Científica", // i18n: valor do mapa de generos, traduzido em rotuloGenero()
   Thriller: "Thriller",
   War: "Guerra",
   Western: "Faroeste",
 };
 
-/** Nome do genero para mostrar: traduz quando sabemos, senao devolve igual. */
+/**
+ * Nome do genero para mostrar, no idioma do interface.
+ *
+ * O mapa acima da o rotulo em PORTUGUES (e' a lingua em que as chaves do
+ * dicionario estao escritas). Com interface em ingles aquilo mostrava
+ * "Acao", "Ficcao Cientifica" — o oposto do que se quer. Por isso o rotulo
+ * do mapa passa pelo dicionario.
+ *
+ * `tt` le' o `localStorage`, que e' onde o `I18nProvider` guarda a escolha:
+ * este modulo nao e' um componente e nao pode usar o `useT()` do contexto.
+ */
 export function rotuloGenero(nome) {
-  return ROTULO_GENERO[nome] || nome;
+  const pt = ROTULO_GENERO[nome];
+  return pt ? tt(pt) : nome;
+}
+
+/** Rotulo do tipo (Filmes/Series/Anime) no idioma do interface. */
+export function rotuloTipo(tipo) {
+  const pt = ROTULO_TIPO[tipo];
+  return pt ? tt(pt) : tipo;
 }
 
 // Ordem fixa, para as barras sairem sempre iguais (e nao por ordem de contagem,
@@ -214,7 +236,7 @@ export function detalheStats(items) {
     generos: listaGeneros,
     // So' os tipos que a pessoa tem: mostrar "Series 0" e' ruido.
     tipos: ORDEM_TIPO.filter((t) => tipos.get(t) > 0).map((t) => ({
-      nome: ROTULO_TIPO[t],
+      nome: rotuloTipo(t),
       n: tipos.get(t),
     })),
     // Quantos generos distintos tem a biblioteca toda, para o "8 de 24" ao lado

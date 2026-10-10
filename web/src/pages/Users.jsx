@@ -37,7 +37,7 @@ export default function Users() {
 
   return (
     <div className="sub-page users-page">
-      <h2 className="row-title">Encontrar pessoas</h2>
+      <h2 className="row-title">{t("Encontrar pessoas")}</h2>
       <input
         className="users-search"
         type="search"
@@ -47,7 +47,7 @@ export default function Users() {
         autoFocus
       />
 
-      {loading && <p className="muted">A procurar...</p>}
+      {loading && <p className="muted">{t("A procurar...")}</p>}
 
       {!loading && results !== null && results.length === 0 && (
         <p className="muted">{t("Nenhum utilizador encontrado.")}</p>
