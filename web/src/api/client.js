@@ -159,12 +159,51 @@ function authHeaders() {
   return t ? { Authorization: `Bearer ${t}` } : {};
 }
 
+// A linguagem da interface, lida do localStorage.
+//
+// Este ficheiro nao e' um componente React e por isso nao pode usar o `useT()`.
+// Le directamente a mesma chave que o `I18nProvider` grava — e o mesmo que o
+// `detectarIdioma()` escolhe quando ainda nao ha escolha. `t()` aqui e' a funcao
+// pura do dicionario, sem contexto: e' o que traduz a mensagem de erro do
+// servidor, que vem sempre em portugues (o servidor nao sabe o idioma do
+// pedido). A chave e' a propria mensagem, como em todo o resto do i18n.
+function idiomaAtual() {
+  try {
+    const g = localStorage.getItem("meida:idioma");
+    if (g === "en" || g === "pt") return g;
+  } catch {
+    /* modo privado sem localStorage */
+  }
+  // Sem escolha guardada: usa o que o browser pede.
+  if (typeof navigator !== "undefined") {
+    for (const l of navigator.languages || [navigator.language || ""]) {
+      const curto = String(l || "").slice(0, 2).toLowerCase();
+      if (curto === "en" || curto === "pt") return curto;
+    }
+  }
+  return "pt";
+}
+
+// `traduzir` vem do mesmo sitio que o resto do i18n. Importado de `traduzir.js`
+// (e nao do contexto) porque este modulo nao e' um componente React e nao pode
+// usar o hook `useT()`.
+import { traduzir } from "../i18n/traduzir.js";
+
 async function handle(res) {
   if (!res.ok) {
     let msg = `Erro ${res.status}`;
     try {
       const body = await res.json();
-      if (body.error) msg = body.error;
+      if (body.error) {
+        // O servidor responde em portugues; traduz-se aqui pela mesma chave.
+        // Se a chave nao existir no ingles, o proprio `traduzir` devolve o
+        // portugues — nunca fica um `undefined` no ecra.
+        const lang = idiomaAtual();
+        msg =
+          lang !== "pt"
+            ? traduzir(body.error, null, lang)
+            : body.error;
+      }
     } catch {
       /* corpo nao e JSON: fica o erro por defeito */
     }

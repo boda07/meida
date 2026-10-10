@@ -20,7 +20,13 @@
 // SO' INGLES E PORTUGUES de momento. Acrescentar uma terceira e' meter um bloco
 // novo em `traducoes.js` e o codigo do pais em `detectarIdioma` — mais nada.
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
-import { DICIONARIO, IDIOMAS } from "./traducoes.js";
+import { IDIOMAS } from "./traducoes.js";
+// A MESMA funcao que o `api/client.js` usa para as mensagens de erro do
+// servidor. Importar em vez de reimplementar: se os dois divergissem, o `t()` e
+// a traducao do erro dariam resultados diferentes para o mesmo texto.
+import { traduzir } from "./traduzir.js";
+
+export { traduzir };
 
 // Exportado para o `ErrorBoundary`, que e' uma `class` e por isso nao pode usar
 // o hook `useT()`: uma class le' o contexto por `static contextType`.
@@ -62,37 +68,13 @@ export function idiomaSalvo() {
   return detectarIdioma();
 }
 
-/**
- * Traduz `texto` para o idioma actual.
- *
- * Deve ser chamado SEMPRE com um literal em portugues:
- *     t("Início")           -> "Home"      (em ingles)
- *     t("Página inexistente") -> "Página inexistente"  (ainda nao traduzida)
- *
- * O segundo argumento e' para quando o texto ja vem montado:
- *     t("Viste {n} filmes", { n: 12 })  -> "You watched 12 films"
- * Os `{nome}` sao substituidos pela ordem, sem depender do idioma (o ingles nao
- * inverte a ordem das palavras num `printf`, e nao ha casos em que precise).
- */
-export function traduzir(texto, valores, idioma) {
-  const base = String(texto ?? "");
-  const lang = idioma || "pt";
-  const dicionario = DICIONARIO[lang];
-  let saida = base;
-
-  // so' procura traducao se o texto nao vier ja de uma traducao (evita o
-  // duplo-t: traduzir o que ja esta em ingles nao faz sentido).
-  if (dicionario && lang !== "pt") {
-    saida = dicionario[base] || base;
-  }
-
-  if (valores) {
-    saida = saida.replace(/\{(\w+)\}/g, (todo, nome) =>
-      valores[nome] !== undefined ? String(valores[nome]) : todo
-    );
-  }
-  return saida;
-}
+// O `t()` que os componentes usam vem do `useT()` abaixo. A funcao pura
+// `traduzir` vem de `traduzir.js` (importada acima e reexportada), para o
+// `api/client.js` usar exactamente a mesma sem duplicar o codigo.
+//
+// Para usar nos componentes: `t("texto em portugues", { n: 12 })`. A chave tem de
+// ser um LITERAL — `t(variavel)` traduz, `t("texto")` traduz; `t(algo)` calculado
+// nao encontra nada e devolve o que recebeu.
 
 export function I18nProvider({ children }) {
   const [idioma, definirIdioma] = useState(() => idiomaSalvo());

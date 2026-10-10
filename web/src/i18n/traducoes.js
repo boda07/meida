@@ -392,6 +392,74 @@ export const DICIONARIO = {
     "A procurar \"{q}\" em categorias...": "A procurar \"{q}\" em categorias...",
     // --- changelog ---
     "Fixe!": "Fixe!",
+    // --- erros do servidor ---
+    "a lista precisa de um nome": "a lista precisa de um nome",
+    "AniList nao configurado no servidor.":
+      "AniList nao configurado no servidor.",
+    "Anime nao encontrado no AniList": "Anime nao encontrado no AniList",
+    "Cola o teu token do Real-Debrid.": "Cola o teu token do Real-Debrid.",
+    "Comentario a responder nao existe.": "Comentario a responder nao existe.",
+    "Comentario nao existe.": "Comentario nao existe.",
+    "Conta AniList nao ligada.": "Conta AniList nao ligada.",
+    "Conta MAL nao ligada.": "Conta MAL nao ligada.",
+    "Escreve alguma coisa.": "Escreve alguma coisa.",
+    "Esse utilizador ja existe.": "Esse utilizador ja existe.",
+    "Este perfil é privado.": "Este perfil é privado.",
+    "Extrator de anime nao configurado.": "Extrator de anime nao configurado.",
+    "falta o parametro tmdb": "falta o parametro tmdb",
+    "falta o parametro url": "falta o parametro url",
+    "faltam parametros id e season": "faltam parametros id e season",
+    "faltam parametros type e id": "faltam parametros type e id",
+    "faltam tmdb e title": "faltam tmdb e title",
+    "faltam tmdbId e type": "faltam tmdbId e type",
+    "faltam type e tmdb": "faltam type e tmdb",
+    "faltam type e tmdbId": "faltam type e tmdbId",
+    "faltam type, tmdbId e position": "faltam type, tmdbId e position",
+    "formato invalido": "formato invalido",
+    "Indica o teu username do Letterboxd.":
+      "Indica o teu username do Letterboxd.",
+    "Liga primeiro a tua conta Letterboxd.":
+      "Liga primeiro a tua conta Letterboxd.",
+    "Liga primeiro o Real-Debrid.": "Liga primeiro o Real-Debrid.",
+    "Nao autenticado.": "Nao autenticado.",
+    "Não consegui adicionar o magnet no Real-Debrid.":
+      "Não consegui adicionar o magnet no Real-Debrid.",
+    "Nao encontrado.": "Nao encontrado.",
+    "Nao podes seguir-te a ti proprio.": "Nao podes seguir-te a ti proprio.",
+    "Nome de utilizador do Letterboxd invalido.":
+      "Nome de utilizador do Letterboxd invalido.",
+    "O comentario e' demasiado longo.": "O comentario e' demasiado longo.",
+    "Password tem de ter 4+ caracteres.": "Password tem de ter 4+ caracteres.",
+    "Real-Debrid não devolveu link para o ficheiro.":
+      "Real-Debrid não devolveu link para o ficheiro.",
+    "room e client sao obrigatorios.": "room e client sao obrigatorios.",
+    "room e kind sao obrigatorios.": "room e kind sao obrigatorios.",
+    "score tem de estar entre 1 e 100": "score tem de estar entre 1 e 100",
+    "series precisam de season e episode": "series precisam de season e episode",
+    "So podes apagar os teus comentarios.":
+      "So podes apagar os teus comentarios.",
+    "status invalido (paused|dropped|null)":
+      "status invalido (paused|dropped|null)",
+    "Stream expirado ou inexistente.": "Stream expirado ou inexistente.",
+    "tmdbId e type (movie|tv|anime) sao obrigatorios":
+      "tmdbId e type (movie|tv|anime) sao obrigatorios",
+    "tmdbId invalido": "tmdbId invalido",
+    "Token do Real-Debrid inválido ou expirado.":
+      "Token do Real-Debrid inválido ou expirado.",
+    "torrent nao ativo": "torrent nao ativo",
+    "type invalido": "type invalido",
+    "type tem de ser 'movie' ou 'tv'": "type tem de ser 'movie' ou 'tv'",
+    "type tem de ser movie, tv ou anime": "type tem de ser movie, tv ou anime",
+    "Utilizador nao encontrado.": "Utilizador nao encontrado.",
+    "Utilizador ou password invalidos.": "Utilizador ou password invalidos.",
+    "Utilizador tem de ter 3+ caracteres.":
+      "Utilizador tem de ter 3+ caracteres.",
+    "Lista nao encontrada.": "Lista nao encontrada.",
+    // --- erros do servidor ---
+    "lista nao encontrada": "lista nao encontrada",
+    "MAL nao configurado no servidor.": "MAL nao configurado no servidor.",
+    "entrada nao encontrada": "entrada nao encontrada",
+    "este titulo nao tem IMDB id": "este titulo nao tem IMDB id",
   },
 
   en: {
@@ -750,6 +818,75 @@ export const DICIONARIO = {
     "A procurar \"{q}\" em categorias...": "Searching categories for \"{q}\"...",
     // --- changelog ---
     "Fixe!": "Got it!",
+    // --- erros do servidor ---
+    "a lista precisa de um nome": "the list needs a name",
+    "AniList nao configurado no servidor.":
+      "AniList is not configured on the server.",
+    "Anime nao encontrado no AniList": "Anime not found on AniList",
+    "Cola o teu token do Real-Debrid.": "Paste your Real-Debrid token.",
+    "Comentario a responder nao existe.":
+      "The comment you're replying to doesn't exist.",
+    "Comentario nao existe.": "Comment doesn't exist.",
+    "Conta AniList nao ligada.": "AniList account not connected.",
+    "Conta MAL nao ligada.": "MyAnimeList account not connected.",
+    "Escreve alguma coisa.": "Write something.",
+    "Esse utilizador ja existe.": "That username already exists.",
+    "Este perfil é privado.": "This profile is private.",
+    "Extrator de anime nao configurado.": "Anime extractor not configured.",
+    "falta o parametro tmdb": "missing the tmdb parameter",
+    "falta o parametro url": "missing the url parameter",
+    "faltam parametros id e season": "missing id and season parameters",
+    "faltam parametros type e id": "missing type and id parameters",
+    "faltam tmdb e title": "missing tmdb and title",
+    "faltam tmdbId e type": "missing tmdbId and type",
+    "faltam type e tmdb": "missing type and tmdb",
+    "faltam type e tmdbId": "missing type and tmdbId",
+    "faltam type, tmdbId e position": "missing type, tmdbId and position",
+    "formato invalido": "invalid format",
+    "Indica o teu username do Letterboxd.": "Enter your Letterboxd username.",
+    "Liga primeiro a tua conta Letterboxd.":
+      "Connect your Letterboxd account first.",
+    "Liga primeiro o Real-Debrid.": "Connect Real-Debrid first.",
+    "Nao autenticado.": "Not signed in.",
+    "Não consegui adicionar o magnet no Real-Debrid.":
+      "Couldn't add the magnet on Real-Debrid.",
+    "Nao encontrado.": "Not found.",
+    "Nao podes seguir-te a ti proprio.": "You can't follow yourself.",
+    "Nome de utilizador do Letterboxd invalido.": "Invalid Letterboxd username.",
+    "O comentario e' demasiado longo.": "The comment is too long.",
+    "Password tem de ter 4+ caracteres.":
+      "Password must be at least 4 characters.",
+    "Real-Debrid não devolveu link para o ficheiro.":
+      "Real-Debrid didn't return a link for the file.",
+    "room e client sao obrigatorios.": "room and client are required.",
+    "room e kind sao obrigatorios.": "room and kind are required.",
+    "score tem de estar entre 1 e 100": "score must be between 1 and 100",
+    "series precisam de season e episode": "series need season and episode",
+    "So podes apagar os teus comentarios.":
+      "You can only delete your own comments.",
+    "status invalido (paused|dropped|null)":
+      "invalid status (paused|dropped|null)",
+    "Stream expirado ou inexistente.": "Stream expired or doesn't exist.",
+    "tmdbId e type (movie|tv|anime) sao obrigatorios":
+      "tmdbId and type (movie|tv|anime) are required",
+    "tmdbId invalido": "invalid tmdbId",
+    "Token do Real-Debrid inválido ou expirado.":
+      "Real-Debrid token invalid or expired.",
+    "torrent nao ativo": "torrent not active",
+    "type invalido": "invalid type",
+    "type tem de ser 'movie' ou 'tv'": "type must be 'movie' or 'tv'",
+    "type tem de ser movie, tv ou anime": "type must be movie, tv or anime",
+    "Utilizador nao encontrado.": "User not found.",
+    "Utilizador ou password invalidos.": "Wrong username or password.",
+    "Utilizador tem de ter 3+ caracteres.":
+      "Username must be at least 3 characters.",
+    "Lista nao encontrada.": "List not found.",
+    // --- erros do servidor ---
+    "lista nao encontrada": "list not found",
+    "MAL nao configurado no servidor.":
+      "MyAnimeList is not configured on the server.",
+    "entrada nao encontrada": "entry not found",
+    "este titulo nao tem IMDB id": "this title has no IMDB id",
   },
 };
 

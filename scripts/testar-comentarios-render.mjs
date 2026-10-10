@@ -56,10 +56,18 @@ writeFileSync(
 import { renderToStaticMarkup } from "react-dom/server";
 import { createElement as h, Fragment } from "react";
 import { MemoryRouter } from "react-router-dom";
+// O CommentItem usa o t() do i18n (2026-10-10). Sem o provider, useT() devolve
+// null e o render rebenta com "t is not a function" — por isso o I18nProvider
+// tem de envolver o componente, tal como na app.
+import { I18nProvider } from ${JSON.stringify(
+    join(RAIZ, "web/src/i18n/I18nContext.jsx")
+  )};
 
 export { NIVEL_INDENTA, NIVEL_MAXIMO };
 export function render(com, props) {
-  return renderToStaticMarkup(h(MemoryRouter, null, h(CommentItem, { c: com, ...props })));
+  return renderToStaticMarkup(
+    h(MemoryRouter, null, h(I18nProvider, null, h(CommentItem, { c: com, ...props })))
+  );
 }
 export const h_ = h;
 export const F_ = Fragment;
