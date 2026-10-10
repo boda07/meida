@@ -74,6 +74,34 @@ app.use("/api", achievementsRouter);
 app.use("/api", statsRouter);
 app.use("/api", libraryRouter);
 
+// `/runtime-config.json` diz ao frontend onde estao os dados da conta.
+// Exportada para o teste montar a rota sem ter de subir o servidor todo.
+export function rotaRuntimeConfig(dist) {
+  return (req, res) => {
+    let base;
+    try {
+      // O BOM (U+FEFF) e' tirao ANTES do JSON.parse. Sem esta linha, um ficheiro
+      // escrito com BOM (acontece com `Set-Content -Encoding UTF8` no PowerShell)
+      // faz o parse rebentar, o `catch` abaixo devolve `{}`, e o frontend fica
+      // sem `VITE_REMOTE_DATA_BASE` — o login vai para este mesmo servidor, que
+      // nao tem os dados, e falha com "Utilizador ou password invalidos".
+      // Aconteceu na 1.3.9 (2026-10-10); e' a razao de se tirar aqui e nao
+      // confiar so no ficheiro estar limpo.
+      const txt = readFileSync(resolve(dist, "runtime-config.json"), "utf8").replace(/^\uFEFF/, "");
+      base = JSON.parse(txt);
+      if (!base || typeof base !== "object") base = {};
+    } catch {
+      base = {};
+    }
+    const remoto = (process.env.MEIDA_REMOTE_DATA_BASE || "").trim();
+    if (remoto) {
+      base.VITE_REMOTE_DATA_BASE = remoto.replace(/\/+$/, "");
+    }
+    res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
+    res.json(base);
+  };
+}
+
 // Em producao (app desktop), serve o frontend ja compilado (web/dist).
 if (process.env.SERVE_WEB === "1") {
   const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -94,21 +122,7 @@ if (process.env.SERVE_WEB === "1") {
   // estiver em `web/public/runtime-config.json` e' a base, e a variavel
   // sobrescreve so o VITE_REMOTE_DATA_BASE — nunca o resto, para nao se perder
   // o VITE_API_BASE.
-  app.get("/runtime-config.json", (req, res) => {
-    let base;
-    try {
-      base = JSON.parse(readFileSync(resolve(dist, "runtime-config.json"), "utf8"));
-      if (!base || typeof base !== "object") base = {};
-    } catch {
-      base = {};
-    }
-    const remoto = (process.env.MEIDA_REMOTE_DATA_BASE || "").trim();
-    if (remoto) {
-      base.VITE_REMOTE_DATA_BASE = remoto.replace(/\/+$/, "");
-    }
-    res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
-    res.json(base);
-  });
+  app.get("/runtime-config.json", rotaRuntimeConfig(dist));
 
   app.use(
     express.static(dist, {
@@ -194,4 +208,9 @@ function tentar(indice) {
   });
 }
 
-tentar(0);
+// Arranca o servidor — a nao ser que este ficheiro tenha sido importado por um
+// teste, que so' quer a funcao `rotaRuntimeConfig` de cima. Sem este guarda,
+// qualquer `import` no teste abria uma porta e deixava o `node --test` pendurado.
+if (process.env.MEIDA_NO_LISTEN !== "1") {
+  tentar(0);
+}
