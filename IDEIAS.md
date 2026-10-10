@@ -4,7 +4,6 @@ Lista viva de ideias para a app. Marca com `[x]` as que forem feitas e move-as
 para a secção "Feitas".
 
 ## Estatísticas / perfil
-- [ ] Página de **estatísticas** (`/stats`): distribuição das notas (histograma), nº de títulos visto/assistidos, tempo total gasto, género mais visto, "nota mais dada", década favorita.
 - [ ] **Resumo anual/personalizado** ("o teu ano em revisão"): totais por mês, gráficos, top do ano — estilo Spotify Wrapped.
 
 ## Library / notas
@@ -306,9 +305,7 @@ Ou seja: o **raciocínio** já é o mesmo que o do outro projeto. O que falta é
       dados. Testado em `scripts/testar-grafico-mensal.mjs` (55 verificações,
       incluindo que a barra mais alta usa pelo menos 80% da altura — defeito
       encontrado no perfil real, onde o eixo dava 0/500/1000 com a barra a 53%).
-- [ ] **Página `/stats`** com o resto do conteúdo (histograma de notas, tempo
-      total, género mais visto). A dimensão temporal já está no perfil; falta
-      juntar o resto num sítio próprio.
+- [x] **Página `/stats`** com histograma de notas (`HistogramaNotas.jsx`, 10 faixas, SVG mão), tempo visto (`progress.seconds_watched`), género mais visto (`desempate alfabetico`), nota mais alta/baixa/média/mediana e década favorita (`Math.floor(year/10)*10`). Ver a secção "Melhorias já feitas" (linha 362) para detalhes completos.
 - [ ] **Separar o público do privado** nas estatísticas do perfil: números de
       biblioteca e seguidores são públicos; o gráfico de meses e a distribuição por
       estado de visionamento são só de quem é dono.
@@ -362,5 +359,5 @@ dentro do código, passwords em `md5` sem sal, e há código morto espalhado.
 ---
 
 ## Melhorias já feitas (para referência)
-- Compara as tuas notas (`/compare`), Comparar avaliação (`CompareRating`), Notas 0-100, export + import (JSON/CSV), gamificação (badges + streak), quick-add nos cartões, comparar com a comunidade.
+- Compara as tuas notas (`/compare`), Comparar avaliação (`CompareRating`), Notas 0-100, export + import (JSON/CSV), gamificação (badges + streak), quick-add nos cartões, comparar com a comunidade, **página `/stats`** (histograma de notas, tempo visto, ano do título, decada favorita, 5 mutações confirmadas).
 - Base de dados em **SQLite** (`node:sqlite`, zero dependências) com migrações; **perfis** (`/u/:username`), seguir utilizadores, pesquisa de pessoas (`/users`), **comentários por episódio** (respostas, gostos, minuto no vídeo), e **servidor remoto no desktop** (Electron 44, `node:sqlite` no Node 24).
