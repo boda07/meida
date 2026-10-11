@@ -41,10 +41,6 @@ lá" são análises do projeto antigo e ficam onde estão.
 - [ ] **Filtrar Library por nota/estado/tipo** (mais filtros no `LibraryControls`).
 - [ ] **Filtros e ordenação da library a viverem na URL** (`?ordem=nota&filtro=vistos&genero=Ação`). Hoje o `LibraryControls` não usa `useSearchParams`, por isso uma vista filtrada não se pode partilhar, marcar nos favoritos, nem sobreviver ao botão "voltar". O ProdSound faz isto com um helper de ~15 linhas que reescreve os parâmetros existentes em vez de os substituir (`exUrl()`), e é o que torna cada vista um link.
 
-## Providers de anime
-- [x] **Catálogo do Anikoto** como provider extra — ver a secção "Feitas".
-- [x] **Reprodução nativa do MegaPlay, sem iframe** — ver a secção "Feitas".
-
 ## Social / comunidade — o que o projeto antigo (ProdSound) já resolveu
 
 Analisei a fundo `C:\Users\white\Documents\RAI PAP` (o projeto da escola do
@@ -419,7 +415,9 @@ de cima quando se fez — a linha original dizia só o quê, não o como.
 ## Ferramentas de verificação (para não voltar a cair nos mesmos buracos)
 - **Auditor de tradução** (`scripts/auditar-pt-por-traduzir.cjs`, no `npm test`) e o seu teste (`scripts/testar-auditor-i18n.mjs`, 16 verificações, 5 mutações).
 - **Testes com mutação por omissão** — cada ficheiro novo em `scripts/` parte o código de propósito e confirma que o teste o apanha. Um teste que passa porque o código está certo não prova nada; um teste que continua a passar quando o código está partido prova que não está a testar nada.
-- **`npm test` tem 21 passos** — confirmar que o que se mexeu entrou lá.
+- **Um teste que arranca o servidor de verdade** (`testar-anikoto.mjs`). Nenhum dos outros arranca o `index.js`, e foi por isso que um `aquecerCatalogo()` sem `return` matou o servidor ao arrancar com "Cannot read properties of undefined (reading 'catch')" sem nenhum teste dar por isso. A lição: uma função pública chamada no arranque tem de ter um teste que arranque o servidor.
+- **Testes que batem em APIs de terceiros** (o Anikoto, o MegaPlay) usam uma base de dados temporária e saltam com aviso quando a rede falha, em vez de falhar — um teste que rebenta porque o outro mudou o site não diz nada sobre o código.
+- **`npm test` tem 23 passos** — confirmar que o que se mexeu entrou lá.
 
 ## Feitas sem detalhe (só o inventário)
 Isto aqui não tem a explicação do *como* — a de cima é que a tem.
