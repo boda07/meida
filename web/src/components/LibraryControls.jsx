@@ -57,7 +57,7 @@ export default function LibraryControls({ details }) {
         className={`lib-watchlist ${watchlist ? "on" : ""}`}
         onClick={() => save({ watchlist: !watchlist })}
       >
-        {watchlist ? "✓ Na watchlist" : "+ Watchlist"}
+        {watchlist ? t("✓ Na watchlist") : t("+ Watchlist")}
       </button>
 
       <button
@@ -92,7 +92,7 @@ export default function LibraryControls({ details }) {
         onClick={() => save({ status: estado === "paused" ? null : "paused" })}
         title={t("Comecei mas parei")}
       >
-        {estado === "paused" ? "✓ Em pausa" : "Pausar"}
+        {estado === "paused" ? t("✓ Em pausa") : t("Pausar")}
       </button>
 
       <button
@@ -100,7 +100,7 @@ export default function LibraryControls({ details }) {
         onClick={() => save({ status: estado === "dropped" ? null : "dropped" })}
         title={t("Não vou acabar isto")}
       >
-        {estado === "dropped" ? "✓ Abandonado" : "Abandonar"}
+        {estado === "dropped" ? t("✓ Abandonado") : t("Abandonar")}
       </button>
 
       {details.type === "movie" && (
@@ -134,8 +134,14 @@ function CommunityRatingBar({ community, user }) {
       <div className="lib-rating-head">
         <span>{t("Comparar com a comunidade")}</span>
         <span className="lib-rating-values">
-          {comm != null && <span className="lib-rating-comm">Comunidade: {comm}</span>}
-          {me != null && <span className="lib-rating-mine">Tu: {me}</span>}
+          {comm != null && (
+            <span className="lib-rating-comm">
+              {t("Comunidade: {n}", { n: comm })}
+            </span>
+          )}
+          {me != null && (
+            <span className="lib-rating-mine">{t("Tu: {n}", { n: me })}</span>
+          )}
         </span>
       </div>
       <div className="lib-rating-track">

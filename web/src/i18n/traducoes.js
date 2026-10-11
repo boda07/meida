@@ -830,6 +830,19 @@ export const DICIONARIO = {
     "x264": "x264",
     "x265": "x265",
     "min": "min",
+    // --- LibraryControls.jsx: watchlist, pausa, abandonar e a barra de comunidade ---
+    "✓ Na watchlist": "✓ Na watchlist",
+    "+ Watchlist": "+ Watchlist",
+    "✓ Em pausa": "✓ Em pausa",
+    "Pausar": "Pausar",
+    "✓ Abandonado": "✓ Abandonado",
+    "Abandonar": "Abandonar",
+    "Comunidade: {n}": "Comunidade: {n}",
+    "Tu: {n}": "Tu: {n}",
+    // --- Library/Stats: Guardar/Criar e a frase do tempo visto ---
+    "Criar": "Criar",
+    "{n} medido{nome} até agora. Avançar no vídeo não conta; recuar para ver de novo também não.":
+      "{n} medido{nome} até agora. Avançar no vídeo não conta; recuar para ver de novo também não.",
   },
 
   en: {
@@ -1624,6 +1637,19 @@ export const DICIONARIO = {
     "x264": "x264",
     "x265": "x265",
     "min": "min",
+    // --- LibraryControls.jsx: watchlist, pausa, abandonar e a barra de comunidade ---
+    "✓ Na watchlist": "✓ In your watchlist",
+    "+ Watchlist": "+ Watchlist",
+    "✓ Em pausa": "✓ On hold",
+    "Pausar": "Put on hold",
+    "✓ Abandonado": "✓ Dropped",
+    "Abandonar": "Drop",
+    "Comunidade: {n}": "Community: {n}",
+    "Tu: {n}": "You: {n}",
+    // --- Library/Stats: Guardar/Criar e a frase do tempo visto ---
+    "Criar": "Create",
+    "{n} medido{nome} até agora. Avançar no vídeo não conta; recuar para ver de novo também não.":
+      "",
   },
 };
 

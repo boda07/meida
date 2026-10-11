@@ -189,9 +189,10 @@ export default function Stats() {
         )}
         {tempo && data.temposComMedida > 0 && (
           <p className="stats-nota">
-            Medido em {data.temposComMedida}{" "}
-            {data.temposComMedida === 1 ? "título" : "títulos"} até agora. Avançar no
-            vídeo não conta; recuar para ver de novo também não.
+            {t("{n} medido{nome} até agora. Avançar no vídeo não conta; recuar para ver de novo também não.", {
+              nome: t(data.temposComMedida === 1 ? " título" : " títulos"),
+              n: data.temposComMedida,
+            })}
           </p>
         )}
       </section>

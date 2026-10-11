@@ -3,6 +3,11 @@
 Lista viva de ideias para a app. Marca com `[x]` as que forem feitas e move-as
 para a secção "Feitas".
 
+## Lingua / tradução
+- [x] **Interface inteira em português e inglês** — escolha nas Definições (Detalhe → Conteúdo), detetada do browser na primeira vez e memorizada. A tradução é só do lado do cliente: o servidor não sabe o idioma do pedido, e a chave é o próprio texto em português. Uma função pura partilhada (`web/src/i18n/traduzir.js`) é usada pelo contexto e pelo `api/client.js`, para as mensagens de erro do servidor também saírem traduzidas.
+- [x] **Auditor que garante que nada fica por traduzir** — `scripts/auditar-pt-por-traduzir.cjs`, ligado ao `npm test`. Apanha texto em português em JSX, em atributos de texto, em strings e em templates. **Já teve cinco buracos** (cada um com um ficheiro de teste e uma mutação): texto misturado com expressão, imports lidos como JSX, crases de fecho de template, o objecto de valores do `t()` lido como texto, e texto de **uma palavra** (que nenhuma das duas regras via, por ser indistinguível de um identificador). A lição: "não há nada por traduzir" nunca é resposta suficiente — mutar.
+- [ ] **Traduzir também o que o utilizador escreve** (títulos de listas e notas personais)? Provavelmente não: é conteúdo dele, não interface.
+
 ## Estatísticas / perfil
 - [ ] **Resumo anual/personalizado** ("o teu ano em revisão"): totais por mês, gráficos, top do ano — estilo Spotify Wrapped.
 
@@ -29,6 +34,8 @@ para a secção "Feitas".
 - [ ] **Modo cinema**: player em fullscreen com UI limpa e auto-hide dos controlos. **(Decidido: o fullscreen/auto-hide nativo do `<video>` chega — não fazer.)**
 - [ ] **Dark mode unificado** + tema custom por utilizador (a app já é maioritariamente escura; falta terminar).
 - [ ] **Bookmarks/timestamps por episódio** (notas de episódio, não só da série).
+- [x] **Modo P2P (torrents sem Real-Debrid) que começa logo** — em vez de esperar pelo ficheiro inteiro (`ready`) antes de tocar, resolve nos `metadata` e vai chercher as peças de que precisa enquanto o resto vem atrás. Peças priorizadas com `torrent.critical` (que o WebTorrent já tinha e não era usado), com janela de 8 MB a partir da posição de leitura. Torrent sem seeds dá erro em vez de esperar para sempre. (`torrentEngine.js`, `stream.js`; testes em `scripts/testar-p2p.mjs` e `testar-p2p-metadados.mjs`).
+- [ ] **Outros serviços de debrid além do Real-Debrid** (AllDebrid, TorBox, Debrid-Link). O `debrid.js` está escrito contra a API do RD: é preciso uma camada comum (`checkToken` / `instantInfo` / `addMagnet` / `createDownload`) e um selector de serviço no campo do token em Definições. TorBox é o único com plano grátis permanente, mas limitado a 1 download/dia.
 
 ## UX / fluxos rápidos
 - [x] **Botão "Descarregar a app" no site** — no cabeçalho, só na versão web (`meida.onrender.com`). Na app de desktop e em `localhost` não aparece: quem já a tem não precisa de a descarregar, e em desenvolvimento o botão só ia atrapalhar. A regra está em `web/src/lib/web.js`, testada em `scripts/testar-web.mjs` (19 verificações, 2 mutações). Aponta para a página da release no GitHub, que é um URL estável (o do `.exe` leva a versão no nome e passaria a desatualizar).
@@ -358,6 +365,11 @@ dentro do código, passwords em `md5` sem sal, e há código morto espalhado.
 - [x] **Streak/racha diária** — dias consecutivos com atividade (baseado nas datas do diário/progresso e da library); racha atual + melhor racha.
 
 ---
+
+## Ferramentas de verificação (para não voltar a cair nos mesmos buracos)
+- **Auditor de tradução** (`scripts/auditar-pt-por-traduzir.cjs`, no `npm test`) e o seu teste (`scripts/testar-auditor-i18n.mjs`, 16 verificações, 5 mutações).
+- **Testes com mutação por omissão** — cada ficheiro novo em `scripts/` parte o código de propósito e confirma que o teste o apanha. Um teste que passa porque o código está certo não prova nada; um teste que continua a passar quando o código está partido prova que não está a testar nada.
+- **`npm test` tem 21 passos** — confirmar que o que se mexeu entrou lá.
 
 ## Melhorias já feitas (para referência)
 - Compara as tuas notas (`/compare`), Comparar avaliação (`CompareRating`), Notas 0-100, export + import (JSON/CSV), gamificação (badges + streak), quick-add nos cartões, comparar com a comunidade, **página `/stats`** (histograma de notas, tempo visto, ano do título, decada favorita, 5 mutações confirmadas).

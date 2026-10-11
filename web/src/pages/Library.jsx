@@ -484,7 +484,7 @@ export default function Library() {
                     disabled={listBusy || !listName.trim()}
                     onClick={submitListModal}
                   >
-                    {listModal.action === "rename" ? "Guardar" : "Criar"}
+                    {listModal.action === "rename" ? t("Guardar") : t("Criar")}
                   </button>
                 </div>
               </>

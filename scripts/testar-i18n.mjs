@@ -158,6 +158,9 @@ const IGUAIS_ESPERADOS = new Set([
   "✓ browser",         // "browser" e' a mesma palavra em portugues e ingles
   "Mangá, Manhwa & Manhua",
   "Idioma dos nomes de filmes, séries e anime.", // aparece duas vezes, ja' traduzido acima
+  // "Watchlist" e' um anglicismo usado tal e qual em portugues (como "streaming"
+  // e "login"); so' o sinal `+` muda, e nao ha' palavra a traduzir.
+  "+ Watchlist",
   // So' numeros, unidades e simbolos universais: `%`, `👤 peers`, `⬇`, `MB/s`.
   // Sao as mesmas palavras em portugues e ingles, traduzir nao muda nada.
   "{pct}% · 👤 {peers} peers · ⬇ {vel} MB/s",
