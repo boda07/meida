@@ -42,8 +42,8 @@ lá" são análises do projeto antigo e ficam onde estão.
 - [ ] **Filtros e ordenação da library a viverem na URL** (`?ordem=nota&filtro=vistos&genero=Ação`). Hoje o `LibraryControls` não usa `useSearchParams`, por isso uma vista filtrada não se pode partilhar, marcar nos favoritos, nem sobreviver ao botão "voltar". O ProdSound faz isto com um helper de ~15 linhas que reescreve os parâmetros existentes em vez de os substituir (`exUrl()`), e é o que torna cada vista um link.
 
 ## Providers de anime
-- [ ] **Resolver as séries pelo catálogo do Anikoto** — ver a secção "Feitas".
-- [ ] **Reprodução nativa do MegaPlay, sem iframe**: o `/stream/getSources?id=` devolve as legendas em claro (`tracks[].file`) e os tempos de intro/outro, mas o vídeo vem encriptado no campo `enc` (é o JS do player que o descripta). Só vale a pena se se conseguir o m3u8 — e aí as legendas passavam a ser as nossas, com escolha de idioma. Requer engenharia reversa do player: **não fazer** sem tempo para isso.
+- [x] **Catálogo do Anikoto** como provider extra — ver a secção "Feitas".
+- [x] **Reprodução nativa do MegaPlay, sem iframe** — ver a secção "Feitas".
 
 ## Social / comunidade — o que o projeto antigo (ProdSound) já resolveu
 
@@ -380,7 +380,12 @@ de cima quando se fez — a linha original dizia só o quê, não o como.
 
   A API mudou desde 2026-10-04 (ver AGENTS.md, secção de providers): os endpoints são agora `/recent-anime?page=N` e `/series/{id}`, e a chave é o `embed_url.sub/dub` de cada episódio, não `ani_id`. Os `mal_id`/`ani_id` vêm como **texto**, com `""` nos que não têm.
 
-  O catálogo fica em cache no SQLite (tabela `anikoto_series`, migração 7) e o rasteio é incremental (2 páginas ao arrancar, mais 3 a cada título ainda desconhecido, com 1,4 s de pausa — bem dentro do limite de 60 pedidos/2 min da API). Separar "catálogo conhecido" de "embeds buscados" é o que permite guardar ~100 títulos por página com 1 pedido, em vez de pedir `/series/{id}` a todos. Testado em `scripts/testar-anikoto.mjs` (21 verificações, 3 mutações, com uma base temporária e a API real).
+  O catálogo fica em cache no SQLite (tabela `anikoto_series`, migração 7) e o rasteio é incremental (2 páginas ao arrancar, mais 3 a cada título ainda desconhecido, com 1,4 s de pausa — bem dentro do limite de 60 pedidos/2 min da API). Separar "catálogo conhecido" de "embeds buscados" é o que permite guardar ~100 títulos por página com 1 pedido, em vez de pedir `/series/{id}` a todos. Testado em `scripts/testar-anikoto.mjs` (23 verificações, 3 mutações, com uma base temporária e a API real).
+- **Reprodução nativa do MegaPlay, sem iframe** — o `getSources` dá as legendas em claro (`.vtt`) e o vídeo num campo `enc` cifrado; descifra-se e reproduz-se com o **nosso** player em vez de um `<iframe>`. Ganha três coisas que o iframe não dava: legendas escolhíveis, play/pausa que sincroniza no Watch Party (o `postMessage` não atravessa o cross-origin do player), e a posição a entrar no "Continua a ver".
+
+  **A ideia original dizia "engenharia reversa do player: não fazer sem tempo".** Era cautious demais: a chave e o IV (`AES-CBC`, 32 e 16 bytes) estão em texto simples no próprio JavaScript do site, e a página não os sobrescreve. Medido a 2026-10-11 num episódio real: o m3u8 tem 339 segmentos (~24 min) e o `.vtt` 378 blocos, e os segmentos aceitam CORS.
+
+  Aparece como **entrada separada** na lista de fontes ("MegaPlay (nativo)"), porque é o utilizador que escolhe: ao lado do iframe, não a substituí-lo. Se o servidor não conseguir desencriptar (cifra mudou, episódio sem embeds), devolve `native: false` e o `Player` cai no iframe da mesma fonte — a falha é invisível para quem só quer ver o episódio. Service: `megaplayNativo.js`; rota `/api/anime/megaplay`; testes em `scripts/testar-megaplay.mjs` (16 verificações, 3 mutações, a bater no site real).
 
 ### UX / fluxos rápidos
 

@@ -267,6 +267,11 @@ export const api = {
   animeEnabled: () => get("/api/anime/enabled"),
   extractEnabled: () => get("/api/extract/enabled"),
   animeExtract: (opts) => get("/api/anime/extract", opts),
+  // Reprodução NATIVA do MegaPlay: em vez do iframe, o servidor devolve o
+  // m3u8 (decifrando o campo `enc` do site) e as legendas em claro. Devolve
+  // `{ native: false }` quando não consegue — nunca um erro, porque o
+  // frontend nesse caso mostra o iframe, que continua a funcionar.
+  animeMegaplay: (opts) => get("/api/anime/megaplay", opts),
   subtitles: (opts) => get("/api/subtitles", { languages: subtitleLangs(), ...opts }),
 
   // Auth

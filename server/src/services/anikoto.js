@@ -290,7 +290,14 @@ export async function fontesAnikoto({ mal, anilist, episode = 1, audio }) {
   ];
 }
 
-/** Arranca o rasteio em segundo plano. Chamado uma vez ao arrancar o servidor. */
+/**
+ * Arranca o rasteio em segundo plano. Chamado uma vez ao arrancar o servidor.
+ *
+ * TEM de devolver a promessa: quem chama faz `aquecerCatalogo().catch(...)`, e
+ * uma funcao que nao devolve nada faz o servidor MORRER ao arrancar com
+ * "Cannot read properties of undefined (reading 'catch')". Foi o que aconteceu
+ * na 1.4.3 — apanhado pelo teste que arranca o servidor de verdade.
+ */
 export function aquecerCatalogo() {
-  rastearDepois(2).catch(() => {});
+  return rastearDepois(2).catch(() => {});
 }

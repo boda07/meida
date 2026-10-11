@@ -861,6 +861,9 @@ api
                 title={details.title}
                 startIndex={playerIndex}
                 manual={fonteManual}
+                startAt={startAt}
+                onProgress={reportPos}
+                audio={animeAudio}
               />
             ) : (
               <p className="muted">{t("A carregar fontes...")}</p>
@@ -929,6 +932,9 @@ api
                 title={details.title}
                 startIndex={playerIndex}
                 manual={fonteManual}
+                startAt={startAt}
+                onProgress={reportPos}
+                audio={animeAudio}
               />
             ) : (
               <p className="muted">{t("A carregar fontes...")}</p>

@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import FullscreenButton from "./FullscreenButton.jsx";
+import HlsPlayer from "./HlsPlayer.jsx";
 import { useSettings } from "../settings/SettingsContext.jsx";
 import { useT } from "../i18n/I18nContext.jsx";
+import { api } from "../api/client.js";
 
 // Um provider pode devolver um `data:` URL (vi um a servir
 // `data:application/pdf;base64,...` — um PDF disfarçado de página). Não é um
@@ -39,11 +41,23 @@ const TIMEOUT_MS = 15000;
 // outra, que e' o que ia fazer de qualquer maneira.
 const TIMEOUT_MANUAL_MS = 45000;
 
-export default function Player({ embeds, deadIds, title, startIndex = 0, manual = false }) {
+export default function Player({
+  embeds,
+  deadIds,
+  title,
+  startIndex = 0,
+  manual = false,
+  startAt,
+  onProgress,
+  audio,
+}) {
   const t = useT();
   const iframeRef = useRef(null);
   const { settings } = useSettings();
   const [reloadKey, setReloadKey] = useState(0);
+  // Fonte NATIVA (MegaPlay): o servidor devolve o m3u8 e as legendas em vez de
+  // isto ser um iframe. Ver `nativeState` abaixo.
+  const [nativeState, setNativeState] = useState({ url: null, data: null, erro: false });
   // Só entram fontes com URL http(s) — um `data:` URL não é um player (ver
   // ePlayerValido). Filtrar aqui evita que o auto-fallback fique a rodar sobre
   // uma fonte que nunca pode carregar.
@@ -107,6 +121,47 @@ export default function Player({ embeds, deadIds, title, startIndex = 0, manual 
 
   const active = lista?.[index];
   const finalSrc = active ? applyPlaybackPrefs(active.embedUrl, settings) : null;
+
+  // ── Fonte NATIVA (MegaPlay sem iframe) ─────────────────────────────────────
+  // Uma fonte marcada com `native: true` (ver `services/providers.js`) nao vai
+  // para um `<iframe>`: o servidor desencripta o campo `enc` do site e devolve o
+  // m3u8 e as legendas em claro, e reproduzimos com o nosso player.
+  //
+  // E' o que resolve as tres limitacoes do iframe: as legendas ficam
+  // escolhiveis, o play/pausa sincroniza no Watch Party, e a posicao entra no
+  // "Continua a ver".
+  //
+  // O `nativeState.url` guarda a fonte a que o pedido pertence. Sem isto, trocar
+  // de fonte durante o pedido mostrava o m3u8 da fonte anterior — o `erro` e o
+  // `data` sao verificados contra `url` antes de se mostrarem.
+  const nativoUrl = active?.native ? active.embedUrl : null;
+  useEffect(() => {
+    if (!nativoUrl) {
+      setNativeState({ url: null, data: null, erro: false });
+      return;
+    }
+    let vivo = true;
+    setNativeState({ url: nativoUrl, data: null, erro: false });
+    api
+      .animeMegaplay({ url: nativoUrl, audio })
+      .then((d) => {
+        if (!vivo) return;
+        if (d?.native && d.sources?.length) setNativeState({ url: nativoUrl, data: d, erro: false });
+        else setNativeState({ url: nativoUrl, data: null, erro: true });
+      })
+      .catch(() => {
+        if (vivo) setNativeState({ url: nativoUrl, data: null, erro: true });
+      });
+    return () => {
+      vivo = false;
+    };
+  }, [nativoUrl, audio]);
+
+  // O m3u8 so vale para a fonte que o pediu. Quando `data` e' null (o servidor
+  // nao conseguiu: cifra mudou, episodio sem embeds) mostra-se o IFRAME da mesma
+  // fonte, que continua a funcionar — a falha e' invisivel para quem so' quer
+  // ver o episodio.
+  const nativoPronto = nativoUrl && nativeState.url === nativoUrl && nativeState.data;
 
   // Re-inicia o indice activo quando a lista ou a origem mudarem: episodio novo,
   // titulo novo, trocar de audio.
@@ -210,7 +265,16 @@ export default function Player({ embeds, deadIds, title, startIndex = 0, manual 
 
   return (
     <div className="player">
-      {arrancado ? (
+      {arrancado && nativoPronto ? (
+        <HlsPlayer
+          key={`${nativoUrl}-${audio || "sub"}`}
+          sources={nativoPronto.sources}
+          subtitles={nativoPronto.subtitles || []}
+          startAt={startAt}
+          onProgress={onProgress}
+          onLoaded={marcarCarregado}
+        />
+      ) : arrancado ? (
         <iframe
           key={reloadKey}
           ref={iframeRef}

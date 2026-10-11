@@ -1,6 +1,10 @@
 import { Router } from "express";
 import { extractStream, extractEnabled } from "../services/extractor/index.js";
 import { extractAnime, animeExtractorEnabled } from "../services/animeStream.js";
+import {
+  extrairMegaPlayNativo,
+  tracksParaSubtitulos,
+} from "../services/megaplayNativo.js";
 import { handleProxy, buildProxyUrl } from "../services/proxy.js";
 import {
   searchSubtitles,
@@ -22,6 +26,36 @@ playRouter.get("/anime/enabled", (req, res) => {
 // O extrator "Sem anuncios" de filmes/series (Consumet) esta configurado?
 playRouter.get("/extract/enabled", (req, res) => {
   res.json({ enabled: extractEnabled() });
+});
+
+// Reprodução NATIVA do MegaPlay: da' o m3u8 e as legendas em claro, sem
+// iframe. E' o que resolve os dois problemas do iframe (ver
+// services/megaplayNativo.js): as legendas passam a ser nossas (com escolha de
+// idioma) e o play/pausa passa a sincronizar no Watch Party, porque nao ha'
+// cross-origin pelo meio.
+//
+// Devolve `native: false` (e nao um erro) quando nao consegue: quem chama
+// mostra o iframe como estava, que continua a funcionar.
+playRouter.get("/anime/megaplay", async (req, res) => {
+  const { url, audio } = req.query;
+  if (!url) return res.status(400).json({ error: "falta o parametro url" });
+
+  const r = await extrairMegaPlayNativo({ embedUrl: String(url), audio });
+  if (!r) return res.json({ native: false });
+
+  res.json({
+    native: true,
+    audio: r.audio,
+    intro: r.intro,
+    outro: r.outro,
+    // O m3u8 vai pelo nosso proxy: e' ele que poem o `Referer` que o MegaPlay
+    // exige e que reescreve os segmentos da playlist tambem por aqui.
+    sources: [{ isM3U8: true, url: buildProxyUrl(r.m3u8, "https://megaplay.buzz/") }],
+    subtitles: tracksParaSubtitulos(r.tracks).map((s) => ({
+      ...s,
+      url: buildProxyUrl(s.url, "https://megaplay.buzz/"),
+    })),
+  });
 });
 
 // Extrai stream + legendas de um episodio de anime (player proprio).

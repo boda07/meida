@@ -87,7 +87,13 @@ export default function SourceSelector({
                     isDead ? "dead" : ""
                   }`}
                   onClick={() => onSelect(e)}
-                  title={isDead ? `${e.name}: em baixo (último teste falhou)` : e.name}
+                  title={
+                    isDead
+                      ? `${e.name}: em baixo (último teste falhou)`
+                      : e.native
+                      ? t("{nome} — reproduz aqui, sem iframe (legendas escolhíveis, sincroniza no Watch Party)", { nome: e.name })
+                      : e.name
+                  }
                 >
                   {e.name}
                   {isDead && <span className="source-dead-tag">{t("em baixo")}</span>}

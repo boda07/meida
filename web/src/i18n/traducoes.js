@@ -843,6 +843,9 @@ export const DICIONARIO = {
     "Criar": "Criar",
     "{n} medido{nome} até agora. Avançar no vídeo não conta; recuar para ver de novo também não.":
       "{n} medido{nome} até agora. Avançar no vídeo não conta; recuar para ver de novo também não.",
+    // --- SourceSelector: o que distingue a fonte nativa do iframe ---
+    "{nome} — reproduz aqui, sem iframe (legendas escolhíveis, sincroniza no Watch Party)":
+      "{nome} — reproduz aqui, sem iframe (legendas escolhíveis, sincroniza no Watch Party)",
   },
 
   en: {
@@ -1650,6 +1653,9 @@ export const DICIONARIO = {
     "Criar": "Create",
     "{n} medido{nome} até agora. Avançar no vídeo não conta; recuar para ver de novo também não.":
       "",
+    // --- SourceSelector: o que distingue a fonte nativa do iframe ---
+    "{nome} — reproduz aqui, sem iframe (legendas escolhíveis, sincroniza no Watch Party)":
+      "{nome} — plays here, no iframe (selectable subtitles, syncs in Watch Party)",
   },
 };
 

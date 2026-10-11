@@ -23,9 +23,22 @@ const ok_ = (nome, cond, extra = "") => {
 };
 const saltar = (porque) => { saltados++; console.log("  --    saltado: " + porque); };
 
-const { fontesAnikoto, estadoAnikoto, embedsDe, rastearParaTeste } = await import(
+const { fontesAnikoto, estadoAnikoto, embedsDe, rastearParaTeste, aquecerCatalogo } = await import(
   "file:///" + path.join(RAIZ, "server", "src", "services", "anikoto.js").replace(/\\/g, "/")
 );
+
+// `aquecerCatalogo()` tem de DEVOLVER a promessa. Quem chama no arranque do
+// servidor faz `aquecerCatalogo().catch(...)`; uma funcao que nao devolve nada
+// mata o servidor com "Cannot read properties of undefined (reading 'catch')".
+// Aconteceu na 1.4.3 e nao se apanhou com os testes, porque nenhum deles arrancava
+// o servidor. Este teste arranca o `index.js` a serio — ver o fim do ficheiro.
+ok_("aquecerCatalogo() devolve uma promessa (e nao undefined)",
+  typeof aquecerCatalogo === "function" && (() => {
+    const r = aquecerCatalogo();
+    const temCatch = r && typeof r.catch === "function";
+    if (temCatch) r.catch(() => {});
+    return temCatch;
+  })());
 
 // 1) A tabela existe depois das migracoes.
 const { db } = await import("file:///" + path.join(RAIZ, "server", "src", "db", "index.js").replace(/\\/g, "/"));
@@ -55,7 +68,6 @@ try {
   if (!r.ok) throw new Error("HTTP " + r.status);
   lista = (await r.json())?.data;
 } catch (e) {
-  lista = null;
   saltar("a API nao respondeu (" + e.message + ")");
 }
 
@@ -235,6 +247,64 @@ try {
   /* ja fechada */
 }
 fs.rmSync(DIR, { recursive: true, force: true, maxRetries: 3 });
+
+/* ---------- 5) O servidor tem de ARRANCAR ---------- */
+// Este bloco e' o que apanhou o `aquecerCatalogo()` que nao devolvia a promessa:
+// o servidor morria no `listening` e ninguem via, porque nenhum dos testes
+// anteriores arrancava o `index.js`.
+//
+// Arranca de verdade, numa porta livre e com uma base temporaria, e falha se o
+// processo morrer logo a seguir. E' lento (uns segundos) e e' o teste mais
+// valioso do ficheiro.
+console.log("");
+{
+  const { spawn } = await import("node:child_process");
+  const PORTA = 5300 + (process.pid % 90);
+  const dbDir = fs.mkdtempSync(path.join(os.tmpdir(), "meida-anikoto-srv-"));
+  const filho = spawn(process.execPath, [path.join(RAIZ, "server", "src", "index.js")], {
+    cwd: path.join(RAIZ, "server"),
+    env: { ...process.env, PORT: String(PORTA), DB_DIR: dbDir, HOST: "127.0.0.1" },
+    stdio: ["ignore", "pipe", "pipe"],
+  });
+  let saida = "";
+  filho.stdout.on("data", (d) => (saida += d));
+  filho.stderr.on("data", (d) => (saida += d));
+
+  let morreu = null;
+  filho.on("exit", (code) => {
+    morreu = code;
+  });
+
+  let respondeu = false;
+  for (let i = 0; i < 24 && !morreu; i++) {
+    await new Promise((r) => setTimeout(r, 400));
+    try {
+      const h = await fetch(`http://127.0.0.1:${PORTA}/api/health`, {
+        signal: AbortSignal.timeout(1500),
+      });
+      if (h.ok) respondeu = true;
+    } catch {
+      /* ainda a subir */
+    }
+  }
+
+  if (morreu !== null) {
+    console.log("  FALHA o servidor morreu ao arrancar (codigo " + morreu + ")");
+    const linhas = saida.split(/\r?\n/).filter((l) => l.trim()).slice(-6);
+    for (const l of linhas) console.log("        " + l.slice(0, 96));
+    falhou++;
+  } else {
+    ok_("o servidor arranca e responde a /api/health", respondeu);
+    if (!respondeu) {
+      console.log("  FALHA o servidor arrancou mas /api/health nao respondeu");
+      falhou++;
+    }
+  }
+
+  filho.kill();
+  await new Promise((r) => setTimeout(r, 300));
+  fs.rmSync(dbDir, { recursive: true, force: true, maxRetries: 3 });
+}
 
 console.log("");
 console.log(

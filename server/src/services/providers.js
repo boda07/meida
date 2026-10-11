@@ -136,6 +136,26 @@ export const ANIME_PROVIDERS = [
   //    posicao quando o MegaPlay voltou (ver entrada abaixo).
   //  - VidSrc.cc (anime): removido junto com a familia VidSrc (ver PROVIDERS).
   {
+    // MegaPlay NATIVO — a MESMA fonte de cima, mas reproduzida pelo nosso
+    // player em vez de dentro de um iframe.
+    //
+    // Aparece como entrada SEPARADA de propósito: o utilizador escolhe. Sao
+    // tres coisas que o iframe nao da':
+    //   - as legendas sao as do MegaPlay em claro (`.vtt`), escolhiveis;
+    //   - o play/pausa sincroniza no Watch Party (um iframe cross-origin nao
+    //     deixa passar o `postMessage`);
+    //   - a posicao entra no "Continua a ver" (o player e' nosso).
+    //
+    // Como fica no mesmo lugar da lista (mesmo `idType` e mesma posicao), quem
+    // quise so' o iframe tem-no logo a seguir — e `native: true` e' o que diz
+    // ao frontend para ir buscar o m3u8 em vez de meter isto num `<iframe>`.
+    id: "megaplay-anime-nativo",
+    name: "MegaPlay (nativo)",
+    idType: "anilist",
+    native: true,
+    url: "https://megaplay.buzz/stream/ani/{anilist}/{ep}/{audio}",
+  },
+  {
     // MegaPlay (megaplay.buzz), a fonte principal de anime. Verificada a
     // 2026-10-04 no browser: o video carrega e reproduz a 1920x1080, no sub E no
     // dub, e traz legendas COMPLETAS (o .vtt do ep 1 do One Piece tem 285 blocos
@@ -209,6 +229,10 @@ export function buildAnimeEmbedSources({ mal, anilist, episode, audio }) {
       provider: p.id,
       name: p.name,
       embedUrl: fill(p.url, vars),
+      // `native: true` diz ao frontend que esta fonte NAO vai para um
+      // `<iframe>`: ele pede o m3u8 ao servidor (`/api/anime/megaplay`) e usa o
+      // player proprio. Sem esta flag o frontend nao tem como saber.
+      ...(p.native ? { native: true } : null),
     }));
 }
 
