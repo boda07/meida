@@ -33,6 +33,22 @@ lá" são análises do projeto antigo e ficam onde estão.
 - [ ] **Dark mode unificado** + tema custom por utilizador (a app já é maioritariamente escura; falta terminar).
 - [ ] **Bookmarks/timestamps por episódio** (notas de episódio, não só da série).
 - [ ] **Outros serviços de debrid além do Real-Debrid** (AllDebrid, TorBox, Debrid-Link). O `debrid.js` está escrito contra a API do RD: é preciso uma camada comum (`checkToken` / `instantInfo` / `addMagnet` / `createDownload`) e um selector de serviço no campo do token em Definições. TorBox é o único com plano grátis permanente, mas limitado a 1 download/dia.
+- [ ] **Avisar no Watch Party quando a fonte não sincroniza** — o `useVideoSync` só funciona no nosso player (o `postMessage` não atravessa o cross-origin do iframe do provider). Quem está numa sala e escolheu um iframe vê o play/pausa dos outros e o seu não mexe, e não há forma de saber se é a app ou o provider. Um aviso discreto na barra da sala evita que pareça partido.
+- [ ] **Estatísticas do modo grátis**: quanto do episódio veio de P2P e quanto da net, por fonte. É o que diz se o `critical` e o `priorizarPecas` estão a servir para alguma coisa — hoje não há forma de ver.
+
+## Providers de anime / player nativo
+
+- [ ] **Saltar a intro e o fim no player nativo** — o `getSources` do MegaPlay devolve `intro: {start, end}` e `outro`, o `megaplayNativo.js` **já os lê** (linhas 135-136) e a rota `/api/anime/megaplay` **atira-os fora**. A definição "Autoskip" só funciona hoje nos iframes, e só porque o `Player` acrescenta `?autoSkipIntro=` ao URL — um parâmetro do *site*, não nosso. No player nativo temos os tempos exatos, portanto é aí que o Autoskip passa a funcionar a sério: duas linhas na rota, um botão no `HlsPlayer` (com "restaurar"), ligado ao `settings.autoskip`. **Primeira da lista porque é o buraco que a 1.4.3 abriu** — o serviço lê os dados e a rota deita-os fora.
+
+- [ ] **Escolher a qualidade** — o `master.m3u8` tem variantes (1080p/720p/…) e o `HlsPlayer` só usa `sources[0]`. O `hls.js` expõe `levels` e `currentLevel`, por isso é um menu e não um Decoder. Ganho real em ligações lentas.
+
+- [ ] **Lembrar a fonte escolhida** — o `Player` tem `manual`/`fonteManual`, mas isso vive na sessão: ao mudar de episódio volta ao primeiro provider. Guardar em `settings` a última fonte por tipo (filme / série / anime) e abrir nessa. Quem escolheu o MegaPlay porque é o único com legendas não devia ter de o escolher em cada episódio.
+
+- [ ] **Health-check do nativo separado do iframe** — o `providerHealth.js` sonda `p.url`, que é a **página** do player. O nativo pode falhar a desencriptar com a página a responder 200 (o health-check diz "ok" e o episódio não dá), e o inverso também (página morta, nativo a desencriptar à mesma). O `probe()` tem de ir buscar o `getSources` e ver se o `enc` volta em claro. As duas entradas também precisam de estado próprio — hoje têm nomes quase iguais e partilham o resultado.
+
+- [ ] **Legendas de anime em português** — o `settings.subtitleLang` vale para filmes e séries (OpenSubtitles, `subtitles.js`), mas o anime só traz o "English" do MegaPlay. O caminho limpo é procurar por **MAL id** (o `malToAnilist()` já existe, o inverso também deve dar), **não** traduzir legendas.
+
+- [ ] **Marcar visto / dar nota a partir do player nativo** — o `AnimeExtract` já tem o botão; o `Player` não. Como a posição agora entra no "Continua a ver", falta o resto: pôr na biblioteca e dar nota sem sair do vídeo.
 
 ## UX / fluxos rápidos
 - [ ] **Keyboard shortcut "o"** para marcar visto/nota na Library (como no /compare).
