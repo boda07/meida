@@ -846,6 +846,10 @@ export const DICIONARIO = {
     // --- SourceSelector: o que distingue a fonte nativa do iframe ---
     "{nome} — reproduz aqui, sem iframe (legendas escolhíveis, sincroniza no Watch Party)":
       "{nome} — reproduz aqui, sem iframe (legendas escolhíveis, sincroniza no Watch Party)",
+    // --- HlsPlayer: botao de pular a abertura e o fim ---
+    "Saltar a abertura": "Saltar a abertura",
+    "Saltar o fim": "Saltar o fim",
+    "Ir para {t}": "Ir para {t}",
   },
 
   en: {
@@ -1656,6 +1660,10 @@ export const DICIONARIO = {
     // --- SourceSelector: o que distingue a fonte nativa do iframe ---
     "{nome} — reproduz aqui, sem iframe (legendas escolhíveis, sincroniza no Watch Party)":
       "{nome} — plays here, no iframe (selectable subtitles, syncs in Watch Party)",
+    // --- HlsPlayer: botao de pular a abertura e o fim ---
+    "Saltar a abertura": "Skip the opening",
+    "Saltar o fim": "Skip the ending",
+    "Ir para {t}": "Go to {t}",
   },
 };
 

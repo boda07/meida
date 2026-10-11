@@ -1,5 +1,55 @@
 # Changelog
 
+## 1.4.4
+
+### Saltar a abertura e o fim nos episódios de anime
+
+O `getSources` do MegaPlay devolve `intro: {start, end}` e `outro`, e a 1.4.3
+já os trazia até ao frontend — que os deitava fora. O "Autoskip" das Definições
+prometia *"funciona nos nossos players"* e, nos episódios de anime, era mentira:
+funcionava **só** nos iframes, e porque o `Player` acrescentava
+`?autoSkipIntro=` ao URL, que é um parâmetro do *site*, não nosso.
+
+**A forma real, medida em três episódios:**
+
+```
+intro: {start: 140, end: 229}      outro: {start: 1376, end: 1447}
+intro: {start: 31, end: 111}       outro: {start: 0, end: 0}      <- sem fim
+```
+
+`{start: 0, end: 0}` é a armadilha: é o que o site manda quando o episódio **não
+tem fim**, e sem o filtro o botão aparecia aos 0 segundos de qualquer episódio.
+Quando `native: false` os campos nem vêm — a rota responde `{native: false}` sem
+eles.
+
+`web/src/components/pularIntro.js` — a decisão (quando mostrar, para onde saltar,
+o que já foi saltado) está toda aqui, **pura e sem React**, para se poder partir
+por mutação. Duas regras vieram da medição: uma janela só vale se
+`Number.isFinite` nos dois lados e `end - start >= 1`, e o salto é limitado ao fim
+do vídeo quando a janela o passa. Com o Autoskip ligado salta sozinho uma vez e
+sem botão — as Definições prometem "tenta saltar a intro", não "pergunta".
+
+### O harness de mutações estava a mentir
+
+Duas coisas encontradas ao escrever `scripts/testar-pular-intro.mjs`, e as duas
+valem para todos os testes de mutação do projecto:
+
+1. **Código morto, descoberto porque a mutação não era apanhada.** O
+   `typeof start !== "number"` era redundante: `Number.isFinite` não converte,
+   logo já rejeitava `"140"`, `undefined`, `NaN` e `Infinity`. Tirar o `typeof`
+   não mudava nada — por isso a mutação "não era apanhada". O filtro ficou só no
+   `isFinite`, e agora a mutação é observável.
+
+2. **O `split` cortava o `process.exit`.** O sub-teste corria, imprimia as
+   falhas, e **saiu com código 0 na mesma** — o `apanhou` via `r.status !== 0` e
+   era sempre falso. O harness reportava "mutação não apanhada" em casos em que
+   o teste a apanhara. Pior: quase levou a "consertar" testes que estavam
+   certos. O harness ganhou a cauda com o `process.exit` e imprime a saída do
+   sub-teste quando não apanha, para se saber se a mutação não aplicou ou se o
+   teste não a viu.
+
+57 verificações, 7 mutações, todas apanhadas. Entrou no `npm test` (24 passos).
+
 ## 1.4.3
 
 ### MegaPlay nativo: o mesmo site, reproduzido dentro da app

@@ -273,6 +273,12 @@ export default function Player({
           startAt={startAt}
           onProgress={onProgress}
           onLoaded={marcarCarregado}
+          // Tempos de abertura e de fim que o MegaPlay devolve. Sem isto o
+          // "Autoskip" das Definicoes nao fazia nada aqui: so' funcionava nos
+          // iframes, e porque o `Player` acrescentava `?autoSkipIntro=` ao URL
+          // (um parametro do site, nao nosso).
+          intro={nativoPronto.intro}
+          outro={nativoPronto.outro}
         />
       ) : arrancado ? (
         <iframe

@@ -38,8 +38,6 @@ lá" são análises do projeto antigo e ficam onde estão.
 
 ## Providers de anime / player nativo
 
-- [ ] **Saltar a intro e o fim no player nativo** — o `getSources` do MegaPlay devolve `intro: {start, end}` e `outro`, o `megaplayNativo.js` **já os lê** (linhas 135-136) e a rota `/api/anime/megaplay` **atira-os fora**. A definição "Autoskip" só funciona hoje nos iframes, e só porque o `Player` acrescenta `?autoSkipIntro=` ao URL — um parâmetro do *site*, não nosso. No player nativo temos os tempos exatos, portanto é aí que o Autoskip passa a funcionar a sério: duas linhas na rota, um botão no `HlsPlayer` (com "restaurar"), ligado ao `settings.autoskip`. **Primeira da lista porque é o buraco que a 1.4.3 abriu** — o serviço lê os dados e a rota deita-os fora.
-
 - [ ] **Escolher a qualidade** — o `master.m3u8` tem variantes (1080p/720p/…) e o `HlsPlayer` só usa `sources[0]`. O `hls.js` expõe `levels` e `currentLevel`, por isso é um menu e não um Decoder. Ganho real em ligações lentas.
 
 - [ ] **Lembrar a fonte escolhida** — o `Player` tem `manual`/`fonteManual`, mas isso vive na sessão: ao mudar de episódio volta ao primeiro provider. Guardar em `settings` a última fonte por tipo (filme / série / anime) e abrir nessa. Quem escolheu o MegaPlay porque é o único com legendas não devia ter de o escolher em cada episódio.
@@ -398,6 +396,13 @@ de cima quando se fez — a linha original dizia só o quê, não o como.
   **A ideia original dizia "engenharia reversa do player: não fazer sem tempo".** Era cautious demais: a chave e o IV (`AES-CBC`, 32 e 16 bytes) estão em texto simples no próprio JavaScript do site, e a página não os sobrescreve. Medido a 2026-10-11 num episódio real: o m3u8 tem 339 segmentos (~24 min) e o `.vtt` 378 blocos, e os segmentos aceitam CORS.
 
   Aparece como **entrada separada** na lista de fontes ("MegaPlay (nativo)"), porque é o utilizador que escolhe: ao lado do iframe, não a substituí-lo. Se o servidor não conseguir desencriptar (cifra mudou, episódio sem embeds), devolve `native: false` e o `Player` cai no iframe da mesma fonte — a falha é invisível para quem só quer ver o episódio. Service: `megaplayNativo.js`; rota `/api/anime/megaplay`; testes em `scripts/testar-megaplay.mjs` (16 verificações, 3 mutações, a bater no site real).
+- **Saltar a abertura e o fim no player nativo** — o `getSources` devolve `intro: {start, end}` e `outro`, e a 1.4.3 já os trazia até ao frontend… que os deitava fora. O "Autoskip" das Definições só funcionava nos iframes, e só porque o `Player` acrescentava `?autoSkipIntro=` ao URL (um parâmetro do *site*, não nosso).
+
+  **A forma real, medida em 3 episódios:** `intro: {start: 140, end: 229}`, `outro: {start: 1376, end: 1447}` — e **`{start: 0, end: 0}` quando o episódio não tem fim**. Esse último é a armadilha: sem o filtro, o botão aparecia aos 0 segundos de qualquer episódio. Também vem `undefined` quando o `native` é `false`, porque a rota responde `{native: false}` sem os campos.
+
+  A decisão (quando mostrar, para onde saltar, o que já foi saltado) está em **`pularIntro.js`**, toda pura e sem React, para se poder partir por mutação. Duas regras que vieram da medição: uma janela só vale se `Number.isFinite` nos dois lados e `end - start >= 1`, e o salto é limitado ao fim do vídeo quando a janela o passa (o site tem tempos ligeiramente errados). Com o Autoskip ligado salta sozinho uma vez e sem botão — as Definições prometem "tenta saltar a intro", não "pergunta".
+
+  Testes em `scripts/testar-pular-intro.mjs` (57 verificações, 7 mutações). **Duas das mutações revelaram código morto**: o `typeof start !== "number"` era redundante com `Number.isFinite` (que não converte, logo já rejeita texto), e o `split` do harness cortava o `process.exit` — os sub-testes saíam com código 0 mesmo a falhar, e o harness reportava "mutação não apanhada" quando o teste a apanhara. As duas coisas foram corrigidas: o filtro ficou só no `isFinite` e o harness ganhou a cauda com o `process.exit`.
 
 ### UX / fluxos rápidos
 
@@ -433,7 +438,7 @@ de cima quando se fez — a linha original dizia só o quê, não o como.
 - **Testes com mutação por omissão** — cada ficheiro novo em `scripts/` parte o código de propósito e confirma que o teste o apanha. Um teste que passa porque o código está certo não prova nada; um teste que continua a passar quando o código está partido prova que não está a testar nada.
 - **Um teste que arranca o servidor de verdade** (`testar-anikoto.mjs`). Nenhum dos outros arranca o `index.js`, e foi por isso que um `aquecerCatalogo()` sem `return` matou o servidor ao arrancar com "Cannot read properties of undefined (reading 'catch')" sem nenhum teste dar por isso. A lição: uma função pública chamada no arranque tem de ter um teste que arranque o servidor.
 - **Testes que batem em APIs de terceiros** (o Anikoto, o MegaPlay) usam uma base de dados temporária e saltam com aviso quando a rede falha, em vez de falhar — um teste que rebenta porque o outro mudou o site não diz nada sobre o código.
-- **`npm test` tem 23 passos** — confirmar que o que se mexeu entrou lá.
+- **`npm test` tem 24 passos** — confirmar que o que se mexeu entrou lá.
 
 ## Feitas sem detalhe (só o inventário)
 Isto aqui não tem a explicação do *como* — a de cima é que a tem.

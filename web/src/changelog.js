@@ -5,6 +5,17 @@
 // versao; quem nao encontra a sua ve o portugues (a lingua original).
 export const CHANGELOG = [
   {
+    version: "1.4.4",
+    items: [
+      "Novo: nos episódios de anime reproduzidos aqui dentro (MegaPlay nativo), aparece agora um botão \"Saltar a abertura\" no início e outro \"Saltar o fim\" no final, com a hora para onde salta. Se tiveres o Autoskip ligado nas Definições, a abertura salta sozinha sem botão.",
+      "Corrigido: a definição Autoskip dizia que funcionava \"nos nossos players\" — nos episódios de anime isso era mentira, porque o salto dependia de um parâmetro do site.",
+    ],
+    items_en: [
+      "New: on anime episodes played here (native MegaPlay) there's now a \"Skip the opening\" button at the start and a \"Skip the ending\" one at the end, showing the time it jumps to. If you have Autoskip on in Settings, the opening skips by itself with no button.",
+      "Fixed: the Autoskip setting said it worked \"in our players\" — on anime episodes that was untrue, because the skip relied on a parameter of the site.",
+    ],
+  },
+  {
     version: "1.4.3",
     items: [
       "Novo: na lista de fontes de anime aparece agora o MegaPlay (nativo), ao lado do de sempre. São o mesmo site, mas reproduzido aqui dentro em vez de numa página à parte — assim as legendas podem ser escolhidas, o play/pausa fica sincronizado no Watch Party, e a posição entra no \"Continua a ver\".",
