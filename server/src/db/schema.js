@@ -275,4 +275,46 @@ export const MIGRATIONS = [
       `);
     },
   },
+
+  {
+    version: 7,
+    name: "catalogo-anikoto",
+    up(db) {
+      // Catalogo do Anikoto (2026-10-11), para resolver as series de anime que
+      // o MegaPlay nao resolve na rota `/ani/` (ver services/anikoto.js).
+      //
+      // Uma linha por titulo do catalogo do Anikoto. Os idssao os do
+      // MyAnimeList / AniList porque e' por eles que a app conhece o titulo —
+      // e o que torna a linha util sem mais um pedido.
+      //
+      // `embed_ids` e' um objeto JSON `{ "1": { sub, dub }, "2": {...} }` e
+      // fica NULL enquanto a serie nao foi buscada. A separacao e' o que
+      // permite guardar os ~9000 titulos da lista com 91 pedidos, em vez de
+      // 9000: o `/recent-anime` da' o catalogo, o `/series/{id}` da' os
+      // episodios e so e' pedido quando um titulo e' mesmo preciso.
+      //
+      // `embed_ids` tem de ser TEXT e nao INTEGER: e' o id do episodio no
+      // MegaPlay, nao um indice nosso.
+      //
+      // Os dois ids (MAL e AniList) ficam em colunas separadas porque ha
+      // titulos em que so um deles vem preenchido na resposta.
+      // Sem comentarios dentro do SQL: o template literal interpretaria o `$` de
+      // `${...}` e fechava a string. E' a razao de as outras migracoes
+      // comentarem tudo de fora.
+      db.exec(`
+        CREATE TABLE anikoto_series (
+          anikoto_id    INTEGER PRIMARY KEY,
+          mal_id        INTEGER,
+          ani_id        INTEGER,
+          titulo        TEXT,
+          embed_ids     TEXT,
+          ultima_pagina INTEGER NOT NULL DEFAULT 0,
+          updated_at    TEXT    NOT NULL
+        );
+
+        CREATE INDEX idx_anikoto_mal ON anikoto_series(mal_id);
+        CREATE INDEX idx_anikoto_ani ON anikoto_series(ani_id);
+      `);
+    },
+  },
 ];

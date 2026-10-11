@@ -11,6 +11,7 @@ import { libraryRouter } from "./routes/library.js";
 import { streamRouter } from "./routes/stream.js";
 import { playRouter } from "./routes/play.js";
 import { malRouter } from "./routes/mal.js";
+import { aquecerCatalogo } from "./services/anikoto.js";
 import { anilistRouter } from "./routes/anilist.js";
 import { mangaRouter } from "./routes/manga.js";
 import { letterboxdRouter } from "./routes/letterboxd.js";
@@ -173,6 +174,11 @@ function tentar(indice) {
 
   servidor.once("listening", () => {
     portaEscolhida = porta;
+    // Catalogo do Anikoto: duas paginas em segundo plano, para o catalogo
+    // estar em cache quando a primeira pessoa pedir um anime. Nao bloqueia o
+    // arranque (e' um `catch` vazio — falhar aqui e' o mesmo que nao ter
+    // catalogo, que e' o estado de antes).
+    aquecerCatalogo().catch(() => {});
     // O Electron precisa de saber em que porta ficou. Le-o do ficheiro.
     // (num ficheiro ESM nao se pode usar require.)
     try {

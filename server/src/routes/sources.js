@@ -5,6 +5,7 @@ import {
   PROVIDERS,
 } from "../services/providers.js";
 import { malToAnilist } from "../services/jikan.js";
+import { fontesAnikoto, estadoAnikoto } from "../services/anikoto.js";
 import { getProviderHealth, refreshProviderHealth } from "../services/providerHealth.js";
 
 export const sourcesRouter = Router();
@@ -43,19 +44,31 @@ sourcesRouter.get("/sources", async (req, res, next) => {
     if (!anilistId && mal) anilistId = await malToAnilist(mal);
 
     // Anime: fontes dedicadas (sub/dub) por id do MAL/AniList. Nao precisa de TMDB.
+    const ep = episode != null ? Number(episode) : 1;
     const animeSources =
       mal || anilistId
         ? buildAnimeEmbedSources({
             mal,
             anilist: anilistId,
-            episode: episode != null ? Number(episode) : 1,
+            episode: ep,
             audio,
           })
         : [];
 
+    // O Anikoto como FALLBACK: o mesmo MegaPlay, mas pela rota `/stream/s-2/`,
+    // que resolve titulos que a `/ani/` nao resolve. Vem DEPOIS das outras
+    // (para a fonte principal continuar a ser a primeira) e nunca as substitui.
+    //
+    // `fontesAnikoto` devolve `[]` quando o catalogo ainda nao sabe o titulo,
+    // e nesse caso dispara um rasteio em segundo plano semesperar por ele — a
+    // proxima vez que o utilizador abrir o episodio ja' resolve. E' o que
+    // mantem os tempos de resposta iguais aos de antes.
+    const anikotoSources = mal || anilistId ? await fontesAnikoto({ mal, anilist: anilistId, episode: ep, audio }) : [];
+
     // Sem TMDB so faz sentido para anime. Devolve essas fontes.
     if (!tmdb) {
-      if (animeSources.length) return res.json({ embeds: animeSources });
+      const juntos = [...animeSources, ...anikotoSources];
+      if (juntos.length) return res.json({ embeds: juntos });
       // A mensagem anterior era "falta o parametro tmdb" para tudo. Num anime o
       // tmdb e' irrelevante — o que falta e' o id do AniList, e dizer "tmdb"
       // mandava quem investigasse para o lado errado (foi o que aconteceu a
@@ -85,8 +98,13 @@ sourcesRouter.get("/sources", async (req, res, next) => {
       episode: episode != null ? Number(episode) : undefined,
     });
 
-    res.json({ embeds: [...animeSources, ...sources] });
+    res.json({ embeds: [...animeSources, ...anikotoSources, ...sources] });
   } catch (err) {
     next(err);
   }
+});
+
+// Estado do catalogo do Anikoto (util para ver se o rasteio esta' a avancar).
+sourcesRouter.get("/providers/anikoto", (_req, res) => {
+  res.json({ status: estadoAnikoto() });
 });
