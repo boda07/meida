@@ -5,6 +5,23 @@
 // versao; quem nao encontra a sua ve o portugues (a lingua original).
 export const CHANGELOG = [
   {
+    version: "1.4.3",
+    items: [
+      "Novo: na lista de fontes de anime aparece agora o MegaPlay (nativo), ao lado do de sempre. São o mesmo site, mas reproduzido aqui dentro em vez de numa página à parte — assim as legendas podem ser escolhidas, o play/pausa fica sincronizado no Watch Party, e a posição entra no \"Continua a ver\".",
+      "Novo: uma fonte de anime extra a partir do catálogo do Anikoto, para os episódios que o MegaPlay não encontra. Vem no fim da lista e nunca substitui as outras.",
+      "Corrigido: em baixo de tudo na app havia botões e etiquetas que estavam só em português (Apagar, Cancelar, Entrar, Utilizador, as datas do diário, os avisos de legendas). Agora estão traduzidos.",
+      "Corrigido: a etiqueta das fontes avariadas dizia \"below\"; está agora \"down\".",
+      "Corrigido: a app já não pode falhar a arrancar por causa do catálogo de anime.",
+    ],
+    items_en: [
+      "New: the anime source list now has MegaPlay (native) next to the usual one. Same site, but played here instead of on a separate page — so subtitles can be chosen, play/pause syncs in Watch Party, and the position counts for \"Continue watching\".",
+      "New: an extra anime source from the Anikoto catalogue, for episodes MegaPlay can't find. It comes last in the list and never replaces the others.",
+      "Fixed: there were buttons and labels only in Portuguese (Delete, Cancel, Join, Username, the diary dates, the subtitle warnings). They're translated now.",
+      "Fixed: the broken-source label said \"below\"; it now says \"down\".",
+      "Fixed: the app can no longer fail to start because of the anime catalogue.",
+    ],
+  },
+  {
     version: "1.4.2",
     items: [
       "Melhorado: ver um episódio sem Real-Debrid começa logo. Antes ficava à espera de o ficheiro inteiro acabar de descarregar — agora começa a tocar enquanto vai buscando.",

@@ -1,5 +1,87 @@
 # Changelog
 
+## 1.4.3
+
+### MegaPlay nativo: o mesmo site, reproduzido dentro da app
+
+O `getSources` do MegaPlay já devolvia as legendas em claro (`.vtt`) desde
+2026-10-04, e o vídeo num campo `enc` cifrado. Este ficheiro dizia que o `enc`
+"não dá para reproduzir nativamente sem fazer engenharia reversa". **Era
+exagero.**
+
+O `enc` é `AES-CBC` e a chave e o IV estão em **texto simples** no próprio
+`megaplay.buzz/lib/newclient.min.js` (`__MegaPlayCfg`, com valores por defeito
+que a página não sobrescreve). O texto claro é `{"file":"https://.../master.m3u8"}`.
+
+Medido num episódio real: **339 segmentos** (~24 min) e `.vtt` com **378 blocos**.
+Os segmentos aceitam CORS (`*`), por isso o browser pode buscá-los
+directamente. Não é contornar DRM — os segmentos aceitam o mesmo `Referer` que o
+player usaria.
+
+**O que isto resolve, e o que o `<iframe>` não resolvia:**
+
+| | iframe | nativo |
+| --- | --- | --- |
+| Legendas | as do site, ligadas à mão | em claro, escolhíveis |
+| Watch Party | não sincroniza (cross-origin) | sincroniza |
+| "Continua a ver" | não guarda posição | guarda |
+
+**É uma fonte separada, não uma substituição.** Na lista aparece "MegaPlay
+(nativo)" ao lado de "MegaPlay (anime)" — quem quer o iframe continua a tê-lo.
+Se a chave mudar um dia, o servidor devolve `native: false` e o `Player` cai no
+iframe da mesma fonte: a falha é invisível para quem só quer ver o episódio.
+
+`server/src/services/megaplayNativo.js` + `GET /api/anime/megaplay`.
+Testes em `scripts/testar-megaplay.mjs` (16 verificações, 3 mutações, **a bater
+no site real** — a cifra não dá para testar com um `enc` de mentira).
+
+### Catálogo do Anikoto como fonte extra
+
+`services/anikoto.js`, tabela `anikoto_series` (migração 7). O `embed_url` do
+Anikoto é o **próprio MegaPlay pela rota `/stream/s-2/`** — o mesmo site por um
+caminho que resolve títulos que a `/ani/` não resolve. Aparece **depois** das
+providers normais e nunca os substitui.
+
+O que mudou face ao que a ideia previa: a **API mudou** (`/recent-anime?page=N` e
+`/series/{id}`, e a chave passou a ser o `embed_url` de cada episódio), e o
+`mal_id`/`ani_id` vêm como **texto** com `""` nos que não têm. Guardar `""` num
+INTEGER dá **0**, que é um id válido de outra série — o `idValido()` trata
+disso, e há uma mutação a prová-lo.
+
+Rasteio incremental (2 páginas ao arrancar, mais 3 por título desconhecido,
+1,4 s entre pedidos; o limite é 60/120 s). **Separar "catálogo conhecido" de
+"embeds buscados"** dá ~100 títulos por página com 1 pedido, em vez de pedir
+`/series/{id}` a todos.
+
+### Um bug que matava a app ao arrancar
+
+`index.js` fazia `aquecerCatalogo().catch(() => {})` e a função **não devolvia
+nada** (faltava o `return`). O servidor morria no `listening` e a app mostrava
+"o servidor não arrancou".
+
+**Nenhum dos 23 testes dava por isto, porque nenhum arrancava o servidor.**
+É a segunda vez que um teste passa porque o código está certo sem estar a
+provar o arranque (a primeira foi o `t` sem import, apanhado pelo `eslint`).
+
+Corrigido, e `scripts/testar-anikoto.mjs` passou a **arrancar o `index.js` de
+verdade** (porta livre, base temporária, falha se o processo morrer logo a
+seguir). **Verificado por mutação**: reintroduzir o bug é apanhado.
+
+### Traduções (continuação da 1.4.2)
+
+O `Login.jsx` estava praticamente todo por traduzir (`Criar conta`, `Entrar`,
+`Utilizador`, `Password`, `Já tens conta?`) e o `Diary.jsx` tinha as seis
+etiquetas do formulário. `TextoComMencoes.jsx` usa `t` como variável local para
+`setTimeout` (duas vezes), por isso importa o tradutor como `tt`.
+
+`"em baixo": "below"` passou a `"down"`: *below* é posição vertical, *down* é
+estado. `x264`, `x265`, `Trailer` e `min` ficam declarados como iguais nos dois
+idiomas, com `// i18n:` no código a dizer porquê.
+
+O `IDEIAS.md` foi reorganizado: a secção "Feitas" deixou de ser uma promessa e
+passou a existir a sério, com os 17 itens `[x]` movidos de cima e o texto do
+*como* e do *porquê* preservado.
+
 ## 1.4.2
 
 ### O modo P2P (torrents sem Real-Debrid) deixou de esperar pelo ficheiro inteiro
