@@ -27,11 +27,16 @@ export default function App() {
   const t = useT();
   return (
     <div className="app">
+      {/* O Header e o BackButton ficam FORA do boundary, e nao e' um detalhe de
+          estilo: e' o que garante que uma pagina que rebenta NAO leva a
+          navegacao com ela. Com o header dentro, o "ecra em branco" do teu
+          amigo nao tinha botao de voltar nenhum (2026-10-11). A regra e' simples:
+          o que permite SAIR do erro nunca fica dentro do que apanha o erro. */}
+      <BackButton />
+      <AppFullscreen />
+      <Changelog />
+      <Header />
       <ErrorBoundary>
-        <BackButton />
-        <AppFullscreen />
-        <Changelog />
-        <Header />
         <main className="content">
           <Suspense fallback={<LoadingStatus>{t("A carregar")}</LoadingStatus>}>
             <Routes>
@@ -44,7 +49,7 @@ export default function App() {
               <Route path="/library" element={<Library />} />
               <Route path="/diary" element={<Diary />} />
               <Route path="/achievements" element={<Achievements />} />
-      <Route path="/stats" element={<Stats />} />
+              <Route path="/stats" element={<Stats />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="/pick" element={<PickForMe />} />
               <Route path="/compare" element={<Compare />} />

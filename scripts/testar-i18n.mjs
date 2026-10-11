@@ -320,6 +320,74 @@ const { total: comT } = contarComT();
 ok("ha texto a passar por t()", comT > 0, "zero — a camada esta montada mas nao usada");
 console.log("  (textos ja traduzidos via t(): " + comT + ")");
 
+/* ---------- O `t` do tradutor nao pode ser tapado por um `t` local ---------- */
+// Protege contra o bug que fechou a app a ecra em branco (2026-10-11).
+//
+// Em `UserProfile.jsx`, dentro de um `.map()`, havia `const t = displayTitle(...)`
+// — o titulo do filme. Tapava o `t` do `useT()` dentro desse callback, e umas
+// linhas mais abaixo faziam `title={t("Visto")}`: chamar uma STRING como funcao.
+// Rebentava sempre que a grelha tinha um titulo visto — e como o `ErrorBoundary`
+// tambem estava partido (usava `this.context.t` quando o contexto e' a propria
+// funcao), o resultado final era um ecra vazio sem forma de sair.
+//
+// A regra apanha o caso PERIGOSO: num ficheiro que usa `useT()`, um `t` local
+// cujo valor e' um DADO (um titulo, um toque) tapa o tradutor, e uma linha mais
+// abaixo pode acabar por o chamar como funcao — que e' como isto comecou.
+//
+// Saometry CASOS DE VALOR, e nao todos os `t` que nao sejam `useT()`: os
+// `const t = setTimeout(...)` ficam de fora de proposito. Sao 8 em 6 ficheiros,
+// nenhum e' perigoso (ninguem chama `t(...)`), e renomea-los todos seria mexer em
+// metade da app para satisfazer um lint. O `no-shadow` do ESLint apanharia estes
+// casos E mais 30 inofensivos, por isso a regra fica aqui, onde e' sobre ESTE bug.
+const T_TAPADOS = [];
+// Inofensivos: o tradutor, um temporizador, e uma funcao (que se `t` for uma
+// funcao, `t(...)` nunca rebenta).
+const T_NAO_PERIGOSO = /=\s*(?:useT\s*\(|setTimeout\s*\(|setInterval\s*\(|setImmediate\s*\(|.*=>)/;
+
+(function verTapados(pasta) {
+  for (const nome of readdirSync(pasta)) {
+    const p = join(pasta, nome);
+    if (statSync(p).isDirectory()) { verTapados(p); continue; }
+    if (!/\.jsx$/.test(nome)) continue;
+    const s = readFileSync(p, "utf8");
+    if (!/\buseT\(\)/.test(s)) continue; // so' interessa onde ha' tradutor
+    for (const m of s.matchAll(/\b(?:const|let|var)\s+t\s*=/g)) {
+      const resto = s.slice(m.index);
+      const linha = resto.slice(0, resto.indexOf("\n"));
+      if (T_NAO_PERIGOSO.test(linha)) continue;
+      const nLinha = s.slice(0, m.index).split("\n").length;
+      T_TAPADOS.push(nome + ":" + nLinha + "  " + linha.trim().slice(0, 52));
+    }
+  }
+})(join(RAIZ, "web/src"));
+
+ok(
+  "nenhum 't' de DADO tapa o tradutor do useT() (" + T_TAPADOS.length + " achado(s))",
+  T_TAPADOS.length === 0,
+  T_TAPADOS.slice(0, 4).join(" / ")
+);
+for (const x of T_TAPADOS) console.log("        " + x);
+
+// E o `ErrorBoundary`: o valor do contexto do i18n e' a FUNCAO `t`, nao `{t}`.
+// Esta errada estava escondida desde que o i18n entrou, porque nenhuma pagina
+// tinha lancado — e quando uma lancou, o proprio boundary rebentou e a app
+// ficou sem nada no ecra.
+//
+// Os comentarios sao removidos ANTES de procurar, senao a nota que explica o
+// bug (que escreve `this.context.t(...)`) faria o teste accusing-se a ele
+// proprio.
+{
+  const ebBruto = readFileSync(join(RAIZ, "web/src/components/ErrorBoundary.jsx"), "utf8");
+  const eb = ebBruto.replace(/\/\/[^\n]*/g, "").replace(/\/\*[\s\S]*?\*\//g, "");
+  ok("o ErrorBoundary chama o t em vez de aceder a .t", !/this\.context\.t\s*\(/.test(eb));
+  ok("o ErrorBoundary tem um tradutor que nunca lanca", /tSeguro\s*\(/.test(eb));
+  // O header e o botao de voltar tem de ficar FORA do boundary: sao a forma de
+  // sair de uma pagina que rebenta (foi o "nao consigo voltar atras").
+  const app = readFileSync(join(RAIZ, "web/src/App.jsx"), "utf8");
+  const dentro = /<ErrorBoundary>[\s\S]*?<Header/.test(app);
+  ok("o Header fica FORA do ErrorBoundary", !dentro);
+}
+
 console.log("");
 console.log(mau === 0 ? "  " + n + " verificacoes, todas OK" : "  " + n + " ok, " + mau + " FALHAS");
 process.exit(mau === 0 ? 0 : 1);

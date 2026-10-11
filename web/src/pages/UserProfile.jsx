@@ -70,7 +70,12 @@ function PosterGrid({ items, empty, romaji, porPagina = 60 }) {
     <>
       <div className="grid" ref={grelhaRef}>
       {paged.map((it) => {
-        const t = displayTitle(it, romaji);
+        // `titulo`, e NAO `t`. O `t` do `useT()` e' o tradutor; um `t` local
+        // aqui tapa-o dentro do callback, e a linha do `title={t("Visto")}` mais
+        // abaixo tentava CHAMAR o titulo como se fosse funcao. Com um titulo
+        // visto rebentava a pagina toda — e, como o `ErrorBoundary` estava
+        // partido, dava um ecra em branco sem forma de sair (2026-10-11).
+        const titulo = displayTitle(it, romaji);
         return (
           <Link
             key={`${it.type}-${it.tmdbId}`}
@@ -79,9 +84,9 @@ function PosterGrid({ items, empty, romaji, porPagina = 60 }) {
           >
             <div className="card-poster">
               {imageUrl(it.poster, "w342") ? (
-                <img src={imageUrl(it.poster, "w342")} alt={t} loading="lazy" />
+                <img src={imageUrl(it.poster, "w342")} alt={titulo} loading="lazy" />
               ) : (
-                <div className="card-noposter">{t}</div>
+                <div className="card-noposter">{titulo}</div>
               )}
               <div className="card-scrim" />
               {it.score ? <span className="card-rating">{it.score}/100</span> : null}
@@ -92,7 +97,7 @@ function PosterGrid({ items, empty, romaji, porPagina = 60 }) {
               ) : null}
               {it.watchlist && !it.watched ? <span className="card-watchlist">+</span> : null}
               <div className="card-footer">
-                <h3 className="card-title">{t}</h3>
+                <h3 className="card-title">{titulo}</h3>
               </div>
             </div>
           </Link>

@@ -5,6 +5,29 @@
 // versao; quem nao encontra a sua ve o portugues (a lingua original).
 export const CHANGELOG = [
   {
+    version: "1.4.5",
+    items: [
+      "Corrigido: a fonte escolhida no selector de providers passa agora a ser lembrada entre episodios (guardada no localStorage, com chave por tipo e episodio). Quando se muda de episodio, o player arranca na fonte do anterior, se ainda existir e nao estiver morta pelo health-check.",
+      "Novo: o menu do MegaPlay nativo mostra agora a qualidade do video (" + JSON.stringify({ "1080p": "Auto", "720p": "720p", "Auto": "auto" }) + "), quando o master.m3u8 tem variantes. O HlsPlayer le as variantes depois do MANIFEST_PARSED e guarda numa prop separada.",
+      "Corrigido: o ErrorBoundary usava `this.context.t()` quando o contexto do i18n e' a propria funcao `t` (e nao `{t}`). Isso fazia a app rebentar com um ecra em branco quando uma pagina lancava — o teu amigo viu-o no perfil. Corrigido, e agora a mensagem de erro aparece sempre, com um botao para recarregar ou voltar atras.",
+      "Corrigido: o botao da qualidade nao aparecia quando a playlist tinha uma variante (o `MANIFEST_PARSED` so' reporta variantes quando existem pelo menos duas, nao quando ha' uma). Corrigido — uma variante e' "Auto", e o botao aparece quando passa de uma.",
+      "Corrigido: no `Compare.jsx`, `const t = displayTitle(...)` tapava o tradutor `t` e a linha `title={t("A tua nota: ...")}` chamava uma string como funcao — a pagina /compare rebentava sempre que havia um titulo visto.",
+      "Corrigido: no `Hero.jsx`, os eventos de swipe (`e.touches[0]`) usavam `t` como variavel, que tapava o tradutor dentro do componente.",
+      "Corrigido: o `testar-i18n.mjs` tem agora um teste que verifica que `t` nao e' tapado por uma declaracao local num ficheiro que usa `useT()`, com uma regra estreita que nao apanha timers inofensivos.",
+      "Corrigido: o harness das mutacoes (`testar-pular-intro.mjs`) cortava o `process.exit` — os sub-testes saiam com 0 mesmo quando falhavam, e o harness reportava "mutacao nao apanhada" quando o teste a apanhara (custou uma hora). Passa a incluir a cauda com o exit e imprime o que o sub-teste disse quando nao apanha.",
+    ],
+    items_en: [
+      "Fixed: the source picked in the provider selector is now remembered across episodes (stored in localStorage, keyed by title type and episode). When changing episode, the player starts with the previous source, if it still exists and isn't dead from the health check.",
+      "New: the native MegaPlay menu now shows video quality (" + JSON.stringify({ "1080p": "Auto", "720p": "720p", "Auto": "auto" }) + "), when the master.m3u8 has variants. The HlsPlayer reads the variants after MANIFEST_PARSED and keeps them in a separate prop.",
+      "Fixed: the ErrorBoundary called `this.context.t()` when the i18n context value is the `t` function itself (not `{t}`). This made the app crash with a blank white screen whenever any page threw — your friend saw it on the profile page. Fixed, and the error message now always shows, with reload/back buttons.",
+      "Fixed: the quality menu didn't show when the playlist had one variant (`MANIFEST_PARSED` only reports variants when there are at least two, not one). Fixed — one variant is "Auto", and the button shows when there are more.",
+      "Fixed: in `Compare.jsx`, `const t = displayTitle(...)` overwrote the translator `t`, so `title={t("A tua nota: ...")}` called a string as a function — the /compare page always crashed when there was a watched title.",
+      "Fixed: in `Hero.jsx`, swipe events (`e.touches[0]`) used `t` as a variable, overwriting the translator inside the component.",
+      "Fixed: `testar-i18n.mjs` now has a test that checks `t` isn't overwritten by a local declaration in a file that uses `useT()`, with a narrow rule that doesn't flag harmless timers.",
+      "Fixed: the mutation harness (`testar-pular-intro.mjs`) cut `process.exit` — sub-tests exited with 0 even when failing, and the harness reported "mutation not caught" when it was caught (cost an hour). Now includes the exit tail and prints the sub-test output when not caught.",
+    ],
+  },
+  {
     version: "1.4.4",
     items: [
       "Novo: nos episódios de anime reproduzidos aqui dentro (MegaPlay nativo), aparece agora um botão \"Saltar a abertura\" no início e outro \"Saltar o fim\" no final, com a hora para onde salta. Se tiveres o Autoskip ligado nas Definições, a abertura salta sozinha sem botão.",

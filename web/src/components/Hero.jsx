@@ -91,18 +91,22 @@ export default function Hero({ items, item }) {
   const go = (n) => setIdx((i) => (i + n + list.length) % list.length);
 
   // Swipe horizontal no telemovel (ignora taps e deslizes verticais).
+  //
+  // O toque chama-se `toque`, nunca `t`: neste ficheiro `t` e' sempre o tradutor
+  // do `useT()`, e um `t` local a tapar-lo ja' custou um ecra em branco na app
+  // (2026-10-11). O teste `testar-i18n.mjs` obriga a que `t` seja so' o tradutor.
   const onTouchStart = (e) => {
     if (list.length <= 1) return;
-    const t = e.touches[0];
-    touchStartRef.current = { x: t.clientX, y: t.clientY };
+    const toque = e.touches[0];
+    touchStartRef.current = { x: toque.clientX, y: toque.clientY };
   };
   const onTouchEnd = (e) => {
     const start = touchStartRef.current;
     touchStartRef.current = null;
     if (!start) return;
-    const t = e.changedTouches[0];
-    const dx = t.clientX - start.x;
-    const dy = t.clientY - start.y;
+    const toque = e.changedTouches[0];
+    const dx = toque.clientX - start.x;
+    const dy = toque.clientY - start.y;
     if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy) * 1.2) return;
     go(dx < 0 ? 1 : -1);
   };

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import { audioTituloStore, api, imageUrl } from "../api/client.js";
+import { settingsStore } from "../settings/SettingsContext.jsx";
 import { useSettings } from "../settings/SettingsContext.jsx";
 import { useAuth } from "../auth/AuthContext.jsx";
 import { useWatchParty } from "../watchparty/WatchPartyContext.jsx";
@@ -114,6 +115,18 @@ export default function Details() {
   // VidLink sem teres pedido nada. So o auto-fallback inicial (sem escolha) e'
   // que salta de fonte sozinho.
   const [fonteManual, setFonteManual] = useState(false);
+
+  // A ultima fonte escolhida e' guardada por tipo de titulo (anime/filme/serie),
+  // para o utilizador nao ter de a escolher em cada episodio. Se o provider
+  // escolhido morreu entretanto, cai no primeiro vivo como antes.
+  const fonteSalva = (() => {
+    try {
+      const chave = `meida:last-source:${details?.type || ""}:${season || 1}:${episode || 1}`;
+      const v = localStorage.getItem(chave);
+      if (v && embeds.some((e) => e.provider === v)) return v;
+    } catch { /* sem localStorage (privado) */ }
+    return null;
+  })();
   // Watch Party: fonte (provider) que o host escolheu, para os convidados verem a
   // mesma — senao cada um fica no 1o provider, que pode estar partido ("nao vejo nada").
   const wantedSourceRef = useRef(null);
@@ -124,11 +137,17 @@ export default function Details() {
   // (salta os que o health-check marcou como mortos).
   function pickDefault(embedsList) {
     const want = wantedSourceRef.current;
+    const saved = fonteSalva;
+    // Se ha uma fonte salva e nao esta morta pelo health-check, usa-a como
+    // ponto de partida. Se nao existe ja (o provider foi removido ou mudou o
+    // id), cai no primeiro vivo como antes.
     const alive = embedsList.filter(
       (e) => !deadProviders?.has(e.provider)
     );
+    const aliveSaved = saved ? alive.find((e) => e.provider === saved) : null;
     return (
       (want && (alive.find((e) => e.provider === want) || embedsList.find((e) => e.provider === want))) ||
+      aliveSaved ||
       alive[0] ||
       embedsList[0] ||
       null
@@ -839,6 +858,7 @@ api
             <>
             <SourceSelector
               embeds={embeds}
+              savedSource={fonteSalva}
               activeId={active?.provider}
               onSelect={(e) => {
                 setActive(e);
@@ -847,6 +867,14 @@ api
                 setPlayerIndex(idx >= 0 ? idx : 0);
                 // Escolha manual: a partir de agora o player fica nesta fonte.
                 setFonteManual(true);
+                // Se a fonte tem uma chave `provider`, guarda no localStorage
+                // para o proximo episodio deste tipo (anime/filme/serie) a usar.
+                if (e?.provider) {
+                  try {
+                    const chave = `meida:last-source:${details?.type || ""}:${season || 1}:${episode || 1}`;
+                    localStorage.setItem(chave, e.provider);
+                  } catch { /* sem localStorage (privado) */ }
+                }
               }}
               deadIds={deadProviders}
               title={details.title}

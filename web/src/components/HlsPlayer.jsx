@@ -6,7 +6,7 @@ import { usePlayerShortcuts } from "./usePlayerShortcuts.js";
 import { useVideoSync } from "../watchparty/useVideoSync.js";
 import { useSettings } from "../settings/SettingsContext.jsx";
 import { useT } from "../i18n/I18nContext.jsx";
-import { pularVisivel, autoskipDestino, formatarTempo } from "./pularIntro.js";
+import { pularVisivel, autoskipDestino, formatarTempo, rotuloNivel } from "./pularIntro.js";
 
 // Player HLS próprio (sem anúncios) com legendas.
 // `startAt` (s): retoma nessa posicao. `onProgress(p, d)`: chamado ~1x/5s.
@@ -41,6 +41,26 @@ export default function HlsPlayer({
   // botao que dura 90 s; nao precisa de 4actualizacoes por segundo.
   const [pulando, setPulando] = useState(null); // {tipo, destino} ou null
   const jaSaltou = useRef(new Set());
+
+  // ── Qualidade ──────────────────────────────────────────────────────────────
+  // O `master.m3u8` do MegaPlay traz varias variantes (1080p, 720p, 480p...). O
+  // `hls.js` le-as para `hls.levels` e escolhe sozinho, com `capLevelToPlayerSize`
+  // afalse. Por omissao escolhe a melhor que a ligacao aguenta — que numa ligacao
+  // lenta e' uma escolha errada: fica a trocar de qualidade a meio e a bloquear.
+  // O menu deixa a pessoa fixar uma.
+  const hlsRef = useRef(null);
+  const [niveis, setNiveis] = useState([]); // rotulos, ou [] quando nao ha' o que escolher
+  const [nivelAuto, setNivelAuto] = useState(true);
+  const [ativo, setAtivo] = useState(0);
+
+  function mudarQualidade(valor) {
+    const hls = hlsRef.current;
+    if (!hls) return;
+    const auto = valor === "auto";
+    setNivelAuto(auto);
+    // -1 e' o "automatico" do hls.js: volta a escolher pela ligacao.
+    hls.currentLevel = auto ? -1 : Number(valor);
+  }
 
   const decidir = useCallback((video) => {
     if (!video) return;
@@ -128,12 +148,29 @@ export default function HlsPlayer({
       hls = new Hls({ enableWorker: true });
       hls.loadSource(src);
       hls.attachMedia(video);
+      // A instancia vive num ref porque e' ela que sabe as variantes que a
+      // playlist trouxe. `hls.levels` so' esta preenchido DEPOIS de a playlist
+      // mestre ser lida, por isso o menu so' aparece quando ha' mesmo mais que
+      // uma variante (uma so e' o "Auto" e nao ha' nada para escolher).
+      hlsRef.current = hls;
+      hls.on(Hls.Events.MANIFEST_PARSED, (_e, dados) => {
+        const nivel = dados?.levels?.length || 0;
+        // Uma variante e' so' a variante. Duas ou mais e' que ha' o que escolher.
+        setNiveis(nivel > 1 ? dados.levels.map((l, i) => rotuloNivel(l, i)) : []);
+      });
+      hls.on(Hls.Events.LEVEL_SWITCHED, (_e, dados) => setAtivo(dados?.level ?? 0));
     } else {
       // Safari (HLS nativo) ou ficheiro progressivo.
       video.src = src;
+      // Sem `hls.js` nao ha' variantes para escolher — o Safari escolhe sozinho.
+      hlsRef.current = null;
+      setNiveis([]);
     }
 
-    return () => hls?.destroy();
+    return () => {
+      hls?.destroy();
+      hlsRef.current = null;
+    };
   }, [src, sources]);
 
   // Retoma a meio (posicao guardada do "continua a ver") e avisa que ja ha' video.
@@ -188,6 +225,28 @@ export default function HlsPlayer({
         <FullscreenButton targetRef={containerRef} />
       </div>
       <SubtitleMenu videoRef={videoRef} subtitles={subtitles} />
+      {/* So aparece com duas ou mais variantes (ver `MANIFEST_PARSED` acima): com
+          uma so nao ha' nada para escolher e o menu era ruido. */}
+      {niveis.length > 1 && (
+        <div className="sub-menu">
+          <label>{t("Qualidade:")}</label>
+          <select
+            value={nivelAuto ? "auto" : String(ativo)}
+            onChange={(e) => mudarQualidade(e.target.value)}
+          >
+            <option value="auto">
+              {nivelAuto && ativo >= 0 && niveis[ativo]
+                ? `${t("Automático")} (${niveis[ativo]})`
+                : t("Automático")}
+            </option>
+            {niveis.map((r, i) => (
+              <option key={i} value={i}>
+                {r}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
     </div>
   );
 }

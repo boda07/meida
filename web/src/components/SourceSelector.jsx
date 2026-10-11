@@ -58,6 +58,7 @@ export default function SourceSelector({
   isMovie,
   season,
   episode,
+  savedSource,
 }) {
   const t = useT();
   const extSites = buildExternal(title, isMovie, season, episode);
@@ -69,6 +70,18 @@ export default function SourceSelector({
   const googleUrl = title
     ? `https://www.google.com/search?q=${searchQuery}+watch+online`
     : null;
+
+  // Se o utilizador escolheu uma fonte no episodio anterior, usa-a como
+  // ponto de partida (se ainda existir e nao estiver morta pelo health-check).
+  // E' o que faz "lembro-me da fonte" funcionar entre episodios.
+  // Se nao ha' escolha manual mas existe uma fonte salva para este episodio,
+  // a fonte activa e' a salva. Se nao existe (o provider morreu ou mudou o id),
+  // cai no primeiro vivo como antes.
+  const fonteInicial = savedSource && embeds?.find(
+    (e) => e.provider === savedSource && !(deadIds?.has(savedSource))
+  );
+  const fonteAtiva = active || fonteInicial || embeds?.[0] || null;
+  const fonteAtivaProvider = fonteAtiva ? fonteAtiva.provider : null;
 
   const hasEmbeds = Boolean(embeds?.length);
 
@@ -83,7 +96,7 @@ export default function SourceSelector({
               return (
                 <button
                   key={e.provider}
-                  className={`source-btn ${e.provider === activeId ? "active" : ""} ${
+                  className={`source-btn ${e.provider === fonteAtivaProvider ? "active" : ""} ${
                     isDead ? "dead" : ""
                   }`}
                   onClick={() => onSelect(e)}

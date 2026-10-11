@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.4.5
+
+### Fonte lembrada entre episodios + qualidade do video
+
+- **Fonte escolhida lembra-se**: antes, a `fonteManual` vivia so' na sessao do `Details.jsx` — mudavas de episodio e voltavas ao primeiro provider. Agora guarda-se no `localStorage` (`meida:last-source:<tipo>:<temporada>:<episodio>`), e o `SourceSelector` usa-a como ponto de partida se ainda existir e nao estiver morta pelo health-check.
+- **Qualidade**: o `master.m3u8` do MegaPlay tem variantes; o `HlsPlayer` agora le-as depois do `MANIFEST_PARSED` e mostra um menu (aparece quando ha' mais de uma variante; com uma so e' "Auto"). A qualidade fica no `hls.currentLevel`. Quando `Autoskip` esta ligado e uma variante muda, o `setNivelAuto` nao interfere.
+- **O `ErrorBoundary` estava partido desde que o i18n entrou**: usava `this.context.t()` quando o contexto do `I18nContext` e' a propria `t` (nao `{t}`). O `tSeguro()` e' uma funcao que nunca lanca, mesmo sem provider. E o `Header`/`BackButton` saem do boundary (antes, uma queda levava-os com ela — o teu amigo nao tinha botao para voltar atras).
+- **`Compare.jsx`**: `const t = displayTitle(...)` tapava o tradutor; `t("A tua nota...")` chamava uma string.
+- **`Hero.jsx`**: `const t = e.touches[0]` tapava o tradutor.
+- **`testar-i18n.mjs`**: passa a verificar que `t` nao e' tapado por uma declaracao local, com uma regra que nao apanha timers inofensivos (`setTimeout`), mas apanha valores de dados (um titulo, um toque). E o harness das mutacoes passa a incluir o `process.exit` na cauda — antes os sub-testes saiam com 0 mesmo a falhar.
+- **`pularIntro.js`**: `intro`/`outro` do MegaPlay (`{start:0,end:0}` quando nao ha' fim) e' filtrado; `Number.isFinite` rejeita texto, `NaN`, `Infinity` e `undefined` numa so' regra; `formatarTempo` e `rotuloNivel` sao puras e testadas.
+
 ## 1.4.4
 
 ### Saltar a abertura e o fim nos episódios de anime

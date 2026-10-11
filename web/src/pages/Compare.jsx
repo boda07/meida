@@ -19,21 +19,26 @@ function fmtRating(r) {
 }
 
 // Cartão lateral: capa, título e notas de um item.
+//
+// O tradutor e' `t` e o titulo e' `titulo`, como em todo o lado. Antes era ao
+// contrario (`t` para o titulo), e o `t("A tua nota: ...")` de baixo era uma
+// CHAMADA A UMA STRING: a pagina /compare rebentava sempre (2026-10-11).
 function SideCard({ it, label, settings }) {
-  const t = displayTitle(it, settings.animeTitleLang === "romaji");
+  const t = useT();
+  const titulo = displayTitle(it, settings.animeTitleLang === "romaji");
   return (
     <div className={`compare-side ${label === "left" ? "cmp-left" : "cmp-right"}`}>
       <Link to={`/details/${it.type}/${it.tmdbId}`} className="compare-poster-link">
         <div className="compare-poster">
           {imageUrl(it.poster, "w342") ? (
-            <img src={imageUrl(it.poster, "w342")} alt={t} loading="lazy" />
+            <img src={imageUrl(it.poster, "w342")} alt={titulo} loading="lazy" />
           ) : (
-            <div className="card-noposter">{t}</div>
+            <div className="card-noposter">{titulo}</div>
           )}
         </div>
       </Link>
       <Link to={`/details/${it.type}/${it.tmdbId}`} className="compare-title">
-        {t}
+        {titulo}
       </Link>
       <div className="compare-ratings">
         <span className="compare-comm">⭐ {fmtRating(it.rating)}</span>

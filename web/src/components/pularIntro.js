@@ -122,3 +122,30 @@ export function formatarTempo(seg) {
   const dois = (x) => String(x).padStart(2, "0");
   return h > 0 ? `${h}:${dois(m)}:${dois(s)}` : `${m}:${dois(s)}`;
 }
+
+/**
+ * Rotulo de uma variante de qualidade, a partir do que o `hls.js` da.
+ *
+ * A altura e' o que interessa (`1080p`), e e' o unico campo que se pode
+ * mostrar com seguranca: o bitrate real muda de site para site e um numero
+ * grande no ecra assusta sem explicar nada. Quando a variante NAO tem altura
+ * (alguns `master.m3u8` so' trazem bitrate), mostra-se o bitrate em Mbps em vez
+ * de ficar um espaco vazio no menu.
+ *
+ * PURE como o resto do modulo — a escolha do rotulo e' logica, nao UI.
+ */
+export function rotuloNivel(l, indice = 0) {
+  const altura = Number(l?.height);
+  if (Number.isFinite(altura) && altura > 0) return `${altura}p`;
+
+  const bits = Number(l?.bitrate);
+  if (Number.isFinite(bits) && bits > 0) {
+    const mbps = bits / 1_000_000;
+    // Uma casa quando e' pequeno ("1.5"), zero quando e' grande ("8"): 1080p
+    // nao se escreve "8.0" num menu.
+    return `${mbps >= 10 ? Math.round(mbps) : Math.round(mbps * 10) / 10} Mbps`;
+  }
+
+  // Sem altura e sem bitrate: melhor um "Opcao N" honesto do que dois "Auto".
+  return `Opção ${indice + 1}`;
+}
