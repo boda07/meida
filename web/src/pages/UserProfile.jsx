@@ -112,7 +112,11 @@ function PosterGrid({ items, empty, romaji, porPagina = 60 }) {
             {t("← Anterior")}
           </button>
           <span className="lib-pager-info">
-            Página {safePage} de {pageCount} · {lista.length} títulos
+            {t("Página {p} de {n} · {t} títulos", {
+                p: safePage,
+                n: pageCount,
+                t: lista.length,
+              })}
           </span>
           <button
             className="lib-pager-btn"
@@ -282,10 +286,10 @@ export default function UserProfile() {
           {u.bio && <p className="profile-bio">{u.bio}</p>}
           <div className="profile-social">
             <button className="profile-social-link" onClick={() => switchTab("followers")}>
-              {profile.followers} seguidores
+              {t("{n} seguidores", { n: profile.followers })}
             </button>
             <button className="profile-social-link" onClick={() => switchTab("following")}>
-              {profile.following} a seguir
+              {t("{n} a seguir", { n: profile.following })}
             </button>
             {!u.isPublic && <span className="profile-private">{t("Perfil privado")}</span>}
           </div>
@@ -315,11 +319,11 @@ export default function UserProfile() {
       {stats && temDados && (
         <dl className="profile-stats">
           <div className="profile-stat">
-            <dt>títulos</dt>
+            <dt>{t("títulos")}</dt>
             <dd>{stats.total}</dd>
           </div>
           <div className="profile-stat">
-            <dt>vistos</dt>
+            <dt>{t("vistos")}</dt>
             <dd>{stats.vistos}</dd>
           </div>
           {/* {t("A ver agora")} e' outra coisa que "para ver", e e' o que o
@@ -348,7 +352,7 @@ export default function UserProfile() {
           )}
           {stats.abandonados > 0 && (
             <div className="profile-stat">
-              <dt>abandonados</dt>
+              <dt>{t("abandonados")}</dt>
               <dd>{stats.abandonados}</dd>
             </div>
           )}
@@ -383,7 +387,7 @@ export default function UserProfile() {
 
       {!canView ? (
         <p className="muted profile-locked">
-          🔒 Este perfil é privado.{" "}
+          {t("🔒 Este perfil é privado.")}{" "}
           {user ? t("Segue o utilizador, mas a biblioteca só ele a vê.") : t("Entra para o adicionares.")}
         </p>
       ) : tab === "library" ? (

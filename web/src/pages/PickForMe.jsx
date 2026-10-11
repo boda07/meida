@@ -91,8 +91,10 @@ export default function PickForMe() {
       ) : (
         <>
           <p className="muted" style={{ marginTop: 14 }}>
-            Toca nos géneros: 1x = <b className="want">quero</b>, 2x ={" "}
-            <b className="avoid">{t("não quero")}</b> {t(". Depois carrega no botao.")}
+            {t("Toca nos géneros: 1x = {quero}, 2x = {nao}. Depois carrega no botão.", {
+              quero: <b className="want">{t("quero")}</b>,
+              nao: <b className="avoid">{t("não quero")}</b>,
+            })}
           </p>
 
           <div className="genre-grid">

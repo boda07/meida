@@ -87,11 +87,11 @@ export default function Stats() {
       {/* As três medidas que respondem "quanto". */}
       <dl className="st-cabecalho">
         <div className="st-cifra">
-          <dt>títulos</dt>
+          <dt>{t("títulos")}</dt>
           <dd>{data.titulos}</dd>
         </div>
         <div className="st-cifra">
-          <dt>vistos</dt>
+          <dt>{t("vistos")}</dt>
           <dd>{data.vistos}</dd>
         </div>
         <div className="st-cifra">
@@ -105,7 +105,10 @@ export default function Stats() {
           <h2 className="st-titulo">{t("Como distribuis as notas")}</h2>
           {data.comNota > 0 && (
             <span className="st-nota">
-              média {data.media} · mediana {data.mediana}
+              {t("média {media} · mediana {mediana}", {
+                media: data.media,
+                mediana: data.mediana,
+              })}
             </span>
           )}
         </div>
@@ -173,9 +176,10 @@ export default function Stats() {
         {/* As duas ressalvas que os numeros sozinhos nao dizem. */}
         {data.decadaFavorita && semAno > 0 && (
           <p className="stats-nota">
-            A década conta {data.decadaFavorita.comAno} dos {data.titulos} títulos: os
-            restantes ainda não têm ano guardado. Abre a ficha de alguns, ou corre o
-            preenchimento, e este número fica mais firme.
+            {t("A década conta {ano} dos {n} títulos: os restantes ainda não têm ano guardado. Abre a ficha de alguns, ou corre o preenchimento, e este número fica mais firme.", {
+              ano: data.decadaFavorita.comAno,
+              n: data.titulos,
+            })}
           </p>
         )}
         {!tempo && (

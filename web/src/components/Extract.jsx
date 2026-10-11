@@ -54,10 +54,14 @@ export default function Extract({ details, season, episode, startAt, onProgress 
       <div className="extract-empty">
         <p>{t("Sem stream direto para este título de momento.")}</p>
         <p className="muted">
-          Os extractores gratuitos são instaveis. Usa o separador{" "}
-          <b>{t("Providers")}</b> {t("(com anúncios) ou")} <b>Torrents</b>. Para reprodução sem
-          anúncios fiavel, liga um extractor (Consumet) em{" "}
-          <code>EXTRACTOR_API_BASE</code> no <code>server/.env</code>.
+          {t("Os extractores gratuitos são instaveis. Usa o separador {a} (com anúncios) ou {b}.", {
+            a: <b>{t("Providers")}</b>,
+            b: <b>{t("Torrents")}</b>,
+          })}{" "}
+          {t("Para reprodução sem anúncios fiavel, liga um extractor (Consumet) em {chave} no {onde}.", {
+            chave: <code>EXTRACTOR_API_BASE</code>,
+            onde: <code>server/.env</code>,
+          })}
         </p>
       </div>
     );

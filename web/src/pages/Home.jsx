@@ -44,7 +44,7 @@ export default function Home() {
   if (error)
     return (
       <div className="status error">
-        <p>Não consegui carregar o catálogo: {error}</p>
+        <p>{t("Não consegui carregar o catálogo: {erro}", { erro: error })}</p>
         <p className="muted">
           {t("Verifica que criaste {ficheiro} com a tua chave do TMDB.", {
             ficheiro: <code>server/.env</code>,

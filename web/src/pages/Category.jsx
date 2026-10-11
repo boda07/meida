@@ -201,7 +201,7 @@ export default function Category({ category, title }) {
           )}
         </>
       ) : loading ? (
-        <LoadingStatus>A carregar {title}</LoadingStatus>
+        <LoadingStatus>{t("A carregar {titulo}", { titulo: title })}</LoadingStatus>
       ) : (
         <div className="rows">
           {rows.map((row) => (
@@ -214,7 +214,11 @@ export default function Category({ category, title }) {
         <div className="modal-overlay" onClick={() => setGenreOpen(false)}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-head">
-              <h3>Filtrar por género{type === "anime" ? "/tema" : ""}</h3>
+              <h3>
+                {type === "anime"
+                  ? t("Filtrar por género/tema")
+                  : t("Filtrar por género")}
+              </h3>
               <button
                 className="modal-close"
                 aria-label="Fechar"
@@ -240,10 +244,10 @@ export default function Category({ category, title }) {
                 disabled={!genreSel.size}
                 onClick={() => setGenreSel(new Set())}
               >
-                Limpar{genreSel.size ? ` (${genreSel.size})` : ""}
+                {t("Limpar{n}", { n: genreSel.size ? ` (${genreSel.size})` : "" })}
               </button>
               <button className="modal-btn" onClick={() => setGenreOpen(false)}>
-                Aplicar
+                {t("Aplicar")}
               </button>
             </div>
           </div>

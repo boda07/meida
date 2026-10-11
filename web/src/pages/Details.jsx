@@ -671,7 +671,11 @@ api
           </h1>
           <div className="details-tags">
             {details.rating && <span className="tag">⭐ {details.rating}</span>}
-            {details.runtime && <span className="tag">{details.runtime} min</span>}
+            {details.runtime && (
+              <span className="tag">
+                {details.runtime} {t("min")}
+              </span>
+            )}
             {details.genres?.map((g) => (
               <span className="tag" key={g}>
                 {g}
@@ -766,20 +770,20 @@ api
         <div className="watch">
           <div className="anime-audio-bar">
             <span className="muted" style={{ fontSize: 12 }}>
-              Áudio deste título:
+              {t("Áudio deste título:")}
             </span>
             <div className="mode-tabs" style={{ margin: 0 }}>
               <button
                 className={animeAudio === "sub" ? "active" : ""}
                 onClick={() => escolherAudio("sub")}
               >
-                Legendado
+                {t("Legendado")}
               </button>
               <button
                 className={animeAudio === "dub" ? "active" : ""}
                 onClick={() => escolherAudio("dub")}
               >
-                Dobrado
+                {t("Dobrado")}
               </button>
             </div>
           </div>
@@ -789,14 +793,14 @@ api
                 className={mode !== "extract" && mode !== "torrents" ? "active" : ""}
                 onClick={() => setMode("providers")}
               >
-                Fontes
+                {t("Fontes")}
               </button>
               {animeExtractorOn && (
                 <button
                   className={mode === "extract" ? "active" : ""}
                   onClick={() => setMode("extract")}
                 >
-                  Sem anúncios
+                  {t("Sem anúncios")}
                 </button>
               )}
               {details.imdbId && (
@@ -804,7 +808,7 @@ api
                   className={mode === "torrents" ? "active" : ""}
                   onClick={() => setMode("torrents")}
                 >
-                  Torrents
+                  {t("Torrents")}
                 </button>
               )}
             </div>
@@ -866,8 +870,10 @@ api
               </p>
               {party?.active && (
                 <p className="muted" style={{ fontSize: 12, marginTop: 4 }}>
-                  🔴 Watch Party: estas fontes são em iframe, o play/pausa <b>não</b>{" "}
-                  sincroniza — usem <b>{t("Torrents")}</b> para verem em sincronia.
+                  {t("🔴 Watch Party: estas fontes são em iframe, o play/pausa {nao} sincroniza — usem {torrents} para verem em sincronia.", {
+                    nao: <b>{t("não")}</b>,
+                    torrents: <b>{t("Torrents")}</b>,
+                  })}
                 </p>
               )}
             </>
@@ -928,15 +934,18 @@ api
               <p className="muted">{t("A carregar fontes...")}</p>
             )}
             <p className="muted" style={{ fontSize: 12, marginTop: 8 }}>
-              As legendas próprias (incl. português) só funcionam no separador{" "}
-              <b>{t("Torrents")}</b>{extractOn ? <> e <b>{t("Sem anúncios")}</b></> : null} (os
-              Providers são páginas externas em iframe).
+              {t("As legendas próprias (incl. português) só funcionam no separador {torrents}{extra} (os Providers são páginas externas em iframe).", {
+                torrents: <b>{t("Torrents")}</b>,
+                extra: extractOn ? <> e <b>{t("Sem anúncios")}</b></> : null,
+              })}
             </p>
             {party?.active && (
               <p className="muted" style={{ fontSize: 12, marginTop: 4 }}>
-                🔴 Watch Party: aqui (Providers) o play/pausa <b>não</b> sincroniza
-                — usem <b>{t("Torrents")}</b>{extractOn ? <> ou <b>{t("Sem anúncios")}</b></> : null}{" "}
-                para verem em sincronia.
+                {t("🔴 Watch Party: aqui (Providers) o play/pausa {nao} sincroniza — usem {torrents}{extra} para verem em sincronia.", {
+                  nao: <b>{t("não")}</b>,
+                  torrents: <b>{t("Torrents")}</b>,
+                  extra: extractOn ? <> ou <b>{t("Sem anúncios")}</b></> : null,
+                })}
               </p>
             )}
           </>
@@ -972,15 +981,18 @@ api
         <div className="scrobble-bar">
           <button className="btn scrobble-btn" onClick={markFinished} disabled={finishing}>
             {finishing
-              ? "A guardar..."
+              ? t("A guardar...")
               : isMovieLike
-              ? "✓ Marcar como visto"
-              : `✓ Terminei o episódio ${episode}`}
+              ? t("✓ Marcar como visto")
+              : t("✓ Terminei o episódio {n}", { n: episode })}
           </button>
           {!isMovieLike && (
             <span className="muted" style={{ fontSize: 12 }}>
-              {t("Guarda no diário e avança o {b} para o próximo episódio", { b: '"Continua a ver"' })}
-              {details.isAnime ? " (e marca no MAL)" : ""}.
+              {t("Guarda no diário e avança o {b} para o próximo episódio{mal}", {
+                b: '"Continua a ver"',
+                mal: details.isAnime ? " " + t("(e marca no MAL)") : "",
+              })}
+              .
             </span>
           )}
           {finishMsg && (

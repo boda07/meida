@@ -101,7 +101,11 @@ export default function VideoPlayer({ src, infoHash, subtitles = [], startAt, on
           <span className="vbar">
             <span style={{ width: `${status.progress}%` }} />
           </span>
-          {status.progress}% · 👤 {status.peers} peers · ⬇ {mb(status.downloadSpeed)} MB/s
+          {t("{pct}% · 👤 {peers} peers · ⬇ {vel} MB/s", {
+            pct: status.progress,
+            peers: status.peers,
+            vel: mb(status.downloadSpeed),
+          })}
           <button className="vstop" onClick={stop} disabled={removing}>
             {removing ? t("A parar...") : "✕ Parar torrent"}
           </button>

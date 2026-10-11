@@ -428,22 +428,25 @@ function DebridSection({ user }) {
           </p>
           <div className="set-row" style={{ marginTop: 8 }}>
             <button className="set-clear" onClick={unlink}>
-              Desligar
+              {t("Desligar")}
             </button>
           </div>
         </>
       ) : (
         <>
           <p className="muted">
-            Cola o teu token do Real-Debrid (obtém-no em{" "}
-            <a
-              href="https://real-debrid.com/apitoken"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              real-debrid.com/apitoken
-            </a>
-            {t("). É um serviço pago (mas barato) que guarda os torrents em cache — por isso o stream começa imediatamente, como no Stremio.")}
+            {t("Cola o teu token do Real-Debrid (obtém-no em {ligacao}){fim}", {
+              ligacao: (
+                <a
+                  href="https://real-debrid.com/apitoken"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  real-debrid.com/apitoken
+                </a>
+              ),
+              fim: t("). É um serviço pago (mas barato) que guarda os torrents em cache — por isso o stream começa imediatamente, como no Stremio."),
+            })}
           </p>
           <div className="set-img-url">
             <input
@@ -936,10 +939,15 @@ export default function Settings() {
           </button>
           {srv && (
             <p className="muted">
-              A ligar a:{" "}
-              <strong>
-                {srv.mode === "remote" && srv.url ? srv.url : "servidor local deste computador"}
-              </strong>
+              {t("A ligar a: {destino}", {
+                destino: (
+                  <strong>
+                    {srv.mode === "remote" && srv.url
+                      ? srv.url
+                      : t("servidor local deste computador")}
+                  </strong>
+                ),
+              })}
             </p>
           )}
           {srvMsg && <p className={srvErr ? "status error" : "muted"}>{srvMsg}</p>}
@@ -1065,8 +1073,7 @@ export default function Settings() {
       <section className="set-section" data-tab="conteudo">
         <h3>{t("Conteúdo adulto (anime)")}</h3>
         <p className="muted">
-          Mostrar anime adulto (NSFW/hentai) na pesquisa, nos filtros de género e no
-          {t('"Escolhe algo para mim". Desligado por defeito.')}
+          {t('Mostrar anime adulto (NSFW/hentai) na pesquisa, nos filtros de género e no "Escolhe algo para mim". Desligado por defeito.')}
         </p>
         <div className="set-row">
           <Choice value={false} current={settings.showAdult} onPick={(v) => update({ showAdult: v })}>
@@ -1413,8 +1420,9 @@ export default function Settings() {
                 onChange={(e) => setIsPublic(e.target.checked)}
               />
               <span>
-                Perfil público — qualquer pessoa pode ver a tua biblioteca e listas.
-                {!isPublic && t(" (agora está privado: só tu vês)")}
+                {t("Perfil público — qualquer pessoa pode ver a tua biblioteca e listas.{estado}", {
+                  estado: !isPublic ? t(" (agora está privado: só tu vês)") : "",
+                })}
               </span>
             </label>
             <button

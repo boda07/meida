@@ -86,11 +86,11 @@ function CenterControls({ it, busy, onScore, onAdjust }) {
       <div className="compare-btns">
         <button className="cmp-btn cmp-down" disabled={busy} onClick={() => onAdjust(-1)} title={t("Baixar 1")}>
           <span className="cmp-ico" aria-hidden="true">↓</span>
-          <span>Baixar</span>
+          <span>{t("Baixar")}</span>
         </button>
         <button className="cmp-btn cmp-up" disabled={busy} onClick={() => onAdjust(1)} title={t("Subir 1")}>
           <span className="cmp-ico" aria-hidden="true">↑</span>
-          <span>Aumentar</span>
+          <span>{t("Aumentar")}</span>
         </button>
       </div>
     </div>

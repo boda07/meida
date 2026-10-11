@@ -186,7 +186,7 @@ export default function Torrents({ type, imdb, title, season, episode, anime, de
           {streaming && <p className="muted">{t("A preparar stream no Real-Debrid...")}</p>}
           {streamErr && (
             <p className="muted" style={{ fontSize: 12 }}>
-              Debrid indisponível, a tocar via torrent local — {streamErr}
+              {t("Debrid indisponível, a tocar via torrent local")} — {streamErr}
             </p>
           )}
           {videoSrc && (
@@ -211,7 +211,7 @@ export default function Torrents({ type, imdb, title, season, episode, anime, de
             className={`tf-chip ${quality === "all" ? "active" : ""}`}
             onClick={() => setQuality("all")}
           >
-            Todas
+            {t("Todas")}
           </button>
           {qualities.map((q) => (
             <button
@@ -241,7 +241,7 @@ export default function Torrents({ type, imdb, title, season, episode, anime, de
           </div>
         )}
         <label className="tf-sort">
-          Ordenar:
+          {t("Ordenar:")}
           <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
             <option value="seeders">{t("Mais seeders")}</option>
             <option value="quality">{t("Qualidade")}</option>
@@ -254,7 +254,7 @@ export default function Torrents({ type, imdb, title, season, episode, anime, de
             className={`tf-chip ${compat === "all" ? "active" : ""}`}
             onClick={() => setCompat("all")}
           >
-            Todos
+            {t("Todos")}
           </button>
           {haveInstant && (
             <button
@@ -276,14 +276,14 @@ export default function Torrents({ type, imdb, title, season, episode, anime, de
             onClick={() => setCodec(codec === "x264" ? "all" : "x264")}
             title={t("Só torrents x264 (mais compatíveis com o browser)")}
           >
-            x264
+            {t("x264")} {/* i18n: codec, igual nos dois idiomas */}
           </button>
           <button
             className={`tf-chip ${codec === "x265" ? "active" : ""}`}
             onClick={() => setCodec(codec === "x265" ? "all" : "x265")}
             title={t("Só torrents x265/HEVC (mais pequenos, mas o browser não reproduz)")}
           >
-            x265
+            {t("x265")} {/* i18n: codec, igual nos dois idiomas */}
           </button>
         </div>
       </div>

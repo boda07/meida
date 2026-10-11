@@ -257,12 +257,15 @@ export default function Player({ embeds, deadIds, title, startIndex = 0, manual 
       )}
       {arrancado && !loaded && active.name && (
         <span className="player-loading-hint muted" style={{ position: "absolute", right: 8, bottom: 8, fontSize: 12 }}>
-          {active.name} · a carregar...
+          {t("{nome} · a carregar...", { nome: active.name })}
         </span>
       )}
       {arrancado && trocada && loaded && (
         <span className="player-loading-hint muted" style={{ position: "absolute", left: 8, bottom: 8, fontSize: 12 }}>
-          {trocada} nao carregou · a usar {active?.name}
+          {t("{fonte} nao carregou · a usar {nome}", {
+            fonte: trocada,
+            nome: active?.name,
+          })}
         </span>
       )}
       {arrancado && <FullscreenButton targetRef={iframeRef} />}

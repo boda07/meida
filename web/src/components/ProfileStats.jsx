@@ -110,13 +110,13 @@ export default function ProfileStats({ items }) {
         )}
         {s.abandonados > 0 && (
           <div className="st-cifra">
-            <dt>abandonados</dt>
+            <dt>{t("abandonados")}</dt>
             <dd>{s.abandonados}</dd>
           </div>
         )}
         {s.mediana !== null && (
           <div className="st-cifra">
-            <dt>mediana</dt>
+            <dt>{t("mediana")}</dt>
             <dd>{s.mediana}</dd>
           </div>
         )}
@@ -178,7 +178,7 @@ export default function ProfileStats({ items }) {
         <section className="st-bloco">
           <div className="st-bloco-topo">
             <h3 className="st-titulo">{t("As tuas notas")}</h3>
-            <span className="st-nota">{s.comNota} com nota</span>
+            <span className="st-nota">{t("{n} com nota", { n: s.comNota })}</span>
           </div>
           <div className="st-espectro">
             <div className="st-espectro-linha">

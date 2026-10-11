@@ -377,7 +377,7 @@ export default function Library() {
           className={`tf-chip ${selList == null ? "active" : ""}`}
           onClick={() => setSelList(null)}
         >
-          Tudo
+          {t("Tudo")}
         </button>
         {lists.map((l) => (
           <span
@@ -444,14 +444,14 @@ export default function Library() {
                     disabled={listBusy}
                     onClick={() => setListModal(null)}
                   >
-                    Cancelar
+                    {t("Cancelar")}
                   </button>
                   <button
                     className="modal-btn danger"
                     disabled={listBusy}
                     onClick={confirmDeleteList}
                   >
-                    Apagar
+                    {t("Apagar")}
                   </button>
                 </div>
               </>
@@ -477,7 +477,7 @@ export default function Library() {
                     disabled={listBusy}
                     onClick={() => setListModal(null)}
                   >
-                    Cancelar
+                    {t("Cancelar")}
                   </button>
                   <button
                     className="modal-btn"
@@ -563,10 +563,10 @@ export default function Library() {
                 disabled={!genreSel.size}
                 onClick={() => setGenreSel(new Set())}
               >
-                Limpar{genreSel.size ? ` (${genreSel.size})` : ""}
+                {t("Limpar{n}", { n: genreSel.size ? ` (${genreSel.size})` : "" })}
               </button>
               <button className="modal-btn" onClick={() => setGenreOpen(false)}>
-                Aplicar
+                {t("Aplicar")}
               </button>
             </div>
           </div>
@@ -641,7 +641,11 @@ export default function Library() {
               {t("← Anterior")}
             </button>
             <span className="lib-pager-info">
-              Página {safePage} de {pageCount} · {shown.length} títulos
+              {t("Página {p} de {n} · {t} títulos", {
+                p: safePage,
+                n: pageCount,
+                t: shown.length,
+              })}
             </span>
             <button
               className="lib-pager-btn"

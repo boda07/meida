@@ -20,7 +20,10 @@ const U = L - M.esq - M.dir;
 /**
  * @param barras [{de, a, n}] as 10 faixas, ja ordenadas
  */
+import { useT } from "../i18n/I18nContext.jsx";
+
 export default function HistogramaNotas({ barras }) {
+  const t = useT();
   const dados = Array.isArray(barras) ? barras : [];
   if (!dados.length) return null;
 
@@ -94,8 +97,9 @@ export default function HistogramaNotas({ barras }) {
         })}
       </svg>
       <figcaption className="gm-legenda">
-        {total} título{total === 1 ? "" : "s"} com nota, por faixa de 10 pontos. Passa o
-        rato sobre uma barra para o número exacto.
+        {t("{titulos} com nota, por faixa de 10 pontos. Passa o rato sobre uma barra para o número exacto.", {
+          titulos: t(total === 1 ? "título" : "títulos"),
+        })}
       </figcaption>
     </figure>
   );

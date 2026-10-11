@@ -41,16 +41,16 @@ export default function Achievements() {
   return (
     <div className="sub-page achievements-page">
       <div className="ach-header">
-        <h2 className="row-title">Conquistas</h2>
+        <h2 className="row-title">{t("Conquistas")}</h2>
         <div className="ach-streak">
           <span className="ach-streak-num">{streak}</span>
           <span className="ach-streak-label">{t("dias de racha")}</span>
-          <span className="ach-streak-best">melhor: {bestStreak}</span>
+          <span className="ach-streak-best">{t("melhor: {n}", { n: bestStreak })}</span>
         </div>
       </div>
 
       <p className="muted" style={{ marginTop: 4 }}>
-        {unlocked.length} de {badges.length} conquistadas
+        {t("{a} de {b} conquistadas", { a: unlocked.length, b: badges.length })}
       </p>
 
       <div className="ach-grid">

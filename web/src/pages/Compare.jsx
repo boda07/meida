@@ -38,7 +38,9 @@ function SideCard({ it, label, settings }) {
       <div className="compare-ratings">
         <span className="compare-comm">⭐ {fmtRating(it.rating)}</span>
         <span className="compare-mine">
-          A tua nota: {it.score != null ? `${it.score}/100` : "—"}
+          {t("A tua nota: {nota}", {
+            nota: it.score != null ? `${it.score}/100` : "—",
+          })}
         </span>
       </div>
     </div>
@@ -277,10 +279,10 @@ export default function Compare() {
       <div className="compare-filters">
         <span className="muted">{t("Filtra por tipo:")}</span>
         <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)}>
-          <option value="all">todos</option>
-          <option value="movie">filmes</option>
+          <option value="all">{t("todos")}</option>
+          <option value="movie">{t("filmes")}</option>
           <option value="tv">{t("séries")}</option>
-          <option value="anime">animes</option>
+          <option value="anime">{t("animes")}</option>
         </select>
       </div>
 

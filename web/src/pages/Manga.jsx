@@ -221,9 +221,9 @@ function ForYou() {
   return (
     <>
       <p className="muted" style={{ marginTop: 14 }}>
-        Recomendações com base nas tags que mais lês na tua lista do MAL
-        {read ? ` (${read} títulos analisados)` : ""}. Nunca te recomendo nada que já
-        tenhas na lista.
+        {t("Recomendações com base nas tags que mais lês na tua lista do MAL{analisados}. Nunca te recomendo nada que já tenhas na lista.", {
+          analisados: read ? t("({n} títulos analisados)", { n: read }) : "",
+        })}
       </p>
 
       <div className="manga-filter-block">
@@ -548,7 +548,8 @@ function Filters() {
             onClick={() => setNotInList((v) => !v)}
             title={t("Precisa de teres o MyAnimeList ligado")}
           >
-            {notInList ? "✓ " : ""}Esconder o que já tenho na lista
+            {notInList ? "✓ " : ""}
+            {t("Esconder o que já tenho na lista")}
           </button>
         </div>
       </div>

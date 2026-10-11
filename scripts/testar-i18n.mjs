@@ -158,6 +158,14 @@ const IGUAIS_ESPERADOS = new Set([
   "✓ browser",         // "browser" e' a mesma palavra em portugues e ingles
   "Mangá, Manhwa & Manhua",
   "Idioma dos nomes de filmes, séries e anime.", // aparece duas vezes, ja' traduzido acima
+  // So' numeros, unidades e simbolos universais: `%`, `👤 peers`, `⬇`, `MB/s`.
+  // Sao as mesmas palavras em portugues e ingles, traduzir nao muda nada.
+  "{pct}% · 👤 {peers} peers · ⬇ {vel} MB/s",
+  // Codecs de video: `x264` e `x265` sao nomes de codec, nao palavras.
+  "x264",
+  "x265",
+  // Unidade de tempo, igual nos dois.
+  "min",
 ]);
 
 const semMudar = chavesPt.filter(

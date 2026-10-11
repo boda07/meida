@@ -12,6 +12,11 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../api/client.js";
 import { mencaoEmCurso, insereMencao, pedacosComMencoes } from "../lib/mencoes.js";
+// `tt` e' o `t` importado com outro nome porque este ficheiro ja' usa `t` como
+// variavel local para o `setTimeout` (duas vezes, nas linhas 63 e 67). Importar
+// como `t` seria a colisao classica: o `t` do `useT()` ficaria a sombrear o do
+// contexto e o `t(...)` de traducao chamaria o `setTimeout`.
+import { t as tt } from "../i18n/traduzir.js";
 import Avatar from "./Avatar.jsx";
 
 // Quanto tempo se espera antes de perguntar ao servidor quem ha' para sugerir.
@@ -156,7 +161,7 @@ export function TextoComMencoes({ value, onChange, placeholder, rows = 2, maxLen
               >
                 <Avatar avatar={u.avatar} name={u.username} size={22} />
                 <span className="mencao-nome">{u.username}</span>
-                {ligados.includes(u.id) && <span className="mencao-ligacao">segues</span>}
+                {ligados.includes(u.id) && <span className="mencao-ligacao">{tt("segues")}</span>}
               </button>
             </li>
           ))}

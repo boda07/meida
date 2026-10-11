@@ -33,10 +33,10 @@ export default function Login({ mode = "login" }) {
   return (
     <div className="auth-page">
       <form className="auth-card" onSubmit={onSubmit}>
-        <h1>{isRegister ? "Criar conta" : "Entrar"}</h1>
+        <h1>{isRegister ? t("Criar conta") : t("Entrar")}</h1>
         {error && <p className="auth-error">{error}</p>}
         <label>
-          Utilizador
+          {t("Utilizador")}
           <input
             value={username}
             onChange={(e) => setUsername(e.target.value)}
@@ -44,7 +44,7 @@ export default function Login({ mode = "login" }) {
           />
         </label>
         <label>
-          Password
+          {t("Password")}
           <input
             type="password"
             value={password}
@@ -57,15 +57,15 @@ export default function Login({ mode = "login" }) {
               {t("A entrar")}
             </LoadingStatus>
           ) : isRegister ? (
-            "Criar conta"
+            t("Criar conta")
           ) : (
-            "Entrar"
+            t("Entrar")
           )}
         </button>
         <p className="auth-switch">
           {isRegister ? (
             <>
-              Já tens conta? <Link to="/login">Entrar</Link>
+              {t("Já tens conta?")} <Link to="/login">{t("Entrar")}</Link>
             </>
           ) : (
             <>

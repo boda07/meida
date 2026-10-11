@@ -183,6 +183,44 @@ function ficheiros(dir, acc = []) {
 }
 
 /** O candidato parece texto de interface? */
+/**
+ * O candidato e' uma PALAVRA dentro de uma tag (`<h2>Conquistas</h2>`)?
+ *
+ * E' uma terceira regra, e a que faltava. Entre `>` e `<` nao ha' codigo: o que
+ * esta' la dentro e' interface, ponto. Por isso aqui NAO se pode usar o filtro
+ * de identificadores do `pareceTexto` (uma palavra so' e' indistinguivel de um
+ * identificador) nem exigir duas palavras como o `pareceFrase`.
+ *
+ * Sem esta regra, o texto de uma palavra so' NUNCA era apontado — e' o caso mais
+ * facil de esquecer e o que mais pesa na interface: "Conquistas", "Apagar",
+ * "Cancelar", "Utilizador", "Entrar", "Acabou", "Todas", "Desligar", "vistos".
+ * O auditor dizia "limpo" com mais de 40 botoes por traduzir no ecra.
+ *
+ * O filtro que sobra e' o de estrutura (`NAO_E_ESTRUTURA`) mais duas ressalvas
+ * que a experiencia manda a pe: o `VS` dos titulos (igual nos dois idiomas) e
+ * o texto todo em maiusculas dos carimbos (`NOVO`), que ja' esta' em
+ * `IGUAIS_ESPERADOS` no dicionario.
+ */
+function pareceTextoDeTag(texto) {
+  const limpo = texto.trim();
+  if (limpo.length < 2) return false;
+  if (NAO_E_ESTRUTURA.some((r) => r.test(limpo))) return false;
+  // Caracteres de JavaScript que um texto de interface nao tem. A lista e'
+  // propositadamente larga: e' melhor deixar passar um texto com parenteses do
+  // que aceitar `cmpVersion(c.version, inicial)` e `) : other ? (`, que e' o
+  // que acontece quando so' se exclui o `=>`.
+  //
+  // A razao de ser tao restritiva: entre `>` e `<` o scanner pode estar a ler
+  // o fecho de uma expressao (`{cond && <p>Texto</p>}` — o `>` do `&&` abre um
+  // "texto" que e' codigo). Como nao da' para distinguir essa abertura da
+  // verdadeira, o filtro tem de ser do lado de "isto e' codigo".
+  if (/[(){}?&=;|!+*]|\.\w/.test(limpo)) return false;
+  // So' numeros, pontuacao ou simbolos ("2024", "·", "✕", "↓").
+  if (!/[A-Za-zÀ-ÿ]/.test(limpo)) return false;
+  if (/^[\d\s.,:·|/\\-]+$/.test(limpo)) return false;
+  return true;
+}
+
 function pareceTexto(v) {
   const limpo = v.trim();
   if (limpo.length < 2) return false;
@@ -286,10 +324,7 @@ function dentroDeTemplate(codigo, pos) {
   return crases % 2 === 1;
 }
 
-/** O numero da linha (1-based) onde esta' `pos`. */
-function linhaDe(codigo, pos) {
-  return codigo.slice(0, pos).split("\n").length;
-}
+
 
 /**
  * `{algo.label}` sem `t()` a volta.
@@ -305,6 +340,67 @@ function rotuloSemTraducao(texto) {
   if (!m) return null;
   const antes = texto.slice(Math.max(0, m.index - 4), m.index);
   return /t\(\s*$/.test(antes) ? null : m[0];
+}
+
+/**
+ * Tira as expressoes `{...}` de um texto de JSX, e so' o que resta.
+ *
+ * Isto e' o que fecha o buraco do "texto misturado com expressao": em
+ * `<p>A preparar {erro}</p>` o texto visivel e' "A preparar" e o `{erro}` nao
+ * se traduze. A regex que apanha o texto de JSX parava no `{` (estava na lista
+ * de caracteres excluidos) e nao via nada — por isso
+ * "Debrid indisponivel, a tocar via torrent local" ficou por traduzir com o
+ * auditor a dizer "limpo".
+ *
+ * O contador de `{`/`}` e' que_depth e nao um `split` por regex: dentro de uma
+ * expressao pode haver objectos aninhados (`{a && {b: 1}}`) e um `/\{[^{}]*\}/`
+ * apagava o de fora e deixava o de dentro, que nao e' texto nenhum.
+ */
+function semExpressoes(texto) {
+  let fora = "";
+  let dentro = 0;
+  for (const ch of texto) {
+    if (ch === "{") dentro++;
+    else if (ch === "}") dentro--;
+    else if (dentro === 0) fora += ch;
+  }
+  return fora;
+}
+
+/**
+ * Onde acaba a chamada `t(...)` que opened antes de `pos`, contando parenteses
+ * e saltando aspas. Devolve o indice logo DEPOIS do `)`.
+ */
+function fimDaChamada(codigo, pos) {
+  let nivel = 1; // o `(` do `t(` ja esta aberto
+  let chaves = 0;
+  let i = pos;
+  while (i < codigo.length) {
+    const c = codigo[i];
+    if (c === '"' || c === "'" || c === "`") {
+      const delim = c;
+      i++;
+      while (i < codigo.length && codigo[i] !== delim) {
+        if (codigo[i] === "\\") i++;
+        i++;
+      }
+    } else if (c === "{") chaves++;
+    else if (c === "}") chaves--;
+    else if (c === "(") nivel++;
+    else if (c === ")") {
+      // As DUAS profundidades contam. Um `)` dentro de `{ ... }` e' o fecho de
+      // um `t()` aninhado no objecto de valores — `{ a: <b>{t("x")}</b> }` — e
+      // nao o fecho da chamada que estamos a saltar. Contar so' os parenteses
+      // devolvia a posicao errada e o scanner voltava a descer para dentro do
+      // objecto, que e' exactamente o buraco que este salto veio fechar.
+      if (chaves === 0) {
+        nivel--;
+        if (nivel === 0) return i + 1;
+      }
+    }
+    i++;
+  }
+  return codigo.length;
 }
 
 const suspeitas = [];
@@ -381,14 +477,31 @@ for (const abs of ficheiros(SRC)) {
 
     // --- Texto de JSX: `>palavra palavra<` ---
     if (c === ">") {
-      const m = /^>([^<>{}"'`/]{2,})</.exec(codigo.slice(i));
+      const resto = codigo.slice(i);
+      // Dois formatos, porque o segundo (texto + expressao) e' o que faltava:
+      //   misturado — `>A preparar {erro}<`  (tem de apanhar `{`)
+      //   simples   — `>Reproduzir<`         (o que ja funcionava)
+      // A ordem importa: o primeiro e' mais especifico e o segundo exclui `{`.
+      const cand = /^>([^<>]*\{[^<>]*)</.exec(resto);
+      // O `misto` so' vale se o texto NAO trouxer aspas. Com aspas, o scanner
+      // atravessou uma string e nao esta' em texto de JSX: em
+      // `>{"...frase..." , { a: <b>` a chave `{a}` da frase faz o padrao
+      // fechar no `<` do `<b>`, e o salto deixava o scanner A DENTRO do objecto
+      // de valores do `t()` — sem esta proteccao, os `chave:`/`onde:` eram lidos
+      // como texto. Sem este guarda nao se desce, e o ramo do `{` trata a
+      // chamada como deve ser.
+      const misto = cand && !/["'`]/.test(cand[1]) ? cand : null;
+      const simples = /^>([^<>{}"'`/]{2,})</.exec(resto);
+      const m = misto || simples;
       if (m) {
-        const texto = m[1].replace(/\s+/g, " ").trim();
+        const bruto = misto ? semExpressoes(m[1]) : m[1];
+        const texto = bruto.replace(/\s+/g, " ").trim();
         // Duas regras: a palavra portuguesa (apanha "Novidade", "Nota") e a
         // forma de frase (apanha "Usar URL", "Criar sala"). Ver `pareceTexto`
         // e `pareceFrase`.
         if (
-          (pareceTexto(texto) || pareceFrase(texto)) &&
+          texto &&
+          (pareceTextoDeTag(texto) || pareceTexto(texto) || pareceFrase(texto)) &&
           !marcada(nLinha(i + 1)) &&
           !vistas.has(rel + ":jsx:" + i)
         ) {
@@ -434,7 +547,29 @@ for (const abs of ficheiros(SRC)) {
     if (vistas.has(chave)) { i = j; continue; }
 
     // Ja' traduzido? `t("...")`, ou a chave de um `case`/comparacao.
-    if (dentroDeT(codigo, i)) { i = j; continue; }
+    //
+    // E se depois da string vier um `{`, a string e' a CHAVE de um
+    // `t("...", { valores })` e temos de saltar a chamada toda. Sem isto o
+    // scanner descia para dentro do objecto de valores e lia o JSX que la
+    // vive (`<code>EXTRACTOR_API_BASE</code>`) como se fosse texto: o `>` de
+    // fecho de `<code>` era tomado por abertura de texto de JSX e apanhava o
+    // `chave:` da propriedade seguinte como "frase portuguesa".
+    //
+    // So' se salta quando o `e' mesmo objecto de valores. Num
+    // `t(cond ? "A" : "B")` nao ha `{` a seguir e os dois ramos continuam a ser
+    // auditados — que e' o que se quer, sao as duas chaves do dicionario.
+    if (dentroDeT(codigo, i)) {
+      let k = j + 1;
+      // A virgula entre argumentos tambem tem de ser saltada: e' `t("...", {` e
+      // nao `t("..."` seguido de outra coisa.
+      while (k < codigo.length && (/\s/.test(codigo[k]) || codigo[k] === ",")) k++;
+      if (codigo[k] === "{") {
+        i = fimDaChamada(codigo, k) - 1;
+        continue;
+      }
+      i = j;
+      continue;
+    }
 
     // Valor de um atributo que NAO e' texto: `className`, `key`, `id`, `to`,
     // `data-*`... A string pode ter palavras portuguesas (`className="muted

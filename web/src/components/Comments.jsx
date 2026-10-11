@@ -131,7 +131,11 @@ export function CommentItem({
                 respostas: o formulario so' sabia desenhar ao nivel de topo, que
                 era o que impedia de responder a uma resposta. */}
             {user && <button className="comment-link" onClick={() => onReply(c.id)}>{t("Responder")}</button>}
-            {mine && <button className="comment-link danger" onClick={() => onDelete(c.id)}>Apagar</button>}
+            {mine && (
+              <button className="comment-link danger" onClick={() => onDelete(c.id)}>
+                {t("Apagar")}
+              </button>
+            )}
           </div>
         )}
         {/* O formulario vive dentro do comentario, e' o que fez a resposta poder
@@ -148,14 +152,14 @@ export function CommentItem({
             />
             <div className="comment-form-foot">
               <button className="comment-link" onClick={onCancelReply}>
-                Cancelar
+                {t("Cancelar")}
               </button>
               <button
                 className="lib-watched"
                 disabled={busy || !replyBody.trim()}
                 onClick={() => onSubmitReply(c.id)}
               >
-                Responder
+                {t("Responder")}
               </button>
             </div>
           </div>

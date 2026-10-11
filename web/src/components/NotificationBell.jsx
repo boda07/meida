@@ -162,7 +162,7 @@ export default function NotificationBell() {
       {aberto && (
         <div className="notif-painel" role="dialog" aria-label={t("Notificações")}>
           <div className="notif-topo">
-            <strong>Notificações</strong>
+            <strong>{t("Notificações")}</strong>
           </div>
           {items.length === 0 ? (
             <p className="notif-vazio">{t("Nada por aqui. Quando alguém responder a um comentário teu ou gostar dele, aparece aqui.")}</p>

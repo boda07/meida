@@ -40,8 +40,10 @@ export default function AnimeExtract({ details, episode, startAt, onProgress, au
       <div className="extract-empty">
         <p>{t("Sem stream sem anúncios para este episódio de momento.")}</p>
         <p className="muted">
-          {error || t("O extrator não devolveu fontes.")} — usa o separador{" "}
-          <b>{t("Fontes")}</b>.
+          {t("{erro} — usa o separador {separador}.", {
+            erro: error || t("O extrator não devolveu fontes."),
+            separador: <b>{t("Fontes")}</b>,
+          })}
         </p>
       </div>
     );
@@ -55,9 +57,11 @@ export default function AnimeExtract({ details, episode, startAt, onProgress, au
         onProgress={onProgress}
       />
       <p className="muted" style={{ fontSize: 12 }}>
-        Fonte: {data.provider} ·{" "}
-        {animeAudio === "dub" ? "Dobrado" : "Legendado"} ·{" "}
-        {(data.subtitles || []).length} legendas (liga/desliga no player)
+        {t("Fonte: {fonte} · {audio} · {n} legendas (liga/desliga no player)", {
+          fonte: data.provider,
+          audio: t(animeAudio === "dub" ? "Dobrado" : "Legendado"),
+          n: (data.subtitles || []).length,
+        })}
       </p>
     </>
   );

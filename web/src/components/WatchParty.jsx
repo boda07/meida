@@ -66,13 +66,15 @@ export default function WatchParty() {
           {party.active ? (
             <>
               <p className="muted">
-                Veem o mesmo ao mesmo tempo. Pausa/play e sincronizado nos
-                separadores <b>{t("Sem anúncios")}</b> e <b>Torrents</b>.
+                {t("Veem o mesmo ao mesmo tempo. Pausa/play e sincronizado nos separadores {a} e {b}.", {
+                  a: <b>{t("Sem anúncios")}</b>,
+                  b: <b>{t("Torrents")}</b>,
+                })}
               </p>
               <div className="wp-code">
                 <span>{party.room}</span>
                 <button className="set-choice" onClick={copy}>
-                  {copied ? t("Copiado!") : "Copiar codigo"}
+                  {copied ? t("Copiado!") : t("Copiar codigo")}
                 </button>
               </div>
               <div className="wp-members">
@@ -121,7 +123,7 @@ export default function WatchParty() {
                   onClick={() => party.joinRoom(code, getNick("Convidado"))}
                   disabled={!code.trim()}
                 >
-                  Entrar
+                  {t("Entrar")}
                 </button>
               </div>
               {party.error && <p className="auth-error">{party.error}</p>}

@@ -741,6 +741,95 @@ export const DICIONARIO = {
     // --- botao de descarregar a app (so no site) ---
     "Descarregar a app": "Descarregar a app",
     "Descarregar a app para o computador": "Descarregar a app para o computador",
+    // --- textos que estavam por traduzir (achados pelo auditor: JSX misturado com expressao) ---
+    "Debrid indisponível, a tocar via torrent local":
+      "Debrid indisponível, a tocar via torrent local",
+    "{erro} — usa o separador {separador}.":
+      "{erro} — usa o separador {separador}.",
+    "Fonte: {fonte} · {audio} · {n} legendas (liga/desliga no player)":
+      "Fonte: {fonte} · {audio} · {n} legendas (liga/desliga no player)",
+    "Dobrado": "Dobrado",
+    "Os extractores gratuitos são instaveis. Usa o separador {a} (com anúncios) ou {b}.":
+      "Os extractores gratuitos são instaveis. Usa o separador {a} (com anúncios) ou {b}.",
+    "Para reprodução sem anúncios fiavel, liga um extractor (Consumet) em {chave} no {onde}.":
+      "Para reprodução sem anúncios fiavel, liga um extractor (Consumet) em {chave} no {onde}.",
+    "título": "título",
+    "{titulos} com actividade nos últimos {n} meses. O que conta é a última vez que mexeste em cada um — a nota que deste, o momento em que o puseste na lista.":
+      "{titulos} com actividade nos últimos {n} meses. O que conta é a última vez que mexeste em cada um — a nota que deste, o momento em que o puseste na lista.",
+    "{titulos} com nota, por faixa de 10 pontos. Passa o rato sobre uma barra para o número exacto.":
+      "{titulos} com nota, por faixa de 10 pontos. Passa o rato sobre uma barra para o número exacto.",
+    "{nome} · a carregar...": "{nome} · a carregar...",
+    "{fonte} nao carregou · a usar {nome}":
+      "{fonte} nao carregou · a usar {nome}",
+    "{n} com nota": "{n} com nota",
+    "{pct}% · 👤 {peers} peers · ⬇ {vel} MB/s":
+      "{pct}% · 👤 {peers} peers · ⬇ {vel} MB/s",
+    "{a} de {b} conquistadas": "{a} de {b} conquistadas",
+    "A carregar {titulo}": "A carregar {titulo}",
+    "A tua nota: {nota}": "A tua nota: {nota}",
+    "Não consegui carregar o catálogo: {erro}":
+      "Não consegui carregar o catálogo: {erro}",
+    "Página {p} de {n} · {t} títulos": "Página {p} de {n} · {t} títulos",
+    "Recomendações com base nas tags que mais lês na tua lista do MAL{analisados}. Nunca te recomendo nada que já tenhas na lista.":
+      "Recomendações com base nas tags que mais lês na tua lista do MAL{analisados}. Nunca te recomendo nada que já tenhas na lista.",
+    "({n} títulos analisados)": "({n} títulos analisados)",
+    "Esconder o que já tenho na lista": "Esconder o que já tenho na lista",
+    "Cola o teu token do Real-Debrid (obtém-no em {ligacao}){fim}":
+      "Cola o teu token do Real-Debrid (obtém-no em {ligacao}){fim}",
+    "A ligar a: {destino}": "A ligar a: {destino}",
+    "servidor local deste computador": "servidor local deste computador",
+    "Perfil público — qualquer pessoa pode ver a tua biblioteca e listas.{estado}":
+      "Perfil público — qualquer pessoa pode ver a tua biblioteca e listas.{estado}",
+    "Mostrar anime adulto (NSFW/hentai) na pesquisa, nos filtros de género e no \"Escolhe algo para mim\". Desligado por defeito.":
+      "Mostrar anime adulto (NSFW/hentai) na pesquisa, nos filtros de género e no \"Escolhe algo para mim\". Desligado por defeito.",
+    "média {media} · mediana {mediana}": "média {media} · mediana {mediana}",
+    "A década conta {ano} dos {n} títulos: os restantes ainda não têm ano guardado. Abre a ficha de alguns, ou corre o preenchimento, e este número fica mais firme.":
+      "A década conta {ano} dos {n} títulos: os restantes ainda não têm ano guardado. Abre a ficha de alguns, ou corre o preenchimento, e este número fica mais firme.",
+    "{n} a seguir": "{n} a seguir",
+    "🔒 Este perfil é privado.": "🔒 Este perfil é privado.",
+    // --- Details.jsx: legendas, avisos do iframe e o botao de terminar episodio ---
+    "As legendas próprias (incl. português) só funcionam no separador {torrents}{extra} (os Providers são páginas externas em iframe).":
+      "As legendas próprias (incl. português) só funcionam no separador {torrents}{extra} (os Providers são páginas externas em iframe).",
+    "🔴 Watch Party: aqui (Providers) o play/pausa {nao} sincroniza — usem {torrents}{extra} para verem em sincronia.":
+      "🔴 Watch Party: aqui (Providers) o play/pausa {nao} sincroniza — usem {torrents}{extra} para verem em sincronia.",
+    "Guarda no diário e avança o {b} para o próximo episódio{mal}":
+      "Guarda no diário e avança o {b} para o próximo episódio{mal}",
+    "(e marca no MAL)": "(e marca no MAL)",
+    // --- Details.jsx: separadores e avisos ---
+    "Áudio deste título:": "Áudio deste título:",
+    "🔴 Watch Party: estas fontes são em iframe, o play/pausa {nao} sincroniza — usem {torrents} para verem em sincronia.":
+      "🔴 Watch Party: estas fontes são em iframe, o play/pausa {nao} sincroniza — usem {torrents} para verem em sincronia.",
+    // --- texto de uma palavra dentro de tags (o auditor nao os via) ---
+    "abandonados": "abandonados",
+    "mediana": "mediana",
+    "segues": "segues",
+    "Todas": "Todas",
+    "Ordenar:": "Ordenar:",
+    "Todos": "Todos",
+    "Veem o mesmo ao mesmo tempo. Pausa/play e sincronizado nos separadores {a} e {b}.":
+      "Veem o mesmo ao mesmo tempo. Pausa/play e sincronizado nos separadores {a} e {b}.",
+    "Copiar codigo": "Copiar codigo",
+    "melhor: {n}": "melhor: {n}",
+    "Aplicar": "Aplicar",
+    "Limpar{n}": "Limpar{n}",
+    "Tudo": "Tudo",
+    "todos": "todos",
+    "filmes": "filmes",
+    "animes": "animes",
+    "Já tens conta?": "Já tens conta?",
+    "{n} seguidores": "{n} seguidores",
+    "Toca nos géneros: 1x = {quero}, 2x = {nao}. Depois carrega no botão.":
+      "Toca nos géneros: 1x = {quero}, 2x = {nao}. Depois carrega no botão.",
+    "quero": "quero",
+    "Estado": "Estado",
+    "Começou": "Começou",
+    "Acabou": "Acabou",
+    "Temporada": "Temporada",
+    "Começou: {data}": "Começou: {data}",
+    // --- identicos nos dois idiomas (codecs, unidades, marcas) ---
+    "x264": "x264",
+    "x265": "x265",
+    "min": "min",
   },
 
   en: {
@@ -1052,7 +1141,7 @@ export const DICIONARIO = {
     "Escreve um nome de utilizador...": "Type a username...",
     "Nenhum utilizador encontrado.": "No users found.",
     "Fonte:": "Source:",
-    "em baixo": "below",
+    "em baixo": "down",
     "Site externo:": "External site:",
     "Procurar este filme/episódio no Google":
       "Search this movie/episode on Google",
@@ -1448,6 +1537,93 @@ export const DICIONARIO = {
     // --- botao de descarregar a app (so no site) ---
     "Descarregar a app": "Download the app",
     "Descarregar a app para o computador": "Download the app for your computer",
+    // --- textos que estavam por traduzir (achados pelo auditor: JSX misturado com expressao) ---
+    "Debrid indisponível, a tocar via torrent local":
+      "Debrid unavailable, playing via local torrent",
+    "{erro} — usa o separador {separador}.": "{erro} — use the {separador} tab.",
+    "Fonte: {fonte} · {audio} · {n} legendas (liga/desliga no player)":
+      "Source: {fonte} · {audio} · {n} subtitles (turn on/off in the player)",
+    "Dobrado": "Dubbed",
+    "Os extractores gratuitos são instaveis. Usa o separador {a} (com anúncios) ou {b}.":
+      "The free extractors are unreliable. Use the {a} tab (with ads) or {b}.",
+    "Para reprodução sem anúncios fiavel, liga um extractor (Consumet) em {chave} no {onde}.":
+      "For reliable ad-free playback, set up an extractor (Consumet) at {chave} in {onde}.",
+    "título": "title",
+    "{titulos} com actividade nos últimos {n} meses. O que conta é a última vez que mexeste em cada um — a nota que deste, o momento em que o puseste na lista.":
+      "{titulos} with activity in the last {n} months. What counts is the last time you touched each one — the rating you gave, the moment you added it to your list.",
+    "{titulos} com nota, por faixa de 10 pontos. Passa o rato sobre uma barra para o número exacto.":
+      "{titulos} rated, in bands of 10 points. Hover a bar for the exact number.",
+    "{nome} · a carregar...": "{nome} · loading...",
+    "{fonte} nao carregou · a usar {nome}": "{fonte} did not load · using {nome}",
+    "{n} com nota": "{n} rated",
+    "{pct}% · 👤 {peers} peers · ⬇ {vel} MB/s":
+      "{pct}% · 👤 {peers} peers · ⬇ {vel} MB/s",
+    "{a} de {b} conquistadas": "{a} of {b} unlocked",
+    "A carregar {titulo}": "Loading {titulo}",
+    "A tua nota: {nota}": "Your rating: {nota}",
+    "Não consegui carregar o catálogo: {erro}":
+      "Couldn't load the catalogue: {erro}",
+    "Página {p} de {n} · {t} títulos": "Page {p} of {n} · {t} titles",
+    "Recomendações com base nas tags que mais lês na tua lista do MAL{analisados}. Nunca te recomendo nada que já tenhas na lista.":
+      "Recommendations based on the tags you read most in your MAL list{analisados}. I never recommend anything you already have.",
+    "({n} títulos analisados)": "({n} titles analysed)",
+    "Esconder o que já tenho na lista": "Hide what I already have in my list",
+    "Cola o teu token do Real-Debrid (obtém-no em {ligacao}){fim}":
+      "Paste your Real-Debrid token (get it at {ligacao}){fim}",
+    "A ligar a: {destino}": "Connecting to: {destino}",
+    "servidor local deste computador": "this computer's local server",
+    "Mostrar anime adulto (NSFW/hentai) na pesquisa, nos filtros de género e no \"Escolhe algo para mim\". Desligado por defeito.":
+      'Show adult anime (NSFW/hentai) in search, in the genre filters and in "Pick something for me". Off by default.',
+    "Perfil público — qualquer pessoa pode ver a tua biblioteca e listas.{estado}":
+      "Public profile — anyone can see your library and lists.{estado}",
+    "média {media} · mediana {mediana}": "average {media} · median {mediana}",
+    "A década conta {ano} dos {n} títulos: os restantes ainda não têm ano guardado. Abre a ficha de alguns, ou corre o preenchimento, e este número fica mais firme.":
+      "The decade accounts for {ano} of the {n} titles: the rest have no year stored yet. Open a few of them, or run the fill-in, and this number gets more solid.",
+    "{n} a seguir": "{n} following",
+    "🔒 Este perfil é privado.": "🔒 This profile is private.",
+    // --- Details.jsx: legendas, avisos do iframe e o botao de terminar episodio ---
+    "As legendas próprias (incl. português) só funcionam no separador {torrents}{extra} (os Providers são páginas externas em iframe).":
+      "The app's own subtitles (including Portuguese) only work in the {torrents}{extra} tab (Providers are external pages in an iframe).",
+    "🔴 Watch Party: aqui (Providers) o play/pausa {nao} sincroniza — usem {torrents}{extra} para verem em sincronia.":
+      "🔴 Watch Party: here (Providers) play/pause does {nao} sync — use {torrents}{extra} to watch in sync.",
+    "Guarda no diário e avança o {b} para o próximo episódio{mal}":
+      "Saves to the diary and moves \"{b}\" to the next episode{mal}",
+    "(e marca no MAL)": "(and marks it on MAL)",
+    // --- Details.jsx: separadores e avisos ---
+    "Áudio deste título:": "Audio for this title:",
+    "🔴 Watch Party: estas fontes são em iframe, o play/pausa {nao} sincroniza — usem {torrents} para verem em sincronia.":
+      "🔴 Watch Party: these sources are in an iframe, so play/pause does {nao} sync — use {torrents} to watch in sync.",
+    // --- texto de uma palavra dentro de tags (o auditor nao os via) ---
+    "abandonados": "abandoned",
+    "mediana": "median",
+    "segues": "following",
+    "Todas": "All",
+    "Ordenar:": "Sort by:",
+    "Todos": "All",
+    "Veem o mesmo ao mesmo tempo. Pausa/play e sincronizado nos separadores {a} e {b}.":
+      "Watch the same thing at the same time. Play/pause syncs on the {a} and {b} tabs.",
+    "Copiar codigo": "Copy code",
+    "melhor: {n}": "best: {n}",
+    "Aplicar": "Apply",
+    "Limpar{n}": "Clear{n}",
+    "Tudo": "All",
+    "todos": "all",
+    "filmes": "movies",
+    "animes": "anime",
+    "Já tens conta?": "Already have an account?",
+    "{n} seguidores": "{n} followers",
+    "Toca nos géneros: 1x = {quero}, 2x = {nao}. Depois carrega no botão.":
+      "Tap the genres: 1x = {quero}, 2x = {nao}. Then press the button.",
+    "quero": "want",
+    "Estado": "Status",
+    "Começou": "Started",
+    "Acabou": "Finished",
+    "Temporada": "Season",
+    "Começou: {data}": "Started: {data}",
+    // --- identicos nos dois idiomas (codecs, unidades, marcas) ---
+    "x264": "x264",
+    "x265": "x265",
+    "min": "min",
   },
 };
 

@@ -4,6 +4,7 @@ import {
   getTorrentFile,
   getStatus,
   listActive,
+  priorizarPecas,
   removeTorrent,
   rememberMagnet,
 } from "../services/torrentEngine.js";
@@ -64,7 +65,7 @@ streamRouter.delete("/stream/:infoHash", async (req, res, next) => {
 streamRouter.get("/stream/:infoHash", async (req, res, next) => {
   try {
     const { infoHash } = req.params;
-    const { file } = await getTorrentFile(infoHash, req.query.fileIdx);
+    const { torrent, file } = await getTorrentFile(infoHash, req.query.fileIdx);
     const total = file.length;
     const type = contentType(file.name);
     const range = req.headers.range;
@@ -77,6 +78,8 @@ streamRouter.get("/stream/:infoHash", async (req, res, next) => {
         res.writeHead(416, { "Content-Range": `bytes */${total}` });
         return res.end();
       }
+      // As pecas que este pedido vai ler entram na fila como prioritarias.
+      priorizarPecas(torrent, file, start, end);
       res.writeHead(206, {
         "Content-Range": `bytes ${start}-${end}/${total}`,
         "Accept-Ranges": "bytes",
@@ -85,6 +88,9 @@ streamRouter.get("/stream/:infoHash", async (req, res, next) => {
       });
       pipe(file.createReadStream({ start, end }), req, res);
     } else {
+      // Sem `Range` e' o "tocar do inicio": marca o comeco do ficheiro, que e'
+      // o que decide se o video arranca depressa ou aos soluancos.
+      priorizarPecas(torrent, file, 0, null);
       res.writeHead(200, {
         "Content-Length": total,
         "Accept-Ranges": "bytes",

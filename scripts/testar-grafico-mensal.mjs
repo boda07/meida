@@ -100,17 +100,29 @@ const dir = mkdtempSync(join(tmpdir(), "meida-gm-"));
 const entrada = join(dir, "e.mjs");
 const saida = join(dir, "s.cjs");
 
+// O componente usa `useT()`, que vive no `I18nProvider`. Este teste monta o
+// grafico fora do `main.jsx`, entao tem de envolver a arvore — sem isto o
+// contexto e' `undefined` e o `useT()` rebenta. (Apanhou-me quando o grafico
+// passou a traduzir a legenda.)
+const provedores = `
+import { I18nProvider } from ${JSON.stringify(join(RAIZ, "web/src/i18n/I18nContext.jsx"))};
+function ComProvedor(props) {
+  return h(I18nProvider, null, h(GraficoMensal, props));
+}
+`;
+
 writeFileSync(
   entrada,
   `import GraficoMensal, { escalaBonita } from ${JSON.stringify(join(RAIZ, "web/src/components/GraficoMensal.jsx"))};
 import { renderToStaticMarkup } from "react-dom/server";
 import { createElement as h, Fragment } from "react";
-export function render(props) { return renderToStaticMarkup(h(GraficoMensal, props)); }
+${provedores}
+export function render(props) { return renderToStaticMarkup(h(ComProvedor, props)); }
 // DOIS graficos na MESMA arvore. E' o caso real (o \`useId\` so' differentiate
 // dentro de uma raiz); renderizar duas vezes em separado daria o mesmo id as
 // duas, por isso o teste errado mediria o \`useId\`, nao o componente.
 export function renderDois(props) {
-  return renderToStaticMarkup(h(Fragment, null, h(GraficoMensal, props), h(GraficoMensal, props)));
+  return renderToStaticMarkup(h(Fragment, null, h(ComProvedor, props), h(ComProvedor, props)));
 }
 // A escala e' logica pura mas vive no .jsx, que o Node nao importa. Vem pelo
 // bundle — por isso exporta-se aqui em vez de se fazer \`import\` do ficheiro.

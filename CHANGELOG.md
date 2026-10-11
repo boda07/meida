@@ -1,5 +1,110 @@
 # Changelog
 
+## 1.4.2
+
+### O modo P2P (torrents sem Real-Debrid) deixou de esperar pelo ficheiro inteiro
+
+O problema: `addTorrent` esperava pelo evento `ready`, que só dispara com o
+ficheiro **completo** em disco. Retomar um episódio, ou vê-lo pela segunda vez,
+ficava bloqueado até acabar o download — ou seja, não havia buffering nenhum.
+Era o que tornava o modo grátis inutilizável fora de um torrent já em cache.
+
+**Agora resolve nos `metadata`** (`torrentEngine.js`), que chegam em segundos.
+O `createReadStream` continua a ir buscar as peças de que precisa enquanto o
+resto vai atrás, que e' o buffering que sempre esteve lá — nunca chegou a ser
+usado.
+
+`c.add()` também deixa de poder pendurar o pedido para sempre: sem `error`, sem
+`metadata`, o que resta era uma barra de progresso parada sem fim. Agora dá `504`
+com uma mensagem, e **destrói o torrent** — senão ele fica em `client.torrents`
+a tentar e cada reprodução nova espera os mesmos 30 s.
+
+### Priorização das peças (`torrent.critical`)
+
+`webtorrent@2.8.5` expõe `torrent.critical(start, end)`, e `_request(wire, piece,
+critical)` usa essa marca para pedir primeiro. **Não estava a ser usado.**
+
+O `hotswap` do WebTorrent, que já lá está, **não** faz isto: ele reatribui uma
+peça de um wire lento para um rápido (L1865), não prioriza por posição de
+leitura. Por isso a otimização era mesmo nova, e não redundante.
+
+`pecasDaJanela()` é uma **função pura** (`offset`, `tamanho`, `pieceLength`,
+`inicio`, `fim` → `[primeiraPeca, ultimaPeca]`), e é isso que a torna testável
+sem WebTorrent, sem disco e sem rede.
+
+Três decisões dentro dela:
+
+- **O `offset` conta.** As peças são do *torrent*, não do ficheiro. Num
+  pack/batch de anime o episódio não é a primeira coisa; sem o `offset` marcava
+  as peças do **episódio errado**.
+- **A janela tem de ser limitada a 8 MB.** O browser pede `bytes=0-` (fim
+  aberto) para começar, e o `end` nesse caso é o fim do ficheiro. Sem o limite,
+  `critical` marcaria o ficheiro inteiro — o mesmo que não marcar nada, porque
+  a prioridade é uniforme.
+- **`Janela a partir de ONDE, não do início.** Um seek a 3000 MB marca as peças
+  à volta dos 3000, não do início.
+
+A rota chama `priorizarPecas(torrent, file, start, end)` nos dois ramos (com e
+sem `Range`), e o `getStatus` devolve agora `temMetadados` — é o que distingue
+"ninguém tem isto" de "está a descarregar devagar", que se espera de maneiras
+completamente diferentes.
+
+### Um buraco de auditoria, e o que ele estava a esconder
+
+Procurando o texto "Debrid indisponível, a tocar via torrent local" — que
+estava por traduzir — encontrei a **5.ª vez** que o auditor de textos por
+traduzir dizia "limpo" sem estar.
+
+Desta vez eram **texto de uma palavra**. `pareceTexto` descarta o que é uma
+palavra só (é indistinguível de um identificador) e `pareceFrase` exige duas.
+Ou seja: entre `>` e `<` — onde não há código nenhum, só interface —
+**"Apagar", "Entrar", "Utilizador", "Conquistas", "Acabou" nunca foram vistos.**
+
+Somando ao buraco anterior (texto misturado com expressão, 26 textos), são
+**~50 botões e etiquetas** que estavam em português com o auditor a passar.
+
+**A regra nova (`pareceTextoDeTag`)** não pode usar o filtro de identificadores
+nem exigir duas palavras. O filtro que sobra é de caracteres de JavaScript
+(`(){}?&=;|!+*` e `.` seguido de letra), porque o scanner também passa pelo
+fecho de uma expressão e lê `) : other ? (` como se fosse texto.
+
+### `scripts/testar-auditor-i18n.mjs`
+
+Passou de 11 verificações / 4 mutações para **16 / 5**. A quinta mutação apaga
+`pareceTextoDeTag` do ramo do JSX e o teste tem de apanhar.
+
+Corre o auditor contra ficheiros de teste num `web/src` de mentira, montado na
+pasta temporária do sistema — `web/src` nunca é tocado. (Uma corrida anterior
+deixou `_mut-*.mjs` em `web/src` e o `eslint` do `build` apanhou-os.)
+
+### Traduções
+
+O `Login.jsx` estava praticamente todo por traduzir (`Criar conta`, `Entrar`,
+`Utilizador`, `Password`, `Já tens conta?`), e o `Diary.jsx` tinha as seis
+etiquetas do formulário.
+
+`TextoComMencoes.jsx` usa `t` como variável local para `setTimeout` (duas
+vezes), por isso importa o tradutor como `tt` — como já se fazia em
+`lib/tempo.js`.
+
+`"em baixo": "below"` passou a `"down"`: *below* é posição vertical, *down* é
+estado. `x264`, `x265`, `Trailer` e `min` ficam declarados no dicionário como
+iguais nos dois idiomas, com `// i18n:` no código a dizer porquê.
+
+### `scripts/testar-grafico-mensal.mjs` partido pela tradução
+
+`GraficoMensal` passou a usar `useT()`, e o teste monta o componente fora do
+`main.jsx` — o contexto era `undefined` e o `useT()` rebentava. Envolve agora a
+árvore no `I18nProvider`.
+
+### Testes novos no `npm test`
+
+`testar-p2p.mjs` (26 verificações, 4 mutações) e `testar-p2p-metadados.mjs`
+(22 verificações, 3 mutações, com um WebTorrent de mentira injectado).
+
+O de metadados encurta `META_TIMEOUT_MS` para 400 ms **só no ensaio** — não é
+mutação, é o harness. Em produção o prazo é 30 s.
+
 ## 1.4.1
 
 ### Novo: botão para descarregar a app, no site

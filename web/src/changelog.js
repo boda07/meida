@@ -5,6 +5,23 @@
 // versao; quem nao encontra a sua ve o portugues (a lingua original).
 export const CHANGELOG = [
   {
+    version: "1.4.2",
+    items: [
+      "Melhorado: ver um episódio sem Real-Debrid começa logo. Antes ficava à espera de o ficheiro inteiro acabar de descarregar — agora começa a tocar enquanto vai buscando.",
+      "Melhorado: as partes do vídeo que estás a ver chegam primeiro, em vez de irem todas ao mesmo ritmo.",
+      "Corrigido: quando um torrent não tem ninguém, a app diz isso e deixa-te escolher outro em vez de ficar a carregar para sempre.",
+      "Corrigido: mais de 50 textos que estavam só em português (botões como Apagar, Entrar, Utilizador, Conquistas, as datas do diário, os avisos de legendas) estão agora traduzidos.",
+      "Corrigido: a etiqueta das fontes avariadas dizia “below”; está agora “down”.",
+    ],
+    items_en: [
+      "Improved: watching an episode without Real-Debrid now starts straight away. Before it waited for the whole file to finish downloading — now it plays while it fetches.",
+      "Improved: the parts of the video you're watching arrive first, instead of everything coming at the same rate.",
+      "Fixed: when a torrent has nobody seeding it, the app says so and lets you pick another one instead of loading forever.",
+      "Fixed: over 50 texts that were only in Portuguese (buttons like Delete, Join, Username, Achievements, the diary dates, the subtitle warnings) are now translated.",
+      "Fixed: the broken-source label said “below”; it now says “down”.",
+    ],
+  },
+  {
     version: "1.4.1",
     items: [
       "Novo: no site (meida.onrender.com) aparece um botão no topo para descarregar a app para o computador. Na app já instalada não aparece — não faz sentido oferecer a quem já tem.",

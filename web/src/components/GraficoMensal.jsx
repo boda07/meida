@@ -32,6 +32,7 @@
 //   responsivo por CSS (`width:100%`), o que mantem o `rx` proporcional.
 import { useId, useState } from "react";
 import { rotuloEixo } from "./profileStats.js";
+import { useT } from "../i18n/I18nContext.jsx";
 
 // Altura total em unidades de desenho. A largura e' 100%; o `viewBox` usa a
 // largura real porque os cantos arredondados nao podem distorcer.
@@ -50,6 +51,7 @@ export default function GraficoMensal({ serie }) {
   // partilhar o mesmo id, senao o um recorta o outro.
   const id = useId();
   const [foco, setFoco] = useState(null);
+  const t = useT();
 
   const dados = Array.isArray(serie) ? serie : [];
   // Sem dados suficientes nao ha grafico: uma linha so' e' ruido, e dois pontos
@@ -170,9 +172,10 @@ export default function GraficoMensal({ serie }) {
       </svg>
 
       <figcaption className="gm-legenda">
-        {total} título{total === 1 ? "" : "s"} com actividade nos últimos{" "}
-        {dados.length} meses. O que conta é a última vez que mexeste em cada um — a
-        nota que deste, o momento em que o puseste na lista.
+        {t("{titulos} com actividade nos últimos {n} meses. O que conta é a última vez que mexeste em cada um — a nota que deste, o momento em que o puseste na lista.", {
+          titulos: t(total === 1 ? "título" : "títulos"),
+          n: dados.length,
+        })}
       </figcaption>
     </figure>
   );

@@ -22,13 +22,13 @@ export default function Trailer({ src }) {
         <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
           <path d="M8 5v14l11-7z" />
         </svg>
-        Trailer
+        {t("Trailer")}
       </button>
       {open && (
         <div className="modal-overlay" onClick={() => setOpen(false)}>
           <div className="modal trailer-modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-head">
-              <h3>Trailer</h3>
+              <h3>{t("Trailer")}</h3>
               <button
                 className="modal-close"
                 aria-label="Fechar"

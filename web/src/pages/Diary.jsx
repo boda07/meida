@@ -159,7 +159,9 @@ export default function Diary() {
                     {pos(it) && <span className="diary-pos"> · {pos(it)}</span>}
                   </h3>
                   <div className="diary-dates">
-                    {fmt(it.startedAt) && <span>Começou: {fmt(it.startedAt)}</span>}
+                    {fmt(it.startedAt) && (
+                      <span>{t("Começou: {data}", { data: fmt(it.startedAt) })}</span>
+                    )}
                     {it.status === "finished" ? (
                       <span>Acabou: {fmt(it.finishedAt) || t("data não disponível")}</span>
                     ) : (
@@ -202,7 +204,7 @@ export default function Diary() {
             </div>
             <div className="diary-form">
               <label>
-                Estado
+                {t("Estado")}
                 <select
                   value={form.status}
                   onChange={(e) => setForm({ ...form, status: e.target.value })}
@@ -212,7 +214,7 @@ export default function Diary() {
                 </select>
               </label>
               <label>
-                Começou
+                {t("Começou")}
                 <input
                   type="date"
                   value={form.started}
@@ -220,7 +222,7 @@ export default function Diary() {
                 />
               </label>
               <label>
-                Acabou
+                {t("Acabou")}
                 <input
                   type="date"
                   value={form.finished}
@@ -231,7 +233,7 @@ export default function Diary() {
                 <div className="diary-form-row">
                   {edit.type === "tv" && (
                     <label>
-                      Temporada
+                      {t("Temporada")}
                       <input
                         type="number"
                         min="1"
@@ -254,7 +256,7 @@ export default function Diary() {
             </div>
             <div className="modal-actions">
               <button className="modal-btn ghost" onClick={() => setEdit(null)}>
-                Cancelar
+                {t("Cancelar")}
               </button>
               <button className="modal-btn" onClick={saveEdit} disabled={saving}>
                 {saving ? t("A guardar...") : t("Guardar")}
