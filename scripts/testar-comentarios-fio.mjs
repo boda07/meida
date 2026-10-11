@@ -55,7 +55,36 @@ function bloco(abre, fecha) {
   return { a, b, texto: linhas.slice(a, b + 1).join("\n") };
 }
 
-const item = bloco("function CommentItem({", "}");
+// O `bloco()` acima parava na PRIMEIRA linha que fosse `}` tal e qual. Com a
+// traducao isso deixa de funcionar: o `CommentItem` tem funcoes aninhadas (que
+// terminam em `  }`) e uma assinatura de props partida por varias linhas, e o
+// bloco acabava antes do formulario de resposta — que e' exactamente o que o
+// teste existe para garantir.
+//
+// Por isso conta-se a PROFUNDIDADE de chaves a partir da linha de abertura, e o
+// bloco e' ate a linha onde a profundidade volta a zero.
+function blocoFuncao(abre) {
+  const a = linhas.findIndex((l) => l.includes(abre));
+  if (a < 0) return null;
+
+  let nivel = 0;
+  let começou = false;
+  for (let i = a; i < linhas.length; i++) {
+    const l = linhas[i];
+    // As chaves DENTRO de strings (o `t("...")` pode trazer `{n}`) nao contam.
+    const semStrings = l.replace(/"(?:[^"\\]|\\.)*"/g, '""').replace(/'(?:[^'\\]|\\.)*'/g, "''");
+    for (const ch of semStrings) {
+      if (ch === "{") { nivel++; começou = true; }
+      else if (ch === "}") nivel--;
+    }
+    if (começou && nivel <= 0) {
+      return { a, b: i, texto: linhas.slice(a, i + 1).join("\n") };
+    }
+  }
+  return null;
+}
+
+const item = blocoFuncao("function CommentItem({");
 const lista = bloco("<ul className=\"comment-list\">", "</ul>");
 
 ok("Comments.jsx foi lido", linhas.length > 100);

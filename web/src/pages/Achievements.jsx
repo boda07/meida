@@ -66,7 +66,7 @@ export default function Achievements() {
             <div className="ach-body">
               <h3 className="ach-name">
                 {/* i18n: `label` e `desc` vem do servidor, nao sao texto local. */}
-                {b.label}
+                {t(b.label)}
               </h3>
               <p className="ach-desc muted">{b.desc}</p>
             </div>

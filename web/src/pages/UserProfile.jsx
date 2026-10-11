@@ -368,15 +368,15 @@ export default function UserProfile() {
           { id: "stats", label: "Estatísticas" },
           { id: "followers", label: "Seguidores" },
           { id: "following", label: "A seguir" },
-        ].map((t) => (
+        ].map((sep) => (
           <button
-            key={t.id}
+            key={sep.id}
             role="tab"
-            aria-selected={tab === t.id}
-            className={`profile-tab ${tab === t.id ? "active" : ""}`}
-            onClick={() => switchTab(t.id)}
+            aria-selected={tab === sep.id}
+            className={`profile-tab ${tab === sep.id ? "active" : ""}`}
+            onClick={() => switchTab(sep.id)}
           >
-            {t.label}
+            {t(sep.label)}
           </button>
         ))}
       </div>

@@ -130,7 +130,7 @@ export default function Diary() {
                 className={`tf-chip ${filter === f.id ? "active" : ""}`}
                 onClick={() => setFilter(f.id)}
               >
-                {f.label}
+                {t(f.label)}
               </button>
             ))}
           </div>

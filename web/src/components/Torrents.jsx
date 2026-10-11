@@ -235,7 +235,7 @@ export default function Torrents({ type, imdb, title, season, episode, anime, de
                 className={`tf-chip ${audio === a.id ? "active" : ""}`}
                 onClick={() => mudarAudio(a.id)}
               >
-                {a.label}
+                {t(a.label)}
               </button>
             ))}
           </div>

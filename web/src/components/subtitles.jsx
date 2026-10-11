@@ -38,6 +38,7 @@ function preferredIndex(subtitles, pref) {
 
 // Faixas <track> para colocar dentro de um <video>.
 export function SubtitleTracks({ subtitles = [] }) {
+  const t = useT();
   return (
     <>
       {subtitles.map((s, i) => (
@@ -46,7 +47,7 @@ export function SubtitleTracks({ subtitles = [] }) {
           kind="subtitles"
           src={s.url}
           srcLang={s.lang}
-          label={s.label}
+          label={t(s.label)}
         />
       ))}
     </>
@@ -88,7 +89,7 @@ export function SubtitleMenu({ videoRef, subtitles = [] }) {
         <option value="-1">{t("Desligadas")}</option>
         {subtitles.map((s, i) => (
           <option key={i} value={i}>
-            {s.label}
+            {t(s.label)}
           </option>
         ))}
       </select>

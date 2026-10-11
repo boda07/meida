@@ -723,7 +723,7 @@ api
                     ))
                   : animeSeasons.map((s) => (
                       <option key={s.seasonNumber} value={s.seasonNumber}>
-                        {s.label} ({s.episodes.length} eps)
+                        {t(s.label)} ({s.episodes.length} eps)
                       </option>
                     ))}
               </select>

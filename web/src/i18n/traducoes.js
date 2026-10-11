@@ -675,7 +675,7 @@ export const DICIONARIO = {
     "DUB": "DUB",
     "Legendado": "Legendado",
     // --- chaves em falta 2 ---
-    "(agora está privado: só tu vês)": "(agora está privado: só tu vês)",
+    " (agora está privado: só tu vês)": " (agora está privado: só tu vês)",
     "\"Escolhe algo para mim\". Desligado por defeito.":
       "\"Escolhe algo para mim\". Desligado por defeito.",
     "+ Nova lista": "+ Nova lista",
@@ -1379,7 +1379,7 @@ export const DICIONARIO = {
     "DUB": "DUB",
     "Legendado": "Subtitled",
     // --- chaves em falta 2 ---
-    "(agora está privado: só tu vês)": "(now private: only you see it)",
+    " (agora está privado: só tu vês)": "(now private: only you see it)",
     "\"Escolhe algo para mim\". Desligado por defeito.":
       "\"Pick something for me\". Off by default.",
     "+ Nova lista": "+ New list",

@@ -119,7 +119,7 @@ export function CommentItem({
               ? c.likedByMe
                 ? t("Tirar o gosto")
                 : t("Gostar")
-              : t("Entra para gosto")
+              : t("Entra para gostar")
           }
             >
               <span className="comment-like-icone" aria-hidden="true">

@@ -799,12 +799,12 @@ export default function Settings() {
           [`# biblioteca\r\n${libCsv}\r\n# diario\r\n${diaryCsv}`],
           { type: "text/csv;charset=utf-8" }
         );
-        filename = `meida-export-${stamp}.csv`;
+        filename = `meida-export-${stamp}.csv`; // i18n: nome de ficheiro, igual nos dois idiomas
       } else {
         blob = new Blob([JSON.stringify({ exportedAt, library, diary }, null, 2)], {
           type: "application/json;charset=utf-8",
         });
-        filename = `meida-export-${stamp}.json`;
+        filename = `meida-export-${stamp}.json`; // i18n: nome de ficheiro, igual nos dois idiomas
       }
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -1214,7 +1214,7 @@ export default function Settings() {
               current={settings.bgStyle || "none"}
               onPick={(v) => update({ bgStyle: v })}
             >
-              {o.label}
+              {t(o.label)}
             </Choice>
           ))}
         </div>

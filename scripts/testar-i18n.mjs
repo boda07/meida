@@ -153,6 +153,9 @@ const IGUAIS_ESPERADOS = new Set([
   "Trailer",           // mesma palavra nos dois
   "...",               // reticencias: iguais nos dois
   "{r} ({n})",         // rotulo de um grupo de resultados: so' pontuacao e numeros
+  "DUB",               // sigla de "dubbed", igual nos dois
+  "⚡ Debrid",          // marca (Real-Debrid), com o raio
+  "✓ browser",         // "browser" e' a mesma palavra em portugues e ingles
   "Mangá, Manhwa & Manhua",
   "Idioma dos nomes de filmes, séries e anime.", // aparece duas vezes, ja' traduzido acima
 ]);

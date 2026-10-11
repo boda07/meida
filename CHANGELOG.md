@@ -1,5 +1,155 @@
 # Changelog
 
+## 1.4.0
+
+### Novo: a interface esta' toda em ingles tambem
+
+Antes a app era so' em portugues. Agora ha **dois idiomas**, e muda-se sozinho
+conforme o que o navegador pede (`navigator.languages`), com selector nas
+**Definicoes > Conteudo** para trocar a mao.
+
+**A traducao e' no cliente, nao no servidor.** O servidor nao sabe o idioma do
+pedido, e nao precisa: cada texto vem com a sua propria traducao indexada pela
+**frase em portugues**. E' o mesmo principio do resto do interface — a chave e' o
+proprio texto em portugues, nao um identificador tipo `nav.home`. Por isso as
+**46 mensagens de erro que o servidor devolve** traduzem sem tocar no servidor
+e **sem redeploy** do `meida.fadehost.app`.
+
+Tres ficheiros, e porque:
+
+- **`web/src/i18n/traducoes.js`** — o dicionario. **548 chaves** em portugues e
+  548 em ingles. A chave e' sempre o texto em portugues.
+- **`web/src/i18n/I18nContext.jsx`** — o `t()` dos componentes. `useT()` chama
+  o hook normal do React, por isso os componentes re-renderizam quando o
+  idioma muda. `<html lang>` tambem muda (leitores de ecra).
+- **`web/src/i18n/traduzir.js`** — a funcao **pura**, fora do React. Importada
+  pelo `I18nContext` **e** pelo `api/client.js`, para que a mensagem de erro do
+  servidor e a do interface traduzam **pelo mesmo codigo**. Ter duas copias
+  seria a forma mais facil de elas divergirem em silencio.
+
+**O `t()` aceita elementos React.** Uma frase que ja' tem markup a volta de uma
+palavra (`Usa o filtro <b>x</b> na lista`) traduz-se inteira, com o elemento
+dentro:
+
+```jsx
+{t("Usa o filtro {filtro} na lista de torrents e escolhe um {formato}.", {
+  filtro: <b>✓ Reproduz no browser</b>,
+  formato: <b>.mp4 / x264</b>,
+})}
+```
+
+Quando algum valor e' um elemento, `traduzir()` devolve um **array** em vez de
+uma string — `String(<b>x</b>)` daria `[object Object]` no ecra.
+
+### Corrigido: `useT()` dentro de um `.map()` (rebentava com varias notificacoes)
+
+O `frase()` do `NotificationBell.jsx` fazia `const t = useT()` e era chamada
+dentro de `items.map((n) => ...)`. Isso executa o hook **uma vez por
+notificacao**: assim que chegasse uma nova (ou saisse uma), o React contava
+mais hooks do que no render anterior e rebentava com *"Rendered more hooks than
+during the previous render"*.
+
+O mesmo padrao apareceu em `Comments.jsx` (`whenTitle`) e `Manga.jsx`
+(`MultiChips`). Agora o `t` entra como **parametro** — quem tem o hook e' o
+componente, e passa-o. Em `Manga.jsx` o `t()` traduz no momento de mostrar
+(`{t(o.label)}`), porque o array e' de nivel de modulo e la nao ha hook.
+
+### Corrigido: dois nomes `t` a colidir no mesmo ficheiro
+
+O nome bonito para a traducao e' `t`. O nome bonito para o **titulo** de um
+filme tambem era `t`. Em `Library.jsx` e `CompareRating.jsx` o `const t =
+displayTitle(...)` dentro do `.map` sombreava o `t = useT()`, e o
+`{t("Remover da lista")}` traduzia o proprio titulo: o botao aparecia com o nome
+do filme em vez do texto.
+
+O titulo passou a chamar-se `titulo`. O mesmo vale para `lib/tempo.js`, onde o
+`t` local e' o timestamp — por isso o `t()` puro e' importado ali como `tt`.
+
+### Corrigido: os generos e as datas apareciam sempre em portugues
+
+- **Generos**: `ROTULO_GENERO` dava o rotulo em portugues e o interface mostrava
+  "Acao", "Ficcao Cientifica" com a app em ingles. Agora `rotuloGenero()` passa o
+  rotulo pelo dicionario.
+- **Datas relativas**: `lib/tempo.js` escrevia "ha 20 min" e usava
+  `toLocaleDateString("pt-PT")` fixo. Agora segue o idioma, e a data absoluta sai
+  em ingles quando o interface esta' em ingles.
+- **Unidades** (`Torrents.jsx`): `"h"`, `"min"`, `"seg"`, `"dia"` — iguais nos
+  dois idiomas, por isso ficam como estao (marcado com `// i18n`).
+
+### Corrigido: os labels dos separadores ficavam em portugues
+
+`TABS`, `SORTS`, `sets` e companhia sao **arrays de nivel de modulo**, onde nao
+ha `useT()`. Traduzir na definicao dava `t is not defined`; traduzir com o
+`t()` puro resolveria o erro mas nao a mudanca de idioma, porque o valor era
+calculado uma vez no carregamento do modulo.
+
+A convencao adoptada: o `label` guarda a **chave em portugues** e traduz-se no
+momento de mostrar, em `{t(x.label)}`. O auditor sabe que e' uma chave e nao um
+texto por traduzir.
+
+### Novo: `scripts/auditar-pt-por-traduzir.cjs` (esta no `npm test`)
+
+Nao ha forma de provar por leitura que **nao** ha texto esquecido — e este
+projecto provou isso duas vezes. A primeira auditoria disse "nenhum texto por
+traduzir" com **45 textos** por traduzir.
+
+Por isso o auditor varre o `web/src` inteiro e corre em `npm test`. **Falha com
+6 mutacoes** que apanham cada tipo de esquecimento: palavra isolada, texto de
+JSX partido por varias linhas, atributo `title`, template literal com
+expressao, ternario com expressao, e `label` de modulo usado sem `t()`.
+
+Tres coisas que o auditor aprendeu a fazer, cada uma porque falhou:
+
+1. **O limiar de uma palavra, e nao duas.** Com duas, "Novidade", "Nota" e
+   "Apagar" passavam — e sao os textos mais faceis de esquecer.
+2. **Reconhecer frases sem depender do dicionario.** "Usar URL" e "Criar sala"
+   nao tem nenhuma palavra da lista de portugues. No texto de JSX e nos
+   atributos de texto, **duas palavras e' interface quase certo**.
+3. **Nao se perder no codigo.** Um `import { useEffect } from "react"` fazia o
+   scanner ler a aspa de fecho como inicio de uma string que nunca mais fechava
+   — e o ficheiro ficava **inteiro** por auditar. `Hero.jsx` tinha "Reproduzir"
+   e "Mais info" no ecra em portugues com o auditor a dizer "limpo".
+
+As exclusoes ficam **no codigo**, com `// i18n:` — nao numa lista do script, para
+ninguem as "arranjar" sem ver que a traducao ja la esta.
+
+### Corrigido: texto que o proprio extractor nao via
+
+O `extrair-textos.cjs` so' olhava para 4 pastas e so' para texto na mesma linha.
+Ficou de fora, e so' apareceu quando se abriu a app no browser: template
+literals, ternarios com expressao, texto de JSX partido por varias linhas,
+atributos, e ficheiros inteiros na raiz (`App.jsx`) e em pastas que nao eram
+abertas (`lib/`, `watchparty/`, `auth/`, `api/`).
+
+O `App.jsx` e' o exemplo mais barato: tres linhas de uma pagina inteira
+(`A carregar`, `Filmes`, `Series`).
+
+### Ferramentas de traducao
+
+O trabalho foi feito com scripts, nao a mao, porque eran 330 textos:
+
+- `extrair-textos.cjs`, `extrair-erros-servidor.cjs` — puxam os textos.
+- `traduzir-*.cjs`, `gerar-dicionario.cjs` — escrevem o dicionario.
+- `acrescentar-uset.cjs`, `corrigir-lint-i18n.cjs` — tratam de imports e de
+  falsos positivos do lint.
+- `verificar-t-em-codigo.cjs` — confirma que um `t()` nao ficou com a chave
+  errada.
+
+**Os testes apanham mais do que se pensava.** O `eslint` (`no-undef`) apanhou
+seis `t` usados sem import — que **compilavam sem erro nenhum**, porque o build
+nao verifica identificadores. E o `testar-i18n.mjs` apanhou chaves iguais em
+portugues e ingles onde deviam ser differentes (`Watch Party`, `DUB`,
+`Debrid`).
+
+### Notas
+
+- **O servidor nao mudou.** Zero alteracoes em `server/`: as mensagens
+  continuam a vir em portugues e traduzem-se no cliente.
+- **A web funciona igual.** O mesmo codigo corre em `meida.onrender.com`; so' a
+  deteccao de idioma e' a nova.
+- **Os titulos e as sinopses seguem o idioma do catalogo** (TMDB), que ja era a
+  configuracao antes — nao se mexeu nisso.
+
 ## Por publicar
 
 ### Corrigido: dava para nao responder a uma resposta
