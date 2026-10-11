@@ -1,18 +1,21 @@
 # IDEIAS — MEIDA
 
-Lista viva de ideias para a app. Marca com `[x]` as que forem feitas e move-as
-para a secção "Feitas".
+Lista viva de ideias para a app.
+
+**Como se organiza:** as secções do topo são o que **ainda não está feito** — só
+listas `[ ]`. Quando uma coisa se faz, a linha vai para a secção **Feitas**, no
+fim do ficheiro, e mantém o texto com a explicação do *como* e do *porquê*
+(que é a parte que se perde e é a mais difícil de reconstruir). As secções
+"Social / comunidade", "O CSS e as estatísticas" e "O que não há que ir buscar
+lá" são análises do projeto antigo e ficam onde estão.
 
 ## Lingua / tradução
-- [x] **Interface inteira em português e inglês** — escolha nas Definições (Detalhe → Conteúdo), detetada do browser na primeira vez e memorizada. A tradução é só do lado do cliente: o servidor não sabe o idioma do pedido, e a chave é o próprio texto em português. Uma função pura partilhada (`web/src/i18n/traduzir.js`) é usada pelo contexto e pelo `api/client.js`, para as mensagens de erro do servidor também saírem traduzidas.
-- [x] **Auditor que garante que nada fica por traduzir** — `scripts/auditar-pt-por-traduzir.cjs`, ligado ao `npm test`. Apanha texto em português em JSX, em atributos de texto, em strings e em templates. **Já teve cinco buracos** (cada um com um ficheiro de teste e uma mutação): texto misturado com expressão, imports lidos como JSX, crases de fecho de template, o objecto de valores do `t()` lido como texto, e texto de **uma palavra** (que nenhuma das duas regras via, por ser indistinguível de um identificador). A lição: "não há nada por traduzir" nunca é resposta suficiente — mutar.
 - [ ] **Traduzir também o que o utilizador escreve** (títulos de listas e notas personais)? Provavelmente não: é conteúdo dele, não interface.
 
 ## Estatísticas / perfil
 - [ ] **Resumo anual/personalizado** ("o teu ano em revisão"): totais por mês, gráficos, top do ano — estilo Spotify Wrapped.
 
 ## Library / notas
-- [x] **Nota rápida no cartão**: mostra a tua nota (0-100) num badge no canto inferior-direito do cartão (SVG estrela) — usa o cache da library, sem pedidos extra.
 - [ ] **Barra de nota visual** nos cartões (gradiente colorido por nota).
 - [ ] **Marcar como visto ao dar nota** (uma ação única).
 - [ ] **Vista timeline**: ordenar por data em que viste, com linhas cronológicas.
@@ -23,28 +26,18 @@ para a secção "Feitas".
 - [ ] **"Podias gostar"**: recomendações baseadas nas notas altas (similaridade de géneros/tags).
 
 ## Multi-utilizador / social
-- [x] **Discord Rich Presence** — mostrar no perfil do Discord o que se está a ver (título, `S1E2`, `12:34 / 45:00` + cartaz), como no Stremio/Crunchyroll. 100% grátis e local: protocolo RPC do Discord implementado à mão em `electron/discord-presence.cjs` (zero dependências), sem servidor e sem API paga. Interruptor em Definições → Discord. Só na app de computador (Electron); nos providers com iframe só se sabe que a fonte foi escolhida.
 - [ ] **Estadísticas comparadas com a média dos utilizadores** (rating global por título).
-- [x] **Listas públicas/compartilháveis** (link para mostreres a tua biblioteca) — perfis em `/u/:username` com biblioteca e listas, privacidade à escolha (público/privado), seguir utilizadores e pesquisa de pessoas (`/users`). Ver "Melhorias já feitas".
 
 ## Player / visual
-- [x] **Suporte Real-Debrid**: cola o token em Definições; os torrents em cache no RD reproduzem logo (o que faz o Stremio parecer "instantâneo"). Torrents sem cache caem para o WebTorrent local. Badge "⚡ Debrid" + filtro só cache + os instant ficam no topo. Rotas: `/api/debrid/*`.
-- [x] **Multi-provider de torrents**: framework agregador no backend (`server/src/services/providers/`) que junta resultados de vários indexadores (Torrentio + YTS). Adicionar um provider = criar um ficheiro na pasta `providers/` e registá-lo no `index.js`. Mostra o badge da fonte (ex.: YTS) em cada torrent.
-- [x] **Redirecionamento/links para sites externos**: botão para abrir diretamente no RidoMovies (com slug exato por série/época/episódio ou filme) e pesquisa no Google quando os providers internos falham ou a pedido do utilizador.
 - [ ] **Modo cinema**: player em fullscreen com UI limpa e auto-hide dos controlos. **(Decidido: o fullscreen/auto-hide nativo do `<video>` chega — não fazer.)**
 - [ ] **Dark mode unificado** + tema custom por utilizador (a app já é maioritariamente escura; falta terminar).
 - [ ] **Bookmarks/timestamps por episódio** (notas de episódio, não só da série).
-- [x] **Modo P2P (torrents sem Real-Debrid) que começa logo** — em vez de esperar pelo ficheiro inteiro (`ready`) antes de tocar, resolve nos `metadata` e vai chercher as peças de que precisa enquanto o resto vem atrás. Peças priorizadas com `torrent.critical` (que o WebTorrent já tinha e não era usado), com janela de 8 MB a partir da posição de leitura. Torrent sem seeds dá erro em vez de esperar para sempre. (`torrentEngine.js`, `stream.js`; testes em `scripts/testar-p2p.mjs` e `testar-p2p-metadados.mjs`).
 - [ ] **Outros serviços de debrid além do Real-Debrid** (AllDebrid, TorBox, Debrid-Link). O `debrid.js` está escrito contra a API do RD: é preciso uma camada comum (`checkToken` / `instantInfo` / `addMagnet` / `createDownload`) e um selector de serviço no campo do token em Definições. TorBox é o único com plano grátis permanente, mas limitado a 1 download/dia.
 
 ## UX / fluxos rápidos
-- [x] **Botão "Descarregar a app" no site** — no cabeçalho, só na versão web (`meida.onrender.com`). Na app de desktop e em `localhost` não aparece: quem já a tem não precisa de a descarregar, e em desenvolvimento o botão só ia atrapalhar. A regra está em `web/src/lib/web.js`, testada em `scripts/testar-web.mjs` (19 verificações, 2 mutações). Aponta para a página da release no GitHub, que é um URL estável (o do `.exe` leva a versão no nome e passaria a desatualizar).
-- [x] **Quick add à library** dos cartões do catalogo (home/search/category): ícone `+` no canto — adiciona à watchlist ou marca como visto sem abrir a ficha, com optimistic update. (`LibraryContext`, `MediaCard.jsx`). Também mostra as badges de visto/watchlist em todos os cartões.
 - [ ] **Keyboard shortcut "o"** para marcar visto/nota na Library (como no /compare).
 
 ## Importação / dados
-- [x] **Exportar a tua biblioteca/diário (CSV/JSON)** — botão nas Definições → "Os teus dados". JSON para backup, CSV para Excel/Sheets. Servidor entrega JSON em `GET /api/export`; o CSV é gerado no browser.
-- [x] **Importar o ficheiro exportado (JSON/CSV)** — secção "Importar dados" nas Definições. Merge conservador (`upsertLibrarySafe` + `importProgress`): não apaga notas/visto que o ficheiro não traga; parse CSV no backend (`parseCsv` com aspas/escapes).
 - [ ] **Filtrar Library por nota/estado/tipo** (mais filtros no `LibraryControls`).
 - [ ] **Filtros e ordenação da library a viverem na URL** (`?ordem=nota&filtro=vistos&genero=Ação`). Hoje o `LibraryControls` não usa `useSearchParams`, por isso uma vista filtrada não se pode partilhar, marcar nos favoritos, nem sobreviver ao botão "voltar". O ProdSound faz isto com um helper de ~15 linhas que reescreve os parâmetros existentes em vez de os substituir (`exUrl()`), e é o que torna cada vista um link.
 
@@ -302,7 +295,6 @@ Ou seja: o **raciocínio** já é o mesmo que o do outro projeto. O que falta é
 - [ ] **Faixa de números no perfil** com os tokens acima — o número grande na cor
       de destaque, o rótulo em maiúsculas, a linha vertical de 1px entre eles, e
       seguidores / a seguir a abrir a lista em vez de só mostrarem um número.
-- [x] **Gráfico de "ao longo do tempo" no perfil** — 12 meses de barras verticais
       em **SVG puro** (`GraficoMensal.jsx`, sem dependências), alimentado por
       `serieMensal()` em `profileStats.js`. Mede **actividade** (última vez que
       mexeste num título), não visionamento, e a legenda diz-o. Três decisões que
@@ -313,7 +305,6 @@ Ou seja: o **raciocínio** já é o mesmo que o do outro projeto. O que falta é
       dados. Testado em `scripts/testar-grafico-mensal.mjs` (55 verificações,
       incluindo que a barra mais alta usa pelo menos 80% da altura — defeito
       encontrado no perfil real, onde o eixo dava 0/500/1000 com a barra a 53%).
-- [x] **Página `/stats`** com histograma de notas (`HistogramaNotas.jsx`, 10 faixas, SVG mão), tempo visto (`progress.seconds_watched`), género mais visto (`desempate alfabetico`), nota mais alta/baixa/média/mediana e década favorita (`Math.floor(year/10)*10`). Ver a secção "Melhorias já feitas" (linha 362) para detalhes completos.
 - [ ] **Separar o público do privado** nas estatísticas do perfil: números de
       biblioteca e seguidores são públicos; o gráfico de meses e a distribuição por
       estado de visionamento são só de quem é dono.
@@ -360,17 +351,76 @@ dentro do código, passwords em `md5` sem sal, e há código morto espalhado.
 
 ---
 
-## Gamificação
-- [x] **Sistema de conquistas/badges** — página `/achievements` + link no menu. Badges calculados a partir da library/diário (Primeiro passo, Matiné, Cinéfilo, Maratonista, Otaku, Crítico, Biblioteca, Centenário, …) com ícones SVG (sem emojis).
-- [x] **Streak/racha diária** — dias consecutivos com atividade (baseado nas datas do diário/progresso e da library); racha atual + melhor racha.
+## Feitas
 
----
+Tudo o que já está feito, com a explicação de como e porquê. Saiu daqui
+de cima quando se fez — a linha original dizia só o quê, não o como.
+
+### Lingua / tradução
+
+- **Interface inteira em português e inglês** — escolha nas Definições (Detalhe → Conteúdo), detetada do browser na primeira vez e memorizada. A tradução é só do lado do cliente: o servidor não sabe o idioma do pedido, e a chave é o próprio texto em português. Uma função pura partilhada (`web/src/i18n/traduzir.js`) é usada pelo contexto e pelo `api/client.js`, para as mensagens de erro do servidor também saírem traduzidas.
+- **Auditor que garante que nada fica por traduzir** — `scripts/auditar-pt-por-traduzir.cjs`, ligado ao `npm test`. Apanha texto em português em JSX, em atributos de texto, em strings e em templates. **Já teve cinco buracos** (cada um com um ficheiro de teste e uma mutação): texto misturado com expressão, imports lidos como JSX, crases de fecho de template, o objecto de valores do `t()` lido como texto, e texto de **uma palavra** (que nenhuma das duas regras via, por ser indistinguível de um identificador). A lição: "não há nada por traduzir" nunca é resposta suficiente — mutar.
+
+### Library / notas
+
+- **Nota rápida no cartão**: mostra a tua nota (0-100) num badge no canto inferior-direito do cartão (SVG estrela) — usa o cache da library, sem pedidos extra.
+
+### Multi-utilizador / social
+
+- **Discord Rich Presence** — mostrar no perfil do Discord o que se está a ver (título, `S1E2`, `12:34 / 45:00` + cartaz), como no Stremio/Crunchyroll. 100% grátis e local: protocolo RPC do Discord implementado à mão em `electron/discord-presence.cjs` (zero dependências), sem servidor e sem API paga. Interruptor em Definições → Discord. Só na app de computador (Electron); nos providers com iframe só se sabe que a fonte foi escolhida.
+- **Listas públicas/compartilháveis** (link para mostreres a tua biblioteca) — perfis em `/u/:username` com biblioteca e listas, privacidade à escolha (público/privado), seguir utilizadores e pesquisa de pessoas (`/users`).
+
+### Player / visual
+
+- **Suporte Real-Debrid**: cola o token em Definições; os torrents em cache no RD reproduzem logo (o que faz o Stremio parecer "instantâneo"). Torrents sem cache caem para o WebTorrent local. Badge "⚡ Debrid" + filtro só cache + os instant ficam no topo. Rotas: `/api/debrid/*`.
+- **Multi-provider de torrents**: framework agregador no backend (`server/src/services/providers/`) que junta resultados de vários indexadores (Torrentio + YTS). Adicionar um provider = criar um ficheiro na pasta `providers/` e registá-lo no `index.js`. Mostra o badge da fonte (ex.: YTS) em cada torrent.
+- **Redirecionamento/links para sites externos**: botão para abrir diretamente no RidoMovies (com slug exato por série/época/episódio ou filme) e pesquisa no Google quando os providers internos falham ou a pedido do utilizador.
+- **Modo P2P (torrents sem Real-Debrid) que começa logo** — em vez de esperar pelo ficheiro inteiro (`ready`) antes de tocar, resolve nos `metadata` e vai chercher as peças de que precisa enquanto o resto vem atrás. Peças priorizadas com `torrent.critical` (que o WebTorrent já tinha e não era usado), com janela de 8 MB a partir da posição de leitura. Torrent sem seeds dá erro em vez de esperar para sempre. (`torrentEngine.js`, `stream.js`; testes em `scripts/testar-p2p.mjs` e `testar-p2p-metadados.mjs`).
+
+### UX / fluxos rápidos
+
+- **Botão "Descarregar a app" no site** — no cabeçalho, só na versão web (`meida.onrender.com`). Na app de desktop e em `localhost` não aparece: quem já a tem não precisa de a descarregar, e em desenvolvimento o botão só ia atrapalhar. A regra está em `web/src/lib/web.js`, testada em `scripts/testar-web.mjs` (19 verificações, 2 mutações). Aponta para a página da release no GitHub, que é um URL estável (o do `.exe` leva a versão no nome e passaria a desatualizar).
+- **Quick add à library** dos cartões do catalogo (home/search/category): ícone `+` no canto — adiciona à watchlist ou marca como visto sem abrir a ficha, com optimistic update. (`LibraryContext`, `MediaCard.jsx`). Também mostra as badges de visto/watchlist em todos os cartões.
+
+### Importação / dados
+
+- **Exportar a tua biblioteca/diário (CSV/JSON)** — botão nas Definições → "Os teus dados". JSON para backup, CSV para Excel/Sheets. Servidor entrega JSON em `GET /api/export`; o CSV é gerado no browser.
+- **Importar o ficheiro exportado (JSON/CSV)** — secção "Importar dados" nas Definições. Merge conservador (`upsertLibrarySafe` + `importProgress`): não apaga notas/visto que o ficheiro não traga; parse CSV no backend (`parseCsv` com aspas/escapes).
+
+### O CSS e as estatísticas — o que o ProdSound faz melhor
+
+- **Gráfico de "ao longo do tempo" no perfil** — 12 meses de barras verticais
+  em **SVG puro** (`GraficoMensal.jsx`, sem dependências), alimentado por
+  `serieMensal()` em `profileStats.js`. Mede **actividade** (última vez que
+  mexeste num título), não visionamento, e a legenda diz-o. Três decisões que
+  vieram do outro projecto: a escala cresce contra o **maior** mês (e não
+  contra o total), um mês vazio fica a **3 px em vez de nada** — o zero é
+  informação, e sumir fazia o eixo mentir —, e a cor vem do mesmo token que o
+  resto da app. O eixo X leva o ano só quando muda. Só aparece com 3+ meses de
+  dados. Testado em `scripts/testar-grafico-mensal.mjs` (55 verificações,
+  incluindo que a barra mais alta usa pelo menos 80% da altura — defeito
+  encontrado no perfil real, onde o eixo dava 0/500/1000 com a barra a 53%).
+- **Página `/stats`** com histograma de notas (`HistogramaNotas.jsx`, 10 faixas, SVG mão), tempo visto (`progress.seconds_watched`), género mais visto (`desempate alfabetico`), nota mais alta/baixa/média/mediana e década favorita (`Math.floor(year/10)*10`).
+
+### Gamificação
+- **Sistema de conquistas/badges** — página `/achievements` + link no menu. Badges calculados a partir da library/diário (Primeiro passo, Matiné, Cinéfilo, Maratonista, Otaku, Crítico, Biblioteca, Centenário, …) com ícones SVG (sem emojis).
+- **Streak/racha diária** — dias consecutivos com atividade (baseado nas datas do diário/progresso e da library); racha atual + melhor racha.
 
 ## Ferramentas de verificação (para não voltar a cair nos mesmos buracos)
 - **Auditor de tradução** (`scripts/auditar-pt-por-traduzir.cjs`, no `npm test`) e o seu teste (`scripts/testar-auditor-i18n.mjs`, 16 verificações, 5 mutações).
 - **Testes com mutação por omissão** — cada ficheiro novo em `scripts/` parte o código de propósito e confirma que o teste o apanha. Um teste que passa porque o código está certo não prova nada; um teste que continua a passar quando o código está partido prova que não está a testar nada.
 - **`npm test` tem 21 passos** — confirmar que o que se mexeu entrou lá.
 
-## Melhorias já feitas (para referência)
-- Compara as tuas notas (`/compare`), Comparar avaliação (`CompareRating`), Notas 0-100, export + import (JSON/CSV), gamificação (badges + streak), quick-add nos cartões, comparar com a comunidade, **página `/stats`** (histograma de notas, tempo visto, ano do título, decada favorita, 5 mutações confirmadas).
-- Base de dados em **SQLite** (`node:sqlite`, zero dependências) com migrações; **perfis** (`/u/:username`), seguir utilizadores, pesquisa de pessoas (`/users`), **comentários por episódio** (respostas, gostos, minuto no vídeo), e **servidor remoto no desktop** (Electron 44, `node:sqlite` no Node 24).
+## Feitas sem detalhe (só o inventário)
+Isto aqui não tem a explicação do *como* — a de cima é que a tem.
+
+### Dados e base
+- Base de dados em **SQLite** (`node:sqlite`, zero dependências) com migrações; **servidor remoto no desktop** (Electron 44, `node:sqlite` no Node 24).
+- Notas 0-100 em vez de 5 estrelas.
+
+### Perfis e social
+- **Perfis** (`/u/:username`), seguir utilizadores, pesquisa de pessoas (`/users`), comparar com a comunidade.
+- **Comentários por episódio** (respostas a respostas, gostos, minuto no vídeo).
+
+### Biblioteca
+- **Compara as tuas notas** (`/compare`) e **Comparar avaliação** (`CompareRating`).
