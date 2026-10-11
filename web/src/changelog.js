@@ -5,6 +5,15 @@
 // versao; quem nao encontra a sua ve o portugues (a lingua original).
 export const CHANGELOG = [
   {
+    version: "1.4.1",
+    items: [
+      "Novo: no site (meida.onrender.com) aparece um botão no topo para descarregar a app para o computador. Na app já instalada não aparece — não faz sentido oferecer a quem já tem.",
+    ],
+    items_en: [
+      "New: on the website (meida.onrender.com) there's a button at the top to download the app for your computer. It doesn't appear in the installed app — there's no point offering it to someone who already has it.",
+    ],
+  },
+  {
     version: "1.4.0",
     items: [
       "Tradução completa da interface para português e inglês (284 textos de interface + 46 mensagens de erro do servidor).",

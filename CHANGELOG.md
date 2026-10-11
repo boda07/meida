@@ -1,5 +1,60 @@
 # Changelog
 
+## 1.4.1
+
+### Novo: botão para descarregar a app, no site
+
+Quem chega pela página web vê agora um botão no cabeçalho que leva à release
+do GitHub. **Na app de desktop não aparece** — não faz sentido oferecer a
+descarregar a app a quem já a tem instalada.
+
+**A regra está em `web/src/lib/web.js`** (`ehVersaoWeb`), e tem três condições
+porque cada uma cobre um caso diferente:
+
+| Onde | Electron? | Host | Vê o botão? |
+| --- | --- | --- | --- |
+| App de desktop, dados locais | sim | — | não |
+| App de desktop, servidor partilhado | sim | — | não |
+| `meida.onrender.com` | não | domínio | **sim** |
+| `npm run dev` | não | `localhost` | não |
+
+**Por que detetar pelo `hostname` e não pelo `runtime-config.json`:** esse
+ficheiro está também em `web/public/`, portanto o `npm run dev` lê-o igual e
+passaria a mostrar o botão em desenvolvimento. Detetar pelo hostname não depende
+do servidor e dá o mesmo resultado.
+
+Pior: no Electron em modo "remoto", `MEIDA_REMOTE_DATA_BASE` **está**
+preenchido (é o processo principal que o mete). Um teste que olhasse para essa
+variável mostraria o botão *dentro da app*. É por isso que o teste da
+app-em-modo-remoto existe.
+
+**O link é para a página da release**, não para o `.exe`: o nome do ficheiro
+leva a versão (`MEIDA-Setup-1.4.0.exe`), por isso um link direto passaria a
+apontar para uma versão antiga. A página mostra o instalador *e* as notas.
+
+**O `npm test` ganhou `scripts/testar-web.mjs`** — 19 verificações mais duas
+mutações (sem o teste do Electron, e sem o teste do localhost). A regra é uma
+função pura que recebe `{ electronAPI, hostname }` em vez de ir buscar o
+`window`, que é o que a torna testável sem browser.
+
+### Um erro que os testes não apanharam
+
+O botão apareceu **sempre**, também em `localhost`. A causa:
+
+```js
+import { noBrowser as ehWeb } from "../lib/web.js";
+// ...
+{ehWeb && (...)}      // <-- funcao, sempre verdadeira
+```
+
+`ehWeb` é a *função*, não o resultado de a chamar — e uma função é sempre
+truthy. O teste passava na mesma, porque testava `noBrowser()` e não o `{ehWeb && }`
+do JSX. Só apareceu quando se abriu a página no browser.
+
+É o mesmo bug só visto de outra maneira: **um teste da função não prova nada
+sobre o sítio onde a função é chamada.** Por isso o ficheiro agora chama
+`ehVersaoWeb()` explicitamente e o comentário ao lado avisa.
+
 ## 1.4.0
 
 ### Novo: a interface esta' toda em ingles tambem

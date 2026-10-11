@@ -4,6 +4,7 @@ import NotificationBell from "./NotificationBell.jsx";
 import ProfileMenu from "./ProfileMenu.jsx";
 import WatchParty from "./WatchParty.jsx";
 import { useT } from "../i18n/I18nContext.jsx";
+import { ehVersaoWeb, URL_RELEASE } from "../lib/web.js";
 
 function HomeIcon() {
   return (
@@ -51,6 +52,17 @@ function DiceIcon() {
       <circle cx="15.5" cy="15.5" r="1.3" fill="currentColor" stroke="none" />
       <circle cx="15.5" cy="8.5" r="1.3" fill="currentColor" stroke="none" />
       <circle cx="8.5" cy="15.5" r="1.3" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
+// Seta para baixo a entrar numa linha: o "descarregar" de sempre.
+function DownloadIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 3v11" />
+      <polyline points="7.5 10.5 12 15 16.5 10.5" />
+      <path d="M4 19h16" />
     </svg>
   );
 }
@@ -131,6 +143,25 @@ export default function Header() {
           <NavLink to="/pick" title={t("Escolhe algo para mim")} className="nav-dice" aria-label={t("Escolhe algo para mim")}>
             <DiceIcon />
           </NavLink>
+
+          {/* Só no site. Na app de desktop e' absurdo oferecer "descarregar a
+              app" — a pessoa ja a tem. A regra esta' em `lib/web.js`; ve o
+              ficheiro para o porque de nao vir do runtime-config.
+
+              `ehVersaoWeb()` e' CHAMADA, nao usada como valor: uma funcao e'
+              sempre verdadeira, e `{funcao && ...}` mostraria o botao sempre. */}
+          {ehVersaoWeb() && (
+            <a
+              className="nav-descarregar"
+              href={URL_RELEASE}
+              target="_blank"
+              rel="noopener noreferrer"
+              title={t("Descarregar a app para o computador")}
+            >
+              <DownloadIcon />
+              <span>{t("Descarregar a app")}</span>
+            </a>
+          )}
         </nav>
       </div>
 

@@ -738,6 +738,9 @@ export const DICIONARIO = {
     "✓ Reproduz no browser": "✓ Reproduz no browser",
     "✓ Visto": "✓ Visto",
     "✓ browser": "✓ browser",
+    // --- botao de descarregar a app (so no site) ---
+    "Descarregar a app": "Descarregar a app",
+    "Descarregar a app para o computador": "Descarregar a app para o computador",
   },
 
   en: {
@@ -1442,6 +1445,9 @@ export const DICIONARIO = {
     "✓ Reproduz no browser": "✓ Plays in browser",
     "✓ Visto": "✓ Watched",
     "✓ browser": "✓ browser",
+    // --- botao de descarregar a app (so no site) ---
+    "Descarregar a app": "Download the app",
+    "Descarregar a app para o computador": "Download the app for your computer",
   },
 };
 

@@ -330,6 +330,32 @@ h2 {
   padding: 9px 11px;
 }
 
+/* "Descarregar a app": so aparece no site (ver `lib/web.js`). Nao e' um
+   `NavLink` — nao muda de pagina, abre a release no GitHub. Por isso leva
+   `target="_blank"`, e por isso o ecra nao "pisca" como nos outros links. */
+.nav-links a.nav-descarregar {
+  margin-left: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.nav-links a.nav-descarregar:hover {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+/* Em ecrã estreito nao ha espaco para o texto: fica so a seta. O `title` e' o
+   que diz o que e' (e e' o que o leitor de ecra le). */
+@media (max-width: 720px) {
+  .nav-links a.nav-descarregar span {
+    display: none;
+  }
+
+  .nav-links a.nav-descarregar {
+    padding: 9px 11px;
+  }
+}
+
 .nav-links svg {
   width: 16px;
   height: 16px;

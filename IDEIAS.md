@@ -31,6 +31,7 @@ para a secção "Feitas".
 - [ ] **Bookmarks/timestamps por episódio** (notas de episódio, não só da série).
 
 ## UX / fluxos rápidos
+- [x] **Botão "Descarregar a app" no site** — no cabeçalho, só na versão web (`meida.onrender.com`). Na app de desktop e em `localhost` não aparece: quem já a tem não precisa de a descarregar, e em desenvolvimento o botão só ia atrapalhar. A regra está em `web/src/lib/web.js`, testada em `scripts/testar-web.mjs` (19 verificações, 2 mutações). Aponta para a página da release no GitHub, que é um URL estável (o do `.exe` leva a versão no nome e passaria a desatualizar).
 - [x] **Quick add à library** dos cartões do catalogo (home/search/category): ícone `+` no canto — adiciona à watchlist ou marca como visto sem abrir a ficha, com optimistic update. (`LibraryContext`, `MediaCard.jsx`). Também mostra as badges de visto/watchlist em todos os cartões.
 - [ ] **Keyboard shortcut "o"** para marcar visto/nota na Library (como no /compare).
 
