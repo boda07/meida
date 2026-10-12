@@ -869,6 +869,11 @@ export const DICIONARIO = {
     "Sem serifa": "Sem serifa",
     "Com serifa": "Com serifa",
     "Monoespaçada": "Monoespaçada",
+    // --- PlayerControls: botoes da barra de controlos ---
+    "Com som": "Com som",
+    "Sem som": "Sem som",
+    "Volume": "Volume",
+    "Posição no vídeo": "Posição no vídeo",
   },
 
   en: {
@@ -1702,6 +1707,11 @@ export const DICIONARIO = {
     "Sem serifa": "Sans-serif",
     "Com serifa": "Serif",
     "Monoespaçada": "Monospace",
+    // --- PlayerControls: botoes da barra de controlos ---
+    "Com som": "Unmute",
+    "Sem som": "Mute",
+    "Volume": "Volume",
+    "Posição no vídeo": "Video position",
   },
 };
 

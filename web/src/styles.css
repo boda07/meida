@@ -3183,6 +3183,145 @@ h2 {
   font-size: 13px;
 }
 
+/* ===== Barra de controlos do player (NOSSA, nao a do browser) ==============
+
+   O `<video>` esta' sem `controls` (ver `PlayerControls.jsx`), por isso esta
+   barra tem de ter o que a do browser tinha: play, seek, tempo, volume,
+   ecra inteiro — mais o botao de legendas, que ja nao tem onde se meter.
+
+   Fica em baixo, dentro da caixa, e esconde-se quando o video esta' a dar e o
+   rato esta' parado — o comportamento que toda a gente espera. Em pausa fica
+   sempre visivel, senao nao havia como carregar no play. */
+.pc-barra {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 6;
+  padding: 22px 10px 8px;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.85), rgba(0, 0, 0, 0));
+  opacity: 1;
+  transition: opacity 0.25s ease;
+}
+
+.pc-barra.escondida {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* A barra do seek: o alvo do rato e' uma faixa alta (a do browser tambem e'),
+   para nao ser preciso acertar numa linha de 4 px. */
+.pc-seek {
+  padding: 6px 0;
+  cursor: pointer;
+  touch-action: none;
+}
+
+.pc-seek-trilho {
+  position: relative;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.28);
+}
+
+.pc-seek:hover .pc-seek-trilho {
+  height: 6px;
+}
+
+/* O preenchimento e' escrito por um REF (nao por estado): o `timeupdate` dispara
+   4x por segundo e um render por quarto de segundo redesenharia o componente
+   inteiro. Ver o comentario em `PlayerControls.jsx`. */
+.pc-seek-cheio {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 0;
+  border-radius: 2px;
+  background: var(--accent, #c90303);
+}
+
+.pc-seek-bolinha {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 12px;
+  height: 12px;
+  margin-left: -6px;
+  border-radius: 50%;
+  background: var(--accent, #c90303);
+  transform: translateY(-50%) scale(0);
+  transition: transform 0.15s;
+}
+
+.pc-seek:hover .pc-seek-bolinha,
+.pc-seek:focus-visible .pc-seek-bolinha {
+  transform: translateY(-50%) scale(1);
+}
+
+.pc-seek:focus-visible .pc-seek-trilho {
+  outline: 2px solid var(--accent, #c90303);
+  outline-offset: 3px;
+}
+
+.pc-linha {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pc-btn {
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.pc-btn:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.pc-btn:focus-visible {
+  outline: 2px solid var(--accent, #c90303);
+  outline-offset: -2px;
+}
+
+.pc-tempo {
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+  color: #fff;
+  padding: 0 6px;
+  white-space: nowrap;
+}
+
+.pc-tempo-de {
+  opacity: 0.65;
+  margin-left: 4px;
+}
+
+/* Empurra o volume e o ecra inteiro para a direita. */
+.pc-vazio {
+  flex: 1;
+}
+
+.pc-volume {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.pc-volume-tilho {
+  width: 72px;
+  accent-color: var(--accent, #c90303);
+  cursor: pointer;
+}
+
 /* ===== Estilo das legendas (o `::cue` do <video>) ==========================
 
    O `::cue` e' o mecanismo que o MDN documenta para dar estilo as legendas de
@@ -3218,50 +3357,44 @@ h2 {
   color: rgba(255, 255, 255, var(--sub-opacidade, 1));
 }
 
-/* Botao de legendas DENTRO do player, com a lista num popup.
-   Posicao: EMBAIXO, a ESQUERDA DO AUDIO (o 🔊). Os controlos nativos do
-   `<video>` vao ~55 px de pitch e o 🔊 anda a ~140 px do canto, por isso 140 px
-   e' o que deixa o CC antes dele sem tocar em nada. (Ja se tentou 58 px — que e'
-   ONDE ESTA O ⛶ nativo, e sobrepunha.) Sobe 52 px para ficar acima da barra. */
+/* Botao de legendas DENTRO da barra de controlos, com a lista num popup.
+   Ja nao e' posicionado em absoluto: quem decide a ordem e' a barra
+   (`PlayerControls.jsx`), que o mete entre o tempo e o volume. E' o que
+   resolvia o problema original — estar a chocar com os botoes do browser. */
 .sub-cc {
-  position: absolute;
-  bottom: 52px;
-  right: 140px;
-  z-index: 6;
+  position: relative;
+  display: flex;
+  align-items: center;
 }
 
 .sub-cc-btn {
-  width: 36px;
-  height: 32px;
+  width: 34px;
+  height: 34px;
   display: flex;
   align-items: center;
   justify-content: center;
   border: none;
   border-radius: 8px;
-  background: rgba(0, 0, 0, 0.55);
+  background: transparent;
   color: #fff;
   cursor: pointer;
-  /* Escondido como os outros botoes do iframe (`.fs-btn`, `.player-reload`):
-     so' aparece com o rato por cima do player, e desaparece com eles. */
-  opacity: 0;
-  transition: opacity 0.2s, background 0.2s;
-}
-
-.player:hover .sub-cc-btn,
-.sub-cc-btn:focus-visible {
-  opacity: 1;
-}
-
-/* Legenda ligada: fundo marcado, para se distinguir de "desligadas" sem
-   abrir o menu. A opacidade fica com o hover (como os outros botoes), por isso
-   aqui so' muda a cor. */
-.sub-cc-btn.on {
-  background: rgba(0, 0, 0, 0.85);
-  box-shadow: inset 0 -2px 0 var(--accent, #c90303);
+  transition: background 0.2s;
 }
 
 .sub-cc-btn:hover {
-  background: rgba(0, 0, 0, 0.85);
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.sub-cc-btn:focus-visible {
+  outline: 2px solid var(--accent, #c90303);
+  outline-offset: -2px;
+}
+
+/* Legenda ligada: fundo marcado com a cor de destaque, para se ver sem abrir
+   o menu. */
+.sub-cc-btn.on {
+  background: rgba(255, 255, 255, 0.14);
+  box-shadow: inset 0 -2px 0 var(--accent, #c90303);
 }
 
 .sub-cc-btn:focus-visible {
@@ -3269,12 +3402,15 @@ h2 {
   outline-offset: 2px;
 }
 
+/* O popup abre para CIMA a partir do botao, que esta' na barra no fundo do
+   ecra. O `bottom` grande e' o que o afasta o suficiente para nao ficar por
+   baixo da barra; sem isto a lista de legendas aparecia cortado. */
 .sub-cc-pop {
   position: absolute;
-  bottom: calc(100% + 6px);
+  bottom: calc(100% + 10px);
   right: 0;
-  min-width: 168px;
-  max-height: 260px;
+  min-width: 190px;
+  max-height: 60vh;
   overflow-y: auto;
   display: flex;
   flex-direction: column;

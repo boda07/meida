@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Hls from "hls.js";
 import { SubtitleTracks, SubtitleMenu } from "./subtitles.jsx";
-import FullscreenButton from "./FullscreenButton.jsx";
+import PlayerControls from "./PlayerControls.jsx";
 import { usePlayerShortcuts } from "./usePlayerShortcuts.js";
 import { useVideoSync } from "../watchparty/useVideoSync.js";
 import { useSettings } from "../settings/SettingsContext.jsx";
@@ -206,8 +206,24 @@ export default function HlsPlayer({
 
   return (
     <div className="vplayer">
-      <div className="player" ref={containerRef}>
-        <video ref={videoRef} controls autoPlay={settings.autoplay} crossOrigin="anonymous">
+      <div
+        className="player"
+        ref={containerRef}
+        // Tocar no video alterna play/pausa. Sem `controls` nao ha' botao do
+        // browser para isso, e o toque no video e' o gesto que toda a gente faz.
+        onClick={(e) => {
+          // Nao quando se clicou num botao (o evento sobe ate aqui).
+          if (e.target.closest("button, input, .pc-seek, .sub-cc-pop")) return;
+          const v = videoRef.current;
+          if (!v) return;
+          if (v.paused) v.play().catch(() => {});
+          else v.pause();
+        }}
+      >
+        {/* SEM `controls`: a barra e' nossa (ver `PlayerControls.jsx`). A do
+            browser nao deixa meter um botao dentro — e' o que fazia o botao de
+            legendas chocar com o volume. */}
+        <video ref={videoRef} autoPlay={settings.autoplay} crossOrigin="anonymous" playsInline>
           {/* As faixas que o `SubtitleMenu` ja deslocou pelo atraso escolhido. */}
           <SubtitleTracks subtitles={subtitles} delay={settings.subDelay || 0} />
         </video>
@@ -223,11 +239,11 @@ export default function HlsPlayer({
             <span className="skip-btn-sub">{t("Ir para {t}", { t: formatarTempo(pulando.destino) })}</span>
           </button>
         )}
-        <FullscreenButton targetRef={containerRef} />
-        {/* O botao de legendas vai DENTRO da caixa do video (e' posicionado em
-            absoluto), para nao ser cortado pelo `overflow: hidden` e para a
-            decisao de mostrar/nao legendas estar no sitio onde se ve o video. */}
-        <SubtitleMenu videoRef={videoRef} subtitles={subtitles} />
+        {/* O botao de ecra inteiro da barra de controlos substitui o
+            `.fs-btn` de topo, que agora nao faria sentido com a barra nossa. */}
+        <PlayerControls videoRef={videoRef}>
+          <SubtitleMenu videoRef={videoRef} subtitles={subtitles} />
+        </PlayerControls>
       </div>
       {/* So aparece com duas ou mais variantes (ver `MANIFEST_PARSED` acima): com
           uma so nao ha' nada para escolher e o menu era ruido. */}
