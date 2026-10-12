@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { settingsStore } from "../api/client.js";
+import { t } from "../i18n/traduzir.js";
 
 const SettingsContext = createContext(null);
 
@@ -19,6 +20,9 @@ function shade(hex, amount) {
 // em localStorage via settingsStore; este contexto torna-as reativas na UI.
 export function SettingsProvider({ children }) {
   const [settings, setSettings] = useState(() => settingsStore.get());
+  // Erro a guardar: so aparece se o localStorage recusou a escrita. Antes nao
+  // havia nada — o utilizador via a mudanca no ecra e achava que estava guardada.
+  const [erroGuardar, setErroGuardar] = useState(null);
 
   // Aplica a cor de destaque escolhida as variaveis CSS (--accent).
   useEffect(() => {
@@ -61,11 +65,24 @@ export function SettingsProvider({ children }) {
   }, [settings.cardW, settings.cardH]);
 
   function update(patch) {
+    let gravou = true;
     setSettings((prev) => {
       const next = { ...prev, ...patch };
-      settingsStore.set(next);
+      // Gravar DENTRO do actualizador era perigoso: um throw aqui (ex.: limite
+      // do localStorage com uma imagem grande) perdia a alteracao E subia para
+      // o React como erro de render, em vez de se limitar a nao guardar.
+      gravou = settingsStore.set(next);
       return next;
     });
+    if (!gravou) {
+      setErroGuardar(
+        t(
+          "Nao foi possivel guardar (o espaco no navegador esta cheio). A alteracao vale so nesta sessao."
+        )
+      );
+    } else {
+      setErroGuardar(null);
+    }
   }
 
   // Diz ao processo principal se o autoplay esta ligado. Tem de acontecer AQUI
@@ -77,7 +94,7 @@ export function SettingsProvider({ children }) {
   }, [settings.autoplay]);
 
   return (
-    <SettingsContext.Provider value={{ settings, update }}>
+    <SettingsContext.Provider value={{ settings, update, erroGuardar }}>
       {children}
     </SettingsContext.Provider>
   );

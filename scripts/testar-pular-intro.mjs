@@ -206,14 +206,19 @@ const MUTACOES = [
 ];
 
 const original = fs.readFileSync(MOD, "utf8");
+// Finas de linha normalizadas (ver `testar-megaplay.mjs`): os blocos das
+// mutacoes estao escritos com `\n` e o ficheiro pode estar em CRLF, o que fazia
+// `includes` falhar e o teste dizer "o codigo mudou" quando o codigo estava
+// igual — so' a linha a mais no fim de cada linha.
+const originalLf = original.replace(/\r\n/g, "\n");
 for (const [nome, de, para] of MUTACOES) {
-  if (!original.includes(de)) {
+  if (!originalLf.includes(de)) {
     ok_("MUTACAO " + nome + " (o codigo mudou, a mutacao nao aplica)", false);
     continue;
   }
   const dirMut = fs.mkdtempSync(path.join(RAIZ, "scripts", ".mut-"));
   const modMut = path.join(dirMut, "pularIntro.js");
-  fs.writeFileSync(modMut, original.replace(de, para));
+  fs.writeFileSync(modMut, originalLf.replace(de, para));
 
   // O teste importa por caminho, por isso corre-se uma copia dele que aponta
   // para o ficheiro partido.

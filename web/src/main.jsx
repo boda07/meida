@@ -2,6 +2,7 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import App from "./App.jsx";
+import BootScreen from "./components/BootScreen.jsx";
 import { AuthProvider } from "./auth/AuthContext.jsx";
 import { LibraryProvider } from "./library/LibraryContext.jsx";
 import { SettingsProvider } from "./settings/SettingsContext.jsx";
@@ -52,6 +53,12 @@ async function loadRuntimeConfig() {
 loadRuntimeConfig()
   .catch(() => {})
   .finally(() => {
+    // O ecra ESTATICO do `index.html` diz "a app esta a arrancar" e sai aqui:
+    // o React ja vai montar e o `BootScreen` assume com "o servidor de dados
+    // esta a acordar". Se nao se removesse, ficavam os dois no ecra ao mesmo
+    // tempo (e o estatico, que tem z-index 9999, tapava o outro).
+    document.getElementById("boot")?.remove();
+
     const root = ReactDOM.createRoot(document.getElementById("root"));
     root.render(
       <React.StrictMode>
@@ -64,7 +71,12 @@ loadRuntimeConfig()
                <AuthProvider>
                  <WatchPartyProvider>
                    <LibraryProvider>
-                     <App />
+                     {/* Espera pelo servidor de dados antes de mostrar a app:
+                         sem isto a versao web abre um ecra preto enquanto o
+                         servidor partilhado acorda. */}
+                     <BootScreen>
+                       <App />
+                     </BootScreen>
                    </LibraryProvider>
                  </WatchPartyProvider>
                </AuthProvider>

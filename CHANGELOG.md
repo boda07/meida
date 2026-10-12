@@ -1,5 +1,90 @@
 # Changelog
 
+## 1.4.9
+
+### O ecra de arranque: a versao web nao fica mais preta a espera do servidor
+- **Sintoma**: ao abrir `meida.onrender.com` com o servidor adormecido, o ecra
+  ficava **preto, sem nada**, durante 30-50 s. Era lido como "a app esta
+  partida".
+- **Causa raiz** (`web/src/main.jsx`): o React so era montado **depois** de
+  `loadRuntimeConfig()`, e essa funcao faz `fetch("/runtime-config.json")`. No
+  Render esse e' o primeiro pedido e e' o que acorda o servico. Nesse intervalo
+  o `#root` esta vazio e so se ve `html { background-color: var(--bg-dark) }`
+  = `#070708`, ou seja preto. E o mesmo acontecia a seguir, a espera do
+  servidor de **dados** (FadeHost), que hiberna tambem.
+- **Esta correccao ja estava na 1.4.8 publicada e nunca chegou ao repositorio.**
+  A tag `v1.4.8` aponta para a commit da 1.4.7 e tanto o `package.json` como as
+  duas changelogs em `main` paravam na 1.4.7: a release foi feita de um bump
+  local que nao foi committado. Como o Render faz deploy do repositorio, o ecra
+  nunca chegou a ser publicado. Foi daqui que se tirou o codigo — do bundle
+  minificado da release, ja que o fonte nao existe em lado nenhum.
+- **O que foi recriado**:
+  1. `web/index.html` — ecra **estatico** (`#boot`) que aparece no instante em
+     que o HTML chega, sem esperar por um byte de JavaScript. O CSS vai em
+     linha de proposito: uma folha de estilos externa seria mais um pedido a
+     esperar, que e' precisamente o que se quer tapar. A imagem tambem nao
+     entra (um `logo.png` por carregar seria mais um pedido a falhar).
+  2. `web/src/components/BootScreen.jsx` — o gate do React: insiste no
+     `/api/health` do servidor de dados e vai mudando a mensagem conforme passa
+     o tempo (0 s, 6 s, 25 s, 55 s), com contador. Limite de 90 s, para nunca
+     ser um ecra preto eterno.
+  3. `main.jsx` — remove o `#boot` estatico e envolve a `<App/>` no gate.
+  4. `web/src/api/client.js` — `healthDados()`, que pede o health ao servidor
+     de dados (e nao ao local, que e' o `health` que ja existia).
+  5. `styles.css` e `traducoes.js` (pt/en).
+- **Provado com fotografias**, nao com palavras: um servidor local que atrasa 9 s
+  em `/runtime-config.json` e `/api/health`, dentro do Electron. Antes dava
+  preto; agora o estatico entra logo e depois o gate com mensagem e contador.
+- **Um ajuste ao codigo original**: a `.boot-msg` tinha
+  `animation: boot-entra .35s ease both`. O `fill-mode: both` deixa o elemento no
+  estado inicial (`opacity: 0`) enquanto a animacao nao corre, e um teste com a
+  janela escondida provou exatamente isso — mensagem invisivel. Como essa
+  mensagem e' o unico feedback que o utilizador tem, ficou sem `both`: sem
+  animacao, mostra-se na mesma.
+- **Os dois ecras sao diferentes de proposito**: o estatico diz "a app esta a
+  arrancar", o do React diz "o servidor de dados esta a acordar" (que demora
+  muito mais e precisa de contador). O `main.jsx` tira o primeiro antes de
+  montar o segundo, senao ficavam os dois no ecra (e o estatico, com
+  `z-index: 9999`, tapava o outro).
+
+### Corrigido: as Definições perdiam-se em silencio
+- `settingsStore.get()` fazia `catch { return padroes }`: uma preferencia
+  corrompida repunha **tudo** — imagem de fundo, accent, legendas — sem um
+  aviso nenhum. O sintoma do utilizador era um ecra preto (sem imagem fica so a
+  cor escura) e nenhuma pista de porque. Pior: o `update()` seguinte gravava os
+  valores por omissao por cima, selando a perda.
+- `settingsStore.set()` nao tinha `try`/`catch` e era chamado **dentro** do
+  actualizador do `setSettings`. Se o `localStorage` recusasse (limite de ~5 MB,
+  facil de bater com uma imagem grande), a exceccao subia como erro de render
+  em vez de "nao guardei" — o utilizador via a mudanca no ecra e achava que
+  estava guardada.
+- Agora: guarda uma copia em `streamapp_settings_aviso` e escreve na consola; o
+  `set()` devolve `false` e as Definicoes mostram o aviso; e quando o estilo de
+  fundo e' "Imagem" mas nao ha imagem, aparece a explicacao.
+
+### `npm test` passou a correr inteiro (estava a falhar antes de nada disto)
+- **Tres testes com o caminho absoluto do laptop** (`file:///C:/Users/white/
+  Documents/Meida/...`) em `testar-estados`, `testar-notificacoes` e
+  `testar-tempo`: rebentavam com `ERR_MODULE_NOT_FOUND` **antes de correr uma
+  verificacao**. Agora o caminho e' calculado a partir do ficheiro.
+- **Tres testes que renderizavam em ingles**: o i18n escolhe pelo
+  `navigator.language`, e o do Node e' `en-US`. `testar-comentarios-render` e
+  `testar-grafico-mensal` procuravam os textos em portugues e falhavam; o
+  `testar-tempo` esperava "59 seg atras" e recebia "59 seg ago". Fixam o
+  idioma em `localStorage`.
+- **Tres testes de mutacao que acusavam "o codigo mudou" sem o codigo ter
+  mudado** (`testar-megaplay`, `testar-pular-intro`, `testar-legendas`): os
+  blocos de texto das mutacoes estao escritos com `\n` e os ficheiros estao em
+  **CRLF**, por isso `includes` nunca encontrava. Normaliza-se antes de
+  procurar. E' um bug de portabilidade que so aparece no Windows — e um teste
+  que nunca chega a mutar parece estar a proteger o codigo quando nao protege.
+
+### Notas
+- A release 1.4.8 esta publicada mas o seu codigo nunca foi committado (ver
+  acima). Por isso a proxima versao e' **1.4.9** e nao 1.4.8: confirmar sempre
+  a release mais recente no GitHub antes de bumpar, porque o `package.json`
+  mente.
+
 ## 1.4.7
 
 A barra de controlos do player passa a ser nossa, a qualidade entra nela, e o

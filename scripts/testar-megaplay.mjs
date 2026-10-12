@@ -153,6 +153,12 @@ const MUTACOES = [
 
 console.log("");
 const fonteReal = fs.readFileSync(caminho, "utf8");
+// Finas de linha normalizadas. Os blocos de texto das mutacoes estao escritos
+// com `\n`, mas o ficheiro pode estar em CRLF (e no Windows esta SEMPRE, depois
+// de um checkout). Sem normalizar, `includes` nao encontra nada e a mutacao e'
+// declarada "IMPOSSIVEL (o codigo mudou)" - o diagnostico ao contrario: nao foi
+// o codigo que mudou, foi o teste que nao estava a ver por causa do CRLF.
+const fonteLf = fonteReal.replace(/\r\n/g, "\n");
 
 // A mutacao e' aplicada ao FICHEIRO REAL (numa copia temporaria), e o modulo
 // partido e' importado. E' a unica forma de provar que o codigo detectaria a
@@ -166,7 +172,7 @@ const antesReal = await modReal.extrairMegaPlayNativo({
 });
 
 for (const [nome, de, para] of MUTACOES) {
-  if (!fonteReal.includes(de)) {
+  if (!fonteLf.includes(de)) {
     console.log("  FALHA MUTACAO IMPOSSIVEL (o codigo mudou): " + nome);
     falhou++;
     continue;
@@ -177,7 +183,7 @@ for (const [nome, de, para] of MUTACOES) {
     fs.copyFileSync(path.join(servicosDir, f), path.join(dir, f));
   }
   const ficheiroMut = path.join(dir, "megaplayNativo.js");
-  fs.writeFileSync(ficheiroMut, fonteReal.replace(de, para));
+  fs.writeFileSync(ficheiroMut, fonteLf.replace(de, para));
 
   let depois;
   try {

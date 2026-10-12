@@ -106,6 +106,10 @@ const saida = join(dir, "s.cjs");
 // passou a traduzir a legenda.)
 const provedores = `
 import { I18nProvider } from ${JSON.stringify(join(RAIZ, "web/src/i18n/I18nContext.jsx"))};
+// Idioma fixado em portugues. Sem isto o i18n segue o \`navigator.language\`, que
+// no Node e' "en-US", e a legenda sai em ingles — o teste procurava-a em
+// portugues e falhava por causa do idioma da maquina, nao do grafico.
+globalThis.localStorage = { getItem: () => "pt", setItem: () => {}, removeItem: () => {} };
 function ComProvedor(props) {
   return h(I18nProvider, null, h(GraficoMensal, props));
 }

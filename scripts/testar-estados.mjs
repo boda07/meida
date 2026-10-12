@@ -11,14 +11,23 @@
 // os casos possiveis. Se alguma mudar sem a outra, falha.
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
+import { fileURLToPath, pathToFileURL } from "node:url";
+
+// Caminho do repo calculado a partir do FICHEIRO, nunca escrito a mao. Estava
+// `file:///C:/Users/white/Documents/Meida/...` — caminho absoluto do laptop onde
+// o teste foi escrito — e por isso aqui o `npm test` rebentava com
+// ERR_MODULE_NOT_FOUND antes de correr uma unica verificacao. O sintoma era o
+// pior possivel: "o teste falha" em vez de "o caminho esta errado".
+const RAIZ = join(dirname(fileURLToPath(import.meta.url)), "..");
+const mod = (p) => pathToFileURL(join(RAIZ, p)).href;
 
 const dir = mkdtempSync(join(tmpdir(), "meida-estados-"));
 process.env.DB_DIR = dir;
 
-const store = await import("file:///C:/Users/white/Documents/Meida/server/src/store.js");
+const store = await import(mod("server/src/store.js"));
 const { estadoDe: doFrontend } = await import(
-  "file:///C:/Users/white/Documents/Meida/web/src/components/profileStats.js"
+  mod("web/src/components/profileStats.js")
 );
 
 let n = 0;
@@ -94,11 +103,10 @@ const lista = [
   { status: "dropped", watched: false, watchlist: true, score: null }, // dropped
   { status: null, watched: false, watchlist: false, score: null }, // none
 ];
-const stats = (await import("file:///C:/Users/white/Documents/Meida/web/src/components/profileStats.js"))
-  .statsFrom(lista);
-const { detalheStats } = await import(
-  "file:///C:/Users/white/Documents/Meida/web/src/components/profileStats.js"
+const stats = (await import(mod("web/src/components/profileStats.js"))).statsFrom(
+  lista
 );
+const { detalheStats } = await import(mod("web/src/components/profileStats.js"));
 
 ok("6 titulos no total", () => {
   if (stats.total !== 6) throw new Error("veio " + stats.total);
@@ -132,7 +140,7 @@ ok("detalheStats conta os estados e diz quantos tem nota", () => {
   if (d.faixas !== undefined) throw new Error("as faixas ainda existem");
 });
 
-const { closeDb } = await import("file:///C:/Users/white/Documents/Meida/server/src/db/index.js");
+const { closeDb } = await import(mod("server/src/db/index.js"));
 closeDb?.();
 rmSync(dir, { recursive: true, force: true });
 console.log(mau ? `\n  ${mau} FALHA(S)` : `\n  ${n} verificacoes passam`);

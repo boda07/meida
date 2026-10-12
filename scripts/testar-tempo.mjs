@@ -2,8 +2,22 @@
 //
 // Funcao pura, corre em Node sem browser. Nao se usa `assert` do node: e' cada
 // caso que diz o que esperava, para se ler a falha sem ir ver a linha.
+//
+// O caminho do modulo e' calculado a partir deste ficheiro. Hardcoded estava com
+// o caminho do laptop (C:/Users/white/...), que aqui dava ERR_MODULE_NOT_FOUND.
+import { dirname, join } from "node:path";
+import { fileURLToPath, pathToFileURL } from "node:url";
+
+const RAIZ = join(dirname(fileURLToPath(import.meta.url)), "..");
+
+// Idioma fixado em portugues: o `t()` le o `navigator.language`, que no Node e'
+// "en-US", e as datas saiam em ingles ("59 seg ago" em vez de "atras"). O
+// esperado aqui esta' escrito em portugues, por isso o teste tinha de fixar o
+// idioma — senao falha por causa da maquina, e nao do codigo.
+globalThis.localStorage = { getItem: () => "pt", setItem: () => {}, removeItem: () => {} };
+
 const { haQuanto, quandoCompleto, paraTempo, paraSegundos } = await import(
-  "file:///C:/Users/white/Documents/Meida/web/src/lib/tempo.js"
+  pathToFileURL(join(RAIZ, "web/src/lib/tempo.js")).href
 );
 
 const AGORA = new Date("2026-10-07T15:00:00Z").getTime();

@@ -5,6 +5,14 @@
 // versao; quem nao encontra a sua ve o portugues (a lingua original).
 export const CHANGELOG = [
   {
+    version: "1.4.9",
+    items: [
+      "Corrigido: a versão web ficava com o ecrã todo preto enquanto o servidor estava a acordar — e canse até um minuto, sem dizer nada. Agora aparece logo o nome da app a carregar, com uma mensagem que vai mudando e a dizer há quanto tempo vai.",
+      "Corrigido: se as tuas preferências se corrompessem, a app perdia-as sem avisar (a imagem de fundo desaparecia e o ecrã ficava preto). Agora guarda uma cópia e escreve um aviso.",
+      "Melhorado: se não houver espaço no navegador para guardar uma imagem de fundo, as Definições avisam em vez de fingir que guardaram — antes a imagem desaparecia ao fechar a app.",
+    ],
+  },
+  {
     version: "1.4.7",
     items: [
       "Novo: o player tem agora barra de controlos própria — play, barra de progresso, tempo, volume e ecrã inteiro, todos no sítio certo. O botão de legendas já não choca com nada.",

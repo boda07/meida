@@ -64,6 +64,19 @@ import { I18nProvider } from ${JSON.stringify(
   )};
 
 export { NIVEL_INDENTA, NIVEL_MAXIMO };
+
+// Idioma fixado em portugues. Sem isto o render sai em INGLES: o i18n escolhe
+// pelo \`navigator.language\`, e o do Node e' "en-US". Foi por isso que a
+// verificacao "o formulario e' o da resposta" comecou a falhar quando a i18n
+// entrou — o texto passou a vir traduzido e o teste continuou a procura-lo em
+// portugues. Um teste nao pode depender do idioma da maquina que o corre: e' um
+// falso negativo que ninguem percebe de onde vem.
+globalThis.localStorage = {
+  getItem: () => "pt",
+  setItem: () => {},
+  removeItem: () => {},
+};
+
 export function render(com, props) {
   return renderToStaticMarkup(
     h(MemoryRouter, null, h(I18nProvider, null, h(CommentItem, { c: com, ...props })))

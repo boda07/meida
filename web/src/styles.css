@@ -1573,6 +1573,95 @@ h2 {
   animation: loading-rotate 1.15s linear infinite;
 }
 
+/* ===== Ecra de arranque enquanto o servidor de dados acorda =====
+   Este bloco e' propositadamente identico ao CSS que vai em linha no `index.html`
+   (o ecra ESTATICO, que aparece antes de o React arrancar). Se um mudar, o outro
+   tem de mudar tambem - sao o mesmo ecra em dois momentos diferentes.
+   O React so diz "o servidor de dados esta a acordar"; o estatico diz "a app
+   esta a arrancar". */
+.boot {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: var(--bg-dark);
+}
+
+.boot-caixa {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  text-align: center;
+  max-width: 420px;
+}
+
+.boot-anel {
+  margin-bottom: 4px;
+}
+
+.boot-titulo {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.42em;
+  text-indent: 0.42em;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.boot-msg {
+  margin: 0;
+  min-height: 2.6em;
+  font-size: 0.98rem;
+  font-weight: 600;
+  color: var(--text);
+  /* SEM `fill-mode: both` de proposito. Com ele, a animacao comeca a correr no
+     estado inicial (opacity 0) e, se nao chegar a andar — janela escondida,
+     renderizador ocupado, movimento reduzido mal aplicado — a mensagem fica
+     INVISIVEL. E' a unica coisa que diz ao utilizador o que se passa, portanto
+     tem de estar la mesmo sem animacao. */
+  animation: boot-entra 0.35s ease;
+}
+
+.boot-contador {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.12em;
+  color: var(--accent);
+}
+
+.boot-dica {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+
+@keyframes boot-entra {
+  0% {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .boot-msg {
+    animation: none;
+  }
+}
+
 .loading-ring span {
   position: absolute;
   left: 50%;

@@ -97,14 +97,41 @@ export const DEFAULT_SETTINGS = {
 };
 export const settingsStore = {
   get() {
+    const cru = localStorage.getItem(SETTINGS_KEY);
+    if (!cru) return { ...DEFAULT_SETTINGS };
     try {
-      return { ...DEFAULT_SETTINGS, ...JSON.parse(localStorage.getItem(SETTINGS_KEY) || "{}") };
-    } catch {
+      return { ...DEFAULT_SETTINGS, ...JSON.parse(cru) };
+    } catch (e) {
+      // NAO engolir em silencio. Antes, um `catch { return padroes }` fazia uma
+      // definicao corrompida repor tudo sem avise nenhum: o utilizador perdia a
+      // imagem de fundo, o accent, as legendas... e via um ecra preto sem
+      // nenhum sinal de porque. Guarda-se o que estava la (para se recuperar a
+      // mao) e escreve-se na consola.
+      console.warn(
+        "[settings] stored settings are corrupt and were reset to defaults. " +
+          "Kept a copy under " + SETTINGS_KEY + "_aviso. Detail: " +
+          (e && e.message)
+      );
+      try {
+        localStorage.setItem(SETTINGS_KEY + "_aviso", cru.slice(0, 200000));
+      } catch {
+        /* sem espaco para a copia - segue na mesma */
+      }
       return { ...DEFAULT_SETTINGS };
     }
   },
   set(s) {
-    localStorage.setItem(SETTINGS_KEY, JSON.stringify(s));
+    try {
+      localStorage.setItem(SETTINGS_KEY, JSON.stringify(s));
+      return true;
+    } catch (e) {
+      // O mais comum e' o limite do localStorage (~5 MB): uma imagem de fundo
+      // grande estoura-o. Engolido, o utilizador escolhe a imagem, ve-a no
+      // ecra, e no arranque seguinte volta a nao estar — e conclui que a app
+      // esta partida. Devolver false deixa o aviso aparecer no sitio certo.
+      console.error("[settings] could not save:", e && e.message);
+      return false;
+    }
   },
 };
 
@@ -255,6 +282,16 @@ async function del(path, params = {}) {
 
 export const api = {
   health: () => get("/api/health"),
+  // "Health" do servidor de DADOS (o partilhado, quando ha). E' diferente do
+  // `health` de cima, que e' o servidor local: na versao web o UI e' servido pelo
+  // Render e os dados vao para o FadeHost, que hiberna e precisa de ~30-50 s
+  // para acordar. E' este que o ecra de arranque vai/pollar.
+  healthDados: () => {
+    const base =
+      (typeof window !== "undefined" && window.MEIDA_REMOTE_DATA_BASE) || "";
+    const b = base ? base.replace(/\/+$/, "") : "";
+    return get(b + "/api/health");
+  },
   catalog: () => get("/api/catalog", langParams()),
   category: (c) => get(`/api/catalog/${c}`, langParams()),
   discover: (opts) => get("/api/discover", { ...opts, ...langParams() }),

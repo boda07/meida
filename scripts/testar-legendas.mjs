@@ -211,10 +211,16 @@ process.exit(falhou ? 1 : 0);
 
 const original = fs.readFileSync(MOD, "utf8");
 const originalCliente = fs.readFileSync(MOD_CLIENTE, "utf8");
+// Finas de linha normalizadas (ver `testar-megaplay.mjs`): com CRLF no ficheiro,
+// os blocos das mutacoes (escritos com `\n`) nao eram encontrados e o teste
+// acusava "o codigo mudou" sem o codigo ter mudado nada.
+const lf = (s) => s.replace(/\r\n/g, "\n");
+const originalLf = lf(original);
+const originalClienteLf = lf(originalCliente);
 
 for (const [ficheiro, nome, de, para] of MUTACOES) {
   const alvoCliente = ficheiro === "cliente";
-  const originalAqui = alvoCliente ? originalCliente : original;
+  const originalAqui = alvoCliente ? originalClienteLf : originalLf;
   if (!originalAqui.includes(de)) {
     ok_("MUTACAO " + nome + " (o codigo mudou, a mutacao nao aplica)", false);
     continue;

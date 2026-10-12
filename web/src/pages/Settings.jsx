@@ -601,7 +601,7 @@ const TABS = [
 const TAB_KEY = "meida:settings-tab";
 
 export default function Settings() {
-  const { settings, update } = useSettings();
+  const { settings, update, erroGuardar } = useSettings();
   const t = useT();
   const { user, updateAvatar, updateProfile } = useAuth();
   const [imgUrl, setImgUrl] = useState("");
@@ -1225,8 +1225,28 @@ export default function Settings() {
             </Choice>
           ))}
         </div>
+        {erroGuardar && (
+          <p
+            style={{
+              margin: "12px 0 0",
+              fontSize: 12,
+              color: "#ffb4a2",
+              borderLeft: "3px solid #ff6a3d",
+              paddingLeft: 8,
+            }}
+          >
+            {erroGuardar}
+          </p>
+        )}
         {settings.bgStyle === "image" && (
           <div style={{ marginTop: 12 }}>
+            {!settings.bgImage && (
+              <p className="muted" style={{ margin: "0 0 10px", fontSize: 12 }}>
+                {t(
+                  "Escolhe uma imagem para o fundo. Sem imagem, o fundo fica so com a cor escura e parece que a app esta preta."
+                )}
+              </p>
+            )}
             <div className="set-img-url">
               <input
                 className="set-input"

@@ -1,14 +1,21 @@
 // Notificacoes: fluxo completo contra uma base de dados real.
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
+import { fileURLToPath, pathToFileURL } from "node:url";
+
+// Caminho do repo calculado a partir do FICHEIRO. Estava escrito a mao com o
+// caminho do laptop (C:/Users/white/...), e aqui o teste rebentava com
+// ERR_MODULE_NOT_FOUND sem chegar a verificar nada.
+const RAIZ = join(dirname(fileURLToPath(import.meta.url)), "..");
+const mod = (p) => pathToFileURL(join(RAIZ, p)).href;
 
 const dir = mkdtempSync(join(tmpdir(), "meida-notif-"));
 process.env.DB_DIR = dir;
 
-const store = await import("file:///C:/Users/white/Documents/Meida/server/src/store.js");
-const { closeDb, db } = await import("file:///C:/Users/white/Documents/Meida/server/src/db/index.js");
-const { MIGRATIONS } = await import("file:///C:/Users/white/Documents/Meida/server/src/db/schema.js");
+const store = await import(mod("server/src/store.js"));
+const { closeDb, db } = await import(mod("server/src/db/index.js"));
+const { MIGRATIONS } = await import(mod("server/src/db/schema.js"));
 
 let n = 0, mau = 0;
 function ok(rotulo, fn) {

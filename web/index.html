@@ -10,7 +10,93 @@
     <title>MEIDA</title>
   </head>
   <body>
+    <!--
+      Ecra de arranque ESTATICO. Aparece no instante em que o HTML chega, sem
+      esperar por um unico byte de JavaScript, e e' removido pelo `main.jsx` mal
+      o React monte.
+
+      Porque e' preciso: entre o HTML chegar e o React montar passa o download e
+      o parse de ~950 KB de JS mais o service worker. Nesse intervalo via-se um
+      ecra completamente vazio — e era provavelmente o "ecra preto" que se via
+      depois de um push, quando o Render reinicia e o HTML demora ~50 s a
+      chegar. Aqui, pelo menos, a partir do momento em que o HTML chega ja se ve
+      que a app esta a arrancar.
+
+      O CSS vai em linha de proposito: uma folha de estilos externa seria mais um
+      pedido a esperar, que e' precisamente o que se esta a tentar tapar.
+      A imagem tambem nao entra — um `logo.png` que ainda nao carregou seria
+      mais um pedido a falhar. Aqui so' ha CSS: desenha-se sempre.
+
+      Este ecra NAO e' o mesmo que o `BootScreen` do React. Este diz "a app esta
+      a arrancar"; aquele diz "o servidor de dados esta a acordar", que demora
+      muito mais e precisa de um contador. Os dois estao no sitio ao mesmo tempo,
+      cada um no seu momento: este primeiro, aquele a seguir.
+    -->
+    <div id="boot" aria-hidden="true">
+      <div class="boot-anel">
+        <span style="--i: 0"></span>
+        <span style="--i: 1"></span>
+        <span style="--i: 2"></span>
+        <span style="--i: 3"></span>
+        <span style="--i: 4"></span>
+        <span style="--i: 5"></span>
+      </div>
+      <div class="boot-titulo">MEIDA</div>
+      <div class="boot-msg"></div>
+    </div>
     <div id="root"></div>
+    <style>
+      /* Este bloco e' propositadamente identico ao `BootScreen` do React
+         (`.boot`, `.boot-anel`, `.boot-titulo`, `.boot-msg` em
+         `web/src/styles.css`). Se um mudar, o outro tem de mudar tambem — sao
+         o mesmo ecra em dois momentos diferentes. */
+      html, body { margin: 0; padding: 0; background: #070708; color: #fff; }
+      body {
+        min-height: 100vh;
+        font-family: Manrope, system-ui, -apple-system, "Segoe UI", sans-serif;
+      }
+      #boot {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 18px;
+        background: #070708;
+        z-index: 9999;
+      }
+      #boot .boot-anel {
+        position: relative;
+        width: 42px;
+        height: 42px;
+        animation: boot-spin 1.15s linear infinite;
+      }
+      #boot .boot-anel span {
+        position: absolute;
+        left: 50%;
+        top: 0;
+        width: 7px;
+        height: 7px;
+        border-radius: 999px;
+        background: #c90303;
+        opacity: calc(0.25 + (var(--i) * 0.12));
+        transform: translateX(-50%) rotate(calc(var(--i) * 60deg));
+        transform-origin: 50% 21px;
+      }
+      #boot .boot-titulo {
+        margin: 0;
+        font-size: 15px;
+        font-weight: 800;
+        letter-spacing: 0.42em;
+        text-indent: 0.42em;
+        color: rgba(255, 255, 255, 0.62);
+      }
+      @keyframes boot-spin { to { transform: rotate(360deg); } }
+      @media (prefers-reduced-motion: reduce) {
+        #boot .boot-anel { animation: none; }
+      }
+    </style>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
