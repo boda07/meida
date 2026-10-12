@@ -3322,6 +3322,36 @@ h2 {
   cursor: pointer;
 }
 
+/* O botao de qualidade: mostra a RESOLUCAO em texto ("1080p") em vez de um
+   icone de engrenagem. Um icone obriga a abrir o menu para saber em que se
+   esta'; o numero diz logo, e cabe nos 34 px de altura da barra. O texto e'
+   menor que o dos botoes com icone para nao parecer um botao diferente. */
+.pc-qual {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.pc-qual-btn {
+  width: auto;
+  min-width: 34px;
+  padding: 0 9px;
+}
+
+.pc-qual-txt {
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* O popup da qualidade fica alinhado pela DIREITA do botao (como o das
+   legendas) para nao sair do ecra quando o botao esta' a meio da barra. */
+.pc-qual-pop {
+  min-width: 132px;
+}
+
 /* ===== Estilo das legendas (o `::cue` do <video>) ==========================
 
    O `::cue` e' o mecanismo que o MDN documenta para dar estilo as legendas de
@@ -3404,8 +3434,11 @@ h2 {
 
 /* O popup abre para CIMA a partir do botao, que esta' na barra no fundo do
    ecra. O `bottom` grande e' o que o afasta o suficiente para nao ficar por
-   baixo da barra; sem isto a lista de legendas aparecia cortado. */
-.sub-cc-pop {
+   baixo da barra; sem isto a lista de legendas aparecia cortado.
+
+   As classes sao `pc-pop*` e nao `sub-cc*` porque este popup ja nao e' so das
+   legendas: o da qualidade (`QualityMenu.jsx`) abre com as mesmas regras. */
+.pc-pop {
   position: absolute;
   bottom: calc(100% + 10px);
   right: 0;
@@ -3420,7 +3453,7 @@ h2 {
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.55);
 }
 
-.sub-cc-pop button {
+.pc-pop button {
   padding: 8px 10px;
   border: none;
   border-radius: 6px;
@@ -3432,29 +3465,29 @@ h2 {
   white-space: nowrap;
 }
 
-.sub-cc-pop button:hover {
+.pc-pop button:hover {
   background: rgba(255, 255, 255, 0.1);
 }
 
 /* A legenda escolhida. O ponto e' para se ver qual esta' ligada sem ler. */
-.sub-cc-pop button.on {
+.pc-pop button.on {
   color: var(--accent, #c90303);
   font-weight: 700;
 }
 
-.sub-cc-pop button.on::after {
+.pc-pop button.on::after {
   content: " \2713";
 }
 
 /* O popup divide-se em duas secoes: a lista de legendas e as opcoes de como
    mostrar. O divisor e' fino e semMargem — o popup ja tem o seu padding. */
-.sub-cc-sec + .sub-cc-sec {
+.pc-pop-sec + .pc-pop-sec {
   border-top: 1px solid rgba(255, 255, 255, 0.12);
   margin-top: 4px;
   padding-top: 4px;
 }
 
-.sub-cc-titulo {
+.pc-pop-titulo {
   margin: 4px 10px 2px;
   font-size: 10px;
   letter-spacing: 0.06em;
@@ -3464,7 +3497,7 @@ h2 {
 }
 
 /* Cada opcao e' uma linha: nome a esquerda, controlo a direita. */
-.sub-cc-linha {
+.pc-pop-linha {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -3474,12 +3507,12 @@ h2 {
   cursor: pointer;
 }
 
-.sub-cc-linha > span {
+.pc-pop-linha > span {
   flex: 1;
   min-width: 62px;
 }
 
-.sub-cc-linha select {
+.pc-pop-linha select {
   padding: 4px 6px;
   border-radius: 4px;
   background: var(--bg-surface, #1a1a22);
@@ -3490,13 +3523,13 @@ h2 {
 }
 
 /* O "cursor" (slider) e' branco para se ver sobre a caixa escura. */
-.sub-cc-linha input[type="range"] {
+.pc-pop-linha input[type="range"] {
   width: 96px;
   accent-color: var(--accent, #c90303);
   cursor: pointer;
 }
 
-.sub-cc-linha em {
+.pc-pop-linha em {
   font-style: normal;
   font-variant-numeric: tabular-nums;
   min-width: 34px;
@@ -3512,22 +3545,9 @@ h2 {
   border: 1px solid rgba(255, 255, 255, 0.18) !important;
 }
 
-.sub-menu {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 8px;
-  font-size: 13px;
-  color: var(--text-secondary);
-}
-
-.sub-menu select {
-  padding: 6px 10px;
-  border-radius: 4px;
-  background: var(--bg-surface);
-  color: var(--text);
-  border: 1px solid #444;
-}
+/* O seletor de qualidade que vivia aqui (`Qualidade:` + `<select>`, por baixo do
+   video) foi para dentro da barra de controlos — ver `QualityMenu.jsx`. Antes
+   ficava a flutuar fora do jogador, o que se via quando a barra ficou nossa. */
 
 /* ===== Torrents ===== */
 .torrent-filters {

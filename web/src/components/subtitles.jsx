@@ -76,7 +76,7 @@ export function SubtitleTracks({ subtitles = [], delay = 0 }) {
 /**
  * Botao de legendas DENTRO do player, com a lista e as opcoes de displaying.
  *
- * Antes era um `<select>` por baixo do video (`.sub-menu`). Isso obligeia a
+ * Antes era um `<select>` por baixo do video. Isso obligeia a
  * olhar para baixo do ecra para mudar a legenda e — pior — no `HlsPlayer` o
  * menu ficava CORTADO pelo `overflow: hidden` da caixa do player (2026-10-12),
  * ou seja, no MegaPlay nativo nao se via nada. Agora e' um botao dentro do
@@ -88,7 +88,7 @@ export function SubtitleTracks({ subtitles = [], delay = 0 }) {
  * sem sair do video — o resto seria um Formulario nas Definicoes, e o atraso
  * so' faz sentido a mexer aqui, com o video a dar.
  *
- * Monta-se dentro do `<div className="player">` (o do video), por isso e'
+ * Monta-se dentro da barra de controlos (`PlayerControls.jsx`), por isso e'
  * posicionado em absoluto.
  */
 export function SubtitleMenu({ videoRef, subtitles = [] }) {
@@ -177,9 +177,9 @@ export function SubtitleMenu({ videoRef, subtitles = [] }) {
       </button>
 
       {aberto && (
-        <div className="sub-cc-pop" role="menu">
-          <div className="sub-cc-sec">
-            <p className="sub-cc-titulo">{t("Legenda")}</p>
+        <div className="pc-pop" role="menu">
+          <div className="pc-pop-sec">
+            <p className="pc-pop-titulo">{t("Legenda")}</p>
             {/* A primeira opcao e' SEM legendas. E' a resposta a "eu deveria
                 decidir a aparecia das legendas dentro do player". */}
             <button
@@ -205,10 +205,10 @@ export function SubtitleMenu({ videoRef, subtitles = [] }) {
             ))}
           </div>
 
-          <div className="sub-cc-sec">
-            <p className="sub-cc-titulo">{t("Como mostrar")}</p>
+          <div className="pc-pop-sec">
+            <p className="pc-pop-titulo">{t("Como mostrar")}</p>
 
-            <label className="sub-cc-linha">
+            <label className="pc-pop-linha">
               <span>{t("Tamanho")}</span>
               <select
                 value={settings.subTamanho || "normal"}
@@ -222,7 +222,7 @@ export function SubtitleMenu({ videoRef, subtitles = [] }) {
               </select>
             </label>
 
-            <label className="sub-cc-linha">
+            <label className="pc-pop-linha">
               <span>{t("Opacidade")}</span>
               <input
                 type="range"
@@ -235,7 +235,7 @@ export function SubtitleMenu({ videoRef, subtitles = [] }) {
               <em>{Math.round(limitar(settings.subOpacidade, OPACIDADE_MIN, OPACIDADE_MAX, 1) * 100)}%</em>
             </label>
 
-            <label className="sub-cc-linha">
+            <label className="pc-pop-linha">
               <span>{t("Fonte")}</span>
               <select value={settings.subFonte || ""} onChange={(e) => update({ subFonte: e.target.value })}>
                 {FONTES.map((f) => (
@@ -246,7 +246,7 @@ export function SubtitleMenu({ videoRef, subtitles = [] }) {
               </select>
             </label>
 
-            <label className="sub-cc-linha">
+            <label className="pc-pop-linha">
               <span>{t("Atraso")}</span>
               <input
                 type="range"

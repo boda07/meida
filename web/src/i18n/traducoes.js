@@ -852,7 +852,6 @@ export const DICIONARIO = {
     "Ir para {t}": "Ir para {t}",
     // --- HlsPlayer: menu de qualidade ---
     "Automático": "Automático",
-    "Qualidade:": "Qualidade:",
     // --- subtitles.jsx: opcoes de displaying das legendas ---
     "Legenda": "Legenda",
     "Como mostrar": "Como mostrar",
@@ -1690,7 +1689,6 @@ export const DICIONARIO = {
     "Ir para {t}": "Go to {t}",
     // --- HlsPlayer: menu de qualidade ---
     "Automático": "Automatic",
-    "Qualidade:": "Quality:",
     // --- subtitles.jsx: opcoes de displaying das legendas ---
     "Legenda": "Subtitle",
     "Como mostrar": "How to show",

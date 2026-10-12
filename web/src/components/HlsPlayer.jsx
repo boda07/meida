@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Hls from "hls.js";
 import { SubtitleTracks, SubtitleMenu } from "./subtitles.jsx";
 import PlayerControls from "./PlayerControls.jsx";
+import QualityMenu from "./QualityMenu.jsx";
 import { usePlayerShortcuts } from "./usePlayerShortcuts.js";
 import { useVideoSync } from "../watchparty/useVideoSync.js";
 import { useSettings } from "../settings/SettingsContext.jsx";
@@ -213,7 +214,7 @@ export default function HlsPlayer({
         // browser para isso, e o toque no video e' o gesto que toda a gente faz.
         onClick={(e) => {
           // Nao quando se clicou num botao (o evento sobe ate aqui).
-          if (e.target.closest("button, input, .pc-seek, .sub-cc-pop")) return;
+          if (e.target.closest("button, input, .pc-seek, .pc-pop")) return;
           const v = videoRef.current;
           if (!v) return;
           if (v.paused) v.play().catch(() => {});
@@ -242,31 +243,15 @@ export default function HlsPlayer({
         {/* O botao de ecra inteiro da barra de controlos substitui o
             `.fs-btn` de topo, que agora nao faria sentido com a barra nossa. */}
         <PlayerControls videoRef={videoRef}>
+          <QualityMenu
+            niveis={niveis}
+            nivelAuto={nivelAuto}
+            ativo={ativo}
+            onMudar={mudarQualidade}
+          />
           <SubtitleMenu videoRef={videoRef} subtitles={subtitles} />
         </PlayerControls>
       </div>
-      {/* So aparece com duas ou mais variantes (ver `MANIFEST_PARSED` acima): com
-          uma so nao ha' nada para escolher e o menu era ruido. */}
-      {niveis.length > 1 && (
-        <div className="sub-menu">
-          <label>{t("Qualidade:")}</label>
-          <select
-            value={nivelAuto ? "auto" : String(ativo)}
-            onChange={(e) => mudarQualidade(e.target.value)}
-          >
-            <option value="auto">
-              {nivelAuto && ativo >= 0 && niveis[ativo]
-                ? `${t("Automático")} (${niveis[ativo]})`
-                : t("Automático")}
-            </option>
-            {niveis.map((r, i) => (
-              <option key={i} value={i}>
-                {r}
-              </option>
-            ))}
-          </select>
-        </div>
-      )}
     </div>
   );
 }
