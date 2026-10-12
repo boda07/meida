@@ -5,6 +5,15 @@
 // versao; quem nao encontra a sua ve o portugues (a lingua original).
 export const CHANGELOG = [
   {
+    version: "1.5.1",
+    items: [
+      "Corrigido: a app ficava presa no ecrã «a carregar» em vez de abrir. Acontecia quando a app acorda o servidor partilhado — já agora, quem tem o servidor na mão não vê este ecrã de todo.",
+    ],
+    items_en: [
+      "Fixed: the app could get stuck on the \"connecting\" screen instead of opening. It happened when the app wakes up the shared server — and now, if you already have that server up, you don't see this screen at all.",
+    ],
+  },
+  {
     version: "1.5.0",
     items: [
       "Corrigido: as novidades da 1.4.9 estavam só em português — quem tem a app em inglês via agora a versão em inglês dessa e de todas as versões novas daqui em diante.",

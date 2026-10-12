@@ -1,5 +1,47 @@
 # Changelog
 
+## 1.5.1
+
+### Corrigido: o ecra de arranque ficava no ecra e a app nao abria
+- **Isto era um bug meu** (tinha entrado na 1.4.9 e na 1.5.0, e ja vinha da 1.4.8
+  do laptop). Pior do que o ecra preto que ia resolver: a app ficava presa no
+  ecra de arranque.
+- **Causa**: `api.healthDados()` construia um URL **absoluto**
+  (`https://.../api/health`) e passava-o a `get()`. Mas `get()` faz
+  `baseFor(path) + path`, e o `baseFor` so' desvia para o servidor remoto
+  quando o path comeca por `/api/`. Com um URL absoluto nao desvia, e o
+  resultado era:
+  ```
+  http://127.0.0.1:5197https://meida.fadehost.app/api/health   -> Invalid URL
+  ```
+  O pedido falhava sempre, o gate repetia de 4 em 4 segundos, e o ecra nunca
+  saia. Confirmado: `new URL()` do URL antigo da `Invalid URL`; o novo da
+  `https://meida.fadehost.app/api/health` e' valido e responde 200.
+- **Correccao**: `healthDados()` deixa de passar por `get()` e faz `fetch()`
+  direto ao URL absoluto. Sem a base para prepor, nao ha como dar a volta.
+- **Rede de seguranca (esta e' a parte que importa)**: o `BootScreen` tem um
+  **periodo de graca de 3,5 s**. Quem tem o servidor local (ou o
+  partilhado acordado) **nao ve o ecra nenhum** — a app aparece logo. So' quem
+  esta mesmo a espera e' que o ve, que e' a raza de ser dele. Antes, qualquer
+  falha no `healthDados()` deixava a app presa; agora ela aparece na mesma ao
+  fim de uns segundos e sao os pedidos de dados que mostram o erro.
+- Isto afecta a **app de desktop tambem** (que usa o mesmo `BootScreen`), e nao
+  so' a versao web.
+
+### investigated: a imagem de fundo
+- Testado a serio, dentro do Electron, com a imagem nas DEFINICOES (nao
+  aplicada a mao, porque o `SettingsContext` re-aplica as suas e apaga o que o
+  teste acabara de meter — foi esse o erro de dois testes meus seguidos).
+- A camada e' `body::before` com `position: fixed; inset: 0` e mede o ecra todo
+  (1280x800 numa janela de 1280x800), e **nada a tapa**. O screenshot do
+  utilizador, com a imagem aparece so numa faixa e e' cortada, nao se reproduz
+  com a app a serio.
+- **Fica registado como tao**: nao foi possivel reproduzir aqui, e a app no PC
+  de desenvolvimento mostra o fundo por inteiro. A proxima passagem e pela conta
+  de quem viu: as Definicoes mostram a pre-visualizao (a imagem esta guardada), e
+  o `body::before` esta a ser medido certo. Falta o passo do meio — se o que
+  tapa e' `html`/`body` com `background` opaco, e' um elemento especifico.
+
 ## 1.5.0
 
 ### Corrigido: as novidades da 1.4.9 estavam so' em portugues

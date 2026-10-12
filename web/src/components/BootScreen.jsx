@@ -24,6 +24,17 @@ const MENSAGENS = [
 ];
 const LIMITE = 90; // segundos
 const TENTAR_DE_NOVO = 4000; // ms entre tentativas
+// Periodo de GRACA antes de mostrar o ecra de arranque. O servidor local
+// responde em milissegundos, por isso quem usa a app no PC proprio nao deve ver
+// NADA — so' quem esta a espera do servidor partilhado (que hiberna) chega a
+// ver o ecra.
+//
+// E' tambem a rede de seguranca contra o pior: se o `healthDados()` falhar por
+// alguma raza que nao seja o servidor estar a dormir, a app aparece na mesma ao
+// fim de uns segundos, em vez de ficar presa num ecra de arranque. Os pedidos de
+// dados que falharem mostram o erro deles, que e' melhor do que uma app que nao
+// abre.
+const GRACA = 3500; // ms antes de mostrar o ecra
 
 // Indice da mensagem para o tempo ja passado (a lista esta ordenada).
 function indiceDaMensagem(segundos) {
@@ -35,20 +46,30 @@ function indiceDaMensagem(segundos) {
 }
 
 export default function BootScreen({ children }) {
+  // `useT()` do contexto; o `t()` importado de traduzir.js fica sombreado por
+  // este nome dentro da funcao (e' o mesmo tradutor, so' que re-renderiza
+  // quando muda de idioma).
   const t = useT();
+  // `mostrar` e' o que se ve. Comeca a ser `false` para NINGUEM ver ecra de
+  // arranque quando o servidor responde logo; `pronto` e' o que o servidor disse.
   const [pronto, setPronto] = useState(false);
+  const [excedeuGraça, setExcedeuGraça] = useState(false);
   const [segundos, setSegundos] = useState(0);
   const inicio = useRef(Date.now());
   const vivo = useRef(true);
 
   // Nao actualizar estado depois de o componente sair (o servidor respondeu no
   // fim e o React ja nao esta montado).
-  useEffect(() => () => {
-    vivo.current = false;
+  useEffect(() => {
+    vivo.current = true;
+    return () => {
+      vivo.current = false;
+    };
   }, []);
 
   useEffect(() => {
     let temporizador = null;
+    let contaGraça = null;
 
     // Insiste: o servidor pode estar a acordar e o primeiro pedido pode perder-se
     // (ou o fetch pode ser interrompido a meio), por isso repete ate responder.
@@ -64,6 +85,12 @@ export default function BootScreen({ children }) {
     };
     tentar();
 
+    // O periodo de graca: se o servidor nao disser nada em GRACA ms, assume-se
+    // que esta demorado e mostra-se o ecra — que e' a raza de ser dele.
+    contaGraça = setTimeout(() => {
+      if (vivo.current) setExcedeuGraça(true);
+    }, GRACA);
+
     const relogio = setInterval(() => {
       setSegundos(Math.floor((Date.now() - inicio.current) / 1000));
     }, 1000);
@@ -71,17 +98,21 @@ export default function BootScreen({ children }) {
     return () => {
       clearInterval(relogio);
       clearTimeout(temporizador);
+      clearTimeout(contaGraça);
     };
   }, []);
 
   // Rede de seguranca: nem que o servidor nunca responda, ao fim de 90 s a app
-  // aparece (as chamadas de dados vao falhar com mensagem propia, mas o utilizador
-  // ve a interface em vez de um ecra preto sem fim).
+  // aparece (as chamadas de dados vao falhar com mensagem propria, mas o
+  // utilizador ve a interface em vez de um ecra preto sem fim).
   useEffect(() => {
     if (segundos >= LIMITE) setPronto(true);
   }, [segundos]);
 
   if (pronto) return children;
+
+  // Ainda dentro da graca: mostra-se a app e so' se troca se a espera continuar.
+  if (!excedeuGraça) return children;
 
   const i = indiceDaMensagem(segundos);
 

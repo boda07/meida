@@ -286,11 +286,24 @@ export const api = {
   // `health` de cima, que e' o servidor local: na versao web o UI e' servido pelo
   // Render e os dados vao para o FadeHost, que hiberna e precisa de ~30-50 s
   // para acordar. E' este que o ecra de arranque vai/pollar.
+  //
+  // NAO passa por `get()` de proposito. `get()` faz `baseFor(path) + path`, e o
+  // `baseFor` so' desvia para o servidor remoto quando o path comeca por
+  // "/api/". Com um URL ABSOLUTO (que e' o que o servidor remoto e') a base nao
+  // desvia e o resultado era `http://localhost:5197https://meida.fadehost.app/
+  // api/health` — um URL invalido, o pedido falhava sempre, e o ecra de
+  // arranque ficava no ecra a repetir o pedido em vez de mostrar a app.
   healthDados: () => {
-    const base =
+    const remoto =
       (typeof window !== "undefined" && window.MEIDA_REMOTE_DATA_BASE) || "";
-    const b = base ? base.replace(/\/+$/, "") : "";
-    return get(b + "/api/health");
+    const base = remoto ? remoto.replace(/\/+$/, "") : "";
+    const url = base + "/api/health";
+    return fetch(url).then((r) => {
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      // O corpo pode nao ser JSON (um proxy pode responder outra coisa); o que
+      // interessa aqui e' apenas que o servidor respondeu.
+      return r.json().catch(() => ({ ok: true }));
+    });
   },
   catalog: () => get("/api/catalog", langParams()),
   category: (c) => get(`/api/catalog/${c}`, langParams()),
