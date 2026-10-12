@@ -5,6 +5,15 @@
 // versao; quem nao encontra a sua ve o portugues (a lingua original).
 export const CHANGELOG = [
   {
+    version: "1.5.0",
+    items: [
+      "Corrigido: as novidades da 1.4.9 estavam só em português — quem tem a app em inglês via agora a versão em inglês dessa e de todas as versões novas daqui em diante.",
+    ],
+    items_en: [
+      "Fixed: the 1.4.9 notes were only in Portuguese — if your app is in English you now get the English version of those, and of every new version from now on.",
+    ],
+  },
+  {
     version: "1.4.9",
     items: [
       "Corrigido: a versão web ficava com o ecrã todo preto enquanto o servidor estava a acordar — e canse até um minuto, sem dizer nada. Agora aparece logo o nome da app a carregar, com uma mensagem que vai mudando e a dizer há quanto tempo vai.",

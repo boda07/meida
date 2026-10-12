@@ -1,8 +1,10 @@
 # Changelog
 
-## 1.4.9
+## 1.5.0
 
-### Corrigido: o changelog da 1.4.9 so' tinha a versao em portugues
+### Corrigido: as novidades da 1.4.9 estavam so' em portugues
+- A release **1.4.9 ja foi publicada**; esta e' a mesma mais a versao em ingles
+  do changelog (e nada mais mudou).
 - O `ChangelogModal.jsx:27` escolhe com
   `t.idioma === "pt" ? entry.items : entry.items_en`. A entrada da 1.4.9 foi
   escrita so' com `items`, portanto **quem tem a app em ingles via o texto em
