@@ -1,5 +1,87 @@
 # Changelog
 
+## 1.4.7
+
+A barra de controlos do player passa a ser nossa, a qualidade entra nela, e o
+proxy deixa de mentir sobre os 404.
+
+### Barra de controlos própria (`PlayerControls.jsx`)
+
+O `<video>` ficou **sem `controls`** nos dois players próprios (`HlsPlayer` e
+`VideoPlayer`). A barra que o browser desenha não é DOM: não tem posição que se
+possa ler, e não há CSS nem biblioteca que meta um botão dentro dela — que era
+exatamente o problema do botão de legendas, que ficava a chocar com o volume
+porque os dois tentavam ocupar o mesmo sítio.
+
+O que a barra nova traz: play/pausa, barra de progresso (arrastar só pinta, o
+seek acontece ao largar), tempo, volume com mudo, legendas, qualidade e ecrã
+inteiro. Esconde-se quando o vídeo dá e o rato está parado; em pausa fica
+sempre visível, senão não havia como carregar no play.
+
+Duas decisões que valem registo:
+
+- **O preenchimento da barra é escrito por um `ref`, não por estado.** O
+  `timeupdate` dispara ~4×/s e um render por quarto de segundo redesenharia o
+  componente inteiro, popup incluído. O texto do tempo só muda quando muda o
+  segundo.
+- **O seek dispara o `seeked`** de propósito. Um seek nosso que não passa pelo
+  evento deixaria o Watch Party dessincronizado.
+
+Os atalhos de teclado (`usePlayerShortcuts`) não foram afectados: operam sobre o
+elemento `<video>`, não dependiam dos controlos.
+
+### A qualidade dentro da barra
+
+Medido antes de mexer, porque a resposta à pergunta "não conseguimos trocar a
+qualidade?" precisava de ser medida e não de suposta:
+
+```
+25 episódios de 10 séries
+  19  → 1 variante só (1080p) — não há o que escolher
+   6  → 3 variantes (1080 / 720 / 480) — todos Attack on Titan
+   5  → native=false / falhou
+```
+
+Confirmado que a troca é real, medindo a resolução **do que é desenhado** e não
+o texto do `.m3u8`:
+
+```
+pedi 1080p -> 1404x1089
+pedi  720p ->  936x726
+pedi  480p ->  624x484
+```
+
+O botão mostra a resolução que está a dar em vez de um ícone, e o menu só existe
+com duas ou mais variantes. O seletor deixou de ser um `<select>` a flutuar por
+baixo do vídeo (que se via a dar mal assim que a barra ficou nossa).
+
+As classes do popup passaram de `.sub-cc-*` para `.pc-pop*`: o popup da qualidade
+e o das legendas são o mesmo menu, e tê-los com nomes diferentes era pior.
+
+### `proxy.js`: um 404 dizia 200
+
+O ramo das playlists reescrevia o texto mas **não copiava o `upstream.status`**.
+Um 404 (ou 403) do fornecedor voltava como **200**, com a página de erro do
+MegaPlay — HTML — reescrita "aos bocados" como se fosse uma playlist. O
+`hls.js` aceitava aquilo em silêncio e o erro só aparecia muito mais tarde, sem
+dizer nada.
+
+Os outros dois ramos (legendas e segmentos) já faziam `res.status(...)`; este era
+o único que não. Corrigido, e agora um erro também **não é reescrito**: não há
+uma única linha de playlist para reescrever num HTML de erro, só texto a estragar.
+
+`scripts/testar-proxy.mjs` (14 verificações, 3 mutações, todas apanhadas) chama o
+`handleProxy` com `req`/`res` falsos mas com um servidor HTTP a sério ao lado —
+é o status real que interessa. Ligado ao `npm test`.
+
+### `VideoPlayer` (torrents) com a mesma barra
+
+O `controls` e o `FullscreenButton` de topo saíram; o ecrã inteiro passou para a
+barra. O `FullscreenButton` continua em uso no `Player.jsx`, que é o player de
+iframe.
+
+---
+
 ## 1.4.6
 
 Duas correcões que vieram de um utilizador, e uma promessa que eu tinha feito sem medir.

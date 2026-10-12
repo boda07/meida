@@ -72,6 +72,23 @@ export async function handleProxy(req, res) {
   const contentType = upstream.headers.get("content-type") || "";
 
   if (isPlaylist(target, contentType)) {
+    // O status do site tem de vir connosco. Sem isto um 404 (ou 403) do
+    // fornecedor voltava como 200, com a pagina de erro do site reescrita "aos
+    // bocados" como se fosse uma playlist — e o `hls.js` aceitava aquilo em
+    // silencio, em vez de dizer logo que o episodio nao existe. Os outros dois
+    // ramos abaixo ja faziam isto; este era o unico que nao.
+    res.status(upstream.status);
+
+    // E um erro NAO se reescreve: a pagina de erro do MegaPlay e' HTML
+    // ("<html><body>Error - MegaPlay</body></html>") e nao uma playlist, por
+    // isso nao ha' uma unica linha a reescrever — so' texto a estragar. Passa
+    // tal e qual, com o status que o site deu, que e' o que interessa ao
+    // `hls.js`: ele larga o video e diz que nao ha' nada para ver.
+    if (!upstream.ok) {
+      res.setHeader("Access-Control-Allow-Origin", "*");
+      return res.send(await upstream.text());
+    }
+
     const text = await upstream.text();
     const rewritten = rewritePlaylist(text, target, referer);
     res.setHeader("Content-Type", "application/vnd.apple.mpegurl");

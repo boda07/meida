@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { SubtitleTracks, SubtitleMenu } from "./subtitles.jsx";
-import FullscreenButton from "./FullscreenButton.jsx";
+import PlayerControls from "./PlayerControls.jsx";
 import { usePlayerShortcuts } from "./usePlayerShortcuts.js";
 import { useVideoSync } from "../watchparty/useVideoSync.js";
 import { useSettings } from "../settings/SettingsContext.jsx";
@@ -77,21 +77,38 @@ export default function VideoPlayer({ src, infoHash, subtitles = [], startAt, on
 
   return (
     <div className="vplayer">
-      <div className="player" ref={containerRef}>
+      <div
+        className="player"
+        ref={containerRef}
+        // Tocar no video alterna play/pausa, como no `HlsPlayer`: sem `controls`
+        // nao ha' botao do browser para isso.
+        onClick={(e) => {
+          // Nao quando se clicou num botao (o evento sobe ate aqui).
+          if (e.target.closest("button, input, .pc-seek, .pc-pop")) return;
+          const v = videoRef.current;
+          if (!v) return;
+          if (v.paused) v.play().catch(() => {});
+          else v.pause();
+        }}
+      >
+        {/* SEM `controls`: a barra e' nossa, a mesma do `HlsPlayer`
+            (`PlayerControls.jsx`). Sem mudancas de qualidade porque este
+            player e' de um ficheiro progressivo — nao ha' variantes. */}
         <video
           ref={videoRef}
           src={src}
-          controls
           autoPlay={settings.autoplay}
           crossOrigin="anonymous"
+          playsInline
           onError={() => setErr(true)}
         >
           <SubtitleTracks subtitles={subtitles} delay={settings.subDelay || 0} />
         </video>
-        <FullscreenButton targetRef={containerRef} />
-        {/* Legendas dentro da caixa do video, pelo mesmo motivo que no
-            `HlsPlayer`: o `.player` corta o que fique fora com `overflow: hidden`. */}
-        <SubtitleMenu videoRef={videoRef} subtitles={subtitles} />
+        {/* O ecra inteiro ja vem na barra (ultimo botao), por isso o
+            `FullscreenButton` de topo nao se usa aqui. */}
+        <PlayerControls videoRef={videoRef}>
+          <SubtitleMenu videoRef={videoRef} subtitles={subtitles} />
+        </PlayerControls>
       </div>
       {err && (
         <p className="vhint">

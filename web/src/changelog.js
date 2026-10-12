@@ -5,6 +5,23 @@
 // versao; quem nao encontra a sua ve o portugues (a lingua original).
 export const CHANGELOG = [
   {
+    version: "1.4.7",
+    items: [
+      "Novo: o player tem agora barra de controlos própria — play, barra de progresso, tempo, volume e ecrã inteiro, todos no sítio certo. O botão de legendas já não choca com nada.",
+      "Novo: a qualidade do vídeo mudou-se para dentro dessa barra. O botão mostra a resolução que está a dar (1080p, 720p…) e o menu só aparece quando o episode tem mesmo mais que uma.",
+      "Nota: muitos episódios só têm uma qualidade disponível — isso é do site, não da app. Onde há várias, agora dá para escolher.",
+      "Corrigido: os torrents também ficaram com a barra nova (o botão de ecrã inteiro que estava no canto passou para a barra).",
+      "Corrigido: quando um vídeo não existe no site, a app agora diz isso logo. Antes respondia «está tudo bem» com a página de erro disfarçada de lista de reprodução, e o erro só aparecia mais tarde.",
+    ],
+    items_en: [
+      "New: the player now has its own control bar — play, progress bar, time, volume and fullscreen, all in the right place. The subtitles button no longer collides with anything.",
+      "New: video quality moved into that bar. The button shows the resolution you're watching at (1080p, 720p…) and the menu only appears when the episode really has more than one.",
+      "Note: many episodes only have one quality available — that's the site, not the app. Where there are several, you can now choose.",
+      "Fixed: torrents now use the new bar too (the fullscreen button that was in the corner moved into the bar).",
+      "Fixed: when a video doesn't exist on the site, the app now says so straight away. Before it replied \"everything's fine\" with the error page disguised as a playlist, and the error only showed up later.",
+    ],
+  },
+  {
     version: "1.4.6",
     items: [
       "Corrigido: já dá para escolher as legendas no MegaPlay nativo. O menu estava a ser cortado pela caixa do vídeo e não se via.",
