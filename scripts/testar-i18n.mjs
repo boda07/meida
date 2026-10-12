@@ -19,6 +19,7 @@
 // 4. **O `{nome}` e' substituido** e nao deve dar a volta quando o valor nao
 //    existe (e' melhor ver `{n}` no ecra do que "undefined").
 import { join, resolve } from "node:path";
+import { pathToFileURL } from "node:url";
 import { readdirSync, readFileSync, statSync } from "node:fs";
 
 const RAIZ = resolve(process.argv[2] || ".");
@@ -388,6 +389,44 @@ for (const x of T_TAPADOS) console.log("        " + x);
   const app = readFileSync(join(RAIZ, "web/src/App.jsx"), "utf8");
   const dentro = /<ErrorBoundary>[\s\S]*?<Header/.test(app);
   ok("o Header fica FORA do ErrorBoundary", !dentro);
+}
+
+// --------------------------------------------------------------- O changelog
+//
+// O "o que mudou" tem DEZ versoes: o `ChangelogModal.jsx` escolhe com
+//   t.idioma === "pt" ? entry.items : entry.items_en
+// e, sem `items_en`, quem fala ingles ve o portugues.
+//
+// Este teste nao existia, e o resultado foi uma release (1.4.9) publicada com a
+// versao em portugues a unica: so' apareceu quando alguem com a app em ingles
+// abriu o changelog. E' o tipo de coisa que o `npm test` devia dar automaticamente.
+//
+// As entradas ANTIGAS nao tem `items_en` e isso e' propositado — a i18n so' chegou
+// na 1.4.x, e o modal cai no portugues de volta (`|| entry?.items`). Traduzir 70
+// notas antigas nao vale o esforço. Por isso a regra e' sobre as entradas NOVAS:
+// as tres mais recentes tem de ter as duas linguas, senao a proxima release volta
+// a sair so' em portugues.
+{
+  const mod = await import(pathToFileURL(join(RAIZ, "web/src/changelog.js")).href);
+  const novas = mod.CHANGELOG.slice(0, 3);
+  const semEn = novas.filter((c) => !Array.isArray(c.items_en) || !c.items_en.length);
+  ok(
+    "as 3 entradas mais recentes do changelog tem versao em ingles (" + semEn.length + " sem)",
+    semEn.length === 0,
+    semEn.map((c) => c.version).join(", ")
+  );
+  // E o mesmo numero de linhas em cada idioma: um item em portugues que ficou
+  // de fora em ingles aparece a meio da lista, que e' pior do que nao aparecer.
+  const desencontrados = mod.CHANGELOG.filter(
+    (c) => Array.isArray(c.items_en) && c.items && c.items_en.length !== c.items.length
+  );
+  ok(
+    "o changelog tem o mesmo numero de itens nos dois idiomas (" + desencontrados.length + " desencontrados)",
+    desencontrados.length === 0,
+    desencontrados.map((c) => c.version + " (" + c.items.length + "/" + c.items_en.length + ")").join(", ")
+  );
+  const semItems = mod.CHANGELOG.filter((c) => !Array.isArray(c.items) || !c.items.length);
+  ok("todas as entradas do changelog tem versao em portugues", semItems.length === 0);
 }
 
 console.log("");

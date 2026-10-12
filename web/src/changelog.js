@@ -11,6 +11,11 @@ export const CHANGELOG = [
       "Corrigido: se as tuas preferências se corrompessem, a app perdia-as sem avisar (a imagem de fundo desaparecia e o ecrã ficava preto). Agora guarda uma cópia e escreve um aviso.",
       "Melhorado: se não houver espaço no navegador para guardar uma imagem de fundo, as Definições avisam em vez de fingir que guardaram — antes a imagem desaparecia ao fechar a app.",
     ],
+    items_en: [
+      "Fixed: the web version showed a completely black screen while the server was waking up — it can take up to a minute, with no sign of what was happening. Now the app name appears straight away, with a message that changes and tells you how long it's been.",
+      "Fixed: if your preferences got corrupted, the app lost them without saying anything (the background image disappeared and the screen went black). Now it keeps a copy and writes a warning.",
+      "Improved: if the browser has no room to save a background image, the Settings say so instead of pretending they saved it — before, the image vanished when you closed the app.",
+    ],
   },
   {
     version: "1.4.7",

@@ -2,6 +2,24 @@
 
 ## 1.4.9
 
+### Corrigido: o changelog da 1.4.9 so' tinha a versao em portugues
+- O `ChangelogModal.jsx:27` escolhe com
+  `t.idioma === "pt" ? entry.items : entry.items_en`. A entrada da 1.4.9 foi
+  escrita so' com `items`, portanto **quem tem a app em ingles via o texto em
+  portugues** nessa versao.
+- Acrescentado o `items_en`. E acrescentada a verificacao que faltava em
+  `scripts/testar-i18n.mjs`: as **3 entradas mais recentes** tem de ter as duas
+  linguas, e o **numero de itens tem de ser igual** nos dois (um item em portugues
+  que fique de fora em ingles aparece a meio da lista, que e' pior do que nao
+  aparecer).
+- **A regra nao e' "todas as entradas"**: a i18n so' chegou na 1.4.x, e as 72
+  entradas antigas (desde a 0.4.0) nao tem `items_en` — o modal cai de volta no
+  portugues de proposito (`|| entry?.items`). Traduzir 70 notas antigas nao vale
+  o esforço; o que nao pode voltar a acontecer e' uma release nova sair so' em
+  portugues.
+- Testado por mutacao: removendo o `items_en` da 1.4.9 o teste falha com
+  `-> 1.4.9`, e volta a passar com ele la.
+
 ### O ecra de arranque: a versao web nao fica mais preta a espera do servidor
 - **Sintoma**: ao abrir `meida.onrender.com` com o servidor adormecido, o ecra
   ficava **preto, sem nada**, durante 30-50 s. Era lido como "a app esta
