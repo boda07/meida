@@ -1,5 +1,8 @@
 // Proxy para HLS: contorna CORS e o Referer exigido pelos hosts de video.
 // Reescreve as playlists .m3u8 para que segmentos/chaves passem tambem por aqui.
+// E' tambem onde se desloca o `.vtt` das legendas (`&atraso=N`).
+
+import { deslocarVtt, limitarAtraso } from "./legendas.js";
 
 const UA =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36";
@@ -12,6 +15,11 @@ export function buildProxyUrl(targetUrl, referer) {
 
 function isPlaylist(url, contentType = "") {
   return /\.m3u8(\?|$)/i.test(url) || /mpegurl/i.test(contentType);
+}
+
+// E' uma legenda? O `.vtt` e' o que o `<track>` do browser consome.
+function isLegendas(url, contentType = "") {
+  return /\.vtt(\?|$)/i.test(url) || /text\/vtt/i.test(contentType);
 }
 
 // Reescreve uma playlist m3u8: todas as URLs (segmentos, sub-playlists, chaves)
@@ -69,6 +77,21 @@ export async function handleProxy(req, res) {
     res.setHeader("Content-Type", "application/vnd.apple.mpegurl");
     res.setHeader("Access-Control-Allow-Origin", "*");
     return res.send(rewritten);
+  }
+
+  // Legendas com atraso pedido pelo utilizador: `&atraso=2.5`. O `<track>` do
+  // browser nao deixa mexer nos tempos, entao desloca-se aqui — que e' onde o
+  // `.vtt` ja passa. Um atraso de 0 (o normal) nao faz nada e nao reescreve.
+  if (isLegendas(target, contentType)) {
+    const atraso = limitarAtraso(req.query.atraso);
+    let text = await upstream.text();
+    if (atraso !== 0) text = deslocarVtt(text, Math.round(atraso * 1000));
+    res.status(upstream.status);
+    res.setHeader("Content-Type", "text/vtt; charset=utf-8");
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    // Sem cache: o mesmo URL com atrasos diferentes da conteudos diferentes.
+    res.setHeader("Cache-Control", "no-store");
+    return res.send(text);
   }
 
   // Segmentos / chaves / outros: encaminhar bytes (com range se aplicavel).

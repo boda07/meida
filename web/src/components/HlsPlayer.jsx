@@ -208,7 +208,8 @@ export default function HlsPlayer({
     <div className="vplayer">
       <div className="player" ref={containerRef}>
         <video ref={videoRef} controls autoPlay={settings.autoplay} crossOrigin="anonymous">
-          <SubtitleTracks subtitles={subtitles} />
+          {/* As faixas que o `SubtitleMenu` ja deslocou pelo atraso escolhido. */}
+          <SubtitleTracks subtitles={subtitles} delay={settings.subDelay || 0} />
         </video>
         {pulando && (
           <button

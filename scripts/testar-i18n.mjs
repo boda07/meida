@@ -140,6 +140,7 @@ ok(
 const IGUAIS_ESPERADOS = new Set([
   "Anime",              // em todo o mundo e' anime
   "Password",           // mesma palavra em portugues
+  "Normal",             // tamanho de legenda: "Normal" em portugues e em ingles
   "MyAnimeList",        // marca
   "AniList",            // marca
   "Letterboxd",         // marca

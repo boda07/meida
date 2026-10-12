@@ -86,7 +86,7 @@ export default function VideoPlayer({ src, infoHash, subtitles = [], startAt, on
           crossOrigin="anonymous"
           onError={() => setErr(true)}
         >
-          <SubtitleTracks subtitles={subtitles} />
+          <SubtitleTracks subtitles={subtitles} delay={settings.subDelay || 0} />
         </video>
         <FullscreenButton targetRef={containerRef} />
         {/* Legendas dentro da caixa do video, pelo mesmo motivo que no

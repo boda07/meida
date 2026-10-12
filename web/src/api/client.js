@@ -75,6 +75,11 @@ export const DEFAULT_SETTINGS = {
   genreLang: "", // idioma dos géneros: "en" | "pt" | "" (segue as sinopses)
   animeTitleLang: "en", // títulos de anime: "en" (ingles) | "romaji"
   subtitleLang: "pt", // legenda preferida: "pt" | "en" | "off"
+  // Como as legendas se mostram. O delay e' em segundos (positivo = atrasa).
+  subTamanho: "normal", // "pequeno" | "normal" | "grande" | "muito grande"
+  subOpacidade: 1, // 0 (invisivel) a 1 (opaca)
+  subFonte: "", // "" (a do sistema) | "sistema" | "serifada" | "monoespacada"
+  subDelay: 0, // -10 a +10 segundos
   defaultTab: "providers", // separador inicial: providers | extract | torrents
   animeAudio: "sub", // anime: "sub" (legendado) ou "dub" (dobrado)
   showAdult: false, // mostrar conteudo adulto (anime NSFW/hentai) na pesquisa/filtros

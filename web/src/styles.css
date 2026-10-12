@@ -3183,16 +3183,50 @@ h2 {
   font-size: 13px;
 }
 
+/* ===== Estilo das legendas (o `::cue` do <video>) ==========================
+
+   O `::cue` e' o mecanismo que o MDN documenta para dar estilo as legendas de
+   um `<video>` — e' CSS puro, nao ha' biblioteca para isto. O que o browser
+   permite mexer e' pouco (cor, fundo, fonte, tamanho, sombra), e e' o suficiente
+   para o que se pede: opacidade, fonte e tamanho.
+
+   Os valores chegam por variaveis de CSS posto no `<video>` pela pagina
+   (ver `legendas.js`, `cssLegendas()`), para a pagina poder mudar as preferencias
+   sem recarregar o componente.
+
+   O `--sub-tamanho` e' uma ESCALA, nao pixels: o tamanho que o browser escolhe
+   para as legendas depende do tamanho do video, e px fixos ficariam gigantes
+   num ecra grande e ilegiveis num pequeno. O 5% e' o valor por omissao do
+   Chrome, para que "normal" seja exactamente o que era antes destas opcoes. */
+.player video::cue {
+  font-size: calc(5% * var(--sub-tamanho, 1));
+  color: rgba(255, 255, 255, var(--sub-opacidade, 1));
+  /* A caixa de fundo tambem segue a opacidade, mas mais suave: a 0.5 o texto
+     fica a meia opacidade e o fundo quase transparente, que e' o que se quer
+     quando se poe legendas por cima de uma cena clara. */
+  background: rgba(0, 0, 0, calc(0.6 * var(--sub-opacidade, 1)));
+  text-shadow: 0 1px 2px rgba(0, 0, 0, calc(0.9 * var(--sub-opacidade, 1)));
+}
+
+.player video.legenda-fonte video::cue {
+  font-family: var(--sub-fonte);
+}
+
+/* O Firefox e' mais picuinhas com `::cue` e ignora `background`; a sombra serve
+   de fallback la (o texto continua legivel sem a caixa). */
+.player video::cue(:focus) {
+  color: rgba(255, 255, 255, var(--sub-opacidade, 1));
+}
+
 /* Botao de legendas DENTRO do player, com a lista num popup.
-   Fica EMBAIXO, a ESQUERDA do menu (o ⋮) dos controlos nativos do `<video>` —
-   que e' onde o YouTube põe o botao CC. Do lado esquerdo da barra de controlos
-   sao o play e o volume, e no direito o ⋮, o PiP e o ecra inteiro; o 140 px de
-   margem a direita deixa o botao a esquerda do ⋮ sem lhe tocar.
-   Sobe acima da barra (que tem ~48 px) para nao ficar por baixo dela. */
+   Posicao: EMBAIXO, a ESQUERDA DO AUDIO (o 🔊). Os controlos nativos do
+   `<video>` vao ~55 px de pitch e o 🔊 anda a ~140 px do canto, por isso 140 px
+   e' o que deixa o CC antes dele sem tocar em nada. (Ja se tentou 58 px — que e'
+   ONDE ESTA O ⛶ nativo, e sobrepunha.) Sobe 52 px para ficar acima da barra. */
 .sub-cc {
   position: absolute;
   bottom: 52px;
-  right: 58px;
+  right: 140px;
   z-index: 6;
 }
 
@@ -3274,6 +3308,72 @@ h2 {
 
 .sub-cc-pop button.on::after {
   content: " \2713";
+}
+
+/* O popup divide-se em duas secoes: a lista de legendas e as opcoes de como
+   mostrar. O divisor e' fino e semMargem — o popup ja tem o seu padding. */
+.sub-cc-sec + .sub-cc-sec {
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  margin-top: 4px;
+  padding-top: 4px;
+}
+
+.sub-cc-titulo {
+  margin: 4px 10px 2px;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0.55;
+  font-weight: 700;
+}
+
+/* Cada opcao e' uma linha: nome a esquerda, controlo a direita. */
+.sub-cc-linha {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 10px;
+  font-size: 12.5px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.sub-cc-linha > span {
+  flex: 1;
+  min-width: 62px;
+}
+
+.sub-cc-linha select {
+  padding: 4px 6px;
+  border-radius: 4px;
+  background: var(--bg-surface, #1a1a22);
+  color: #fff;
+  border: 1px solid #444;
+  font-size: 12px;
+  max-width: 110px;
+}
+
+/* O "cursor" (slider) e' branco para se ver sobre a caixa escura. */
+.sub-cc-linha input[type="range"] {
+  width: 96px;
+  accent-color: var(--accent, #c90303);
+  cursor: pointer;
+}
+
+.sub-cc-linha em {
+  font-style: normal;
+  font-variant-numeric: tabular-nums;
+  min-width: 34px;
+  text-align: right;
+  opacity: 0.8;
+}
+
+.sub-cc-repor {
+  margin: 4px 10px 6px;
+  padding: 4px 8px !important;
+  font-size: 11.5px !important;
+  opacity: 0.7;
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
 }
 
 .sub-menu {

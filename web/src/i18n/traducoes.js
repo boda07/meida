@@ -853,6 +853,22 @@ export const DICIONARIO = {
     // --- HlsPlayer: menu de qualidade ---
     "Automático": "Automático",
     "Qualidade:": "Qualidade:",
+    // --- subtitles.jsx: opcoes de displaying das legendas ---
+    "Legenda": "Legenda",
+    "Como mostrar": "Como mostrar",
+    "Tamanho": "Tamanho",
+    "Opacidade": "Opacidade",
+    "Fonte": "Fonte",
+    "Atraso": "Atraso",
+    "Repor": "Repor",
+    "Normal": "Normal",
+    "Pequeno": "Pequeno",
+    "Grande": "Grande",
+    "Muito grande": "Muito grande",
+    "Do sistema": "Do sistema",
+    "Sem serifa": "Sem serifa",
+    "Com serifa": "Com serifa",
+    "Monoespaçada": "Monoespaçada",
   },
 
   en: {
@@ -1670,6 +1686,22 @@ export const DICIONARIO = {
     // --- HlsPlayer: menu de qualidade ---
     "Automático": "Automatic",
     "Qualidade:": "Quality:",
+    // --- subtitles.jsx: opcoes de displaying das legendas ---
+    "Legenda": "Subtitle",
+    "Como mostrar": "How to show",
+    "Tamanho": "Size",
+    "Opacidade": "Opacity",
+    "Fonte": "Font",
+    "Atraso": "Delay",
+    "Repor": "Reset",
+    "Normal": "Normal",
+    "Pequeno": "Small",
+    "Grande": "Large",
+    "Muito grande": "Very large",
+    "Do sistema": "System default",
+    "Sem serifa": "Sans-serif",
+    "Com serifa": "Serif",
+    "Monoespaçada": "Monospace",
   },
 };
 
