@@ -3184,13 +3184,15 @@ h2 {
 }
 
 /* Botao de legendas DENTRO do player, com a lista num popup.
-   Fica no canto inferior DIREITO, ACIMA dos controlos nativos do `<video>`
-   (que tem ~40 px de altura) — por isso o `bottom` nao e' 12 px como no
-   `.fs-btn`, senao ficava por baixo da barra de controlos. */
+   Fica EMBAIXO, a ESQUERDA do menu (o ⋮) dos controlos nativos do `<video>` —
+   que e' onde o YouTube põe o botao CC. Do lado esquerdo da barra de controlos
+   sao o play e o volume, e no direito o ⋮, o PiP e o ecra inteiro; o 140 px de
+   margem a direita deixa o botao a esquerda do ⋮ sem lhe tocar.
+   Sobe acima da barra (que tem ~48 px) para nao ficar por baixo dela. */
 .sub-cc {
   position: absolute;
-  bottom: 48px;
-  right: 12px;
+  bottom: 52px;
+  right: 140px;
   z-index: 6;
 }
 
@@ -3205,18 +3207,10 @@ h2 {
   background: rgba(0, 0, 0, 0.55);
   color: #fff;
   cursor: pointer;
+  /* Escondido como os outros botoes do iframe (`.fs-btn`, `.player-reload`):
+     so' aparece com o rato por cima do player, e desaparece com eles. */
+  opacity: 0;
   transition: opacity 0.2s, background 0.2s;
-}
-
-/* O botao esbate-se quando NAO ha' legenda ligada. O `:not(.on)` diz isso
-   directamente, em vez de duas regras a disputarem a mesma propriedade.
-   NOTA: isto NAO e' um bug de cascata que eu tenha visto — testei com o browser
-   e descobri que a pagina estava em segundo plano (`visibilityState: "hidden"`),
-   onde a `transition` nunca avanca e o `getComputedStyle` devolve o valor
-   inicial. Sem a transicao devolvia 1 e o fundo certo. O `:not(.on`) fica
-   porque e' mais claro, nao porque consertasse alguma coisa. */
-.sub-cc-btn:not(.on) {
-  opacity: 0.75;
 }
 
 .player:hover .sub-cc-btn,
@@ -3225,15 +3219,14 @@ h2 {
 }
 
 /* Legenda ligada: fundo marcado, para se distinguir de "desligadas" sem
-   abrir o menu. */
+   abrir o menu. A opacidade fica com o hover (como os outros botoes), por isso
+   aqui so' muda a cor. */
 .sub-cc-btn.on {
-  opacity: 1;
   background: rgba(0, 0, 0, 0.85);
   box-shadow: inset 0 -2px 0 var(--accent, #c90303);
 }
 
 .sub-cc-btn:hover {
-  opacity: 1;
   background: rgba(0, 0, 0, 0.85);
 }
 
@@ -3658,15 +3651,12 @@ h2 {
   opacity: 1;
 }
 
-/* Em ecra inteiro os controlos nativos sao maiores, por isso o botao de
-   legendas sobe mais. E fica sempre visivel: num ecra grande e' onde se olha. */
+/* Em ecra inteiro os controlos nativos sao maiores, por isso o botao sobe mais.
+   A margem a direita tambem cresce (os botoes do video sao maiores), para
+   continuar a esquerda do ⋮. */
 .player:fullscreen .sub-cc {
-  bottom: 72px;
-  right: 24px;
-}
-
-.player:fullscreen .sub-cc-btn {
-  opacity: 1;
+  bottom: 76px;
+  right: 190px;
 }
 
 .vhint {
