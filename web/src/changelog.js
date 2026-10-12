@@ -5,6 +5,19 @@
 // versao; quem nao encontra a sua ve o portugues (a lingua original).
 export const CHANGELOG = [
   {
+    version: "1.4.6",
+    items: [
+      "Corrigido: já dá para escolher as legendas no MegaPlay nativo. O menu estava a ser cortado pela caixa do vídeo e não se via.",
+      "Corrigido: no texto que aparece no fim do episódio, o «Continua a ver» estava sempre em português mesmo com a interface em inglês.",
+      "Nota: o menu de qualidade existe mas ainda não aparece — o site dá só uma qualidade (1080p), por isso não há o que escolher.",
+    ],
+    items_en: [
+      "Fixed: subtitles can now be chosen on native MegaPlay — the menu was being clipped by the video box and wasn't visible.",
+      "Fixed: in the text shown at the end of an episode, \"Continua a ver\" stayed in Portuguese even with the interface in English.",
+      "Note: the quality menu exists but doesn't show yet — the site only serves one quality (1080p), so there's nothing to pick.",
+    ],
+  },
+  {
     version: "1.4.5",
     items: [
       "Corrigido: a fonte escolhida no selector de providers passa agora a ser lembrada entre episodios (guardada no localStorage, com chave por tipo e episodio). Quando se muda de episodio, o player arranca na fonte do anterior, se ainda existir e nao estiver morta pelo health-check.",

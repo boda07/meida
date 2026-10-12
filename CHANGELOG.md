@@ -1,5 +1,46 @@
 # Changelog
 
+## 1.4.6
+
+Duas correcões que vieram de um utilizador, e uma promessa que eu tinha feito sem medir.
+
+### Legendas visíveis no MegaPlay nativo
+
+O `HlsPlayer` era montado **dentro** do `<div className="player">` do `Player.jsx`, e esse `.player` tem:
+
+```css
+.player { position: relative; aspect-ratio: 16 / 9; overflow: hidden; }
+```
+
+É o que faz o iframe ficar na caixa preta. Mas o `HlsPlayer` traz o **seu** `.player` **e os menus por baixo** (legendas, qualidade) — que ficavam **cortados** pelo `overflow: hidden`. Via-se o vídeo e não se via os menus, exatamente o que foi reportado.
+
+O `Player` passou a embrulhar em `.player` **só quando é iframe**; com o nativo pronto, embrulha num `div` simples. Verificado no browser: o pai do `.vplayer` passou de `overflow: hidden` para `visible`, e o menu de legendas aparece com as suas opções (`Desligadas`, `English`, …).
+
+### `{b}` em português hardcoded
+
+`Details.jsx`, no texto de fim de episódio:
+
+```js
+b: '"Continua a ver"',   // <- português fixo
+```
+
+Com a interface em inglês, o texto de fora traduzia e o de dentro não: *"moves "Continua a ver" to the next episode"*. A chave `"Continua a ver"` **já estava traduzida** no dicionário — faltava passar por `t()`.
+
+### A promessa da qualidade era especulação minha
+
+Eu tinha escrito (na `IDEIAS.md` e no changelog) que o `master.m3u8` trazia variantes 1080p/720p. **Não é verdade, e eu não tinha medido** — foi suposição a partir do formato comum de HLS.
+
+Medido em 5 episódios reais (2026-10-12):
+
+```
+#EXT-X-STREAM-INF:BANDWIDTH=1201097,RESOLUTION=1440x1080   <- a variante jogável
+#EXT-X-I-FRAME-STREAM-INF:BANDWIDTH=40570,RESOLUTION=480x360  <- NÃO é outra qualidade
+```
+
+A segunda entrada é uma faixa de **I-frame**, que o HLS usa para saltar no vídeo rapidamente — não é uma segunda qualidade. O `hls.js` reporta `levels.length === 1`, e o menu esconde-se, o que está certo.
+
+O menu ficou feito (`MANIFEST_PARSED` → `levels` → `<select>`) e **aparece sozinho** se a fonte passar a dar mais variantes. Mas não é trabalho do lado da MEIDA — é a fonte. O changelog e a `IDEIAS.md` foram corrigidos para dizer isto.
+
 ## 1.4.5
 
 ### Fonte lembrada entre episodios + qualidade do video
