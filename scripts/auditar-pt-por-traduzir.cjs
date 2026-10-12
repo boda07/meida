@@ -79,11 +79,24 @@ function semComentarios(codigo) {
   return saida;
 }
 
-/** O `(` do `t(` esta' imediatamente antes da aspa de abertura? */
+/**
+ * O `(` do `t(` esta' imediatamente antes da aspa de abertura?
+ *
+ * Aceita tambem `tSeguro(`: o `ErrorBoundary` e' uma `class` e nao pode usar o
+ * `useT()`, por isso traduz com `this.tSeguro("...")` — que e' o MESMO tradutor,
+ * so' que nunca lanca (um boundary que lanca ao mostrar o erro faz o React
+ * desmontar a app toda: foi o ecra em branco que um utilizador reportou).
+ *
+ * Sem esta segunda forma, o auditor apontava as duas linhas do boundary como
+ * "por traduzir" — e a resposta obvia (mudar `tSeguro` para `t`) reintroduzia
+ * exatamente o bug. O nome e' o que distingue, por isso e' no nome que se olha.
+ */
 function dentroDeT(codigo, pos) {
   let j = pos - 1;
   while (j >= 0 && /\s/.test(codigo[j])) j--;
-  return codigo[j] === "(" && codigo[j - 1] === "t";
+  if (codigo[j] !== "(") return false;
+  if (codigo[j - 1] === "t") return true;
+  return /\w?tSeguro$/.test(codigo.slice(0, j));
 }
 
 /**

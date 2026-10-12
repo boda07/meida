@@ -850,6 +850,9 @@ export const DICIONARIO = {
     "Saltar a abertura": "Saltar a abertura",
     "Saltar o fim": "Saltar o fim",
     "Ir para {t}": "Ir para {t}",
+    // --- HlsPlayer: menu de qualidade ---
+    "Automático": "Automático",
+    "Qualidade:": "Qualidade:",
   },
 
   en: {
@@ -1664,6 +1667,9 @@ export const DICIONARIO = {
     "Saltar a abertura": "Skip the opening",
     "Saltar o fim": "Skip the ending",
     "Ir para {t}": "Go to {t}",
+    // --- HlsPlayer: menu de qualidade ---
+    "Automático": "Automatic",
+    "Qualidade:": "Quality:",
   },
 };
 

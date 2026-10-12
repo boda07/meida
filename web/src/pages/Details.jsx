@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import { audioTituloStore, api, imageUrl } from "../api/client.js";
-import { settingsStore } from "../settings/SettingsContext.jsx";
 import { useSettings } from "../settings/SettingsContext.jsx";
 import { useAuth } from "../auth/AuthContext.jsx";
 import { useWatchParty } from "../watchparty/WatchPartyContext.jsx";
@@ -859,7 +858,6 @@ api
             <SourceSelector
               embeds={embeds}
               savedSource={fonteSalva}
-              activeId={active?.provider}
               onSelect={(e) => {
                 setActive(e);
                 // Posiciona o player no indice desta fonte para recomeçar o timeout.
@@ -867,8 +865,7 @@ api
                 setPlayerIndex(idx >= 0 ? idx : 0);
                 // Escolha manual: a partir de agora o player fica nesta fonte.
                 setFonteManual(true);
-                // Se a fonte tem uma chave `provider`, guarda no localStorage
-                // para o proximo episodio deste tipo (anime/filme/serie) a usar.
+                // Guarda a fonte escolhida para o proximo episodio deste tipo.
                 if (e?.provider) {
                   try {
                     const chave = `meida:last-source:${details?.type || ""}:${season || 1}:${episode || 1}`;
@@ -939,13 +936,20 @@ api
           <>
             <SourceSelector
               embeds={embeds}
-              activeId={active?.provider}
+              savedSource={fonteSalva}
               onSelect={(e) => {
                 setActive(e);
                 const idx = embeds.findIndex((x) => x.provider === e?.provider);
                 setPlayerIndex(idx >= 0 ? idx : 0);
                 // Escolha manual: a partir de agora o player fica nesta fonte.
                 setFonteManual(true);
+                // Guarda a fonte escolhida para o proximo episodio deste tipo.
+                if (e?.provider) {
+                  try {
+                    const chave = `meida:last-source:${details?.type || ""}:${season || 1}:${episode || 1}`;
+                    localStorage.setItem(chave, e.provider);
+                  } catch { /* sem localStorage (privado) */ }
+                }
               }}
               deadIds={deadProviders}
               title={details.title}

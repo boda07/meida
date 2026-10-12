@@ -74,6 +74,15 @@ try {
 // Declarado fora do `if` para as mutacoes (em baixo) poderem usar o mesmo
 // titulo real. `null` quando a API nao respondeu.
 let alvo = null;
+
+// Mesma regra do `idValido` do servico: um id so vale se for um inteiro
+// positivo. A API traz os ids como TEXTO, e `""` num INTEGER daria 0 — que e'
+// um id valido de outra serie. Ver `server/src/services/anikoto.js`.
+function idValidoTeste(v) {
+  if (v == null) return null;
+  const n = Number(v);
+  return Number.isInteger(n) && n > 0 ? n : null;
+}
 if (Array.isArray(lista) && lista.length) {
   alvo = lista.find((x) => x?.id != null);
   ok_("a lista traz id, mal_id/ani_id e titulo",
@@ -84,6 +93,38 @@ if (Array.isArray(lista) && lista.length) {
   // dormir um tempo arbitrario e torcer.
   const depois = await rastearParaTeste(1);
   ok_("o rasteio guarda as series da pagina", depois.series > 0, JSON.stringify(depois));
+
+  // Para o teste do fallback (passo 8) precisamos de um titulo que so' tenha
+  // `sub` (sem `dub`): e' ai que "pedir dub → devolve a que ha" faz sentido.
+  // O rasteio guarda so' a pagina 1 da `recent-anime`. Se `alvo` (primeiro da
+  // lista, ja no cache) nao tem dub, usamos `alvo`. Se tem, procuramos entre
+  // os restantes da MESMA pagina (todos no cache) um sem dub. Se nenhum
+  // servir, saltamos com explicacao — e' um dado do site, nao do codigo.
+  let alvoSemDub = null;
+  {
+    // O primeiro e' `alvo`, ja em cache.
+    const candidatos = [alvo, ...lista.filter((s) => s?.id != null && s.id !== alvo.id)];
+    for (const serie of candidatos) {
+      if (!serie || serie.mal_id == null || serie.ani_id == null) continue;
+      // So' os que tem id valido (o cache guarda por estes).
+      if (!idValidoTeste(serie.mal_id) && !idValidoTeste(serie.ani_id)) continue;
+      try {
+        const sr = await fetch(`https://anikotoapi.site/series/${serie.id}`, {
+          headers: { "User-Agent": "Mozilla/5.0", accept: "application/json" },
+          signal: AbortSignal.timeout(15000),
+        });
+        const sj = await sr.json();
+        const eps = sj?.episodes || sj?.data?.episodes || [];
+        const temSub = eps.some((e) => e?.embed_url?.sub);
+        const temDub = eps.some((e) => e?.embed_url?.dub);
+        if (temSub && !temDub) { alvoSemDub = serie; break; }
+      } catch { /* tenta o seguinte */ }
+    }
+    if (!alvoSemDub) {
+      ok_("a pagina traz pelo menos um titulo so com sub (com id valido)", false,
+        "nenhum da pagina e' so-sub; o teste 8 (fallback dub→sub) nao pode correr");
+    }
+  }
 
   // 4) As fontes de um titulo REAL: o embed_url tem de ser o MegaPlay.
   const fontes = await fontesAnikoto({
@@ -131,7 +172,18 @@ if (Array.isArray(lista) && lista.length) {
     ok_("cada episodio tem sub ou dub", Object.values(mapa).some((e) => e.sub || e.dub));
   }
 
-  // 8) O audio: pedir dub quando so' ha' sub tem de devolver o sub, nao nada.
+  // 8) O audio: pedir dub num titulo que so' tem sub tem de devolver o sub.
+  // Precisa de um titulo SEM dub — ver a escolha de `alvoSemDub` acima.
+  // Tambem precisamos que ele esteja no cache: o `fontesAnikoto` quando nao
+  // esta' em cache chama `rastearDepois(3)` mas retorna `[]` imediatamente
+  // (por design — nao prende o pedido). Por isso rasteamos explicitamente
+  // para o titulo antes de chamar.
+  // 8) O audio: e' PREFERENCIA, nao exigencia. Pedir dub num episodio que so'
+  // tem sub tem de devolver o sub — nunca `[]`.
+  //
+  // Este teste encontrou um bug real (2026-10-12): havia um `if (!url) return []`
+  // ANTES do fallback, que disparava sempre que o lado pedido nao existia e
+  // tornava o fallback inalcancavel. O audio era preferencia mas nao funcionava.
   const comDub = await fontesAnikoto({
     mal: alvo.mal_id ?? undefined,
     anilist: alvo.ani_id ?? undefined,

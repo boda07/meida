@@ -274,11 +274,15 @@ export async function fontesAnikoto({ mal, anilist, episode = 1, audio }) {
   const doEpisodio = mapa?.[ep];
   if (!doEpisodio) return [];
 
-  const url = querDub ? doEpisodio.dub : doEpisodio.sub;
-  if (!url) return [];
-  // Um so' lado existe: se pediu dub e so' ha' sub, devolve o que ha' em vez
-  // de nada. O `audio` e' preferencia, nao exigencia.
-  const escolhido = url || doEpisodio.sub || doEpisodio.dub;
+  // O `audio` e' PREFERENCIA, nao exigencia. Se pediu dub e so' ha' sub (ou
+  // pediu sub e so' ha' dub), devolvemos o que existe em vez de nada.
+  //
+  // O bug: havia `const url = querDub ? doEpisodio.dub : doEpisodio.sub; if (!url) return [];`
+  // ANTES do fallback — o `return []` disparava sempre que o lado pedido nao
+  // existia, e o fallback (linha seguinte) nunca era alcancado. Este e' o
+  // "dub→sub" que o teste 8 verificava (2026-10-12).
+  const preferido = querDub ? doEpisodio.dub : doEpisodio.sub;
+  const escolhido = preferido || doEpisodio.sub || doEpisodio.dub;
   if (!escolhido) return [];
 
   return [

@@ -81,8 +81,7 @@ export default class ErrorBoundary extends Component {
             <button className="btn" onClick={() => window.location.reload()}>
               {this.tSeguro("Recarregar")}
             </button>
-          </div>
-        </div>
+          </div>        </div>
       );
     }
     return this.props.children;
