@@ -1027,7 +1027,12 @@ api
           {!isMovieLike && (
             <span className="muted" style={{ fontSize: 12 }}>
               {t("Guarda no diário e avança o {b} para o próximo episódio{mal}", {
-                b: '"Continua a ver"',
+                // O `{b}` e' o nome de um botao/separador, portanto tem de passar
+                // pelo tradutor. Estava em portugues hardcoded (`"Continua a
+                // ver"`), e com a interface em ingles o texto de fora traduzia e
+                // este de dentro nao — lia-se 'moves "Continua a ver" to the
+                // next episode' (2026-10-12).
+                b: `"${t("Continua a ver")}"`,
                 mal: details.isAnime ? " " + t("(e marca no MAL)") : "",
               })}
               .

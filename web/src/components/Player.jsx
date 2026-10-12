@@ -264,23 +264,30 @@ export default function Player({
   if (!active) return null;
 
   return (
+    // O invólucro `.player` tem `aspect-ratio: 16/9` e `overflow: hidden` — e' o
+    // que faz o iframe ficar na caixa preta. Mas o `HlsPlayer` traz o SEU
+    // `.player` E os menus por baixo (legendas, qualidade), que ficavam CORTADOS
+    // dentro desta caixa: o utilizador via o video mas nao via os menus, e nao
+    // conseguia por legendas nem trocar a qualidade no MegaPlay nativo (2026-10-12).
+    // Por isso, com o nativo pronto, o wrapper e' um `div` simples.
+    arrancado && nativoPronto ? (
+      <HlsPlayer
+        key={`${nativoUrl}-${audio || "sub"}`}
+        sources={nativoPronto.sources}
+        subtitles={nativoPronto.subtitles || []}
+        startAt={startAt}
+        onProgress={onProgress}
+        onLoaded={marcarCarregado}
+        // Tempos de abertura e de fim que o MegaPlay devolve. Sem isto o
+        // "Autoskip" das Definicoes nao fazia nada aqui: so' funcionava nos
+        // iframes, e porque o `Player` acrescentava `?autoSkipIntro=` ao URL
+        // (um parametro do site, nao nosso).
+        intro={nativoPronto.intro}
+        outro={nativoPronto.outro}
+      />
+    ) : (
     <div className="player">
-      {arrancado && nativoPronto ? (
-        <HlsPlayer
-          key={`${nativoUrl}-${audio || "sub"}`}
-          sources={nativoPronto.sources}
-          subtitles={nativoPronto.subtitles || []}
-          startAt={startAt}
-          onProgress={onProgress}
-          onLoaded={marcarCarregado}
-          // Tempos de abertura e de fim que o MegaPlay devolve. Sem isto o
-          // "Autoskip" das Definicoes nao fazia nada aqui: so' funcionava nos
-          // iframes, e porque o `Player` acrescentava `?autoSkipIntro=` ao URL
-          // (um parametro do site, nao nosso).
-          intro={nativoPronto.intro}
-          outro={nativoPronto.outro}
-        />
-      ) : arrancado ? (
+      {arrancado ? (
         <iframe
           key={reloadKey}
           ref={iframeRef}
@@ -340,6 +347,7 @@ export default function Player({
       )}
       {arrancado && <FullscreenButton targetRef={iframeRef} />}
     </div>
+    )
   );
 }
 

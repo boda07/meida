@@ -8,9 +8,9 @@ export const CHANGELOG = [
     version: "1.4.5",
     items: [
       "Corrigido: a fonte escolhida no selector de providers passa agora a ser lembrada entre episodios (guardada no localStorage, com chave por tipo e episodio). Quando se muda de episodio, o player arranca na fonte do anterior, se ainda existir e nao estiver morta pelo health-check.",
-      "Novo: o menu do MegaPlay nativo mostra agora a qualidade do video, com rotulos que o `hls.js` fornece como 720p/1080p ou Auto, quando o master.m3u8 tem variantes. O HlsPlayer le as variantes depois do MANIFEST_PARSED e guarda numa prop separada.",
+      "Corrigido: no MegaPlay nativo já se podem escolher as legendas — o menu estava a ser cortado e não se via. O menu de qualidade também existe, mas o site só dá uma variante (1080p), por isso ainda não aparece.",
       "Corrigido: o ErrorBoundary usava `this.context.t()` quando o contexto do i18n e' a propria funcao `t` (e nao `{t}`). Isso fazia a app rebentar com um ecra em branco quando uma pagina lancava — o teu amigo viu-o no perfil. Corrigido, e agora a mensagem de erro aparece sempre, com um botao para recarregar ou voltar atras.",
-      "Corrigido: o botao da qualidade nao aparecia quando a playlist tinha uma variante (o `MANIFEST_PARSED` so reporta variantes quando existem pelo menos duas, nao quando ha uma). Corrigido — uma variante e Auto, e o botao aparece quando passa de uma.",
+      "Corrigido: no fim de um episódio, o texto que diz 'Continua a ver' estava sempre em português mesmo com a interface em inglês.",
       "Corrigido: no Compare.jsx, um `const t = displayTitle(...)` tapava o tradutor `t`, e a linha do titulo acabava por chamar uma string como se fosse funcao — a pagina /compare rebentava sempre que havia um titulo visto.",
       "Corrigido: no `Hero.jsx`, os eventos de swipe (`e.touches[0]`) usavam `t` como variavel, que tapava o tradutor dentro do componente.",
       "Corrigido: o `testar-i18n.mjs` tem agora um teste que verifica que `t` nao e' tapado por uma declaracao local num ficheiro que usa `useT()`, com uma regra estreita que nao apanha timers inofensivos.",
@@ -18,9 +18,9 @@ export const CHANGELOG = [
     ],
     items_en: [
       "Fixed: the source picked in the provider selector is now remembered across episodes (stored in localStorage, keyed by title type and episode). When changing episode, the player starts with the previous source, if it still exists and isn't dead from the health check.",
-      "New: the native MegaPlay menu now shows video quality (e.g. 720p, 1080p, Auto), when the master.m3u8 has variants. The HlsPlayer reads the variants after MANIFEST_PARSED and keeps them in a separate prop.",
+      "Fixed: subtitles can now be chosen on native MegaPlay — the menu was being clipped and wasn't visible. The quality menu exists too, but the site only serves one variant (1080p), so it doesn't show yet.",
       "Fixed: the ErrorBoundary called `this.context.t()` when the i18n context value is the `t` function itself (not `{t}`). This made the app crash with a blank white screen whenever any page threw — your friend saw it on the profile page. Fixed, and the error message now always shows, with reload/back buttons.",
-      "Fixed: the quality menu didn't show when the playlist had only one variant — the manifest event only reports variants when there are at least two. Fixed: one variant is Auto, and the menu shows once there's more.",
+      "Fixed: the text after finishing an episode said 'Continua a ver' in Portuguese even with the interface in English.",
       "Fixed: in Compare.jsx, a `const t = displayTitle(...)` overwrote the translator `t`, and the title line ended up calling a string as a function — the /compare page always crashed when there was a watched title.",
       "Fixed: in `Hero.jsx`, swipe events (`e.touches[0]`) used `t` as a variable, overwriting the translator inside the component.",
       "Fixed: `testar-i18n.mjs` now has a test that checks `t` isn't overwritten by a local declaration in a file that uses `useT()`, with a narrow rule that doesn't flag harmless timers.",

@@ -38,7 +38,7 @@ lá" são análises do projeto antigo e ficam onde estão.
 
 ## Providers de anime / player nativo
 
-- [ ] **Escolher a qualidade** — o `master.m3u8` tem variantes (1080p/720p/…) e o `HlsPlayer` só usa `sources[0]`. O `hls.js` expõe `levels` e `currentLevel`, por isso é um menu e não um Decoder. Ganho real em ligações lentas.
+- [x] **Escolher a qualidade** — o menu existe e funciona, mas **hoje nunca aparece**: medido em 5 episódios a 2026-10-12, o `master.m3u8` do MegaPlay traz **uma só variante jogável** (1080p) mais um `#EXT-X-I-FRAME-STREAM-INF` (360p, que é para saltar no vídeo, não outra qualidade). O `hls.js` reporta `levels.length === 1` e o menu esconde-se — o que está certo. **A ideia original dizia "1080p/720p" e era especulação minha, não medição.** Para o menu ser útil teria de ser a fonte a dar mais variantes; não é trabalho do lado da MEIDA. Se um dia o site passar a dar mais, o menu aparece sozinho (basta `niveis.length > 1`).
 
 - [ ] **Lembrar a fonte escolhida** — o `Player` tem `manual`/`fonteManual`, mas isso vive na sessão: ao mudar de episódio volta ao primeiro provider. Guardar em `settings` a última fonte por tipo (filme / série / anime) e abrir nessa. Quem escolheu o MegaPlay porque é o único com legendas não devia ter de o escolher em cada episódio.
 
