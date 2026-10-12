@@ -3183,6 +3183,106 @@ h2 {
   font-size: 13px;
 }
 
+/* Botao de legendas DENTRO do player, com a lista num popup.
+   Fica no canto inferior DIREITO, ACIMA dos controlos nativos do `<video>`
+   (que tem ~40 px de altura) — por isso o `bottom` nao e' 12 px como no
+   `.fs-btn`, senao ficava por baixo da barra de controlos. */
+.sub-cc {
+  position: absolute;
+  bottom: 48px;
+  right: 12px;
+  z-index: 6;
+}
+
+.sub-cc-btn {
+  width: 36px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  cursor: pointer;
+  transition: opacity 0.2s, background 0.2s;
+}
+
+/* O botao esbate-se quando NAO ha' legenda ligada. O `:not(.on)` diz isso
+   directamente, em vez de duas regras a disputarem a mesma propriedade.
+   NOTA: isto NAO e' um bug de cascata que eu tenha visto — testei com o browser
+   e descobri que a pagina estava em segundo plano (`visibilityState: "hidden"`),
+   onde a `transition` nunca avanca e o `getComputedStyle` devolve o valor
+   inicial. Sem a transicao devolvia 1 e o fundo certo. O `:not(.on`) fica
+   porque e' mais claro, nao porque consertasse alguma coisa. */
+.sub-cc-btn:not(.on) {
+  opacity: 0.75;
+}
+
+.player:hover .sub-cc-btn,
+.sub-cc-btn:focus-visible {
+  opacity: 1;
+}
+
+/* Legenda ligada: fundo marcado, para se distinguir de "desligadas" sem
+   abrir o menu. */
+.sub-cc-btn.on {
+  opacity: 1;
+  background: rgba(0, 0, 0, 0.85);
+  box-shadow: inset 0 -2px 0 var(--accent, #c90303);
+}
+
+.sub-cc-btn:hover {
+  opacity: 1;
+  background: rgba(0, 0, 0, 0.85);
+}
+
+.sub-cc-btn:focus-visible {
+  outline: 2px solid var(--accent, #c90303);
+  outline-offset: 2px;
+}
+
+.sub-cc-pop {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  right: 0;
+  min-width: 168px;
+  max-height: 260px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  padding: 4px;
+  border-radius: 8px;
+  background: rgba(18, 18, 24, 0.97);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.55);
+}
+
+.sub-cc-pop button {
+  padding: 8px 10px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: #fff;
+  cursor: pointer;
+  text-align: left;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.sub-cc-pop button:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* A legenda escolhida. O ponto e' para se ver qual esta' ligada sem ler. */
+.sub-cc-pop button.on {
+  color: var(--accent, #c90303);
+  font-weight: 700;
+}
+
+.sub-cc-pop button.on::after {
+  content: " \2713";
+}
+
 .sub-menu {
   display: flex;
   align-items: center;
@@ -3555,6 +3655,17 @@ h2 {
 }
 
 .player:fullscreen .fs-btn {
+  opacity: 1;
+}
+
+/* Em ecra inteiro os controlos nativos sao maiores, por isso o botao de
+   legendas sobe mais. E fica sempre visivel: num ecra grande e' onde se olha. */
+.player:fullscreen .sub-cc {
+  bottom: 72px;
+  right: 24px;
+}
+
+.player:fullscreen .sub-cc-btn {
   opacity: 1;
 }
 

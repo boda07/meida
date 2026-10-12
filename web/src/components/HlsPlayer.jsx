@@ -223,8 +223,11 @@ export default function HlsPlayer({
           </button>
         )}
         <FullscreenButton targetRef={containerRef} />
+        {/* O botao de legendas vai DENTRO da caixa do video (e' posicionado em
+            absoluto), para nao ser cortado pelo `overflow: hidden` e para a
+            decisao de mostrar/nao legendas estar no sitio onde se ve o video. */}
+        <SubtitleMenu videoRef={videoRef} subtitles={subtitles} />
       </div>
-      <SubtitleMenu videoRef={videoRef} subtitles={subtitles} />
       {/* So aparece com duas ou mais variantes (ver `MANIFEST_PARSED` acima): com
           uma so nao ha' nada para escolher e o menu era ruido. */}
       {niveis.length > 1 && (

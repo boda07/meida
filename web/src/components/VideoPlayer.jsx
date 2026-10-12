@@ -89,8 +89,10 @@ export default function VideoPlayer({ src, infoHash, subtitles = [], startAt, on
           <SubtitleTracks subtitles={subtitles} />
         </video>
         <FullscreenButton targetRef={containerRef} />
+        {/* Legendas dentro da caixa do video, pelo mesmo motivo que no
+            `HlsPlayer`: o `.player` corta o que fique fora com `overflow: hidden`. */}
+        <SubtitleMenu videoRef={videoRef} subtitles={subtitles} />
       </div>
-      <SubtitleMenu videoRef={videoRef} subtitles={subtitles} />
       {err && (
         <p className="vhint">
           {t("O browser não consegue reproduzir este ficheiro (provavelmente .mkv ou codec x265). Usa o filtro {filtro} na lista de torrents e escolhe um {formato}.")}
