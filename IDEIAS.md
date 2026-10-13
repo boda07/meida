@@ -9,9 +9,6 @@ fim do ficheiro, e mantém o texto com a explicação do *como* e do *porquê*
 "Social / comunidade", "O CSS e as estatísticas" e "O que não há que ir buscar
 lá" são análises do projeto antigo e ficam onde estão.
 
-## Lingua / tradução
-- [ ] **Traduzir também o que o utilizador escreve** (títulos de listas e notas personais)? Provavelmente não: é conteúdo dele, não interface.
-
 ## Antes de escolher uma ideia: o servidor adormece
 
 Lido a 2026-10-13. Isto não é uma ideia, é uma **limitação que decide várias
@@ -46,6 +43,23 @@ As saídas, e o que cada uma custa:
 **Regra para quem pegar nisto:** nenhuma ideia de notificação começa a ser
 codada antes de a tabela acima estar decidida. A metade visual do calendário de
 estreias faz-se bem e à parte — ver "Recomendações / descoberta".
+
+## Lingua / tradução
+- [ ] **Traduzir comentários, um a um, com um botão** (como o Instagram e o TikTok). Decidido a 2026-10-13: **só comentários**, e **sob procura**, nunca automático.
+
+  **A pergunta original** — traduzir também o que o utilizador escreve (títulos de listas e notas pessoais) — fica respondida: **não**. Notas e títulos são dele, e traduzi-los sem ele pedir seria pior do que não traduzir. O que se traduz é o que **os outros** escreveram noutra língua.
+
+  **Medido a 2026-10-13**, porque isto decide se a ideia é barata ou cara:
+  - **MyMemory** (`api.mymemory.translated.net`) funciona **sem chave**: 797 ms, e "This scene was incredible, the soundtrack alone is worth it." devolveu *"Essa cena foi incrível, só a trilha sonora já valeu a pena."* Traz também um `match: 0.85` (a confiança), que serve para decidir se a tradução se mostra.
+  - **O endpoint do Google sem chave devolveu 429** logo a seguir. Não é fiável — não contar com ele.
+
+  **Cuidados que a ideia tem de trazer, senão sai mal:**
+  - **Um botão por comentário, nunca automático.** Traduzir tudo estraga os comentários que já estão na tua língua, e ninguém aguenta.
+  - **Dizer de onde veio** — "Traduzido de inglês", com o original sempre acessível. Sem isso, o texto traduzido passa por uma opinião de outra pessoa em vez de Commentário de quem escreveu.
+  - **Cache no servidor** (`cache.js` já existe): o mesmo comentário não se traduz duas vezes, e a cota não se gasta em cliques repetidos.
+  - **O alvo é o idioma da interface** (`t.idioma`), que já é pt ou en. Não precisa de um seletor novo.
+  - **A cota é por IP/dia e é partilhada** — vale a pena avisar quando está a acabar, em vez de o botão falhar em silêncio.
+  - **Privacidade:** ao carregar no botão, o texto do comentário vai para um serviço terceiro. **Decidido que está bem** (2026-10-13) — e é precisamente por ser sob procura que isto é aceitável, porque nada sai sem alguém tocar no botão.
 
 ## Estatísticas / perfil
 - [ ] **Acento sempre legível** — medir e corrigir o contraste do texto com a cor de destaque escolhida. **Dois presets de oito não passam** para texto normal: `#c90303` (o por omissão) dá 3,35:1 sobre o fundo e `#e50914` dá 4,20:1; os outros seis dão 4,60:1 a 9,38:1 (WCAG 2.1, medido a 2026-10-13). A correção é um `--accent-text` derivado da cor escolhida, para o texto e só para o texto (bordas e fundos ficam com a cor cheia): `--accent-text: color-mix(in srgb, var(--accent) 65%, white)` dá 5,46:1 no vermelho por omissão. Uma variável, e o `SettingsContext.jsx` já tem o `shade()` que a calcula no mesmo sítio onde hoje define `--accent-hover`.
