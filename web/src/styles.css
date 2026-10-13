@@ -1021,6 +1021,18 @@ h2 {
   white-space: nowrap;
 }
 
+/* Rede de seguranca para os icones destes botoes. Um `<svg>` sem `width`/`height`
+   e' valido, mas dentro de um `inline-flex` o browser dava-lhe 0x0px e o icone
+   desaparecia (foi o que aconteceu: medido 0x0px). Os componentes ja levam
+   `width`/`height`, mas um icone aqui que se esqueça nao pode ficar invisivel
+   outra vez. `scripts/testar-svg.mjs` verifica que esta regra se mantem. */
+.btn-play svg,
+.btn-info svg {
+  width: 18px;
+  height: 18px;
+  flex: none;
+}
+
 .btn-play {
   background: #fff;
   color: #0a0a0b;

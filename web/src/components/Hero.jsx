@@ -3,9 +3,14 @@ import { Link } from "react-router-dom";
 import { imageUrl } from "../api/client.js";
 import { useT } from "../i18n/I18nContext.jsx";
 
+// O `width`/`height` NAO sao cosmeticos: um `<svg>` sem eles e' um elemento
+// substituido com dimensao automatica, e dentro de um `inline-flex` sem espaco
+// para o conteudo o browser dava-lhe 0x0 — os dois botoes mais visiveis da app
+// ficavam SEM ICONE (medido: 0x0px). Todos os icones de `icons.jsx` ja levam
+// `width`/`height`; estes dois eram copias locais que se esqueceram.
 function PlayIcon() {
   return (
-    <svg aria-hidden="true" viewBox="0 0 24 24" fill="currentColor">
+    <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
       <polygon points="5 3 19 12 5 21 5 3" />
     </svg>
   );
@@ -13,7 +18,7 @@ function PlayIcon() {
 
 function InfoIcon() {
   return (
-    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
       <circle cx="12" cy="12" r="10" />
       <line x1="12" y1="16" x2="12" y2="12" />
       <line x1="12" y1="8" x2="12.01" y2="8" />

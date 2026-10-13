@@ -66,7 +66,9 @@ export function BadgeIcon({ id, size = 28 }) {
       return (
         <svg {...common}>
           <rect x="3" y="4" width="18" height="14" rx="2" />
-          <polyline points="9 14l3-3 3 3" fill="none" stroke="currentColor" strokeWidth="2" />
+          {/* Mesmo bug do que estava acima: `points` de um `polyline` tambem so'
+              aceita pares de numeros. Era "9 14l3-3 3 3" (sintaxe de `d`). */}
+          <polyline points="9 14 12 11 15 14" fill="none" stroke="currentColor" strokeWidth="2" />
         </svg>
       );
     case "anime": // folha (estilo anime)
@@ -78,7 +80,10 @@ export function BadgeIcon({ id, size = 28 }) {
     case "star": // estrela
       return (
         <svg {...common}>
-          <polygon points="12 2l3 7h7l-5 4 2 7-6-4-6 4 2-7-5-4h7z" />
+          {/* Pontos de verdade (pares x,y). Era sintaxe de `<path d>` num
+              atributo `points`, que nao aceita comandos: o browser lia 0
+              vertices e a estrela nao desenhava. Mesmo formato do `MediaCard`. */}
+          <polygon points="12 2 15 9 22 9 17 13 19 20 12 16 5 20 7 13 2 9 9 9" />
         </svg>
       );
     case "list": // lista

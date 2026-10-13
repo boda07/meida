@@ -14,7 +14,12 @@ export default function MediaCard({ item, landscape = false }) {
   const entry = lib ? lib.getEntry(item.type, item.id) : null;
   const watched = entry?.watched ? true : item.watched;
   const watchlist = entry?.watchlist ? true : item.watchlist;
-  const canQuickAdd = Boolean(user) && lib && !lib.loading;
+  // `!watched` faz parte do que decide se o botao DESENHA. Sem isto o `+`
+  // aparecia em cima do selo de visto e nao fazia nada: o `quickAdd` de baixo
+  // faz `if (!canQuickAdd || watched) return`, ou seja num cartaz ja visto o
+  // clique era engolido. Pior do que nao ter botao: parecia clicavel e era
+  // inerte. O proprio comentario do botao diz "so' quando ainda nao foi visto".
+  const canQuickAdd = Boolean(user) && lib && !lib.loading && !watched;
 
   // Adiciona rapidamente à library (watchlist) ou marca como visto. Optimista.
   async function quickAdd(e) {
@@ -40,13 +45,12 @@ export default function MediaCard({ item, landscape = false }) {
 
   const subtitle = item.type === "tv" ? `${item.year || ""} · Série` : item.year;
 
-  // Ação do botão de quick-add (depende do estado actual).
-  let quickAria = t("Adicionar à minha lista");
-  if (watchlist && !watched) {
-    quickAria = t("Marcar como visto");
-  } else if (watched) {
-    quickAria = t("Ver detalhes");
-  }
+  // Ação do botão de quick-add. O botão so' desenha quando `canQuickAdd`, e esse
+  // ja exclui os cartaz vistos — por isso o ramo "visto" abaixo deixou de fazer
+  // sentido e foi removido: prometia "Ver detalhes" num botao que, em cartaz
+  // visto, nao levava a lado nenhum. A navegacao continua a funcionar pelo
+  // cartaz, que e' um `Link` ao detalhe.
+  const quickAria = watchlist ? t("Marcar como visto") : t("Adicionar à minha lista");
 
   return (
     <Link
@@ -87,7 +91,12 @@ export default function MediaCard({ item, landscape = false }) {
                viewBox="0 0 24 24"
                fill="currentColor"
              >
-               <polygon points="12 2l3 7h7l-5 4 2 7-6-4-6 4 2-7-5-4h7z" />
+               {/* Pontos de VERDADE (pares x,y). A versao anterior era
+                    `points="12 2l3 7h7l-5 4 2 7-6-4-6 4 2-7-5-4h7z"`, que e'
+                    sintaxe de `<path d>` — comandos `l`, `h` — metida no atributo
+                    `points`, que so' aceita pares de numeros. O browser lia
+                    ZERO vertices e a estrela nao desenhava (medido: 0x0). */}
+                <polygon points="12 2 15 9 22 9 17 13 19 20 12 16 5 20 7 13 2 9 9 9" />
              </svg>
              {Math.round(entry.score)}
            </div>
