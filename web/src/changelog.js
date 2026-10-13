@@ -5,6 +5,17 @@
 // versao; quem nao encontra a sua ve o portugues (a lingua original).
 export const CHANGELOG = [
   {
+    version: "1.5.2",
+    items: [
+      "Corrigido: o fundo escolhido nas Definições não aparecia. A imagem ficava escondida atrás de uma cor escura, por isso o ecrã continuava preto como se não houvesse nada.",
+      "Corrigido: o mesmo atingia todos os outros estilos de fundo (o brilho, a aurora, a malha, os pontos, a grelha) — nenhum deles aparecia.",
+    ],
+    items_en: [
+      "Fixed: the background chosen at the bottom of Settings wasn't showing. The background image was hidden behind a dark colour, so the screen stayed black as if nothing had been set.",
+      "Fixed: the same problem affected every other background style (glow, aurora, mesh, dots, grid) — none of them were showing.",
+    ],
+  },
+  {
     version: "1.5.1",
     items: [
       "Corrigido: a app ficava presa no ecrã «a carregar» em vez de abrir. Acontecia quando a app acorda o servidor partilhado — já agora, quem tem o servidor na mão não vê este ecrã de todo.",

@@ -1,5 +1,37 @@
 # Changelog
 
+## 1.5.2
+
+### O fundo escolhido nas Definições não aparecia
+
+Regressão introduzida na **1.4.9**, com o bloco `<style>` do ecrã de arranque em
+`web/index.html`:
+
+```css
+html, body { margin: 0; padding: 0; background: #070708; color: #fff; }
+```
+
+O fundo da app (imagem, glow, aurora, mesh, pontos, grelha) vive num
+pseudo-elemento:
+
+```css
+body::before { position: fixed; inset: 0; z-index: -1; }
+```
+
+Um pseudo-elemento com `z-index: -1` pinta-se **por trás** das caixas do
+documento. Com `background: #070708` opaco no `body`, essa cor tapava o
+pseudo-elemento inteiro — e **todas** as opções de fundo deixavam de se ver,
+não só a imagem. O `html` continua opaco (é o que evita o flash branco antes de
+o `styles.css` carregar); o `body` passa a `transparent`.
+
+Confirmado no browser com `getComputedStyle(body).backgroundColor`: antes
+`rgb(7, 7, 8)`, depois `rgba(0, 0, 0, 0)`, com a camada `::before` com conteúdo
+nos cinco estilos.
+
+`scripts/testar-fundo.mjs` (16 verificações, ligado ao `npm test`) apanha o
+regresso, e foi verificado por mutação: reposta a regra errada dá
+`15 ok, 1 falha(s)` (exit 1); restaurada dá `16 ok, 0 falha(s)` (exit 0).
+
 ## 1.5.1
 
 ### Corrigido: o ecra de arranque ficava no ecra e a app nao abria
