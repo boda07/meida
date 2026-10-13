@@ -11,38 +11,32 @@ lá" são análises do projeto antigo e ficam onde estão.
 
 ## Antes de escolher uma ideia: o servidor adormece
 
-Lido a 2026-10-13. Isto não é uma ideia, é uma **limitação que decide várias
-delas** — e é melhor tê-la escrita do que redescobri-la dentro de seis meses.
+Lido a 2026-10-13. Não é uma ideia: é a limitação que decide várias delas.
 
-O servidor partilhado (FadeHost) e o Render **hibernam** quando ficam parados.
-O Render acorda ao primeiro pedido e demora ~50 s; o mesmo no FadeHost. Na
-prática, **o processo está a dormir fora do horário em que alguém o usa.**
+O servidor partilhado (FadeHost) e o Render **hibernam** quando param. Acordam ao
+primeiro pedido, em ~50 s — na prática, **o processo está a dormir fora do
+horário em que alguém o usa.**
 
-Três consequências, por ordem de gravidade:
+**O que daí decorre:**
 
-1. **Nada pode acontecer a uma hora marcada enquanto ninguém está a usar a app.**
-   Não há cron, não há `node-cron`, não há scheduler — as dependências do
-   servidor são `bcryptjs, cors, dotenv, express, jsonwebtoken, subtitle,
-   webtorrent`, e nenhuma é de agenda. Às 20h de uma terça-feira não há ninguém
-   para acordar e dizer que o episódio 7 já saiu.
-2. **Logo, "notifica quando sai o próximo episódio" e "aviso quando o Watch Party
-   começa" não são um problema de código — são de arquitectura.** Antes de
-   começar qualquer uma das duas, decidir o modelo.
-3. **Isto já custa em UX, todos os dias:** o primeiro pedido depois de um
-   período parado leva ~50 s. É o que o ecrã de arranque (1.4.9+) veio
-   tapar — mas tapar não é resolver.
+- **Nada acontece a uma hora marcada sem alguém a usar a app.** Não há cron nem
+  scheduler — as dependências do servidor são `bcryptjs, cors, dotenv, express,
+  jsonwebtoken, subtitle, webtorrent`, e nenhuma é de agenda.
+- **Logo, "notifica quando sai o próximo episódio" e "aviso quando o Watch Party
+  começa" são um problema de arquitectura, não de código.** Decidir o modelo antes
+  de começar qualquer uma das duas.
+- **Já custa em UX todos os dias:** o primeiro pedido depois de um período parado
+  leva ~50 s. O ecrã de arranque (1.4.9+) tapou o sintoma — tapar não é resolver.
 
-As saídas, e o que cada uma custa:
+| Modelo | Custa |
+| --- | --- |
+| **Polling no cliente** (recomendado) — a app, enquanto aberta, pergunta "houve estreia?"; ao abrir, acorda o servidor. | Nada. Não avisa com a app fechada — mas com a app fechada é o próprio Render adormecido. |
+| Serviço que não dorme — worker pago, ou um trigger externo (o cron do GitHub Actions, por exemplo). | Dinheiro, ou uma dependência nova. |
+| Web Push (Service Worker + VAPID) — o browser entrega a notificação com a app fechada. | Chaves VAPID, **e** alguém acordado para *enviar*. Não resolve sozinho. |
 
-| Modelo | Como funciona | Custa |
-| --- | --- | --- |
-| **Polling no cliente** (recomendado) | A app, enquanto aberta, pergunta periodicamente "houve estreia?"; ao abrir, acorda o servidor. | Nada. Não avisa com a app fechada — mas com a app fechada é o próprio Render adormecido. |
-| Serviço que não dorme | Uma máquina/worker pago, ou um trigger externo (cron do GitHub Actions, por exemplo). | Dinheiro, ou uma dependência nova. |
-| Web Push (Service Worker + VAPID) | O browser entrega a notificação mesmo com a app fechada. | Precisa de chaves VAPID, e o Render continua a ter de ter alguém acordado para *enviar*. Não resolve sozinho. |
-
-**Regra para quem pegar nisto:** nenhuma ideia de notificação começa a ser
-codada antes de a tabela acima estar decidida. A metade visual do calendário de
-estreias faz-se bem e à parte — ver "Recomendações / descoberta".
+**Regra:** nenhuma ideia de notificação começa a ser codada antes desta tabela estar
+decidida. A metade visual do calendário de estreias **não** tem este bloqueio — ver
+"Recomendações / descoberta".
 
 ## Lingua / tradução
 - [ ] **Traduzir comentários, um a um, com um botão** (como o Instagram e o TikTok). Decidido a 2026-10-13: **só comentários**, e **sob procura**, nunca automático.
