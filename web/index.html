@@ -50,8 +50,19 @@
          (`.boot`, `.boot-anel`, `.boot-titulo`, `.boot-msg` em
          `web/src/styles.css`). Se um mudar, o outro tem de mudar tambem — sao
          o mesmo ecra em dois momentos diferentes. */
-      html, body { margin: 0; padding: 0; background: #070708; color: #fff; }
+      /* O `html` fica opaco de proposito (e' o que evita o flash branco antes
+         de o `styles.css` carregar). O `body` TEM DE FICAR TRANSPARENTE: o fundo
+         escolhido nas Definicoes — imagem, glow, aurora, mesh, pontos, grelha —
+         vive num pseudo-elemento `body::before` com `z-index: -1`, e um fundo
+         opaco no `body` pinta-se POR CIMA dele. Com `background` no `body`, o
+         pseudo-elemento ficava escondido e nenhuma opcao de fundo funcionava
+         (2026-10-13). O `styles.css` ja faz igual: `html` com cor, `body` sem. */
+      html { margin: 0; padding: 0; background: #070708; color: #fff; }
       body {
+        margin: 0;
+        padding: 0;
+        background: transparent;
+        color: #fff;
         min-height: 100vh;
         font-family: Manrope, system-ui, -apple-system, "Segoe UI", sans-serif;
       }
