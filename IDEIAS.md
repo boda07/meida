@@ -12,7 +12,47 @@ lá" são análises do projeto antigo e ficam onde estão.
 ## Lingua / tradução
 - [ ] **Traduzir também o que o utilizador escreve** (títulos de listas e notas personais)? Provavelmente não: é conteúdo dele, não interface.
 
+## Antes de escolher uma ideia: o servidor adormece
+
+Lido a 2026-10-13. Isto não é uma ideia, é uma **limitação que decide várias
+delas** — e é melhor tê-la escrita do que redescobri-la dentro de seis meses.
+
+O servidor partilhado (FadeHost) e o Render **hibernam** quando ficam parados.
+O Render acorda ao primeiro pedido e demora ~50 s; o mesmo no FadeHost. Na
+prática, **o processo está a dormir fora do horário em que alguém o usa.**
+
+Três consequências, por ordem de gravidade:
+
+1. **Nada pode acontecer a uma hora marcada enquanto ninguém está a usar a app.**
+   Não há cron, não há `node-cron`, não há scheduler — as dependências do
+   servidor são `bcryptjs, cors, dotenv, express, jsonwebtoken, subtitle,
+   webtorrent`, e nenhuma é de agenda. Às 20h de uma terça-feira não há ninguém
+   para acordar e dizer que o episódio 7 já saiu.
+2. **Logo, "notifica quando sai o próximo episódio" e "aviso quando o Watch Party
+   começa" não são um problema de código — são de arquitectura.** Antes de
+   começar qualquer uma das duas, decidir o modelo.
+3. **Isto já custa em UX, todos os dias:** o primeiro pedido depois de um
+   período parado leva ~50 s. É o que o ecrã de arranque (1.4.9+) veio
+   tapar — mas tapar não é resolver.
+
+As saídas, e o que cada uma custa:
+
+| Modelo | Como funciona | Custa |
+| --- | --- | --- |
+| **Polling no cliente** (recomendado) | A app, enquanto aberta, pergunta periodicamente "houve estreia?"; ao abrir, acorda o servidor. | Nada. Não avisa com a app fechada — mas com a app fechada é o próprio Render adormecido. |
+| Serviço que não dorme | Uma máquina/worker pago, ou um trigger externo (cron do GitHub Actions, por exemplo). | Dinheiro, ou uma dependência nova. |
+| Web Push (Service Worker + VAPID) | O browser entrega a notificação mesmo com a app fechada. | Precisa de chaves VAPID, e o Render continua a ter de ter alguém acordado para *enviar*. Não resolve sozinho. |
+
+**Regra para quem pegar nisto:** nenhuma ideia de notificação começa a ser
+codada antes de a tabela acima estar decidida. A metade visual do calendário de
+estreias faz-se bem e à parte — ver "Recomendações / descoberta".
+
 ## Estatísticas / perfil
+- [ ] **Acento sempre legível** — medir e corrigir o contraste do texto com a cor de destaque escolhida. **Dois presets de oito não passam** para texto normal: `#c90303` (o por omissão) dá 3,35:1 sobre o fundo e `#e50914` dá 4,20:1; os outros seis dão 4,60:1 a 9,38:1 (WCAG 2.1, medido a 2026-10-13). A correção é um `--accent-text` derivado da cor escolhida, para o texto e só para o texto (bordas e fundos ficam com a cor cheia): `--accent-text: color-mix(in srgb, var(--accent) 65%, white)` dá 5,46:1 no vermelho por omissão. Uma variável, e o `SettingsContext.jsx` já tem o `shade()` que a calcula no mesmo sítio onde hoje define `--accent-hover`.
+- [ ] **Mapa de calor de atividade por dia** (o `heatmap` do GitHub) — as datas já existem na `library` e na `progress`, e a racha já as calcula. Falta o desenho, e a escolha óbvia é **sem biblioteca**, pelas mesmas razões que o resto dos gráficos.
+- [ ] **Mapa de países, de décadas e de hora do dia** — o que se vê quando se chega a um perfil com alguma história, no mesmo sítio dos gráficos.
+- [ ] **Metas e desafios** — "50 filmes este ano" com anel de progresso, e desafios como "um filme de uma década que ainda não viste". As duas coisas saem da `library` já filtrada por data.
+- [ ] **Cartão de partilha em imagem** — o formato de saída para o resumo anual e para "a minha nota". Depende de gerar fora do browser (canvas no cliente dá, mas sai com a fonte do sistema e sem retina; ver o que a secção do CSS diz dos gráficos).
 - [ ] **Resumo anual/personalizado** ("o teu ano em revisão"): totais por mês, gráficos, top do ano — estilo Spotify Wrapped.
 
 ## Library / notas
@@ -21,11 +61,32 @@ lá" são análises do projeto antigo e ficam onde estão.
 - [ ] **Vista timeline**: ordenar por data em que viste, com linhas cronológicas.
 
 ## Recomendações / descoberta
-- [ ] **Notifica quando sai próximo episódio** dos teus em seguimento.
+- [ ] **Calendário de estreias ("esta semana")** — a **metade visual** da ideia
+  "notifica quando sai próximo episódio" (que está logo abaixo), e que se pode
+  fazer sem depender de notificações: é um ecrã, não um aviso. Vem do
+  `next_episode_to_air` do TMDB e do `nextAiringEpisode` do AniList, com
+  contagem decrescente.
+  **Não confundir com a ideia de baixo:** esta é a vista, aquela é o aviso. E o
+  aviso tem o bloqueio do "servidor adormece" no topo deste ficheiro.
+- [ ] **Plano de maratona** — dizes "acabar até dia X" e a app calcula episódios
+  por dia a partir da duração média **real** dessa série (que se sabe do
+  progresso), não de uma média genérica. É isso que o ajusta ao teu ritmo.
+- [ ] ~~Sagas e ordem de visionamento~~ — via `relations` do AniList. **Não fazer
+  assim:** as relations do AniList são ruidosas e inconsistentes, e "por onde
+  começar" derived delas dá recomendações erradas com mais confiança do que a
+  informação merece. Se se quiser, fazer com uma lista curada à mão.
+- [ ] **"Onde ver"** — o `watch/providers` do TMDB. Nota: **não é plano B para
+  quando as fontes falham** — as fontes da MEIDA são o próprio conteúdo, o TMDB
+  dá onde comprar/alugar. Duas coisas diferentes, com expectativas diferentes.
+- [ ] **Notifica quando sai próximo episódio** dos teus em seguimento. **Bloqueado pelo "servidor adormece"** (topo deste ficheiro): sem um trigger externo, o aviso só sai com a app aberta. A parte visual — o calendário de estreias — **não** tem esse bloqueio e é a mesma ideia.
 - [ ] **Top semanal**: ranking da tua lista por trending ou nota.
 - [ ] **"Podias gostar"**: recomendações baseadas nas notas altas (similaridade de géneros/tags).
 
 ## Multi-utilizador / social
+- [ ] **Escolher para os dois** — junta o `/pick` com o `/compare` e a interseção das duas watchlists, e guarda o resultado numa lista partilhada. O `/pick` e o `/compare` já existem; falta a interseção e a lista de dois.
+- [ ] **Compatibilidade de gosto** — percentagem e as maiores divergências, em `/u/:username` e no `/users`. Sai de comparar as notas sobre os títulos que **os dois** viram (com guarda: sem isso a percentagem mede títulos que um deles nem viu).
+- [ ] **Watch Party agendada** — dia e hora, link de convite e aviso quando começa. **O aviso depende do "servidor adormece"** (topo deste ficheiro): sem um trigger externo só avisa com a app aberta.
+- [ ] **Comentários no minuto certo** (estilo Bilibili) — o minuto já está guardado no comentário, portanto é mostrá-los quando o vídeo lá chega e **esconder os que estejam à frente do progresso**, que é o que resolve o spoiler. O `useVideoSync` já tem a posição sincronizada.
 - [ ] **Estadísticas comparadas com a média dos utilizadores** (rating global por título).
 
 ## Player / visual
@@ -35,6 +96,10 @@ lá" são análises do projeto antigo e ficam onde estão.
 - [ ] **Outros serviços de debrid além do Real-Debrid** (AllDebrid, TorBox, Debrid-Link). O `debrid.js` está escrito contra a API do RD: é preciso uma camada comum (`checkToken` / `instantInfo` / `addMagnet` / `createDownload`) e um selector de serviço no campo do token em Definições. TorBox é o único com plano grátis permanente, mas limitado a 1 download/dia.
 - [ ] **Avisar no Watch Party quando a fonte não sincroniza** — o `useVideoSync` só funciona no nosso player (o `postMessage` não atravessa o cross-origin do iframe do provider). Quem está numa sala e escolheu um iframe vê o play/pausa dos outros e o seu não mexe, e não há forma de saber se é a app ou o provider. Um aviso discreto na barra da sala evita que pareça partido.
 - [ ] **Estatísticas do modo grátis**: quanto do episódio veio de P2P e quanto da net, por fonte. É o que diz se o `critical` e o `priorizarPecas` estão a servir para alguma coisa — hoje não há forma de ver.
+
+- [ ] **Mostrar o estado das fontes** (online / lenta / em baixo) e passar à seguinte se uma não arrancar em X segundos. O trabalho difícil **já está feito**: o `providerHealth.js` sabe o estado de cada fonte e o `Player` já cai para a seguinte. Falta **mostrar** — e é a informação que faltava quando uma fonte não dá, porque agora a queda é silenciosa.
+- [ ] **Picture-in-Picture** — a API do browser (`requestPictureInPicture`) já serve para o `<video>` do nosso player. Falta ligar o botão, e escondê-lo nos iframes cross-origin, onde não háHIP.
+- [ ] **Mini-player que continua a tocar enquanto se navega no catálogo**, mais um "ainda estás a ver?" depois de N episódios em autoplay. A posição já se guarda para o "continua a ver"; falta manter o vídeo vivo enquanto a rota muda.
 
 ## Providers de anime / player nativo
 
@@ -50,6 +115,9 @@ lá" são análises do projeto antigo e ficam onde estão.
 
 ## UX / fluxos rápidos
 - [ ] **Keyboard shortcut "o"** para marcar visto/nota na Library (como no /compare).
+- [ ] **Barra de navegação em baixo no telemóvel** — Início, Pesquisa, Biblioteca, Perfil e "mais". Resolve a nav que **se parte a 375px** (medido: a pílula tem 395px num ecrã de 375px, por isso "Início" e o avatar ficam cortados), e traz a altura para convidar a instalar no ecrã principal. **Ao fazer isto, esconder os quatro botões fixos (voltar, avançar, novidades, ecrã inteiro) abaixo de ~700px** — a 375px eles ficam por cima dos ícones da nav, e ao tocar no sino quem reage é o botão de ecrã inteiro. Nota: o botão "Descarregar a app" agora aparece no site (estava partido até à 1.5.2), por isso a nav fica ainda mais larga e o limite tem de contar com ele.
+- [ ] **Paleta de comandos (Ctrl/Cmd+K)** — pesquisar, navegar e agir (marcar visto, dar nota, mudar a cor, "escolhe algo para mim"). Combina com o desktop e é o que faz uma app com muitas páginas ser usável sem rato.
+- [ ] **Onboarding nos primeiros 60 segundos** — importar de MAL, Letterboxd ou CSV, escolher géneros e cor, para o perfil nascer já cheio. Hoje quem entra vê a app vazia e não sabe por onde começar.
 
 ## Importação / dados
 - [ ] **Filtrar Library por nota/estado/tipo** (mais filtros no `LibraryControls`).
