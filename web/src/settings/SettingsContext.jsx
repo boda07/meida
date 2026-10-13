@@ -30,6 +30,17 @@ export function SettingsProvider({ children }) {
     const accent = settings.accent || "#c90303";
     root.style.setProperty("--accent", accent);
     root.style.setProperty("--accent-hover", shade(accent, 0.18));
+    // O acento QUANDO E' TEXTO. Sao duas cores porque sao dois papeis: o acento
+    // cheio vai para bordas e fundos, onde a legibilidade nao conta; o texto
+    // precisa de 4,5:1 sobre o fundo escuro (WCAG 2.1), e o vermelho por omissao
+    // da so 3,35:1. Clarear 35% para o branco da 5,46:1.
+    //
+    // `color-mix(in srgb, var(--accent) 65%, white)` daria o mesmo numero e
+    // dispensava o JS — mas nao se consegue mudar com o accent picker sem
+    // reescrever a regra, e o `shade()` ja existe e e' o que o `--accent-hover`
+    // usa. O `:root` do `styles.css` tem o valor por omissao para o ecra de
+    // arranque, que aparece antes de este codigo correr.
+    root.style.setProperty("--accent-text", shade(accent, 0.35));
   }, [settings.accent]);
 
   // Aplica a cor de fundo (e deriva as superficies um pouco mais claras).

@@ -5,6 +5,13 @@
   --bg-surface: #101015;
   --bg-surface2: #15151b;
   --accent: #c90303;
+  /* O acento usado como TEXTO. Nao e' a mesma cor: o acento cheio e' para bordas
+     e fundos, e sobre o fundo escuro da app o vermelho por omissao da so 3,35:1
+     — abaixo do minimo de 4,5:1 da WCAG para texto normal (medido a 2026-10-13).
+     Este e' o mesmo acento clareado 35% para o branco: 5,46:1. Vive aqui
+     (e nao so em JS) para o ecra de arranque ter a cor certa antes de o React
+     montar. O `SettingsContext` recalcula quando a cor muda. */
+  --accent-text: #dc5b5b;
   --text: #ffffff;
   --text-secondary: rgba(255, 255, 255, 0.6);
   --text-eyebrow: rgba(255, 255, 255, 0.72);
@@ -562,7 +569,7 @@ h2 {
 
 .profile-name {
   padding: 8px 16px;
-  color: var(--accent);
+  color: var(--accent-text);
   font-weight: 700;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   margin-bottom: 4px;
@@ -830,7 +837,7 @@ h2 {
 }
 
 .diary-watching {
-  color: var(--accent);
+  color: var(--accent-text);
   font-weight: 700;
 }
 
@@ -1560,7 +1567,7 @@ h2 {
 }
 
 .status.error {
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 .loading-status {
@@ -1647,7 +1654,7 @@ h2 {
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.12em;
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 .boot-dica {
@@ -1809,7 +1816,7 @@ h2 {
 }
 
 .icon-btn.wp-on {
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 .wp-badge {
@@ -1911,7 +1918,7 @@ h2 {
   font-size: 22px;
   font-weight: 800;
   letter-spacing: 3px;
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 .wp-members {
@@ -2141,7 +2148,7 @@ h2 {
 }
 
 .whatsnew-list li::marker {
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 /* Novidades com barra lateral de versoes (ver tambem as antigas). */
@@ -2984,7 +2991,7 @@ h2 {
   margin: 0;
   font-size: 14px;
   font-weight: 700;
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 .lib-header .row-title {
@@ -3149,7 +3156,7 @@ h2 {
   color: var(--bg-main, #080809);
 }
 .quick-add.mark {
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 /* ===== Auth ===== */
@@ -3572,7 +3579,7 @@ h2 {
 
 /* A legenda escolhida. O ponto e' para se ver qual esta' ligada sem ler. */
 .pc-pop button.on {
-  color: var(--accent, #c90303);
+  color: var(--accent-text, #dc5b5b);
   font-weight: 700;
 }
 
@@ -3698,7 +3705,7 @@ h2 {
 
 .tq {
   font-weight: 800;
-  color: var(--accent);
+  color: var(--accent-text);
   font-size: 13px;
 }
 
@@ -3767,7 +3774,7 @@ h2 {
   font-weight: 800;
   letter-spacing: 0.3px;
   vertical-align: middle;
-  color: var(--accent);
+  color: var(--accent-text);
   background: color-mix(in srgb, var(--accent) 18%, transparent);
   border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
   text-transform: uppercase;
@@ -3834,7 +3841,7 @@ h2 {
 }
 
 .player-arrancar svg {
-  color: var(--accent);
+  color: var(--accent-text);
   /* Um circulo por volta do triangulo: e' o simbolo de "play" que toda a gente
      reconhece, e mantem o botao legivel sem depender da cor. */
   padding: 14px 12px 14px 15px;
@@ -4710,7 +4717,7 @@ h2 {
 }
 
 .compare-title:hover {
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 .compare-ratings {
@@ -5027,7 +5034,7 @@ h2 {
    que distingue o link do resto do texto sem precisar de sublinhado (que num
    bloco de texto fica feio). */
 .mencao-link {
-  color: var(--accent);
+  color: var(--accent-text);
   font-weight: 600;
   text-decoration: none;
 }
@@ -5123,13 +5130,13 @@ h2 {
 }
 
 .comment-author:hover {
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 .comment-clock {
   font-size: 11px;
   font-weight: 700;
-  color: var(--accent);
+  color: var(--accent-text);
   background: rgba(201, 3, 3, 0.14);
   border: 1px solid rgba(201, 3, 3, 0.35);
   border-radius: var(--radius-pill);
@@ -5276,7 +5283,7 @@ h2 {
 .comment-cita-quem {
   flex: 0 0 auto;
   font-weight: 600;
-  color: var(--accent, #c90303);
+  color: var(--accent-text, #dc5b5b);
 }
 
 /* O texto vai cortado para uma linha: e' para lembrar de quem e', nao para ler.
@@ -5759,7 +5766,7 @@ h2 {
 }
 
 .st-top-linha:hover .st-top-nome {
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 .st-top-linha:last-child {
@@ -5796,7 +5803,7 @@ h2 {
   font-size: 13px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 .st-vazio {
@@ -6003,7 +6010,7 @@ h2 {
 
 .people-link:hover {
   background: var(--bg-surface);
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 .users-search {

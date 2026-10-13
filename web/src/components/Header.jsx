@@ -4,7 +4,7 @@ import NotificationBell from "./NotificationBell.jsx";
 import ProfileMenu from "./ProfileMenu.jsx";
 import WatchParty from "./WatchParty.jsx";
 import { useT } from "../i18n/I18nContext.jsx";
-import { ehVersaoWeb, URL_RELEASE } from "../lib/web.js";
+import { noBrowser, URL_RELEASE } from "../lib/web.js";
 
 function HomeIcon() {
   return (
@@ -148,9 +148,15 @@ export default function Header() {
               app" — a pessoa ja a tem. A regra esta' em `lib/web.js`; ve o
               ficheiro para o porque de nao vir do runtime-config.
 
-              `ehVersaoWeb()` e' CHAMADA, nao usada como valor: uma funcao e'
-              sempre verdadeira, e `{funcao && ...}` mostraria o botao sempre. */}
-          {ehVersaoWeb() && (
+              Aqui tem de ser `noBrowser()`, NUNCA `ehVersaoWeb()`. A funcao pura
+              recebe o `hostname` como argumento; chamada sem argumentos recebe
+              `undefined`, cai em `if (!host) return false` e o botao NUNCA
+              aparecia — em lado nenhum, nem no site. Foi assim que passou
+              despercebido: `testar-web.mjs` exercita a funcao pura com
+              argumentos explicitos, por isso o erro do CHAMADOR era invisivel.
+              `noBrowser()` e' a mesma pergunta a ir buscar o `window` — e e' a
+              unica forma de a fazer sem escrever o `window` a mao. */}
+          {noBrowser() && (
             <a
               className="nav-descarregar"
               href={URL_RELEASE}

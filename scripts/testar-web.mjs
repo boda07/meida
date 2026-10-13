@@ -85,6 +85,76 @@ ok_(
   URL_RELEASE === "https://github.com/boda07/meida/releases/latest"
 );
 
+/* ---------- 6) O CHAMADOR: `noBrowser()`, nunca `ehVersaoWeb()` cru ---------- */
+
+// Tudo o que está a testar isto acima e' a funcao PURA, com argumentos
+// explicitos. Dava para ela estar perfeita e o botao nao aparecer nunca, porque
+// o erro estava na chamada: `ehVersaoWeb()` sem argumentos recebe
+// `hostname === undefined`, cai em `if (!host) return false`, e devolve `false`
+// em qualquer sitio. Era o que acontecia no `Header.jsx` — o botao
+// "Descarregar a app" nunca aparecia, nem no site.
+//
+// Daqui a frente a regra e' simples: FORA de `web.js`, ninguem chama
+// `ehVersaoWeb` directamente — chama-se `noBrowser()`, que e' a mesma pergunta
+// com o `window` dentro.
+{
+  const raiz = path.join(AQUI, "..", "web", "src");
+  const ficheiros = [];
+  (function anda(dir) {
+    for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+      const p = path.join(dir, e.name);
+      if (e.isDirectory()) anda(p);
+      else if (/\.jsx?$/.test(e.name)) ficheiros.push(p);
+    }
+  })(raiz);
+
+  const maus = [];
+  for (const f of ficheiros) {
+    if (path.basename(f) === "web.js") continue; // a propria lib define as duas
+    const s = fs.readFileSync(f, "utf8")
+      .replace(/\/\*[\s\S]*?\*\//g, "")      // comentarios (inclui {/* ... */} do JSX)
+      .replace(/^[ \t]*\/\/.*$/gm, "");      // linhas de comentario
+    for (const m of s.matchAll(/\behVersaoWeb\s*\(([^)]*)\)/g)) {
+      const dentroDoWebJs = path.basename(f) === "web.js";
+      if (!dentroDoWebJs && m[1].trim() === "") {
+        maus.push(path.relative(path.join(AQUI, ".."), f) + "  ehVersaoWeb() sem argumentos");
+      }
+    }
+  }
+  ok_(
+    "ninguem chama ehVersaoWeb() sem argumentos fora de web.js",
+    maus.length === 0,
+    maus.slice(0, 3).join(" | ")
+  );
+  ok_("o Header usa noBrowser()", /noBrowser\(\)/.test(fs.readFileSync(path.join(raiz, "components", "Header.jsx"), "utf8")));
+}
+
+/* ---------- 7) A `noBrowser()` responde mesmo ao `window` ---------- */
+
+// `noBrowser()` e' o que o Header chama, portanto tem de ser testada — o teste
+// acima so prova que nao ha chamadas cruas, nao que a funcao funciona.
+{
+  const webJs = path.join(AQUI, "..", "web", "src", "lib", "web.js");
+
+  async function comWindow(w) {
+    const antigo = globalThis.window;
+    globalThis.window = w;
+    try {
+      // Import com cache-buster: o `noBrowser` ja estava guardado no modulo.
+      const mod = await import("file:///" + webJs.replace(/\\/g, "/") + "?w=" + Math.random());
+      return mod.noBrowser();
+    } finally {
+      if (antigo === undefined) delete globalThis.window;
+      else globalThis.window = antigo;
+    }
+  }
+
+  ok_("noBrowser(): no site mostra", (await comWindow({ location: { hostname: "meida.onrender.com" } })) === true);
+  ok_("noBrowser(): em localhost nao mostra", (await comWindow({ location: { hostname: "localhost" } })) === false);
+  ok_("noBrowser(): no Electron nao mostra", (await comWindow({ electronAPI: {}, location: { hostname: "meida.onrender.com" } })) === false);
+  ok_("noBrowser(): sem window nao mostra", (await comWindow(undefined)) === false);
+}
+
 /* ---------- 6) MUTACAO ---------- */
 // Se a regra deixar de distinguir a app do site, isto tem de falhar.
 
