@@ -883,6 +883,30 @@ export const DICIONARIO = {
     "Sem som": "Sem som",
     "Volume": "Volume",
     "Posição no vídeo": "Posição no vídeo",
+    // --- HeatmapAtividade: mapa de calor de atividade ---
+    "Quando te mexeste": "Quando te mexeste",
+    "Atividade por dia": "Atividade por dia",
+    "{n} no dia": "{n} no dia",
+    "sem atividade": "sem atividade",
+    "{n} dias com atividade": "{n} dias com atividade",
+    "menos": "menos",
+    "mais": "mais",
+    "Sem atividade registada ainda. Assim que marcares ou deres nota a alguma coisa, o mapa enche.":
+      "Sem atividade registada ainda. Assim que marcares ou deres nota a alguma coisa, o mapa enche.",
+    // --- heatmap: data por extenso (12 meses + o formato) ---
+    "{dia} de {mes} de {ano}": "{dia} de {mes} de {ano}",
+    "janeiro": "janeiro",
+    "fevereiro": "fevereiro",
+    "marco": "marco",
+    "abril": "abril",
+    "maio": "maio",
+    "junho": "junho",
+    "julho": "julho",
+    "agosto": "agosto",
+    "setembro": "setembro",
+    "outubro": "outubro",
+    "novembro": "novembro",
+    "dezembro": "dezembro",
   },
 
   en: {
@@ -1730,6 +1754,30 @@ export const DICIONARIO = {
     "Sem som": "Mute",
     "Volume": "Volume",
     "Posição no vídeo": "Video position",
+    // --- HeatmapAtividade: mapa de calor de atividade ---
+    "Quando te mexeste": "When you were active",
+    "Atividade por dia": "Activity per day",
+    "{n} no dia": "{n} that day",
+    "sem atividade": "no activity",
+    "{n} dias com atividade": "{n} days with activity",
+    "menos": "less",
+    "mais": "more",
+    "Sem atividade registada ainda. Assim que marcares ou deres nota a alguma coisa, o mapa enche.":
+      "No activity recorded yet. As soon as you mark something or give it a score, the map fills up.",
+    // --- heatmap: data por extenso (12 meses + o formato) ---
+    "{dia} de {mes} de {ano}": "{day} of {month} of {year}",
+    "janeiro": "January",
+    "fevereiro": "February",
+    "marco": "March",
+    "abril": "April",
+    "maio": "May",
+    "junho": "June",
+    "julho": "July",
+    "agosto": "August",
+    "setembro": "September",
+    "outubro": "October",
+    "novembro": "November",
+    "dezembro": "December",
   },
 };
 

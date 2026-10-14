@@ -3657,6 +3657,89 @@ h2 {
    video) foi para dentro da barra de controlos — ver `QualityMenu.jsx`. Antes
    ficava a flutuar fora do jogador, o que se via quando a barra ficou nossa. */
 
+/* ===== Mapa de calor de atividade (o heatmap do GitHub) ===================
+
+   Um quadradinho por dia, 7 linhas (domingo a sabado) e uma coluna por semana.
+   A escala e' o acento claro, para o mapa ficar da cor da app e nao ser um
+   quadradinho verde do GitHub no meio do escuro. */
+
+.heatmap {
+  margin: 0;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.heatmap-topo {
+  position: relative;
+  height: 16px;
+  margin-left: 0;
+  min-width: 700px;
+  font-size: 10px;
+  color: var(--text-secondary);
+}
+
+.heatmap-topo span {
+  position: absolute;
+  top: 0;
+  white-space: nowrap;
+}
+
+.heatmap-corpo svg {
+  display: block;
+}
+
+/* Celula sem atividade: a malha, tao discreta como a do Github. */
+.heatmap-celula {
+  fill: rgba(255, 255, 255, 0.06);
+}
+
+/* Os cinco degraus. Derivados do acento para dentro do claro, para que o
+   primeiro degrau continue legivel sobre o fundo escuro — `--accent` cheio
+   neste sitio dava 3,35:1 (ver `--accent-text`, em cima). */
+.heatmap-celula.n1 { fill: color-mix(in srgb, var(--accent-text) 26%, transparent); }
+.heatmap-celula.n2 { fill: color-mix(in srgb, var(--accent-text) 45%, transparent); }
+.heatmap-celula.n3 { fill: color-mix(in srgb, var(--accent-text) 68%, transparent); }
+.heatmap-celula.n4 { fill: var(--accent-text); }
+
+/* Dia que nao existe ainda (a semana que ainda nao chegou, ou a do inicio do
+   mapa): quase invisivel, para nao parecer um dia sem atividade. */
+.heatmap-celula.fora {
+  fill: rgba(255, 255, 255, 0.02);
+}
+
+.heatmap-celula:hover {
+  stroke: var(--text);
+  stroke-width: 1.5;
+}
+
+.heatmap-legenda {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.heatmap-escala {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.heatmap-escala i {
+  display: block;
+  width: 11px;
+  height: 11px;
+  border-radius: 2px;
+}
+
+.heatmap-vazio {
+  font-size: 13px;
+  margin: 0;
+}
+
 /* ===== Torrents ===== */
 .torrent-filters {
   display: flex;

@@ -40,8 +40,18 @@ const parseGenres = (json) => {
  *   decadaFavorita:{decada:number,n:number,comAno:number}|null,
  *   histogram:{de:number,a:number,largura:number,barras:{de:number,a:number,n:number}[]},
  *   decadas:{decada:number,n:number}[],
+ *   dias:{dia:string,n:number}[],
  * }}
  */
+/** "YYYY-MM-DD" a partir de um ISO. Igual ao do `routes/achievements.js`:
+ *  as duas rachas e o mapa de calor têm de concordar nas chaves. */
+function dayOf(iso) {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toISOString().slice(0, 10);
+}
+
 export function statsFor(userId) {
   const linhas = db
     .prepare("SELECT * FROM library WHERE user_id = ?")
@@ -114,6 +124,51 @@ export function statsFor(userId) {
     barras[i].n++;
   }
 
+  // ---- atividade por dia (o mapa de calor) --------------------------------
+  // Um dia por chave "YYYY-MM-DD", com o numero de coisas que nesse dia
+  // aconteceram. E' a MESMA contagem que a racha usa (`routes/achievements.js`):
+  // `library.updated_at` e os tres campos de data do `progress`. Escolhi as
+  // mesmas de proposito — se o heatmap contasse outra coisa, a racha que se
+  // ve aqui embaixo nao bateria com os quadradinhos, e um dos dois estaria
+  // errado sem ninguem ver.
+  //
+  // Aviso honesto: `updated_at` tambem muda quando se edita um titulo, e nao so
+  // quando se ve. Um titulo visto em janeiro cuja nota se mexeu em marco conta
+  // como atividade em marco. E' o mesmo que a racha ja faz, e e' o que torna os
+  // dois numeros coerentes entre si.
+  // Um dia por chave "YYYY-MM-DD", com o numero de coisas que nesse dia
+  // aconteceram. E' a MESMA contagem que a racha usa (`routes/achievements.js`):
+  // `library.updated_at` e os tres campos de data do `progress`. Escolhi as
+  // mesmas de proposito — se o heatmap contasse outra coisa, a racha que se ve
+  // em `/achievements` nao bateria com os quadradinhos, e um dos dois estaria
+  // errado sem ninguem ver.
+  //
+  // Aviso honesto: `updated_at` tambem muda quando se edita um titulo, e nao so
+  // quando se ve. Um titulo visto em janeiro cuja nota se mexeu em marco conta
+  // como atividade em marco. E' o mesmo que a racha ja faz, e e' o que torna os
+  // dois numeros coerentes entre si.
+
+  // As datas do diario. Sao tres colunas so (inicio, fim, actualizacao), e o
+  // que interessa e' QUANTAS vezes cada dia aparece — por isso vem agrupado do
+  // servidor e nao linha a linha.
+  const porDia = new Map();
+  const somaDia = (dia) => {
+    if (!dia) return;
+    porDia.set(dia, (porDia.get(dia) || 0) + 1);
+  };
+  for (const r of linhas) somaDia(dayOf(r.updated_at));
+
+  const datasProgresso = db
+    .prepare(
+      `SELECT started_at, finished_at, updated_at FROM progress WHERE user_id = ?`
+    )
+    .all(userId);
+  for (const p of datasProgresso) {
+    somaDia(dayOf(p.started_at));
+    somaDia(dayOf(p.finished_at));
+    somaDia(dayOf(p.updated_at));
+  }
+
   // ---- o "melhor" de cada: desempate por nome ------------------------------
   // Desempate alfabetico, como no `perfil`: sem isso dois generos com 12 titulos
   // trocavam de sitio entre dois carregamentos e o numero parecia saltar.
@@ -159,5 +214,12 @@ export function statsFor(userId) {
       .sort((a, b) => a.decada - b.decada),
 
     histogram: { de: 1, a: 100, largura: 10, barras },
+
+    // So' os dias QUE TIVERAM atividade, ordenados. Mandar os 365 dias todos,
+    // com os zeros, seria 4 KB de JSON para o browser preencher com zeros — e o
+    // desenho do heatmap faz isso na mesma.
+    dias: [...porDia.entries()]
+      .map(([dia, n]) => ({ dia, n }))
+      .sort((a, b) => (a.dia < b.dia ? -1 : 1)),
   };
 }

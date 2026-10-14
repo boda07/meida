@@ -20,6 +20,7 @@ import { Link } from "react-router-dom";
 import { api } from "../api/client.js";
 import { useAuth } from "../auth/AuthContext.jsx";
 import HistogramaNotas from "../components/HistogramaNotas.jsx";
+import HeatmapAtividade from "../components/HeatmapAtividade.jsx";
 import LoadingStatus from "../components/LoadingStatus.jsx";
 import { useT } from "../i18n/I18nContext.jsx";
 
@@ -99,6 +100,17 @@ export default function Stats() {
           <dd>{data.paraVer}</dd>
         </div>
       </dl>
+
+      <section className="st-bloco">
+        <div className="st-bloco-topo">
+          <h2 className="st-titulo">{t("Quando te mexeste")}</h2>
+        </div>
+        {/* Conta o MESMO que a racha das Conquistas (`library.updated_at` e as
+            tres datas do diario), para os dois numeros concordarem. Por isso
+            mede dias em que mexeste em alguma coisa — e nao dias em que viste
+            um filme do principio ao fim. */}
+        <HeatmapAtividade dias={data.dias || []} />
+      </section>
 
       <section className="st-bloco">
         <div className="st-bloco-topo">
