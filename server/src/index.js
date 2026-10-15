@@ -19,6 +19,7 @@ import { debridRouter } from "./routes/debrid.js";
 import { progressRouter } from "./routes/progress.js";
 import { exportRouter } from "./routes/export.js";
 import { achievementsRouter } from "./routes/achievements.js";
+import { goalsRouter } from "./routes/goals.js";
 import { socialRouter } from "./routes/social.js";
 import { commentsRouter } from "./routes/comments.js";
 import { watchPartyRouter } from "./routes/watchparty.js";
@@ -72,6 +73,7 @@ app.use("/api", debridRouter);
 app.use("/api", progressRouter);
 app.use("/api", exportRouter);
 app.use("/api", achievementsRouter);
+app.use("/api", goalsRouter);
 app.use("/api", statsRouter);
 app.use("/api", libraryRouter);
 

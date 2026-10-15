@@ -17,6 +17,8 @@
 // "zero" de "nao medido": `tempoVisto: 0` e' a verdade quando a app ainda nao
 // media, e a pagina tem de dizer isso em vez de esconder a figura sem explicacao.
 import { db } from "./db/index.js";
+import { toApi } from "./store.js";
+import { contaFilmesPorAno, melhoresDoAno } from "./metas.js";
 
 const parseGenres = (json) => {
   try {
@@ -43,6 +45,32 @@ const parseGenres = (json) => {
  *   dias:{dia:string,n:number}[],
  * }}
  */
+/**
+ * Quantas coisas por HORA DO DIA, em 24 baldes.
+ *
+ * PURE, e por isso exportado para o teste — e' a logica nova deste bloco.
+ *
+ * **As horas sao em UTC, e o cliente roda o histograma.** E' o mesmo cuidado do
+ * `dayOf` acima, mas mais visivel: no mapa de calor um dia fora de sitio muda
+ * uma coluna, aqui mudaria a hora de um pico de "as 22h" para as 23h — e o
+ * Render e o FadeHost estao em UTC enquanto o utilizador nao. Rodar um
+ * histograma e' exacto (nao e' uma media nem uma aproximacao) e custa 24
+ * numeros em vez de milhares de datas.
+ *
+ * @param isos  as datas a contar
+ * @returns {{hora:number,n:number}[]} sempre 24 baldes, do 0 ao 23
+ */
+export function contaPorHora(isos) {
+  const porHora = new Array(24).fill(0);
+  for (const iso of isos || []) {
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) continue;
+    // `getUTCHours()` e' o que casa com a chave do `dayOf`, que tambem e' UTC.
+    porHora[d.getUTCHours()]++;
+  }
+  return porHora.map((n, hora) => ({ hora, n }));
+}
+
 /** "YYYY-MM-DD" a partir de um ISO. Igual ao do `routes/achievements.js`:
  *  as duas rachas e o mapa de calor têm de concordar nas chaves. */
 function dayOf(iso) {
@@ -56,6 +84,19 @@ export function statsFor(userId) {
   const linhas = db
     .prepare("SELECT * FROM library WHERE user_id = ?")
     .all(userId);
+  // `linhas` sao as linhas CRUAS do SQLite (`media_type`, `updated_at`), e o
+  // resto deste ficheiro conta nelas assim. As funcoes de `metas.js`, ao
+  // contrario, esperam a forma de `listLibrary` (`type`, `updatedAt`) porque o
+  // `/api/goals` lhes passa essa.
+  //
+  // **Esta linha resolve a diferenca, e sem ela a meta do cartao de partilha
+  // dava sempre zero.** Foi o que aconteceu na primeira versao: `l.type` era
+  // `undefined`, o `continue` comecava a correr e `filmesPorAno`/`topDoAno`
+  // voltavam vazios — com o build e os testes todos a passar, porque nenhum
+  // teste chega a executar o SQL. `melhoresDoAno` e `contaFilmesPorAno` tambem
+  // leem `l.watched`, `l.score`, `l.title` e `l.poster`, que so' existem com
+  // este mapeamento.
+  const emApi = linhas.map((r) => toApi(r));
 
   // ---- contagens, notas, generos, anos ------------------------------------
   const generos = new Map();
@@ -156,7 +197,13 @@ export function statsFor(userId) {
     if (!dia) return;
     porDia.set(dia, (porDia.get(dia) || 0) + 1);
   };
-  for (const r of linhas) somaDia(dayOf(r.updated_at));
+  // As duas contagens leem a MESMA linha, por isso basta um passe: o dia para o
+  // mapa e a hora para o grafico, sem uma segunda leitura da biblioteca.
+  const datas = [];
+  for (const r of linhas) {
+    somaDia(dayOf(r.updated_at));
+    datas.push(r.updated_at);
+  }
 
   const datasProgresso = db
     .prepare(
@@ -167,12 +214,17 @@ export function statsFor(userId) {
     somaDia(dayOf(p.started_at));
     somaDia(dayOf(p.finished_at));
     somaDia(dayOf(p.updated_at));
+    datas.push(p.started_at, p.finished_at, p.updated_at);
   }
 
   // ---- o "melhor" de cada: desempate por nome ------------------------------
   // Desempate alfabetico, como no `perfil`: sem isso dois generos com 12 titulos
   // trocavam de sitio entre dois carregamentos e o numero parecia saltar.
-  const melhor = (m, chave) => {
+  //
+  // O segundo argumento que esta funcao aceitava (`chave`) nunca foi usado — o
+  // desempate e' sempre sobre o nome da chave, em qualquer um dos dois mapas —
+  // e aparecia como aviso de lint.
+  const melhor = (m) => {
     let best = null;
     for (const [nome, n] of m) {
       if (!best || n > best.n || (n === best.n && String(nome).localeCompare(String(best.nome), "pt") < 0)) {
@@ -182,8 +234,8 @@ export function statsFor(userId) {
     return best;
   };
 
-  const gen = melhor(generos, "nome");
-  const dec = melhor(decadas, "decada");
+  const gen = melhor(generos);
+  const dec = melhor(decadas);
   const comAno = [...decadas.values()].reduce((a, b) => a + b, 0);
 
   return {
@@ -212,6 +264,22 @@ export function statsFor(userId) {
     decadas: [...decadas.entries()]
       .map(([decada, n]) => ({ decada, n }))
       .sort((a, b) => a.decada - b.decada),
+
+    // 24 baldes de HORA, em UTC — quem mostra e' o cliente, que roda pelo fuso
+    // do utilizador. Vem sempre com os 24, mesmo vazios: o grafico precisa de
+    // a linha toda para as horas a serio se lerem como horas.
+    horasUtc: contaPorHora(datas),
+
+    // Os 3 titulos que melhor avaliaste NESTE ANO — o que dá conteudo a um
+    // cartao de partilha. Escopado ao ano de proposito: o cartao tem de ser todo
+    // "deste ano", e nao metade deste ano e metade de sempre.
+    topDoAno: melhoresDoAno(emApi, new Date().getUTCFullYear(), 3),
+
+    // A MESMA contagem que `/api/goals` devolve, pela MESMA funcao pura e com
+    // o MESMO argumento — e por isso que as duas nao podem divergir. Repete-se
+    // aqui para o cartao de partilha nao obrigar a `/stats` a fazer um segundo
+    // pedido so' para saber quantos titulos marcaste este ano.
+    filmesPorAno: contaFilmesPorAno(emApi, new Date().getUTCFullYear()),
 
     histogram: { de: 1, a: 100, largura: 10, barras },
 

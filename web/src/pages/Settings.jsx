@@ -769,7 +769,7 @@ export default function Settings() {
         const csv = (header, rows) =>
           [header.join(","), ...rows.map((r) => r.map(cell).join(","))].join("\r\n");
         const libCsv = csv(
-          ["type", "tmdbId", "title", "titleEn", "titleRomaji", "generos", "nota", "media_comunidade", "visto", "watchlist", "atualizado_em"],
+          ["type", "tmdbId", "title", "titleEn", "titleRomaji", "generos", "nota", "media_comunidade", "visto", "watchlist", "atualizado_em", "visto_em"],
           library.map((i) => [
             i.type,
             i.tmdbId,
@@ -782,6 +782,11 @@ export default function Settings() {
             i.watched ? "sim" : "",
             i.watchlist ? "sim" : "",
             i.updatedAt,
+            // Vazio = "nao se sabe quando foi visto". **Nunca** se escreve
+            // aqui o `updatedAt`: a data do ultimo toque nao e' a data em que a
+            // pessoa o viu, e um export/import que as trocasse punha meses e anos
+            // errados na timeline do outro PC sem ninguem ter como saber.
+            i.watchedAt || "",
           ])
         );
         const diaryCsv = csv(

@@ -907,6 +907,61 @@ export const DICIONARIO = {
     "outubro": "outubro",
     "novembro": "novembro",
     "dezembro": "dezembro",
+    // --- Stats: decadas e horas (graficos de barras) ---
+    "De que décadas": "De que décadas",
+    "mais vistos: {d}s": "mais vistos: {d}s",
+    "{n} títulos por década, pelo ano de lançamento.":
+      "{n} títulos por década, pelo ano de lançamento.",
+    "{n} dos teus títulos não têm ano, por isso não entram aqui.":
+      "{n} dos teus títulos não têm ano, por isso não entram aqui.",
+    "A que horas mexes": "A que horas mexes",
+    "{n} mexidas pela tua hora local. Conta a última vez que tocaste em cada título.":
+      "{n} mexidas pela tua hora local. Conta a última vez que tocaste em cada título.",
+    // --- Metas e desafios (/achievements) ---
+    "Metas": "Metas",
+    "Marcaste {n} de {a} filmes como vistos em {ano}.":
+      "Marcaste {n} de {a} filmes como vistos em {ano}.",
+    "Faltam {n}.": "Faltam {n}.",
+    "Cumpreste. Já marcaste mais do que a meta.":
+      "Cumpreste. Já marcaste mais do que a meta.",
+    "Conta a última vez que tocaste em cada filme, e só os que marcaste como vistos — o que puseste na lista não conta.":
+      "Conta a última vez que tocaste em cada filme, e só os que marcaste como vistos — o que puseste na lista não conta.",
+    "A tua meta:": "A tua meta:",
+    "A tua meta": "A tua meta",
+    "Meta cumprida: {n} de {a}.": "Meta cumprida: {n} de {a}.",
+    "{n} de {a}. Faltam {f}.": "{n} de {a}. Faltam {f}.",
+    "As metas não carregaram.": "As metas não carregaram.",
+    "Não consegui guardar a meta.": "Não consegui guardar a meta.",
+    "Desafios": "Desafios",
+    "Um filme de cada década, desde {a}.": "Um filme de cada década, desde {a}.",
+    "{c} de {d} décadas com pelo menos um filme visto.":
+      "{c} de {d} décadas com pelo menos um filme visto.",
+    "{n} dos teus filmes vistos não têm ano guardado, por isso não contam para nenhuma década.":
+      "{n} dos teus filmes vistos não têm ano guardado, por isso não contam para nenhuma década.",
+    // --- Metas: alvo invalido ---
+    "alvo invalido": "alvo invalido",
+    // --- Cartao de partilha (imagem do ano) ---
+    "O teu ano": "O teu ano",
+    "títulos marcados como vistos": "títulos marcados como vistos",
+    "dias com atividade": "dias com atividade",
+    "mais ativo em": "mais ativo em",
+    "Cartão do teu ano": "Cartão do teu ano",
+    "A desenhar…": "A desenhar…",
+    "Descarregado": "Descarregado",
+    "Não consegui desenhar": "Não consegui desenhar",
+    "Não consegui gerar a imagem. Uma das imagens não deixou o desenho ser exportado.":
+      "Não consegui gerar a imagem. Uma das imagens não deixou o desenho ser exportado.",
+    "Partilhar": "Partilhar",
+    "Uma imagem com o teu ano. Sai para o teu computador como um ficheiro, e usa a cor que escolheste nas definições.":
+      "Uma imagem com o teu ano. Sai para o teu computador como um ficheiro, e usa a cor que escolheste nas definições.",
+    // --- Timeline da biblioteca ---
+    "Ver por data": "Ver por data",
+    "Ver em grelha": "Ver em grelha",
+    "Sem data de visionamento": "Sem data de visionamento",
+    "{n} dos teus títulos vistos não têm data de visionamento: foram marcados antes de a app a guardar. Ficam no fim, sem mês.":
+      "{n} dos teus títulos vistos não têm data de visionamento: foram marcados antes de a app a guardar. Ficam no fim, sem mês.",
+    "{n} com a data em que os marcaste como vistos.":
+      "{n} com a data em que os marcaste como vistos.",
   },
 
   en: {
@@ -1778,6 +1833,62 @@ export const DICIONARIO = {
     "outubro": "October",
     "novembro": "November",
     "dezembro": "December",
+    // --- Stats: decadas e horas (graficos de barras) ---
+    "De que décadas": "From which decades",
+    "mais vistos: {d}s": "most watched: {d}s",
+    "{n} títulos por década, pelo ano de lançamento.":
+      "{n} titles by decade, by release year.",
+    "{n} dos teus títulos não têm ano, por isso não entram aqui.":
+      "{n} of your titles have no year, so they are not counted here.",
+    "A que horas mexes": "What hours you use it",
+    "{n} mexidas pela tua hora local. Conta a última vez que tocaste em cada título.":
+      "{n} by your local time. It counts the last time you touched each title.",
+    // --- Metas e desafios (/achievements) ---
+    "Metas": "Goals",
+    "Marcaste {n} de {a} filmes como vistos em {ano}.":
+      "You marked {n} of {a} films as watched in {ano}.",
+    "Faltam {n}.": "{n} to go.",
+    "Cumpreste. Já marcaste mais do que a meta.":
+      "Done. You have already marked more than the goal.",
+    "Conta a última vez que tocaste em cada filme, e só os que marcaste como vistos — o que puseste na lista não conta.":
+      "It counts the last time you touched each film, and only the ones you marked as watched — what you put on the list does not count.",
+    "A tua meta:": "Your goal:",
+    "A tua meta": "Your goal",
+    "Meta cumprida: {n} de {a}.": "Goal reached: {n} of {a}.",
+    "{n} de {a}. Faltam {f}.": "{n} of {a}. {f} to go.",
+    "As metas não carregaram.": "The goals did not load.",
+    "Não consegui guardar a meta.": "Could not save the goal.",
+    "Desafios": "Challenges",
+    "Um filme de cada década, desde {a}.":
+      "One film from each decade, since {a}.",
+    "{c} de {d} décadas com pelo menos um filme visto.":
+      "{c} of {d} decades with at least one film watched.",
+    "{n} dos teus filmes vistos não têm ano guardado, por isso não contam para nenhuma década.":
+      "{n} of your watched films have no year stored, so they count for no decade.",
+    // --- Metas: alvo invalido ---
+    "alvo invalido": "invalid goal",
+    // --- Cartao de partilha (imagem do ano) ---
+    "O teu ano": "Your year",
+    "títulos marcados como vistos": "titles marked as watched",
+    "dias com atividade": "days with activity",
+    "mais ativo em": "busiest in",
+    "Cartão do teu ano": "Your year card",
+    "A desenhar…": "Drawing…",
+    "Descarregado": "Downloaded",
+    "Não consegui desenhar": "Could not draw it",
+    "Não consegui gerar a imagem. Uma das imagens não deixou o desenho ser exportado.":
+      "Could not generate the image. One of the images would not let the drawing be exported.",
+    "Partilhar": "Share",
+    "Uma imagem com o teu ano. Sai para o teu computador como um ficheiro, e usa a cor que escolheste nas definições.":
+      "An image of your year. It is saved to your computer as a file, and uses the colour you picked in settings.",
+    // --- Timeline da biblioteca ---
+    "Ver por data": "View by date",
+    "Ver em grelha": "View as grid",
+    "Sem data de visionamento": "No viewing date",
+    "{n} dos teus títulos vistos não têm data de visionamento: foram marcados antes de a app a guardar. Ficam no fim, sem mês.":
+      "{n} of your watched titles have no viewing date: they were marked before the app started recording one. They stay at the end, with no month.",
+    "{n} com a data em que os marcaste como vistos.":
+      "{n} with the date you marked them as watched.",
   },
 };
 

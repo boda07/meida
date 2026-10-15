@@ -4,6 +4,7 @@ import { api } from "../api/client.js";
 import { useAuth } from "../auth/AuthContext.jsx";
 import { BadgeIcon } from "../components/icons.jsx";
 import LoadingStatus from "../components/LoadingStatus.jsx";
+import MetasDesafios from "../components/MetasDesafios.jsx";
 import { useT } from "../i18n/I18nContext.jsx";
 
 export default function Achievements() {
@@ -73,6 +74,10 @@ export default function Achievements() {
           </div>
         ))}
       </div>
+
+      {/* As metas vao DEPOIS das conquistas, e nao antes: a pagina ja abre com o
+          que a pessoa ja conseguiu, e e' la que vai procurar. */}
+      <MetasDesafios />
     </div>
   );
 }

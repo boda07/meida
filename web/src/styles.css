@@ -6380,3 +6380,398 @@ h2 {
     width: auto;
   }
 }
+
+/* ===== Metas e desafios (/achievements) =====
+   As classes todas comecam por `metas-` ou `desafio-`/`decada-`, e nenhuma
+   delas colide com nada que ja existisse (verificado com grep antes de escrever).
+
+   O anel usa `currentColor` e nao uma cor fixa: assim o texto do anel e a pista
+   herdam a cor do texto normal, e o arco usa `var(--accent)` — que e' o mesmo
+   acento que o resto da app e que a pessoa escolheu nas definicoes. E' o que faz
+   o anel mudar de cor com o tema sem uma regra nova. */
+.metas {
+  margin-top: 28px;
+  padding-top: 22px;
+  border-top: 1px solid #25252b;
+}
+
+.metas-alvo {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+
+.metas-alvo-texto {
+  flex: 1 1 260px;
+  min-width: 0;
+}
+
+.metas-alvo-titulo {
+  font-weight: 600;
+  font-size: 15px;
+  margin: 0 0 4px;
+}
+
+.metas-alvo-nota {
+  font-size: 13px;
+  margin: 2px 0 0;
+}
+
+.anel-meta {
+  flex: 0 0 auto;
+}
+
+/* As duas cores do anel sao variaveis e nao `color: currentColor`: o
+   `testar-acento.mjs` proibe a cor de acento cheia em texto, porque nao passa o
+   contraste (WCAG 2.1). Um traço nao e' texto. Escrever a cor no `stroke` do
+   `<circle>` e' o mesmo efeito sem a regra que mente sobre o que e' texto. */
+/* O `stroke` do arco e' um ATRIBUTO (`stroke="var(--accent)"` no JSX) e nao
+   uma regra daqui. Um atributo de apresentacao tem menos prioridade do que
+   qualquer CSS, por isso esta regra ganha quando a meta esta' cumprida — que e'
+   o unico sitio que precisa de CSS. A pista leva a cor toda no atributo. */
+.anel-meta.cumprida .anel-meta-arco {
+  stroke: #2ea043;
+}
+
+.anel-meta-num {
+  fill: var(--text);
+  font-weight: 700;
+  font-size: 30px;
+  font-family: inherit;
+}
+
+.metas-escolha {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.metas-escolha-btn {
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 6px 14px;
+  min-height: 32px;
+  border-radius: 999px;
+  border: 1px solid #2e2e36;
+  background: #17171b;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+
+.metas-escolha-btn:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+.metas-escolha-btn.on {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.metas-escolha-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.metas-desafio-titulo {
+  margin-top: 26px;
+}
+
+.desafio {
+  background: #131316;
+  border: 1px solid #25252b;
+  border-radius: 12px;
+  padding: 14px;
+  margin-top: 12px;
+}
+
+.desafio-regra {
+  font-weight: 600;
+  font-size: 15px;
+  margin: 0;
+}
+
+.desafio-progresso {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 4px 0 12px;
+}
+
+.desafio-decadas {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+}
+
+.decada {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 13px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: 1px solid #2e2e36;
+  font-variant-numeric: tabular-nums;
+}
+
+.decada.feita {
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+  border-color: var(--accent);
+}
+
+.decada.falta {
+  color: #7c7c86;
+  border-style: dashed;
+}
+
+.decada-n {
+  font-weight: 700;
+}
+
+.decada.falta .decada-n {
+  font-weight: 400;
+}
+
+.desafio-nota {
+  font-size: 12px;
+  margin: 12px 0 0;
+}
+
+/* Em ecrã estreito o anel e o texto ficavam lado a lado espremidos: o numero
+   ficava com 30 px numa coluna de 140. Abaixo de 480 px o anel sobe para
+   cima do texto. */
+@media (max-width: 480px) {
+  .metas-alvo {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+}
+/* ===== Cartao de partilha ("o teu ano") =====
+   O `<canvas>` esta em `display: none` e NAO e' um elemento decorativo: e' o alvo
+   do desenho. Esconder com `width: 0` ou `height: 0` nao o esconderia (o canvas
+   nao e' um elemento de fluxo tao previsivel) e, pior, em alguns browsers um
+   canvas com area zero devolve um PNG de 0 bytes. `display: none` mantem as
+   dimensoes que o JS lhe deu e nao ocupa sitio nenhum. */
+.cartao-ano-bloco {
+  margin-top: 26px;
+}
+
+.cartao-ano-canvas {
+  display: none;
+}
+
+.cartao-ano-btn {
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 10px 18px;
+  min-height: 40px;
+  margin-top: 10px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: #fff;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.cartao-ano-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.cartao-ano-erro {
+  font-size: 13px;
+  margin: 10px 0 0;
+}
+
+/* ===== Timeline da biblioteca =====
+   A linha vertical do cronologico e' um `::before` de cada `.tl-grupo`, e nao
+   um elemento no JSX: e' decoracao, e um `<li>` dentro de um `<ol>` ja e' a
+   linha para quem usa leitor de ecra.
+
+   O `sem data` e' visualmente separado (`--linha` mais fraca) porque e' a
+   unica parte da lista que nao esta' ordenada por data. Se tivesse o mesmo
+   aspecto, quem olhasse para a timeline contaVA mal.
+*/
+.tl {
+  margin-top: 14px;
+}
+
+.tl-nota {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 0 0 14px;
+}
+
+.tl-nota-fraca {
+  color: #6c6c76;
+  margin-top: -8px;
+}
+
+.tl-lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.tl-grupo {
+  position: relative;
+  padding-left: 22px;
+  padding-bottom: 22px;
+}
+
+.tl-grupo::before {
+  content: "";
+  position: absolute;
+  left: 5px;
+  top: 8px;
+  bottom: 0;
+  width: 2px;
+  background: #2a2a31;
+  border-radius: 1px;
+}
+
+/* O ponto da linha, em cada mes. `transform` em vez de `left` para o ponto
+   ficar centrado na linha sem metades a dar para fora. */
+.tl-mes {
+  position: relative;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: capitalize;
+  margin: 0 0 8px;
+  color: var(--text-secondary);
+}
+
+.tl-mes::before {
+  content: "";
+  position: absolute;
+  left: -21px;
+  top: 5px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+.tl-mes-n {
+  margin-left: 8px;
+  font-weight: 400;
+  color: #6c6c76;
+}
+
+/* Sem data: sem ponto, linha fraca, e o rotulo em vez de "sem data" itlico.
+   Dar-lhe um ponto faria a pessoa conta-lo como um mes. */
+.tl-grupo-sem-data::before {
+  background: #1c1c21;
+}
+
+.tl-grupo-sem-data .tl-mes {
+  color: #6c6c76;
+  font-weight: 400;
+}
+
+.tl-grupo-sem-data .tl-mes::before {
+  display: none;
+}
+
+.tl-itens {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tl-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.tl-capa {
+  flex: 0 0 auto;
+  width: 34px;
+  height: 48px;
+  border-radius: 5px;
+  overflow: hidden;
+  background: #1a1a1f;
+}
+
+.tl-capa img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.tl-texto {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+  flex-wrap: wrap;
+}
+
+.tl-titulo {
+  color: var(--text);
+  font-weight: 600;
+  font-size: 14px;
+  /* O titulo e' a parte que cresce; sem isto um nome de anime longo empurra a
+     nota para fora da linha em vez de partir. */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+.tl-ano {
+  font-size: 12px;
+  color: #6c6c76;
+  font-variant-numeric: tabular-nums;
+}
+
+.tl-nota-num {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--accent-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.lib-vista {
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 6px 12px;
+  min-height: 34px;
+  border-radius: 999px;
+  border: 1px solid #2e2e36;
+  background: #17171b;
+  color: var(--text-secondary);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.lib-vista.on {
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+.lib-vista:hover {
+  border-color: var(--accent);
+}

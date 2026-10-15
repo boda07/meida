@@ -1,3 +1,4 @@
+import Timeline from "../components/Timeline.jsx";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { api, imageUrl } from "../api/client.js";
@@ -50,6 +51,10 @@ export default function Library() {
   const [filter, setFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
   const [sort, setSort] = useState("recent");
+  // "grade" e a grelha de cartazes; "timeline" sao as linhas cronologicas.
+  // Sao DUAS vistas da MESMA lista filtrada. A timeline nunca reordena por
+  // titulo ou nota — deixaria de ser cronologica — por isso nao usa o `sort`.
+  const [vista, setVista] = useState("grade");
   const [dir, setDir] = useState("desc"); // "desc" | "asc"
   // Géneros/temas selecionados. Vazio = sem filtro de tags.
   const [genreSel, setGenreSel] = useState(() => new Set());
@@ -332,6 +337,19 @@ export default function Library() {
             {dir === "desc" ? "↓" : "↑"}
           </button>
         </div>
+
+          {/* Duas vistas da MESMA lista. Na timeline o `sort` nao se aplica, e o
+              botao desliga-se: sem isso quem clicasse em "Titulo" veria a lista
+              continuar cronologica, sem nenhuma explicacao. */}
+          <button
+            type="button"
+            className={"lib-vista" + (vista === "timeline" ? " on" : "")}
+            aria-pressed={vista === "timeline"}
+            onClick={() => setVista((v) => (v === "grade" ? "timeline" : "grade"))}
+          >
+            {vista === "timeline" ? t("Ver em grelha") : t("Ver por data")}
+          </button>
+
         <div className="lib-filters">
           {FILTERS.map((f) => (
             <button
@@ -581,6 +599,11 @@ export default function Library() {
             ? t("Nada nesta categoria.")
             : t("A tua lista esta vazia. Abre um filme/série e adiciona a watchlist, marca como visto ou da nota.")}
         </p>
+      ) : vista === "timeline" ? (
+        <Timeline
+          itens={shown}
+          tituloDe={(it) => displayTitle(it, settings.animeTitleLang === "romaji")}
+        />
       ) : (
         <>
         <div className="grid">

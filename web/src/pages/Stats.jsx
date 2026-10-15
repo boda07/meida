@@ -21,6 +21,9 @@ import { api } from "../api/client.js";
 import { useAuth } from "../auth/AuthContext.jsx";
 import HistogramaNotas from "../components/HistogramaNotas.jsx";
 import HeatmapAtividade from "../components/HeatmapAtividade.jsx";
+import GraficoMensal from "../components/GraficoMensal.jsx";
+import { serieDecadas, giraPorFuso, fusoEmHoras } from "../components/serieStats.js";
+import CartaoAno from "../components/CartaoAno.jsx";
 import LoadingStatus from "../components/LoadingStatus.jsx";
 import { useT } from "../i18n/I18nContext.jsx";
 
@@ -147,6 +150,45 @@ export default function Stats() {
         )}
       </section>
 
+      {/* De que décadas e a que horas. Dois graficos de barras com o mesmo
+          desenho (`GraficoMensal` ja' era generico — so' faltava a legenda ser
+          parametro), em vez de dois ficheiros quase iguais. */}
+      {(data.decadas || []).length >= 2 && (
+        <section className="st-bloco">
+          <div className="st-bloco-topo">
+            <h2 className="st-titulo">{t("De que décadas")}</h2>
+            {data.decadaFavorita && (
+              <span className="st-nota">{t("mais vistos: {d}s", { d: decadaTexto(data.decadaFavorita) })}</span>
+            )}
+          </div>
+          <GraficoMensal
+            serie={serieDecadas(data.decadas)}
+            legenda={t("{n} títulos por década, pelo ano de lançamento.", {
+              n: (data.decadas || []).reduce((a, d) => a + d.n, 0),
+            })}
+          />
+          {semAno > 0 && (
+            <p className="st-pe">
+              {t("{n} dos teus títulos não têm ano, por isso não entram aqui.", { n: semAno })}
+            </p>
+          )}
+        </section>
+      )}
+
+      {(data.horasUtc || []).length === 24 && (
+        <section className="st-bloco">
+          <div className="st-bloco-topo">
+            <h2 className="st-titulo">{t("A que horas mexes")}</h2>
+          </div>
+          <GraficoMensal
+            serie={giraPorFuso(data.horasUtc, fusoEmHoras())}
+            legenda={t("{n} mexidas pela tua hora local. Conta a última vez que tocaste em cada título.", {
+              n: (data.horasUtc || []).reduce((a, h) => a + h.n, 0),
+            })}
+          />
+        </section>
+      )}
+
       <section className="st-bloco">
         <div className="st-bloco-topo">
           <h2 className="st-titulo">{t("O resto")}</h2>
@@ -207,6 +249,18 @@ export default function Stats() {
             })}
           </p>
         )}
+      </section>
+
+      {/* O cartao de partilha vai no fim da pagina: e' a ultima coisa que se ve
+          e a unica que sai da pagina. */}
+      <section className="st-bloco cartao-ano-bloco">
+        <div className="st-bloco-topo">
+          <h2 className="st-titulo">{t("Partilhar")}</h2>
+        </div>
+        <p className="stats-nota">
+          {t("Uma imagem com o teu ano. Sai para o teu computador como um ficheiro, e usa a cor que escolheste nas definições.")}
+        </p>
+        <CartaoAno stats={data} username={user?.username} />
       </section>
     </div>
   );

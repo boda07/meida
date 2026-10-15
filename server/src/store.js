@@ -10,6 +10,7 @@
 // UPDATE indexado, o que permite varios utilizadores a escrever ao mesmo tempo
 // sem se sobrescreerem.
 import { db, tx } from "./db/index.js";
+import { leMeta } from "./metas.js";
 import { usernamesMencionados } from "./services/mencoes.js";
 
 const now = () => new Date().toISOString();
@@ -39,6 +40,20 @@ export function getUserByUsername(username) {
 
 // Perfil publico (sem password_hash): vai para o token, para /auth/me e para a
 // area social. Inclui a privacidade porque e' o proprio utilizador que a define.
+export function getMeta(userId) {
+  const r = db.prepare("SELECT meta FROM users WHERE id = ?").get(userId);
+  return leMeta(r && r.meta);
+}
+
+// Junta `patch` ao que ja la esta. Nao substitui o objeto inteiro, porque a
+// proxima preferencia a aparecer tem de poder entrar sem que esta se perca.
+export function setMeta(userId, patch) {
+  const atual = getMeta(userId);
+  const novo = { ...atual, ...(patch && typeof patch === "object" ? patch : {}) };
+  db.prepare("UPDATE users SET meta = ? WHERE id = ?").run(JSON.stringify(novo), userId);
+  return novo;
+}
+
 function toProfile(r) {
   return {
     id: r.id,
@@ -182,7 +197,7 @@ function parseGenres(g) {
   }
 }
 
-function toApi(r) {
+export function toApi(r) {
   return {
     tmdbId: r.external_id,
     type: r.media_type,
@@ -201,6 +216,10 @@ function toApi(r) {
     score: r.score, // nota pessoal (0-100)
     rating: r.rating ?? null, // media da comunidade (MAL/TMDB)
     updatedAt: r.updated_at,
+      // A data em que a pessoa MARCOU o titulo como visto. NULL para tudo o que
+      // ja estava visto antes da migracao 9: nao se sabe, e a interface diz
+      // isso em vez de fingir que sim (ver db/schema.js, migracao 9).
+      watchedAt: r.watched_at ?? null,
   };
 }
 
@@ -225,11 +244,16 @@ export function getLibraryItem(userId, tmdbId, type) {
 // (so aceita null, numero, string, bigint e Uint8Array), e o `poster`/`title`
 // podem nao vir em chamadas que so actualizam a nota.
 export function upsertLibrary(entry) {
+  // Um unico instante para a `updated_at` e para a `watched_at`. Sao gravadas na
+  // mesma frase e hAO de bater certo: com dois `now()` a data de visionamento
+  // ficava uns microssegundos atras da linha, e o que aparecia dependia de qual
+  // das duas o SQLite lesse primeiro.
+  const quando = now();
   db.prepare(
     `INSERT INTO library
        (user_id, media_type, external_id, title, title_en, title_romaji, poster,
-        genres, year, watched, watchlist, status, score, rating, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        genres, year, watched, watchlist, status, score, rating, updated_at, watched_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
      ON CONFLICT(user_id, media_type, external_id) DO UPDATE SET
        title        = excluded.title,
        title_en     = COALESCE(excluded.title_en, library.title_en),
@@ -247,7 +271,27 @@ export function upsertLibrary(entry) {
        status       = excluded.status,
        score        = excluded.score,
        rating       = COALESCE(excluded.rating, library.rating),
-       updated_at   = excluded.updated_at`
+         -- A data de visionamento tem tres casos, e o do meio importa:
+         --
+         --   - marca como NAO visto -> apaga a data. Deixar data num titulo
+         --     que a pessoa reverteu e' pior que nao ter: a timeline
+         --     mostraria "visto em Marco" para um titulo que ja nao conta.
+         --
+         --   - marca como visto pela PRIMEIRA vez -> fica a data de agora.
+         --     E' a condicao sobre a linha antiga que faz a distincao; sem
+         --     ela, cada clique em "dar nota" reescrevia a data e a timeline
+         --     saltava para o mes em que a pessoa mexeu.
+         --
+         --   - ja estava visto -> FICA a data antiga, mesmo que venha NULL.
+         --     Este ultimo caso e' o que torna a coluna util, e e' o erro
+         --     mais facil de cometer: um COALESCE simples trataria "marcar
+         --     como visto" e "dar nota a um filme visto" do mesmo jeito, e a
+         --     segunda escreveria NULL por cima, apagando a data.
+         watched_at   = CASE
+           WHEN excluded.watched = 0 THEN NULL
+           WHEN library.watched = 0 THEN excluded.updated_at
+           ELSE library.watched_at
+         END`
   ).run(
     entry.userId,
     entry.type,
@@ -266,7 +310,13 @@ export function upsertLibrary(entry) {
     entry.status === undefined || entry.status === null ? null : String(entry.status),
     entry.score ?? null,
     entry.rating ?? null,
-    now()
+      // Um unico instante para os dois: com dois now() a data de
+      // visionamento ficava uns microssegundos atras da updated_at, e o
+      // resultado dependia de qual das duas o SQLite lesse primeiro.
+      quando,
+      // Numa linha NOVA, marcar como visto grava a data. Numa linha que ja
+      // existe isto nao decide nada — quem decide e' o CASE de cima.
+      entry.watchedAt ?? (entry.watched ? quando : null)
   );
 }
 
@@ -320,8 +370,8 @@ export function upsertLibrarySafe(entry) {
   db.prepare(
     `INSERT INTO library
        (user_id, media_type, external_id, title, title_en, title_romaji, poster,
-        genres, watched, watchlist, score, rating, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        genres, watched, watchlist, score, rating, updated_at, watched_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
      ON CONFLICT(user_id, media_type, external_id) DO UPDATE SET
        title        = COALESCE(excluded.title, library.title),
        title_en     = COALESCE(excluded.title_en, library.title_en),
@@ -332,7 +382,15 @@ export function upsertLibrarySafe(entry) {
        watchlist    = excluded.watchlist,
        score        = COALESCE(excluded.score, library.score),
        rating       = COALESCE(excluded.rating, library.rating),
-       updated_at   = excluded.updated_at`
+       updated_at   = excluded.updated_at,
+       -- O import nao marca "visto agora": restaura o que o ficheiro tem.
+       -- Um COALESCE simples e' o que se quer aqui, ao contrario do
+       -- upsertLibrary acima: sem data no ficheiro fica a que ja existia, e
+       -- sem data em lado nenhum fica NULL — "nao se sabe", que e' o que a
+       -- timeline diz. Numa linha nova marcada como vista e sem data no
+       -- ficheiro, usar a data do import seria inventar um mes que ninguem
+       -- affirme, e e' por isso que o parametro vai sem o fallback.
+       watched_at   = COALESCE(excluded.watched_at, library.watched_at)`
   ).run(
     entry.userId,
     entry.type,
@@ -346,7 +404,11 @@ export function upsertLibrarySafe(entry) {
     flag(entry.watchlist, ex?.watchlist),
     entry.score != null ? Number(entry.score) : null,
     entry.rating != null ? Number(entry.rating) : null,
-    updatedAt
+    updatedAt,
+    // O ultimo: a data de visionamento. Sem o fallback de propósito — um import
+    // que nao a traz NAO pode fabricar uma, e o COALESCE de cima preserva a que
+    // ja existia.
+    entry.watchedAt ?? null
   );
   return true;
 }

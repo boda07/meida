@@ -1,5 +1,147 @@
 # Changelog
 
+## 1.5.3
+
+Quatro funcionalidades novas e três correcções. Cada uma com teste, e os
+testes verificados por mutação.
+
+### A data em que viste (migração 9)
+
+O pedido era uma vista por data de visionamento, e **não havia histórico
+nenhum**. A `library` só tinha `updated_at`, que é a última vez que tocaste na
+linha: dar nota, mudar o estado ou reordenar a lista escreve nela. E o
+`progress` tem **uma linha por título, não por episódio** — `patchProgress`
+reescreve, e ao avançar um episódio `finishedAt` passa a ser a data de agora.
+Ou seja, "quando viste o último episódio", não uma história.
+
+A migração 9 acrescenta `library.watched_at`, gravada quando `watched` passa
+a 1.
+
+**Não se preenche com `updated_at`.** Seria dar a data do último toque a tudo o
+que já estava visto, e a timeline apareceria com meses e anos errados sem
+ninguém ter como saber. `NULL` significa "não se sabe", e a interface diz isso.
+
+A regra de escrita tem três casos, e o do meio é o que a torna útil:
+
+```sql
+watched_at = CASE
+  WHEN excluded.watched = 0 THEN NULL                -- reverteu: apaga
+  WHEN library.watched = 0 THEN excluded.updated_at  -- marcou agora
+  ELSE library.watched_at                           -- ja estava visto: fica
+END
+```
+
+O terceiro caso é o erro fácil: um `COALESCE` simples trataria "marcar como
+visto" e "dar nota a um filme visto" do mesmo jeito, e a segunda escreveria
+`NULL` por cima, apagando a data.
+
+`upsertLibrarySafe` (o caminho do import) tem regras **diferentes**, e é por
+isso que são funções separadas: um import não é "marcar como visto agora", é
+restaurar o que o ficheiro gravou. Aplicar-lhe a regra da transição punha
+`watched_at` na data do import para tudo o que o ficheiro trouxesse sem data —
+ou seja, fabricava meses e anos.
+
+A timeline (`web/src/components/timeline.js`, `Timeline.jsx`) **nunca usa o
+`updatedAt` como data de visionamento**. Quem não tem `watchedAt` vai para um
+grupo "sem data" no fim, separado e sem ponto na linha — dar-lhe um ponto
+faria a pessoa contar como se fosse um mês.
+
+Testes: `testar-timeline.mjs` (75 verificações, 10 mutações) e
+`testar-timeline-fim.mjs` (19), que arranca o servidor a sério — os três casos
+da regra de escrita só existem quando o SQL corre.
+
+### Metas e desafios em `/achievements`
+
+Uma meta com anel de progresso, com o alvo escolhido pela pessoa
+(10/25/50/100/200/365) guardado na coluna `users.meta` (migração 8). E um
+desafio de ver um filme de cada década desde 1930.
+
+**A meta conta o que MARCASTE COMO VISTO neste ano, não o que viste**, e todos
+os textos dizem "marcaste" — a mesma limitação da `watched_at`. Filmes que
+puseste na watchlist não contam (`watched = 0`), e é isso que impede o número
+de ser generoso. A limitação está escrita em `server/src/metas.js`.
+
+**O ano é do cliente.** O servidor manda três anos de contagem em UTC e o
+cliente escolhe o dele com o relógio de casa, porque o Render e o FadeHost
+estão em UTC e as 00:30 de 1 de Janeiro a meta reiniciava na hora errada.
+
+Grava-se com **PATCH**, não PUT — é o verbo que o `patch_` de `api/client.js`
+manda, e o `updateProfile` já fazia o mesmo. Com PUT o servidor respondia 404,
+o `handle()` do cliente rebentava e a secção das metas desaparecia sem dizer
+nada. Há teste a comparar o verbo HTTP entre os dois ficheiros.
+
+O `/api/stats` devolve `filmesPorAno` e `topDoAno` para o cartão de partilha.
+`statsFor` lê a biblioteca com `SELECT *`, logo as linhas são cruas
+(`media_type`, `updated_at`); as funções de `metas.js` esperam a forma de
+`listLibrary` (`type`, `updatedAt`). **Sem o `toApi` a contar dava zero, sem
+erro nenhum** — foi o bug mais discreto da sessão, e nenhum teste puro o
+apanhava porque nenhum executa SQL.
+
+Testes: `testar-metas.mjs` (86 verificações, 14 mutações) e `testar-cartao-fim.mjs`.
+
+### Cartão de partilha em imagem
+
+Um cartão do teu ano no fim de `/stats`, desenhado num `<canvas>` e guardado
+como `meida-<ano>.png`.
+
+A ideia original em `IDEIAS.md` trazia três ressalvas que a medição desmentiu:
+
+- **"Ver o que a secção do CSS diz dos gráficos"** — essa secção não existe.
+- **"Sai com a fonte do sistema"** — a app usa web fonts (Manrope e Archivo,
+  do Google Fonts). O perigo existe mas é outro: havia pesos `unloaded` no
+  `document.fonts`, e o canvas **cai para a fonte do sistema em silêncio** se
+  se desenhar antes de o peso estar carregado. `carregaFontes()` pede cada peso
+  pelo nome, em vez de se fiar em `fonts.ready`.
+- **"Sem retina"** — falso: este ecrã tem `devicePixelRatio` 1,25 e um canvas de
+  1080 sairia a 81%. São duas linhas, e o dpr é limitado a 3 por causa da memória.
+- **"Gerar fora do browser"** — falso, e era o caminho errado: a app é Electron
+  **e** site, e o canvas corre igual nos dois.
+
+O que a ideia não mencionava e rebenta tudo: um `drawImage` de host sem CORS
+deixa o canvas "tainted" e o `toBlob()` lança `SecurityError`. O CDN do TMDB e
+o do MAL mandam `access-control-allow-origin: *`, mas só se pedir a imagem com
+`crossOrigin="anonymous"` **antes** do `src`.
+
+Os números do cartão são todos deste ano e os cartazes são só filmes, para
+baterem certo com o número de cima. Mostrar um cartaz de série ao lado de uma
+contagem que não inclui séries é contar uma coisa e mostrar outra.
+
+Testes: `testar-cartao.mjs` (86 verificações, 15 mutações) e
+`testar-cartao-fim.mjs` (18, com o servidor a arrancar).
+
+### A barra de pesquisa volta ao normal
+
+Depois de escrever, a barra fecha e o menu mostra os botões. **O texto fica**:
+tocar outra vez na pesquisa abre com o que se escreveu, para corrigir.
+
+O `onBlur` antigo só fechava com o campo vazio, e a decisão passou para
+`headerPesquisa.js` — pura e testada. O `relatedTarget` é o que separa "a
+pessoa foi-se embora" de "tocou no botão da própria pesquisa"; sem ele, tocar
+no ícone com o campo em foco dispara `blur` (fecha) e logo `click` (abre), e a
+barra oscila no mesmo toque.
+
+Faltava também largar o foco ao fechar: o input encolhe para 0 px mas continua
+no DOM, e no telefone o teclado ficava aberto a escrever para um campo
+invisível.
+
+Testes: `testar-pesquisa.mjs` (43 verificações, 8 mutações).
+
+### Dois gráficos novos e os rótulos do eixo
+
+Em `/stats`: **de que décadas** são os teus filmes (a API já devolvia `decadas`
+desde sempre e nada o desenhava) e **a que horas** mexes. A hora vem do
+`updated_at` em UTC, com o cliente a rodar o histograma para o fuso de quem
+vê — rodar um histograma é exacto e custa 24 números em vez de milhares de
+datas.
+
+Corrigido de passagem um bug antigo nos rótulos do eixo: a regra era
+`i === 0 || i % 2 === 1`, que dá os índices 0, 1, 3, 5 — dois rótulos colados no
+início ("Jan Fev Abr Jun") e um salto. Passou a `i % 2 === 0`, e a regra saiu do
+JSX para `indicesRotulados()`, em `serieStats.js`, porque escrita dentro do
+`.map()` não era alcançável por teste nenhum.
+
+---
+
 ## 1.5.2
 
 ### O fundo escolhido nas Definições não aparecia

@@ -4,6 +4,26 @@
 // O changelog tambem tem versao em ingles (`en`). Quem so' fala ingles ve a sua
 // versao; quem nao encontra a sua ve o portugues (a lingua original).
 export const CHANGELOG = [
+
+  {
+    version: "1.5.3",
+    items: [
+      "Novo: uma vista por data na tua lista. Mostra quando marcaste cada filme como visto, mês a mês, numa linha do tempo. A partir de agora a app guarda essa data; o que já estava visto aparece separado, sem mês, porque não se sabe quando o viste.",
+      "Novo: metas e desafios. Escolhes quanto queres ver por ano (10, 25, 50, 100, 200 ou 365) e ves um anel a encher. Há também um desafio de ver um filme de cada década desde 1930.",
+      "Novo: nas estatísticas, dois gráficos novos — de que décadas são os teus filmes e a que horas mexes mais na app.",
+      "Novo: podes descarregar uma imagem com o resumo do teu ano, para partilhar onde quiseres.",
+      "Corrigido: a barra de pesquisa já volta ao normal depois de escreveres. Ficas com o menu de volta e, se quiseres corrigir o que procuraste, basta tocar outra vez na pesquisa.",
+      "Corrigido: as letras dos meses nos gráficos estavam tortas — aparecia “Jan Fev Abr Jun” em vez de um de cada dois.",
+    ],
+    items_en: [
+      "New: a date view in your library. It shows when you marked each film as watched, month by month, on a timeline. From now on the app records that date; what was watched before appears separately, with no month, because there is no telling when you watched it.",
+      "New: goals and challenges. You choose how much you want to watch a year (10, 25, 50, 100, 200 or 365) and see a ring fill up. There is also a challenge to watch a film from every decade since 1930.",
+      "New: two new charts on the stats page — which decades your films are from, and the hours you use the app most.",
+      "New: you can save an image with your year in review, to share wherever you like.",
+      "Fixed: the search bar now goes back to normal after you type. You get the menu back, and if you want to correct what you searched for, you just tap search again.",
+      "Fixed: the month labels on the charts were wrong — they read \"Jan Feb Apr Jun\" instead of every other one.",
+    ],
+  },
   {
     version: "1.5.2",
     items: [

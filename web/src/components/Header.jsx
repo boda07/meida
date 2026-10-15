@@ -4,6 +4,7 @@ import NotificationBell from "./NotificationBell.jsx";
 import ProfileMenu from "./ProfileMenu.jsx";
 import WatchParty from "./WatchParty.jsx";
 import { useT } from "../i18n/I18nContext.jsx";
+import { abreAoMontar, fechaNoBlur, textoParaGuardar } from "./headerPesquisa.js";
 import { noBrowser, URL_RELEASE } from "../lib/web.js";
 
 function HomeIcon() {
@@ -81,28 +82,35 @@ export default function Header() {
   const location = useLocation();
   const t = useT();
   const onSearchPage = location.pathname === "/search";
+  const textoNaUrl = onSearchPage ? new URLSearchParams(location.search).get("q") || "" : "";
 
-  const [searchOpen, setSearchOpen] = useState(onSearchPage);
+  // So' na pagina de pesquisa, e so' sem texto na URL. Os dois argumentos
+  // contam: ver `abreAoMontar`.
+  const [searchOpen, setSearchOpen] = useState(abreAoMontar(textoNaUrl, onSearchPage));
   const [query, setQuery] = useState("");
   const inputRef = useRef(null);
 
-  // Foca o input assim que a pesquisa abre.
+  // Foca o input assim que a pesquisa abre; tira-lhe o foco quando fecha.
+  // O `blur` do fecho e' que abaixa o teclado no telefone: o input continua no
+  // DOM (so' encolhe para 0 px), portanto fechar sem largar o foco deixava a
+  // pessoa a escrever para um campo invisivel.
   useEffect(() => {
-    if (searchOpen) inputRef.current?.focus();
+    const el = inputRef.current;
+    if (!el) return;
+    if (searchOpen) el.focus();
+    else if (document.activeElement === el) el.blur();
   }, [searchOpen]);
 
   // Se chegamos a /search?q=... por URL/refresh, preenche o input.
   useEffect(() => {
-    if (onSearchPage) {
-      const q = new URLSearchParams(location.search).get("q") || "";
-      setQuery(q);
-      setSearchOpen(true);
-    }
+    if (onSearchPage) setQuery(textoParaGuardar(textoNaUrl));
     // só na montagem inicial
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Pesquisa instantanea (estilo Netflix): cada tecla atualiza os resultados.
+  // A barra fica aberta enquanto se escreve — e' a pesquisa a vivo que se quer
+  // ver; ela fecha-se quando se larga o campo, no `onBlur` de baixo.
   const onChange = (value) => {
     setQuery(value);
     const q = value.trim();
@@ -118,12 +126,15 @@ export default function Header() {
     e.preventDefault();
     const q = query.trim();
     if (q) navigate(`/search?q=${encodeURIComponent(q)}`);
+    // Fecha para o menu voltar aos botoes. O `query` NAO e' limpo: e' o que
+    // permite tocar outra vez na pesquisa e acertar o que se escreveu.
+    setSearchOpen(false);
   };
 
   return (
     <header className={`nav-bar ${searchOpen ? "pesquisa-aberta" : ""}`}>
       <div className="nav-left">
-        <nav className="nav-links">
+        <nav className="nav-links" onClick={() => setSearchOpen(false)}>
           <NavLink to="/" end title={t("Início")}>
             <HomeIcon />
             <span>{t("Início")}</span>
@@ -191,7 +202,11 @@ export default function Header() {
             placeholder={t("Títulos, pessoas, géneros")}
             value={query}
             onChange={(e) => onChange(e.target.value)}
-            onBlur={() => { if (!query.trim() && !onSearchPage) setSearchOpen(false); }}
+            onBlur={(e) => {
+              // Fecha quando a pessoa larga o campo. O `relatedTarget` e' o que
+              // impede o fechar/abrir a dar a volta ao tocar no botao.
+              if (fechaNoBlur(e.relatedTarget, e.currentTarget.form)) setSearchOpen(false);
+            }}
           />
         </form>
         <WatchParty />

@@ -32,6 +32,7 @@
 //   responsivo por CSS (`width:100%`), o que mantem o `rx` proporcional.
 import { useId, useState } from "react";
 import { rotuloEixo } from "./profileStats.js";
+import { indicesRotulados } from "./serieStats.js";
 import { useT } from "../i18n/I18nContext.jsx";
 
 // Altura total em unidades de desenho. A largura e' 100%; o `viewBox` usa a
@@ -44,9 +45,13 @@ const P = A - M.topo - M.base; // altura util
 const U = L - M.esq - M.dir; // largura util
 
 /**
- * @param serie  o que `serieMensal()` devolve: [{chave, rotulo, n, mes, ano}]
+ * @param serie  [{chave, rotulo, n}] — o que `serieMensal()` devolve, e o que
+ *   `serieDecadas()`/`giraPorFuso()` de `serieStats.js` tambem devolvem.
+ * @param legenda  o texto de baixo. Por omissao e' a dos meses; os outros
+ *   graficos passam a dele, porque "nos ultimos N meses" num grafico de decadas
+ *   seria mentira.
  */
-export default function GraficoMensal({ serie }) {
+export default function GraficoMensal({ serie, legenda = null }) {
   // O `useId` serve para o `clipPath` — dois graficos na mesma pagina nao podem
   // partilhar o mesmo id, senao o um recorta o outro.
   const id = useId();
@@ -69,8 +74,12 @@ export default function GraficoMensal({ serie }) {
   const larguraBarra = Math.min(38, passoX * 0.62);
   const total = dados.reduce((a, d) => a + d.n, 0);
 
-  // Anos diferentes no eixo? Se sim, o primeiro mes de cada ano leva o ano.
+  // A regra dos rotulos do eixo vive em `indicesRotulados` (testada). Aqui so' se
+  // traduz para um Set, para o `.map()` nao repetir o calculo 24 vezes.
   const mudaAno = new Set(dados.map((d) => d.ano)).size > 1;
+
+  const indiceRotulo = new Set(indicesRotulados(dados, mudaAno));
+  const mudaAnoEm = (i) => mudaAno && i > 0 && dados[i - 1].ano !== dados[i].ano;
 
   return (
     <figure className="gm">
@@ -152,27 +161,25 @@ export default function GraficoMensal({ serie }) {
         )}
 
         {/* Eixo X: um rotulo de dois em dois, e sempre o ano quando muda. Sem
-            isso, 12 rotulos de 3 letras nao cabem no telefone. */}
-        {dados.map((d, i) => {
-          const mudancaDeAno = mudaAno && i > 0 && dados[i - 1].ano !== d.ano;
-          const mostrar = i === 0 || mudancaDeAno || i % 2 === 1;
-          if (!mostrar) return null;
-          return (
+            isso, 12 rotulos de 3 letras nao cabem no telefone. A regra esta' em
+            `indicesRotulados` — ver la porque e' o PAR e nao o impar. */}
+        {dados.map((d, i) =>
+          !indiceRotulo.has(i) ? null : (
             <text
               key={`x-${d.chave}`}
               x={M.esq + i * passoX + passoX / 2}
               y={A - 9}
-              className={`gm-rot ${mudancaDeAno ? "gm-ano" : ""}`}
+              className={`gm-rot ${mudaAnoEm(i) ? "gm-ano" : ""}`}
               textAnchor="middle"
             >
               {rotuloEixo(d, mudaAno)}
             </text>
-          );
-        })}
+          )
+        )}
       </svg>
 
       <figcaption className="gm-legenda">
-        {t("{titulos} com actividade nos últimos {n} meses. O que conta é a última vez que mexeste em cada um — a nota que deste, o momento em que o puseste na lista.", {
+        {legenda ?? t("{titulos} com actividade nos últimos {n} meses. O que conta é a última vez que mexeste em cada um — a nota que deste, o momento em que o puseste na lista.", {
           titulos: t(total === 1 ? "título" : "títulos"),
           n: dados.length,
         })}

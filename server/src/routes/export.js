@@ -98,6 +98,11 @@ function toLibraryEntry(o) {
     watched: o.visto === "sim",
     watchlist: o.watchlist === "sim",
     updatedAt: o.atualizado_em || null,
+    // Vazio = o ficheiro nao sabe quando foi visto. E' o que fica guardado, e a
+    // timeline mostra "sem data". Nunca se usa `atualizado_em` aqui: essa e' a
+    // data do ULTIMO TOQUE, e trocar as duas punha meses e anos errados na
+    // timeline do outro PC sem ninguem ter como saber.
+    watchedAt: o.visto_em || null,
   };
 }
 

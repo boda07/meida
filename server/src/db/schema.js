@@ -317,4 +317,57 @@ export const MIGRATIONS = [
       `);
     },
   },
+
+  {
+    version: 8,
+    name: "metas-do-utilizador",
+    up(db) {
+      // Preferencias do utilizador, em JSON, numa coluna so.
+      //
+      // **Porque uma coluna e nao uma tabela por preferencia?** Porque hoje so
+      // ha uma (o alvo de "filmes este ano") e a forma dela vai mudar. Uma
+      // tabela `user_settings (user_id, chave, valor)` dava uma linha por
+      // preferencia e obrigava a JOIN ou a duas consultas em tudo o que a le —
+      // para um campo lido uma vez por pagina. Se um dia forem oito, a coluna
+      // encolhe bem e a migracao e' um `ALTER` novo.
+      //
+      // A alternativa que se descartou foi meter `alvo` na tabela `users` como
+      // INTEGER: cada meta nova seria uma coluna e uma migracao, e "quantos
+      // filmes por ano" e' so um entre varios numeros que vao aparecer.
+      //
+      // NULL = nunca se guardou nada. O `store.js` le como `{}` e e' desse o
+      // estado que da o alvo por omissao (50). Texto e nao INTEGER porque o
+      // valor e' um objeto e nao um numero; `toApi` ja faz o mesmo pelo `genres`.
+      db.exec(`
+        ALTER TABLE users ADD COLUMN meta TEXT;
+      `);
+    },
+  },
+
+  {
+    version: 9,
+    name: "data-de-visionamento",
+    up(db) {
+      // A data em que a pessoa MARCOU um titulo como visto.
+      //
+      // **Porquê uma coluna quando ja existe `updated_at`.** Porque `updated_at`
+      // e' a ultima vez que tocaste na linha: dar nota, mudar o estado ou
+      // reordenar a lista escreve nela. Para a timeline isso e' errado de uma
+      // maneira que nao se vê: o filme que viste em Janeiro passa para o mes em
+      // que lhe mexeste. E' o mesmo motivo pelo qual a meta diz "marcaste" e
+      // nao "viste" (ver `server/src/metas.js`).
+      //
+      // **NAO SE PREENCHE COM `updated_at`.** Seria dar a data do ultimo toque a
+      // tudo o que ja estava visto, e a timeline apareceria com meses e anos
+      // errados sem ninguem ter como saber. NULL significa "nao se sabe" e a
+      // interface diz isso; quem marcar um titulo como visto a partir de agora
+      // ja fica com a data certa.
+      //
+      // Nao ha indice: a coluna e' lida em conjunto com a biblioteca toda e nunca
+      // sozinha numa `WHERE`, e um indice a mais e' escrita a cada visionamento.
+      db.exec(`
+        ALTER TABLE library ADD COLUMN watched_at TEXT;
+      `);
+    },
+  },
 ];

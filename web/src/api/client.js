@@ -437,6 +437,11 @@ export const api = {
   achievements: () => get("/api/achievements"),
   stats: () => get("/api/stats"),
 
+  // Metas e desafios. `setGoal` devolve o alvo gravado (o servidor e' a
+  // autoridade sobre a lista de alvos validos e devolve os dois se recusar).
+  goals: () => get("/api/goals"),
+  setGoal: (alvo) => patch_("/api/goals", { alvo }),
+
   // Importar dados exportados anteriormente (merge conservador)
   importData: (payload) =>
     post("/api/export/import", payload),
