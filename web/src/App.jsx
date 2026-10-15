@@ -1,6 +1,7 @@
 import { lazy, Suspense } from "react";
 import { Routes, Route } from "react-router-dom";
 import Header from "./components/Header.jsx";
+import NavBaixo from "./components/NavBaixo.jsx";
 import AppFullscreen from "./components/AppFullscreen.jsx";
 import BackButton from "./components/BackButton.jsx";
 import Changelog from "./components/Changelog.jsx";
@@ -36,6 +37,11 @@ export default function App() {
       <AppFullscreen />
       <Changelog />
       <Header />
+      {/* A barra de baixo, pela mesma razao: e' navegacao, e uma pagina que
+          rebenta nao pode levar a navegacao com ela. So se ve abaixo de
+          `LIMITE` (720 px) — e' CSS, nao JavaScript, para nao haver um estado
+          que possa estar errado enquanto o dedo arrasta o ecra. */}
+      <NavBaixo />
       <ErrorBoundary>
         <main className="content">
           <Suspense fallback={<LoadingStatus>{t("A carregar")}</LoadingStatus>}>

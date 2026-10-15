@@ -55,6 +55,22 @@ function shade(hex, amount) {
 }
 
 const css = ler("web/src/styles.css");
+
+/**
+ * O MESMO CSS, sem comentarios.
+ *
+ * **Porquê:** as verificacoes de `var(--accent)` leem o ficheiro com regex, e um
+ * comentario que *explique* a regra — "Nao e' `color: var(--accent)` no item
+ * inteiro" — e' indistinguivel de uma regra que a viole. Foi o que aconteceu a
+ * 2026-10-15, quando a barra de baixo do telefone entrou: o comentario do
+ * `styles.css` dizia exactamente o que se nao deve fazer, e o teste acusou a
+ * linha.
+ *
+ * **A correccao e' tirar os comentarios, nao silenciar a regra.** O comentario
+ * continua a poder escrever `color: var(--accent)` — e e' util que escreva, porque
+ * e' a raza de a regra existir. Um comentario nao e' CSS.
+ */
+const cssSemComentarios = css.replace(/\/\*[\s\S]*?\*\//g, "");
 const settings = ler("web/src/settings/SettingsContext.jsx");
 const settingsJsx = ler("web/src/pages/Settings.jsx");
 
@@ -112,15 +128,20 @@ if (mRoot) {
 console.log("");
 console.log("  4) Nenhum texto ficou com o acento escuro");
 {
-  const semText = css.match(/(^|[^\w-])color:\s*var\(--accent\s*\)/g) || [];
+  const semText = cssSemComentarios.match(/(^|[^\w-])color:\s*var\(--accent\s*\)/g) || [];
   ok_("nenhuma regra usa `color: var(--accent)` sem ser o `-text`", semText.length === 0, semText.length + " sobraram");
-  const comText = css.match(/color:\s*var\(--accent-text/g) || [];
+  const comText = cssSemComentarios.match(/color:\s*var\(--accent-text/g) || [];
   ok_("ha' texto a usar `--accent-text`", comText.length >= 20, comText.length + " sitios");
   // E o inverso: nenhuma BORDA pode estar a usar o `-text`.
   ok_(
     "nenhuma `border-color` usa `--accent-text` (a borda e' o acento cheio)",
-    !/border-color:\s*var\(--accent-text/.test(css)
+    !/border-color:\s*var\(--accent-text/.test(cssSemComentarios)
   );
+  // **O teste so tem valor se continuar a apanhar a regra.** Tira-se o `-text`
+  // de uma regra a serio e a verificacao tem de falhar — foi assim que se
+  // descobriu que o teste lia comentarios.
+  const regraReal = cssSemComentarios.match(/\n\s*\.nav-baixo-item\.on svg\s*\{[^{}]*var\(--accent-text\)/);
+  ok_("o teste ainda apanha a regra num sitio REAL (o svg do separador aceso)", !!regraReal);
 }
 
 console.log("");

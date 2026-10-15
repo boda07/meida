@@ -6775,3 +6775,192 @@ h2 {
 .lib-vista:hover {
   border-color: var(--accent);
 }
+
+/* ===== Barra de baixo (telefone) =====
+
+   A pilula de cima tem 395 px (medido) e o telefone mais comum tem 365 px de
+   largura util: transborda e "Inicio" fica cortado. Pior, os quatro botoes
+   fixos (z-index 70) estavam EM CIMA dela (z-index 60), todos os quatro
+   dentro do intervalo horizontal da pilula — por isso ao tocar no sino quem
+   reagia era o botao de ecra inteiro.
+
+   Abaixo de 720 px: entra a barra de baixo, a pilula perde os links de
+   categoria e OS DOIS BOTOES FIXOS DESAPARECEM. O mesmo 720 nos dois sitio,
+   de proposito: com limites diferentes havia uma faixa onde a barra ja
+   estava em baixo e os botoes ainda por cima dela.
+*/
+.nav-baixo {
+  /* Escondida acima do limite. Nao e' `visibility` nem `height: 0`: com
+     `display: none` o elemento nao existe para o leitor de ecra nem recebe o
+     foco pela tabulacao, que e' o que se quer num telefone. */
+  display: none;
+}
+
+@media (max-width: 720px) {
+  .nav-baixo {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    /* Acima da pilula (60); os botoes fixos (70) ja nao existem a esta
+       largura. A folha do "mais" e' 80. */
+    z-index: 65;
+    display: flex;
+    align-items: stretch;
+    justify-content: space-around;
+    /* O `padding-bottom` e' a area segura do iPhone: sem isto a barra fica
+       por baixo do traco da home e o ultimo separador nao se toca. Vale 0
+       nos restantes. */
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    background: rgba(14, 14, 18, 0.94);
+    backdrop-filter: blur(20px);
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .nav-baixo-item {
+    flex: 1 1 0;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    /* 56 px de altura mais a area segura: e' o minimo que o guideline de
+       toque da. E' `min-height` e nao `height` para o texto em ingles
+       (Home / Search / Library / Profile / More) nao empurrar o icone. */
+    min-height: 56px;
+    padding: 7px 2px;
+    border: 0;
+    background: none;
+    color: rgba(255, 255, 255, 0.62);
+    font: inherit;
+    cursor: pointer;
+    text-decoration: none;
+  }
+
+  .nav-baixo-item svg {
+    width: 21px;
+    height: 21px;
+    stroke: currentColor;
+    stroke-width: 2;
+    fill: none;
+  }
+
+  /* O separador aceso pinta o ICONE com a cor de destaque e deixa o texto
+     branco. Nao e' `color: var(--accent)` no item inteiro: sao 3,3:1 sobre
+     fundo escuro, que e' exactamente o que a variavel `--accent-text` existe
+     para evitar (medido em 2026-10-15, ver IDEIAS.md). */
+  .nav-baixo-item.on {
+    color: #fff;
+  }
+
+  .nav-baixo-item.on svg {
+    color: var(--accent-text);
+  }
+
+  .nav-baixo-rot {
+    font-size: 10px;
+    font-weight: 600;
+    line-height: 1.1;
+    /* "Biblioteca" e "Escolhe algo para mim" nao cabem em 72 px. Cortar e'
+       melhor do que espremer letra a letra. */
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* A pilula de cima fica so com a pesquisa, o sino e o avatar. Os links de
+     categoria saem porque estao todos na barra de baixo ou na folha do
+     "mais" — telos nos dois sitios era "Inicio" duas vezes no mesmo ecra. */
+  .nav-links {
+    display: none;
+  }
+
+  /* Os quatro botoes fixos. Este e' o ponto da ideia: a 365 px estavam
+     dentro da pilula, todos eles, e o sino ficava por baixo do botao de
+     ecra inteiro. Abaixo de 720 saem os quatro. */
+  .app-fs-btn,
+  .app-back-btn,
+  .app-fwd-btn,
+  .app-news-btn {
+    display: none;
+  }
+
+  /* O conteudo precisa de espaco para a barra nao tapar a ultima linha da
+     ultima carta. Vai no `.app` e nao no `.content` porque cada pagina tem o
+     seu proprio `padding` e nenhuma partilha esta altura. */
+  .app {
+    padding-bottom: calc(56px + env(safe-area-inset-bottom, 0px));
+  }
+
+  /* A folha do "mais" */
+  .nav-mais-fundo {
+    position: fixed;
+    inset: 0;
+    z-index: 80;
+    display: flex;
+    align-items: flex-end;
+    background: rgba(0, 0, 0, 0.55);
+  }
+
+  .nav-mais {
+    width: 100%;
+    max-height: 80vh;
+    overflow-y: auto;
+    background: #16161a;
+    border-radius: 18px 18px 0 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 8px 14px calc(14px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .nav-mais-cabeca {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 0 10px;
+    font-size: 15px;
+  }
+
+  /* O punho de arraste do topo da folha: e' decoracao. O fechar e' pelo
+     fundo e pelo X, que sao alvos com tamanho certo. */
+  .nav-mais::before {
+    content: "";
+    display: block;
+    width: 36px;
+    height: 4px;
+    margin: 0 auto 8px;
+    border-radius: 2px;
+    background: rgba(255, 255, 255, 0.24);
+  }
+
+  .nav-mais-lista {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .nav-mais-lista a,
+  .nav-mais-lista button {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: 13px 10px;
+    min-height: 44px;
+    border: 0;
+    border-radius: 10px;
+    background: none;
+    color: var(--text);
+    font: inherit;
+    font-size: 15px;
+    text-decoration: none;
+    cursor: pointer;
+  }
+
+  .nav-mais-lista button:hover,
+  .nav-mais-lista a:hover {
+    background: rgba(255, 255, 255, 0.07);
+  }
+}

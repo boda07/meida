@@ -962,6 +962,12 @@ export const DICIONARIO = {
       "{n} dos teus títulos vistos não têm data de visionamento: foram marcados antes de a app a guardar. Ficam no fim, sem mês.",
     "{n} com a data em que os marcaste como vistos.":
       "{n} com a data em que os marcaste como vistos.",
+    // --- Barra de baixo no telefone ---
+    "Mais": "Mais",
+    "Navegação": "Navegação",
+    "Comparar notas": "Comparar notas",
+    "Pessoas": "Pessoas",
+    "Pesquisa": "Pesquisa",
   },
 
   en: {
@@ -1889,6 +1895,12 @@ export const DICIONARIO = {
       "{n} of your watched titles have no viewing date: they were marked before the app started recording one. They stay at the end, with no month.",
     "{n} com a data em que os marcaste como vistos.":
       "{n} with the date you marked them as watched.",
+    // --- Barra de baixo no telefone ---
+    "Mais": "More",
+    "Navegação": "Navigation",
+    "Comparar notas": "Compare ratings",
+    "Pessoas": "People",
+    "Pesquisa": "Search",
   },
 };
 
