@@ -56,38 +56,13 @@ decidida. A metade visual do calendário de estreias **não** tem este bloqueio 
   - **Privacidade:** ao carregar no botão, o texto do comentário vai para um serviço terceiro. **Decidido que está bem** (2026-10-13) — e é precisamente por ser sob procura que isto é aceitável, porque nada sai sem alguém tocar no botão.
 
 ## Estatísticas / perfil
-- [ ] **Acento sempre legível** — medir e corrigir o contraste do texto com a cor de destaque escolhida. **Dois presets de oito não passam** para texto normal: `#c90303` (o por omissão) dá 3,35:1 sobre o fundo e `#e50914` dá 4,20:1; os outros seis dão 4,60:1 a 9,38:1 (WCAG 2.1, medido a 2026-10-13). A correção é um `--accent-text` derivado da cor escolhida, para o texto e só para o texto (bordas e fundos ficam com a cor cheia): `--accent-text: color-mix(in srgb, var(--accent) 65%, white)` dá 5,46:1 no vermelho por omissão. Uma variável, e o `SettingsContext.jsx` já tem o `shade()` que a calcula no mesmo sítio onde hoje define `--accent-hover`.
-- [x] **Mapa de calor de atividade por dia** (o `heatmap` do GitHub) — as datas já existem na `library` e na `progress`, e a racha já as calcula. Falta o desenho, e a escolha óbvia é **sem biblioteca**, pelas mesmas razões que o resto dos gráficos.
-- [ ] **Mapa de países, de décadas e de hora do dia** — o que se vê quando se chega a um perfil com alguma história, no mesmo sítio dos gráficos. **Feitas as duas últimas (2026-10-14); o mapa de países não tem dados.**
-  - **Décadas** — a API já devolvia `decadas` desde sempre e **nada o desenhava** (só o número da "década favorita"). Saiu sem trabalho de servidor.
-  - **Hora do dia** — sai do `updated_at` (a hora a que mexeste em cada título), mas o servidor pode estar em UTC (Render e FadeHost estão). Por isso o servidor devolve `horasUtc`, 24 baldes, e **o cliente roda o histograma**: um histograma rodado é exacto e custa 24 números em vez de milhares de datas.
-  - **Mapa de países: não há dados.** Nem a `library` tem coluna de país, nem o `normalizeMedia` do TMDB traz `origin_country` (escolhe os campos um a um e esse não está). Fazer isto é uma migração do esquema + o campo no catálogo — não é o mesmo trabalho que os outros dois.
-- [x] **Metas e desafios** — "50 filmes este ano" com anel de progresso, e desafios como "um filme de uma década que ainda não viste". As duas coisas saem da library já filtrada por data. **Feito em 2026-10-14, em `/achievements`.**
-  - **A meta conta o que MARCASTE COMO VISTO neste ano, não o que viste** — e todos os textos dizem "marcaste". A biblioteca **não tem data em que viste**: só `updated_at`, a última vez que tocaste. Sem isto, "viste 32 filmes este ano" seria falso para quem mexeu na lista ontem. Filmes que puseste na watchlist não contam (é `watched = 0`), e é isso que impede o número de ser generoso. A limitação está escrita em `server/src/metas.js`.
-  - **O alvo é escolha da pessoa** (10/25/50/100/200/365), guardado na coluna `meta` dos utilizadores (migração 8). A lista de valores é do servidor e a interface lê-a da resposta — escrever os números no JSX mostrava um botão que o servidor recusa com 400.
-  - **O ano é do cliente.** O servidor manda três anos de contagem em UTC e o cliente escolhe o dele com o relógio de casa, porque o Render e o FadeHost estão em UTC e as 00:30 de 1 de Janeiro a meta reiniciava na hora errada.
-  - **O desafio das décadas é só contar** (1930 até à década corrente), sem ir ao TMDB — não sugere filmes, que era a opção mais cara e podia falhar.
-  - Anel em SVG puro (`AnelMeta.jsx`), a geometria em `metas.js` testada. `testar-metas.mjs`: 86 verificações, 14 mutações.
-- [x] **Cartão de partilha em imagem** — o formato de saída para o resumo anual e para "a minha nota". Depende de gerar fora do browser (canvas no cliente dá, mas sai com a fonte do sistema e sem retina; ver o que a secção do CSS diz dos gráficos). **Feito em 2026-10-14: um cartão do teu ano, no fim do `/stats`. As três ressalvas da nota estavam erradas, e há uma quarta que faltava.**
-  - **Não existe "a secção do CSS sobre os gráficos".** A nota manda ver uma secção que não lá está. O mais perto é um comentário no `GraficoMensal.jsx` sobre SVG-vs-biblioteca, que não fala de canvas nem de imagens.
-  - **A app não usa fonte de sistema** — usa web fonts (Manrope e Archivo, do Google Fonts). O perigo existe mas é outro: no `document.fonts` havia pesos `unloaded` (`Archivo 700`, `Archivo 900`) e o canvas **cai para a fonte do sistema em silêncio** se se desenhar antes de o peso estar carregado. Por isso `carregaFontes()` pede cada peso pelo nome, e não se fica por `fonts.ready` — que não espera por pesos que ninguém desenhou.
-  - **"Sem retina" é falso** — este ecrã tem `devicePixelRatio` 1,25, e um canvas de 1080 sairia a 81% do tamanho. São duas linhas: `escalaRetina()` cria o canvas grande e o `ctx.scale()` reduz as coordenadas. O dpr é limitado a 3, porque a 4 um cartão de 1080 dava 23 megapíxeis.
-  - **"Gerar fora do browser" é falso, e era o caminho errado**: a app é Electron **e** site. O canvas corre igual nos dois; gerar fora exigiria um canal IPC novo e não funcionaria no `meida.onrender.com`. Trocava-se um problema por dois.
-  - **O que a nota não mencionava e rebenta tudo**: um `drawImage` de um host sem CORS deixa o canvas "tainted" e o `toBlob()` lança `SecurityError` — não há PNG nenhum. O CDN do TMDB e o do MAL mandam `access-control-allow-origin: *` (medido), mas só se pedir a imagem com `crossOrigin="anonymous"`, posto **antes** do `src`.
-  - Sai por **link de download** (`meida-<ano>.png`), sem IPC: funciona no site e no desktop, e no desktop vai para a pasta de transferências. O canvas vive em `display: none` — com `width: 0` o PNG saía de 0 bytes.
-  - Os números do cartão são **todos deste ano** (`filmesPorAno` + `dias` filtrados) e os cartazes são **só filmes**, para baterem certo com o número de cima. Mostrar um cartaz de série ao lado de uma contagem que não inclui séries é o cartão a contar uma coisa e mostrar outra.
-  - **`statsFor` passa as linhas CRUAS do SQLite** (`media_type`, `updated_at`) e as funções de `metas.js` esperam a forma de `listLibrary` (`type`, `updatedAt`). Sem o `toApi` a contar dava **zero, sem erro nenhum**, com o build e 86 testes a passar — nenhum deles executa SQL. É a razão de `testar-cartao-fim.mjs` arrancar o servidor a sério.
+- [ ] **Mapa de países** — o que se vê quando se chega a um perfil com alguma história, no mesmo sítio dos gráficos. **Décadas e hora do dia já estão feitas (ver "Feitas"); esta é a única das três que falta.**
+  - **Não há dados, e por isso é outra coisa.** Nem a `library` tem coluna de país, nem o `normalizeMedia` do TMDB traz `origin_country` (escolhe os campos um a um e esse não está). Fazer isto é uma migração do esquema + o campo no catálogo — não é o mesmo trabalho que os outros dois, que saíram sem tocar no servidor.
 
 ## Library / notas
 - [ ] **Barra de nota visual** nos cartões (gradiente colorido por nota).
 - [ ] **Marcar como visto ao dar nota** (uma ação única).
-- [x] **Vista timeline**: ordenar por data em que viste, com linhas cronológicas. **Feito em 2026-10-14, como segunda vista da biblioteca (botão "Ver por data").**
-  - **Não havia histórico de visionamento nenhum.** A `library` só tinha `updated_at` (última vez que tocaste) e o `progress` tem **uma linha por título, não por episódio** — ao avançar um episódio, `finishedAt` passa a ser a data de agora. Uma linha cronológica de "quando viste" não se construía com nada disto.
-  - **Migração 9: coluna `watched_at`**, gravada quando `watched` passa a 1. **Não se preenche com `updated_at`**: seria dar a data do último toque a tudo o que já estava visto, e a timeline apareceria com meses e anos errados sem ninguém ter como saber. NULL significa "não se sabe", e a interface diz isso.
-  - **A regra de escrita tem três casos, e o do meio é o que a torna útil:** marcar como não visto apaga a data; marcar como visto pela **primeira** vez grava a de agora; **já estar visto mantém a data antiga mesmo que venha NULL**. O terceiro é o erro fácil — um `COALESCE` simples trataria "marcar como visto" e "dar nota a um filme visto" do mesmo jeito, e a segunda escreveria NULL por cima, apagando-a.
-  - **A timeline nunca usa o `updatedAt` como data de visionamento.** Quem não tem `watchedAt` vai para um grupo "sem data" no fim, separado e sem ponto na linha — dar-lhe um ponto faria a pessoa contar como se fosse um mês. Com a nota a dizer quantos são.
-  - **O import/export leva a data** (JSON `watchedAt`, CSV `visto_em`), para não se perder ao mudar de PC. E o import **não fabrica datas**: sem data no ficheiro fica NULL.
-  - Testes: `testar-timeline.mjs` (75 verificações, 10 mutações) e `testar-timeline-fim.mjs` (19, com o servidor a sério — os três casos da regra de escrita só existem quando o SQL corre).
+- [ ] **Histórico de visionamento por episódio** — a `watched_at` resolve "quando marquei este filme como visto", mas **não** "quando acabei o episódio 12". O `progress` tem **uma linha por título, não por episódio** (o `patchProgress` reescreve), por isso `finishedAt` é a data de agora sempre que se avança, e o histórico some. A correção é uma tabela nova de progresso por episódio, não mexer na actual — e é o que falta para qualquer coisa do género "quantos episódios por mês" ou "a que horas vejo séries" valer.
 
 ## Recomendações / descoberta
 - [ ] **Calendário de estreias ("esta semana")** — a **metade visual** da ideia
@@ -132,8 +107,6 @@ decidida. A metade visual do calendário de estreias **não** tem este bloqueio 
 
 ## Providers de anime / player nativo
 
-- [x] **Escolher a qualidade** — o menu existe e funciona, mas **hoje nunca aparece**: medido em 5 episódios a 2026-10-12, o `master.m3u8` do MegaPlay traz **uma só variante jogável** (1080p) mais um `#EXT-X-I-FRAME-STREAM-INF` (360p, que é para saltar no vídeo, não outra qualidade). O `hls.js` reporta `levels.length === 1` e o menu esconde-se — o que está certo. **A ideia original dizia "1080p/720p" e era especulação minha, não medição.** Para o menu ser útil teria de ser a fonte a dar mais variantes; não é trabalho do lado da MEIDA. Se um dia o site passar a dar mais, o menu aparece sozinho (basta `niveis.length > 1`).
-
 - [ ] **Lembrar a fonte escolhida** — o `Player` tem `manual`/`fonteManual`, mas isso vive na sessão: ao mudar de episódio volta ao primeiro provider. Guardar em `settings` a última fonte por tipo (filme / série / anime) e abrir nessa. Quem escolheu o MegaPlay porque é o único com legendas não devia ter de o escolher em cada episódio.
 
 - [ ] **Health-check do nativo separado do iframe** — o `providerHealth.js` sonda `p.url`, que é a **página** do player. O nativo pode falhar a desencriptar com a página a responder 200 (o health-check diz "ok" e o episódio não dá), e o inverso também (página morta, nativo a desencriptar à mesma). O `probe()` tem de ir buscar o `getSources` e ver se o `enc` volta em claro. As duas entradas também precisam de estado próprio — hoje têm nomes quase iguais e partilham o resultado.
@@ -151,6 +124,15 @@ decidida. A metade visual do calendário de estreias **não** tem este bloqueio 
 ## Importação / dados
 - [ ] **Filtrar Library por nota/estado/tipo** (mais filtros no `LibraryControls`).
 - [ ] **Filtros e ordenação da library a viverem na URL** (`?ordem=nota&filtro=vistos&genero=Ação`). Hoje o `LibraryControls` não usa `useSearchParams`, por isso uma vista filtrada não se pode partilhar, marcar nos favoritos, nem sobreviver ao botão "voltar". O ProdSound faz isto com um helper de ~15 linhas que reescreve os parâmetros existentes em vez de os substituir (`exUrl()`), e é o que torna cada vista um link.
+
+## Ferramentas e processo
+
+Coisas que não são funcionalidades mas que já custaram tempo, e que só se resolvem
+se ficarem escritas.
+
+- [ ] **`app:publish` que se cura sozinho no `422`.** O `fix-latest.cjs` sabe reparar a release pela metade, mas é preciso **alguém se lembrar de o correr**: o `electron-builder` sai com código 1, o `&&` a seguir não corre, e a release fica publicada com 1 asset de 3 sem nenhum aviso. Falhou **cinco vezes** (1.2.0, 1.2.1, 1.2.2, 1.3.2 e 1.5.3), **sempre com um asset diferente em falta**, o que prova que a verificação tem de ser contar os assets e não ler o erro do log. Fazer o `publish` correr `fix-latest` quando falha, e sair com erro só se a reparação não resolver.
+- [ ] **`verificar-release.mjs` ligado ao `app:publish`.** O script provou a 1.5.3 (16 verificações, com o sha512 do `.exe` público a bater com o do `latest.yml`), mas só corre à mão e só quando a release já está feita. Não dá para pôr no `npm test` sem rede; dá para o `publish` o correr no fim, antes de dar a release por boa.
+- [ ] **Teste de contraste do `--accent-text`.** O `SettingsContext` calcula a variável com `shade(accent, 0.35)` e mediu-se que dá 5,36:1 no preset por omissão — mas **quando a pessoa escolhe outra cor, ninguém mede**. São duas linhas: calcular o rácio a partir da cor escolhida e avisar se ficar abaixo de 4,5:1. Hoje o acento é livre e é o texto que tem de se aguentar.
 
 ## Social / comunidade — o que o projeto antigo (ProdSound) já resolveu
 
@@ -471,6 +453,41 @@ de cima quando se fez — a linha original dizia só o quê, não o como.
 ### Library / notas
 
 - **Nota rápida no cartão**: mostra a tua nota (0-100) num badge no canto inferior-direito do cartão (SVG estrela) — usa o cache da library, sem pedidos extra.
+- **Vista timeline**: ordenar por data em que viste, com linhas cronológicas. **Feito em 2026-10-14, como segunda vista da biblioteca (botão "Ver por data").**
+  - **Não havia histórico de visionamento nenhum.** A `library` só tinha `updated_at` (última vez que tocaste) e o `progress` tem **uma linha por título, não por episódio** — ao avançar um episódio, `finishedAt` passa a ser a data de agora. Uma linha cronológica de "quando viste" não se construía com nada disto.
+  - **Migração 9: coluna `watched_at`**, gravada quando `watched` passa a 1. **Não se preenche com `updated_at`**: seria dar a data do último toque a tudo o que já estava visto, e a timeline apareceria com meses e anos errados sem ninguém ter como saber. NULL significa "não se sabe", e a interface diz isso.
+  - **A regra de escrita tem três casos, e o do meio é o que a torna útil:** marcar como não visto apaga a data; marcar como visto pela **primeira** vez grava a de agora; **já estar visto mantém a data antiga mesmo que venha NULL**. O terceiro é o erro fácil — um `COALESCE` simples trataria "marcar como visto" e "dar nota a um filme visto" do mesmo jeito, e a segunda escreveria NULL por cima, apagando-a.
+  - **A timeline nunca usa o `updatedAt` como data de visionamento.** Quem não tem `watchedAt` vai para um grupo "sem data" no fim, separado e sem ponto na linha — dar-lhe um ponto faria a pessoa contar como se fosse um mês. Com a nota a dizer quantos são.
+  - **O import/export leva a data** (JSON `watchedAt`, CSV `visto_em`), para não se perder ao mudar de PC. E o import **não fabrica datas**: sem data no ficheiro fica NULL.
+  - Testes: `testar-timeline.mjs` (75 verificações, 10 mutações) e `testar-timeline-fim.mjs` (19, com o servidor a sério — os três casos da regra de escrita só existem quando o SQL corre).
+
+### Estatísticas / perfil
+
+- **Acento sempre legível** — contraste do texto com a cor de destaque escolhida. **Feito, e a medição confirma a previsão da ideia.**
+  - **O problema era real:** dois presets de oito não passam para texto normal — `#c90303` (o por omissão) dava 3,30:1 e `#e50914` 4,20:1 (WCAG 2.1, medido a 2026-10-13).
+  - **A solução é uma variável só:** `--accent-text`, calculada em `SettingsContext.jsx` com o `shade()` que já existia para o `--accent-hover`, no mesmo sítio. O `styles.css` fica com `#dc5b5b` como valor fixo, que é **exactamente** o que `shade('#c90303', 0.35)` dá — o mesmo número, escrito à mão, para o ecrã de arranque ter a cor certa antes de o React montar.
+  - **Remedido a 2026-10-15:** `#dc5b5b` dá **5,36:1** sobre o fundo da página e **4,84:1** sobre a superfície de um cartão — acima dos 4,5:1 do AA para texto normal. O acento inteiro continua nos 3,30:1.
+  - **O texto sobre o acento inteiro é que tem de ser escuro, e é.** Os botões que ficam com o acento no fundo (`.lib-watched.on`, `.tf-chip.active`, `.metas-escolha-btn.on`, `.episode-btn.active`, `.source-btn.active`) põem `#fff`; o `.quick-add:hover` põe `--bg-main`. **Nenhum usa `--accent-text` sobre `--accent`**, que é a combinação que daria 1,3:1.
+  - **Bordas e fundos ficam com a cor cheia** — `--accent-text` é só para texto. Foi essa a separação que a ideia pedia, e é a que evita o pior dos dois.
+- **Mapa de calor de atividade por dia** (o `heatmap` do GitHub) — as datas já existem na `library` e na `progress`, e a racha já as calcula. Feito em SVG à mão, pelas mesmas razões que o resto dos gráficos: uma célula é um `<rect>` e o ficheiro inteiro fica abaixo de 4 KB. **Feito em 2026-10-13.**
+- **Décadas** — a API já devolvia `decadas` desde sempre e **nada o desenhava** (só o número da "década favorita"). Saiu sem trabalho de servidor.
+- **Hora do dia** — sai do `updated_at` (a hora a que mexeste em cada título), mas o servidor pode estar em UTC (Render e FadeHost estão). Por isso o servidor devolve `horasUtc`, 24 baldes, e **o cliente roda o histograma**: um histograma rodado é exacto e custa 24 números em vez de milhares de datas.
+- **Metas e desafios** — "50 filmes este ano" com anel de progresso, e desafios como "um filme de uma década que ainda não viste". As duas coisas saem da library já filtrada por data. **Feito em 2026-10-14, em `/achievements`.**
+  - **A meta conta o que MARCASTE COMO VISTO neste ano, não o que viste** — e todos os textos dizem "marcaste". A biblioteca **não tem data em que viste**: só `updated_at`, a última vez que tocaste. Sem isto, "viste 32 filmes este ano" seria falso para quem mexeu na lista ontem. Filmes que puseste na watchlist não contam (é `watched = 0`), e é isso que impede o número de ser generoso. A limitação está escrita em `server/src/metas.js`.
+  - **O alvo é escolha da pessoa** (10/25/50/100/200/365), guardado na coluna `meta` dos utilizadores (migração 8). A lista de valores é do servidor e a interface lê-a da resposta — escrever os números no JSX mostrava um botão que o servidor recusa com 400.
+  - **O ano é do cliente.** O servidor manda três anos de contagem em UTC e o cliente escolhe o dele com o relógio de casa, porque o Render e o FadeHost estão em UTC e as 00:30 de 1 de Janeiro a meta reiniciava na hora errada.
+  - **O desafio das décadas é só contar** (1930 até à década corrente), sem ir ao TMDB — não sugere filmes, que era a opção mais cara e podia falhar.
+  - Anel em SVG puro (`AnelMeta.jsx`), a geometria em `metas.js` testada. `testar-metas.mjs`: 86 verificações, 14 mutações.
+
+- **Cartão de partilha em imagem** — o formato de saída para o resumo anual e para "a minha nota". **Feito em 2026-10-14: um cartão do teu ano, no fim do `/stats`. As três ressalvas da nota estavam erradas, e há uma quarta que faltava.**
+  - **Não existe "a secção do CSS sobre os gráficos".** A nota manda ver uma secção que não lá está. O mais perto é um comentário no `GraficoMensal.jsx` sobre SVG-vs-biblioteca, que não fala de canvas nem de imagens.
+  - **A app não usa fonte de sistema** — usa web fonts (Manrope e Archivo, do Google Fonts). O perigo existe mas é outro: no `document.fonts` havia pesos `unloaded` (`Archivo 700`, `Archivo 900`) e o canvas **cai para a fonte do sistema em silêncio** se se desenhar antes de o peso estar carregado. Por isso `carregaFontes()` pede cada peso pelo nome, e não se fica por `fonts.ready` — que não espera por pesos que ninguém desenhou.
+  - **"Sem retina" é falso** — este ecrã tem `devicePixelRatio` 1,25, e um canvas de 1080 sairia a 81% do tamanho. São duas linhas: `escalaRetina()` cria o canvas grande e o `ctx.scale()` reduz as coordenadas. O dpr é limitado a 3, porque a 4 um cartão de 1080 dava 23 megapíxeis.
+  - **"Gerar fora do browser" é falso, e era o caminho errado**: a app é Electron **e** site. O canvas corre igual nos dois; gerar fora exigiria um canal IPC novo e não funcionaria no `meida.onrender.com`. Trocava-se um problema por dois.
+  - **O que a nota não mencionava e rebenta tudo**: um `drawImage` de um host sem CORS deixa o canvas "tainted" e o `toBlob()` lança `SecurityError` — não há PNG nenhum. O CDN do TMDB e o do MAL mandam `access-control-allow-origin: *` (medido), mas só se pedir a imagem com `crossOrigin="anonymous"`, posto **antes** do `src`.
+  - Sai por **link de download** (`meida-<ano>.png`), sem IPC: funciona no site e no desktop, e no desktop vai para a pasta de transferências. O canvas vive em `display: none` — com `width: 0` o PNG saía de 0 bytes.
+  - Os números do cartão são **todos deste ano** (`filmesPorAno` + `dias` filtrados) e os cartazes são **só filmes**, para baterem certo com o número de cima. Mostrar um cartaz de série ao lado de uma contagem que não inclui séries é o cartão a contar uma coisa e mostrar outra.
+  - **`statsFor` passa as linhas CRUAS do SQLite** (`media_type`, `updated_at`) e as funções de `metas.js` esperam a forma de `listLibrary` (`type`, `updatedAt`). Sem o `toApi` a contar dava **zero, sem erro nenhum**, com o build e 86 testes a passar — nenhum deles executa SQL. É a razão de `testar-cartao-fim.mjs` arrancar o servidor a sério.
 
 ### Multi-utilizador / social
 
@@ -500,6 +517,10 @@ de cima quando se fez — a linha original dizia só o quê, não o como.
   A decisão (quando mostrar, para onde saltar, o que já foi saltado) está em **`pularIntro.js`**, toda pura e sem React, para se poder partir por mutação. Duas regras que vieram da medição: uma janela só vale se `Number.isFinite` nos dois lados e `end - start >= 1`, e o salto é limitado ao fim do vídeo quando a janela o passa (o site tem tempos ligeiramente errados). Com o Autoskip ligado salta sozinho uma vez e sem botão — as Definições prometem "tenta saltar a intro", não "pergunta".
 
   Testes em `scripts/testar-pular-intro.mjs` (57 verificações, 7 mutações). **Duas das mutações revelaram código morto**: o `typeof start !== "number"` era redundante com `Number.isFinite` (que não converte, logo já rejeita texto), e o `split` do harness cortava o `process.exit` — os sub-testes saíam com código 0 mesmo a falhar, e o harness reportava "mutação não apanhada" quando o teste a apanhara. As duas coisas foram corrigidas: o filtro ficou só no `isFinite` e o harness ganhou a cauda com o `process.exit`.
+
+### Providers de anime / player nativo
+
+- **Escolher a qualidade** — o menu existe e funciona, mas **hoje nunca aparece**: medido em 5 episódios a 2026-10-12, o `master.m3u8` do MegaPlay traz **uma só variante jogável** (1080p) mais um `#EXT-X-I-FRAME-STREAM-INF` (360p, que é para saltar no vídeo, não outra qualidade). O `hls.js` reporta `levels.length === 1` e o menu esconde-se — o que está certo. **A ideia original dizia "1080p/720p" e era especulação minha, não medição.** Para o menu ser útil teria de ser a fonte a dar mais variantes; não é trabalho do lado da MEIDA. Se um dia o site passar a dar mais, o menu aparece sozinho (basta `niveis.length > 1`).   **Fechada a 2026-10-12 por medição, não construída.**
 
 ### UX / fluxos rápidos
 
@@ -535,7 +556,8 @@ de cima quando se fez — a linha original dizia só o quê, não o como.
 - **Testes com mutação por omissão** — cada ficheiro novo em `scripts/` parte o código de propósito e confirma que o teste o apanha. Um teste que passa porque o código está certo não prova nada; um teste que continua a passar quando o código está partido prova que não está a testar nada.
 - **Um teste que arranca o servidor de verdade** (`testar-anikoto.mjs`). Nenhum dos outros arranca o `index.js`, e foi por isso que um `aquecerCatalogo()` sem `return` matou o servidor ao arrancar com "Cannot read properties of undefined (reading 'catch')" sem nenhum teste dar por isso. A lição: uma função pública chamada no arranque tem de ter um teste que arranque o servidor.
 - **Testes que batem em APIs de terceiros** (o Anikoto, o MegaPlay) usam uma base de dados temporária e saltam com aviso quando a rede falha, em vez de falhar — um teste que rebenta porque o outro mudou o site não diz nada sobre o código.
-- **`npm test` tem 24 passos** — confirmar que o que se mexeu entrou lá.
+- **`npm test` tem 37 passos** — confirmar que o que se mexeu entrou lá.
+- **`verificar-release.mjs`** — prova uma release a sério, sem acreditar no `exit code`: conta os três assets, descarrega o `.exe` público e compara o `sha512` com o do `latest.yml`, confirma que a tag aponta para o HEAD e lê o cabeçalho PE do `MEIDA.exe` para ser x64. Nasceu do `422` da 1.5.3, em que a release ficou publicada com 1 asset de 3. **Corre à mão, depois de publicar** (ver "Ferramentas e processo").
 
 ## Feitas sem detalhe (só o inventário)
 Isto aqui não tem a explicação do *como* — a de cima é que a tem.
