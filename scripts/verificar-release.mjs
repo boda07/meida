@@ -8,7 +8,14 @@ import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import crypto from "node:crypto";
 
-const VER = "1.5.3";
+// A versao vem do `package.json` e nao e' escrita aqui. Estava fixo em "1.5.3" e
+// era uma armadilha: na release seguinte a script verificava a release anterior
+// (que ainda estava no GitHub e por isso "dava tudo certo"), sem dar conta de que
+// a nova nem estava verificada. Ler o `package.json` e' o que impede isso — e o
+// `package.json` ja foi bumped e commitado antes do publish, que e' a ordem certa.
+const VER = JSON.parse(
+  fs.readFileSync(new URL("../package.json", import.meta.url), "utf8")
+).version;
 const BASE = "https://github.com/boda07/meida/releases/download/v" + VER + "/";
 
 const gh = (args) =>
