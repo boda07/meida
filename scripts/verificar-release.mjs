@@ -59,11 +59,30 @@ ok_("o tamanho bate", exe.length === tam, "exe=" + exe.length + " yml=" + tam);
 ok_("o .exe publico nao esta' truncado (>100 MB)", exe.length > 100 * 1024 * 1024, Math.round(exe.length / 1048576) + " MB");
 
 console.log("");
-console.log("  3) a tag aponta para o commit certo");
+console.log("  3) a tag aponta para um commit que esta' no main");
 const tag = JSON.parse(gh(["api", "repos/boda07/meida/git/ref/tags/v" + VER]));
 const shaTag = tag.object.sha;
-const esperado = execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim();
-ok_("a tag v" + VER + " aponta para o HEAD local", shaTag === esperado, "tag=" + shaTag.slice(0, 10) + " local=" + esperado.slice(0, 10));
+// **Ancestral do main, nao igual ao HEAD local.** Comparar com o HEAD dava uma
+// FALSA imediatamente a seguir a publicacao: assim que se faz mais um commit (o
+// habitual — corrigir o verificador, por exemplo) o HEAD anda para a frente e a
+// verificacao falhava com a release impecavel. O que tem de ser verdade e' que o
+// commit da tag NAO se perdeu: e' esse o erro real (tagar um commit que nao esta
+// no main, ou o push nao ter ido).
+try { execFileSync("git", ["fetch", "origin", "--tags", "--quiet"], { encoding: "utf8" }); } catch { /* sem rede: a verificacao seguinte da */ }
+let noMain;
+try {
+  execFileSync("git", ["merge-base", "--is-ancestor", shaTag, "origin/main"], { encoding: "utf8" });
+  noMain = true;
+} catch { noMain = false; }
+ok_("a tag v" + VER + " aponta para um commit que esta' no main", noMain, "tag=" + shaTag.slice(0, 10));
+const head = execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim();
+const movido = head !== shaTag;
+console.log(
+  "        " +
+    (movido
+      ? "o HEAD local ja foi para a frente (" + shaTag.slice(0, 7) + " -> " + head.slice(0, 7) + "), como deve ser: a tag fica na release."
+      : "o HEAD local e' o commit da release.")
+);
 
 console.log("");
 console.log("  4) o instalador e' x64 (esta maquina e' ARM)");
