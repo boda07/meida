@@ -968,6 +968,47 @@ export const DICIONARIO = {
     "Comparar notas": "Comparar notas",
     "Pessoas": "Pessoas",
     "Pesquisa": "Pesquisa",
+    // --- Onboarding ---
+    "Primeiros passos": "Primeiros passos",
+    "Passos": "Passos",
+    "Importar": "Importar",
+    "Cor": "Cor",
+    "Pronto": "Pronto",
+    "Agora não": "Agora não",
+    "Ver a minha biblioteca": "Ver a minha biblioteca",
+    "Traz os teus títulos de outra app, ou começa do zero — podes fazer isto mais tarde nas Definições.":
+      "Traz os teus títulos de outra app, ou começa do zero — podes fazer isto mais tarde nas Definições.",
+    "Nenhuma conta está ligada. A escrever o teu username do Letterboxd é o caminho mais rápido; nas Definições podes ligar o MyAnimeList e o AniList.":
+      "Nenhuma conta está ligada. A escrever o teu username do Letterboxd é o caminho mais rápido; nas Definições podes ligar o MyAnimeList e o AniList.",
+    "Só entram ficheiros exportados da MEIDA — o formato do Letterboxd tem de ser ligado pelo username, acima.":
+      "Só entram ficheiros exportados da MEIDA — o formato do Letterboxd tem de ser ligado pelo username, acima.",
+    "o teu username": "o teu username",
+    "Ficheiro (JSON ou CSV exportado da MEIDA)":
+      "Ficheiro (JSON ou CSV exportado da MEIDA)",
+    "Importar de {fonte}": "Importar de {fonte}",
+    "Importados {n} títulos do Letterboxd.":
+      "Importados {n} títulos do Letterboxd.",
+    "Importados {n} títulos do ficheiro.": "Importados {n} títulos do ficheiro.",
+    "Importados {n} títulos.": "Importados {n} títulos.",
+    "Não foi possível importar do Letterboxd.":
+      "Não foi possível importar do Letterboxd.",
+    "Não foi possível importar o ficheiro.":
+      "Não foi possível importar o ficheiro.",
+    "Escolhe até {n} gêneros. Vamos pôr títulos desse género em primeiro lugar na tua página inicial.":
+      "Escolhe até {n} gêneros. Vamos pôr títulos desse género em primeiro lugar na tua página inicial.",
+    "Podes mudar isto depois nas Definições.":
+      "Podes mudar isto depois nas Definições.",
+    "Escolhe a cor da app. Podes mudá-la quando quiseres.":
+      "Escolhe a cor da app. Podes mudá-la quando quiseres.",
+    "A tua biblioteca tem {n} títulos.": "A tua biblioteca tem {n} títulos.",
+    "Pronto! A tua biblioteca está vazia — começa por guardar alguma coisa, ou procura no catálogo.":
+      "Pronto! A tua biblioteca está vazia — começa por guardar alguma coisa, ou procura no catálogo.",
+    "Vais ver {g} em primeiro na página inicial.":
+      "Vais ver {g} em primeiro na página inicial.",
+    "Mais tarde podes importar, ligar contas e mudar tudo isto nas Definições.":
+      "Mais tarde podes importar, ligar contas e mudar tudo isto nas Definições.",
+    // --- Home: linha dos generos ---
+    "Porque escolheste estes": "Porque escolheste estes",
   },
 
   en: {
@@ -1901,6 +1942,46 @@ export const DICIONARIO = {
     "Comparar notas": "Compare ratings",
     "Pessoas": "People",
     "Pesquisa": "Search",
+    // --- Onboarding ---
+    "Primeiros passos": "First steps",
+    "Passos": "Steps",
+    "Importar": "Import",
+    "Cor": "Colour",
+    "Pronto": "Done",
+    "Agora não": "Not now",
+    "Ver a minha biblioteca": "See my library",
+    "Traz os teus títulos de outra app, ou começa do zero — podes fazer isto mais tarde nas Definições.":
+      "Bring your titles from another app, or start from scratch — you can do this later in Settings.",
+    "Nenhuma conta está ligada. A escrever o teu username do Letterboxd é o caminho mais rápido; nas Definições podes ligar o MyAnimeList e o AniList.":
+      "No account is linked. Typing your Letterboxd username is the fastest way; in Settings you can link MyAnimeList and AniList.",
+    "Só entram ficheiros exportados da MEIDA — o formato do Letterboxd tem de ser ligado pelo username, acima.":
+      "Only files exported from MEIDA work — for Letterboxd, use the username above.",
+    "o teu username": "your username",
+    "Ficheiro (JSON ou CSV exportado da MEIDA)":
+      "File (JSON or CSV exported from MEIDA)",
+    "Importar de {fonte}": "Import from {fonte}",
+    "Importados {n} títulos do Letterboxd.":
+      "Imported {n} titles from Letterboxd.",
+    "Importados {n} títulos do ficheiro.": "Imported {n} titles from the file.",
+    "Importados {n} títulos.": "Imported {n} titles.",
+    "Não foi possível importar do Letterboxd.":
+      "Could not import from Letterboxd.",
+    "Não foi possível importar o ficheiro.": "Could not import the file.",
+    "Escolhe até {n} gêneros. Vamos pôr títulos desse género em primeiro lugar na tua página inicial.":
+      "Pick up to {n} genres. We'll put titles in those genres first on your home page.",
+    "Podes mudar isto depois nas Definições.":
+      "You can change this later in Settings.",
+    "Escolhe a cor da app. Podes mudá-la quando quiseres.":
+      "Choose the app colour. You can change it whenever you like.",
+    "A tua biblioteca tem {n} títulos.": "Your library has {n} titles.",
+    "Pronto! A tua biblioteca está vazia — começa por guardar alguma coisa, ou procura no catálogo.":
+      "Done! Your library is empty — start by saving something, or browse the catalogue.",
+    "Vais ver {g} em primeiro na página inicial.":
+      "You'll see {g} first on the home page.",
+    "Mais tarde podes importar, ligar contas e mudar tudo isto nas Definições.":
+      "Later you can import, link accounts and change all of this in Settings.",
+    // --- Home: linha dos generos ---
+    "Porque escolheste estes": "Because you chose these",
   },
 };
 

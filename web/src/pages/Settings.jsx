@@ -1401,6 +1401,26 @@ export default function Settings() {
           </button>
         )}
         {importMsg && <span className={`muted ${importError ? "auth-error" : ""}`}>{importMsg}</span>}
+        {/* Atalho para o mesmo assistente de sempre, aqui no sitio onde se vai
+            buscar a segunda vez. **E' o caminho que o `deveMostrar` nao da'**:
+            quem ja tem titulos nunca ve o wizard sozinho, e sem esta botao o
+            assistente so existia no primeiro minuto de vida de uma conta.
+
+            `window.abrirOnboarding` e' registado pelo `App.jsx` e **desligado
+            logo** (`onFechar` volta a por `false`): se ficasse ligado, este
+            botao abriria o wizard em todas as navegacoes seguintes. */}
+        <div className="set-row">
+          <button
+            className="set-choice"
+            onClick={() => {
+              if (typeof window !== "undefined" && window.abrirOnboarding) {
+                window.abrirOnboarding();
+              }
+            }}
+          >
+            {t("Assistente de importação")}
+          </button>
+        </div>
       </section>
 
       {/* ===== Letterboxd ===== */}

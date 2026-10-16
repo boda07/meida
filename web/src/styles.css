@@ -6964,3 +6964,198 @@ h2 {
     background: rgba(255, 255, 255, 0.07);
   }
 }
+
+/* ===== Onboarding (primeiros 60 segundos) =====
+
+   Folha de lado, nao modal com fundo escuro. Em `/library` e' a biblioteca que
+   esta a ser escrita e o contexto importa; e um fundo escuro a bloquear tudo
+   impede de ver o resultado do import a acontecer.
+
+   `z-index: 75`: acima da pílula (60), da barra de baixo (65) e dos botoes
+   fixos (70 — que ja nao existem abaixo de 720 px, mas a folha aparece em
+   qualquer largura). Abaixo do `Changelog` (80), que e' modal a serio.
+*/
+.ob-folha {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 75;
+  width: min(400px, 100vw);
+  display: flex;
+  flex-direction: column;
+  background: rgba(16, 16, 21, 0.97);
+  backdrop-filter: blur(20px);
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: var(--shadow-nav);
+}
+
+.ob-cabeca {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 16px 18px 10px;
+  font-size: 15px;
+}
+
+/* Os passos em linha. O `on` vai ate ao passo actual, nao so ao actual: uma
+   barra com uma marca so nao diz o quanto falta. */
+.ob-passos {
+  list-style: none;
+  display: flex;
+  gap: 6px;
+  margin: 0;
+  padding: 0 18px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.ob-passo {
+  flex: 1;
+  height: 3px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.12);
+  font-size: 0;
+}
+
+/* Barra de 3 px e' um elemento grafico, nao texto: a cor cheia. Mesma razao de
+   `.ob-genero.on` — `--accent-text` e' para TEXTO sobre fundo escuro. */
+.ob-passo.on {
+  background: var(--accent);
+}
+
+.ob-corpo {
+  flex: 1;
+  overflow-y: auto;
+  padding: 14px 18px;
+}
+
+.ob-texto {
+  margin: 0 0 12px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.ob-nota {
+  margin: 10px 0 0;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--text-secondary);
+}
+
+.ob-msg {
+  margin: 0 18px 8px;
+  font-size: 13px;
+  color: #6ee7a8;
+}
+
+.ob-erro {
+  margin: 0 18px 8px;
+  font-size: 13px;
+  color: #ff9d9d;
+}
+
+.ob-portas {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ob-porta {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+}
+
+/* O input do username do Letterboxd tem de ser largo: e' o campo que a
+   pessoa preenche, e num campo estreito o username dela nao cabe. */
+.ob-porta label {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.ob-porta input[type='text'],
+.ob-porta input:not([type]) {
+  width: 100%;
+  min-height: 40px;
+  padding: 9px 11px;
+  border-radius: 9px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.35);
+  color: var(--text);
+  font: inherit;
+  font-size: 14px;
+}
+
+.ob-generos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.ob-genero {
+  min-height: 38px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+/* **A borda fica com a cor de destaque cheia, nao com a `--accent-text`.**
+   `--accent-text` e' o mesmo acento clareado para o branco, e existe porque
+   3,3:1 sobre fundo escuro nao chega para TEXTO. Numa borda de 1 px isso nao e'
+   texto, e clarear a cor faz o contorno parecer cinzento em vez de da cor que a
+   pessoa escolheu — a regra esta em `testar-acento.mjs` e tem razao. */
+.ob-genero.on {
+  border-color: var(--accent);
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+
+.ob-cores {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+/* 44 px: o guideline de toque. A cor e' o botao inteiro, entao o alvo tem
+   de ser o botao — um `span` de 24 px dentro de um `div` clicavel e' o
+   erro classico de quem copia o Pinterest. */
+.ob-cor {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  padding: 0;
+}
+
+.ob-cor.on {
+  border-color: #fff;
+}
+
+.ob-acoes {
+  display: flex;
+  gap: 10px;
+  padding: 12px 18px calc(14px + env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+/* No telefone a folha e' a tela toda, e as acoes ficam em baixo, ao alcance
+   do polegar — e acima da barra de navegacao, que fica z-index 65. */
+@media (max-width: 720px) {
+  .ob-folha {
+    width: 100vw;
+    z-index: 66;
+  }
+}
