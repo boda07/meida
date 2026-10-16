@@ -6,6 +6,21 @@
 export const CHANGELOG = [
 
   {
+      version: "1.5.4",
+      items: [
+        "Corrigido: a app já não fica 40 segundos a dizer que o servidor está a acordar. O ecrã de espera desapareceu: a app abre logo, mesmo quando o servidor de dados tarda ou não responde. Se algo não carregar, é a parte concreta que não carregou que mostra o seu estado, em vez de um ecrã inteiro a dizer uma coisa que ninguém sabe ser verdade.",
+        "Novo: os primeiros 60 segundos. Quando crias a conta, a app pergunta de onde queres trazer os títulos, que genres te interessam e que cor queres. Só aparece a quem ainda não tem nada, e só uma vez.",
+        "Novo: barra de navegação em baixo no telefone. Os separadores ficam ao alcance do dedo, e o que não cabia foi para um menu.",
+        "Corrigido: no telefone, a barra de cima deixava o \"Início\" cortado e os botões ficavam por cima dela, o que fazia tocar no sino responder a outra coisa.",
+      ],
+      items_en: [
+        "Fixed: the app no longer sits for 40 seconds saying the server is waking up. The waiting screen is gone: the app opens straight away, even when the data server is slow or not answering. If something doesn't load, it's that specific part that shows its own state, instead of a full screen claiming something we don't actually know to be true.",
+        "New: the first 60 seconds. When you create your account, the app asks where you want to bring your titles from, which genres you're into and which colour you want. It only shows to people who don't have anything yet, and only once.",
+        "New: a navigation bar at the bottom on phones. The tabs are within thumb reach, and what didn't fit went into a menu.",
+        "Fixed: on phones, the top bar left \"Home\" cut off and the buttons sat on top of it, so tapping the bell answered something else.",
+      ],
+    },
+    {
     version: "1.5.3",
     items: [
       "Novo: uma vista por data na tua lista. Mostra quando marcaste cada filme como visto, mês a mês, numa linha do tempo. A partir de agora a app guarda essa data; o que já estava visto aparece separado, sem mês, porque não se sabe quando o viste.",

@@ -1,5 +1,104 @@
 # Changelog
 
+## 1.5.4
+
+A app deixa de esconder-se atrás de um ecrã de espera, e traz os primeiros 60
+segundos depois de criar a conta.
+
+### O ecrã de arranque foi embora
+
+**Sintoma.** A app de desktop abria sempre com "o servidor de dados está a acordar",
+~40 s de cada vez, com o servidor acordado. Quem ia ver que estava vivo e não
+percebia porque é que a app insistia.
+
+**O que media, antes de mexer.** Com a app real a correr (Electron com
+`--remote-debugging-port`, a perguntar ao renderer):
+
+| Onde | Tempo | Ecrã |
+| --- | --- | --- |
+| fadehost acordado, renderer real | 175 ms | não aparece |
+| pedido a frio, processos novos | 150–340 ms | — |
+| `/api/health` do servidor local | 19 ms | — |
+
+Ou seja: com o servidor acordado nunca aparecia. Ficam excluídos, com evidência: o
+adblock (a função `adHostFor` real, 55 entradas, `fadehost` passa), o CORS (`*`
+nas duas origens), o Private Network Access (preflight 204, e o renderer em
+`127.0.0.1` fez-o em 175 ms) e o URL inválido que prendeu a app na 1.5.0
+(corrigido na 1.5.1).
+
+**Duas causas.**
+
+1. **O `fetch` do health não tinha tempo limite.** Um pedido pendurado — a ligação
+   é aceite mas a resposta não vem: IPv6 sem rota, VPN, portal cativo — **não entra
+   no `.then()` nem no `.catch()`**. Como a repetição só estava no `.catch()`, um
+   pedido pendurado significava *zero* novas tentativas: o ecrã ficava preso para
+   sempre a dizer que o servidor dormia, e o servidor não tinha nada a ver. Os 40 s
+   que a pessoa media são a assinatura disso: o primeiro pedido não falhou logo,
+   ficou pendurado, e a repetição seguinte resolveu.
+
+2. **A tapava a aplicação inteira.** A interface já estava carregada — o servidor
+   local tinha servido a página. O que não estava era *um pedido de dados*, e isso
+   tem o seu próprio estado de carregamento e o seu próprio erro, com a mensagem
+   verdadeira.
+
+**A correcção é estrutural, não uma margem maior.** O `<App/>` passou a ser montado
+directamente em `main.jsx`: não há nada a esperar por um pedido de dados. Isto mata
+o sintoma independentemente da causa, o que é o que interessa quando a causa não
+está verificada.
+
+Foi com o código morto à mistura: `healthDados`, `fetchComTempo`, `TEMPO_HEALTH` e
+os 7 textos do ecrã nas traduções deixaram de ter consumidor e foram embora.
+
+**Fica o ecrã estático do `index.html`.** Diz "a app está a arrancar" e sai quando o
+JS monta (~1 s) — é verdade, e é o que evita o ecrã preto. O outro esperava por um
+pedido de dados, que é outra coisa.
+
+**Medido depois**, com o servidor de dados apontado para um endereço inalcançável
+(`192.0.2.1`, TEST-NET-1): interface em **630 ms**, com conteúdo. Com o fadehost
+real: **504 ms**, 600 cartazes, sem erros na consola. Não há ecrã preto a substituir.
+
+### Os primeiros 60 segundos (`web/src/components/onboarding.js`)
+
+Folha de 4 passos para quem cria a conta: importar, géneros, cor, pronto.
+
+**Mostra-se a quem está vazio, não a quem se registou há pouco** (`count === 0`, com
+`null` = ainda a carregar). `null === 0` é falso, e é isso que evita importar por
+cima de quem já tem 300 títulos.
+
+**Uma porta de importação só é oferecida se for capaz de importar.** O único CSV
+aceite é o exportado pela MEIDA — o `toLibraryEntry()` lê `o.tmdbId`; a Letterboxd
+dá `Date, Name, Year`. MAL e AniList exigem as *duas* metades: servidor configurado
+*e* conta ligada.
+
+**A porta em primeiro é a mais barata** (Letterboxd: escreve-se um username), não a
+mais popular.
+
+**Géneros guardam-se como `{ id, name }`** e o `Home` extrai o `id` — o `/api/discover`
+exige IDs (`?genres=Terror` devolve 0 itens; `?genres=27` devolve 20). Nomes passam
+sem erro e devolvem lista vazia: o pior tipo de bug.
+
+É uma **folha de lado, não um modal** (`aria-modal="false"`), montada **fora** do
+`ErrorBoundary` — quem cria a conta tem de poder ver um erro de rede. A cor
+aplica-se ao clicar, não no fim.
+
+### Barra de navegação em baixo no telefone (`web/src/components/navBaixo.js`)
+
+5 separadores + folha "mais".
+
+Os dois limites (esconder os botões fixos / mostrar a barra) são **o mesmo número**,
+720, e de propósito: limites diferentes deixavam uma faixa de 20 px com a barra em
+baixo *e* os botões por cima.
+
+Medido num iframe de 375 px (o mais comum é 365): a pílula de cima tem 395 px, o
+"Início" ficava a x = −8 (cortado) e os quatro botões fixos (`z-index: 70`) estavam
+em cima dela (`z-index: 60`) — tocar no sino respondia o botão de ecrã inteiro.
+
+### `scripts/verificar-release.mjs`
+
+Prova a release a sério em vez de acreditar no código de saída: os 3 assets, o
+`latest.yml` público com o `sha512` a bater com o do instalador assinado, e o
+cabeçalho PE do `.exe`.
+
 ## 1.5.3
 
 Quatro funcionalidades novas e três correcções. Cada uma com teste, e os

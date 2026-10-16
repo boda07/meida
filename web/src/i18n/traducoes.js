@@ -381,16 +381,6 @@ export const DICIONARIO = {
     "a ver agora": "a ver agora",
     "A ver ...": "A ver ...",
     "A carregar": "A carregar",
-    // --- ecra de arranque (servidor de dados a acordar) ---
-    "A ligar ao servidor": "A ligar ao servidor",
-    "O servidor está a acordar. Pode demorar até um minuto.":
-      "O servidor está a acordar. Pode demorar até um minuto.",
-    "Isto é normal depois de uma atualização. Não feches esta página.":
-      "Isto é normal depois de uma atualização. Não feches esta página.",
-    "Ainda a tentar. Se não abrir, recarrega a página.":
-      "Ainda a tentar. Se não abrir, recarrega a página.",
-    "Os teus dados ficam guardados no servidor. A app só espera que ele acorde.":
-      "Os teus dados ficam guardados no servidor. A app só espera que ele acorde.",
     "não": "não",
     // --- pesquisa e hero ---
     "A procurar \"{q}\"": "A procurar \"{q}\"",
@@ -1356,16 +1346,6 @@ export const DICIONARIO = {
     "a ver agora": "watching now",
     "A ver ...": "Watching ...",
     "A carregar": "Loading",
-    // --- ecra de arranque (servidor de dados a acordar) ---
-    "A ligar ao servidor": "Connecting to the server",
-    "O servidor está a acordar. Pode demorar até um minuto.":
-      "The server is waking up. This can take up to a minute.",
-    "Isto é normal depois de uma atualização. Não feches esta página.":
-      "This is normal after an update. Don't close this page.",
-    "Ainda a tentar. Se não abrir, recarrega a página.":
-      "Still trying. If it doesn't open, reload the page.",
-    "Os teus dados ficam guardados no servidor. A app só espera que ele acorde.":
-      "Your data is stored on the server. The app is just waiting for it to wake up.",
     "não": "not",
     // --- pesquisa e hero ---
     "A procurar \"{q}\"": "Searching \"{q}\"",
