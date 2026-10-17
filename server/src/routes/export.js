@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { Router, json } from "express";
 import { requireAuth } from "../services/auth.js";
 import { listLibrary, listProgress, upsertLibrarySafe } from "../store.js";
 import { importProgress } from "../store.js";
@@ -129,7 +129,10 @@ function toProgressEntry(o) {
 // Body JSON: { format: "json", library: [...], diary: [...] }
 // Body JSON: { format: "csv", text: "<conteudo csv>" }
 // É um merge conservador: não apaga notas/visto que o ficheiro não traga.
-exportRouter.post("/export/import", (req, res, next) => {
+exportRouter.post(
+  "/export/import",
+  json({ limit: "4mb" }), // JSON de export pode ser grande
+  (req, res, next) => {
   const userId = req.user.id;
   try {
     const { format, library, diary, text } = req.body || {};

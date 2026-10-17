@@ -14,10 +14,16 @@ import {
   dataDe,
   somarDias,
   diaDaSemana,
-  dataLonga,
+  dataNumerica,
   semanasDoMapa,
   maximo,
   nivel,
+  textoDoDia,
+  ROTULOS_DIA,
+  ABREVIATURA_DIA,
+  PERIODOS,
+  PERIODO_OMISSAO,
+  semanasAte,
   DIAS_SEMANA,
   NIVEIS,
 } from "../web/src/components/heatmap.js";
@@ -160,7 +166,20 @@ console.log("  8) maximo() e dataLonga()");
   ok_("max() acha o maior", maximo([{ n: 2 }, { n: 9 }, { n: 5 }]) === 9);
   ok_("max() de lista vazia e' 0", maximo([]) === 0);
   ok_("max() ignora entradas sem n", maximo([{ dia: "x" }, { n: 3 }]) === 3);
-  ok_("dataLonga escreve o mes certo", dataLonga("2026-10-14") === "14 de outubro de 2026", dataLonga("2026-10-14"));
+  // **Numeros, barras, ordem de Portugal.** O nome do mes ("de outubro") num
+  // quadradinho de 11 px era quase sempre a mesma coisa e so' ocupava espaco.
+  ok_("dataNumerica escreve dd/mm/aaaa", dataNumerica("2026-10-14") === "14/10/2026", dataNumerica("2026-10-14"));
+  ok_("com dia e mes de um digito leva zero", dataNumerica("2026-01-05") === "05/01/2026", dataNumerica("2026-01-05"));
+  ok_("uma chave estragada nao rebenta", typeof dataNumerica("nada") === "string", dataNumerica("nada"));
+  ok_("e devolve a chave como estava quando nao a percebe", dataNumerica("nada") === "nada", dataNumerica("nada"));
+  // E ja nao ha a data por extenso: nao e' para mais nada e nao pode
+  // desaparecer em silencio sem o teste dar por isso.
+  const FONTE = fs.readFileSync(path.join(RAIZ, "web", "src", "components", "heatmap.js"), "utf8");
+  ok_("a data por extenso foi embora", !FONTE.includes("dataLonga"), "ainda la esta");
+  // E o texto usa mesmo a numerica — `textoDoDia` pode estar a chamar a outra.
+  const FONTE_TEXTO = FONTE.slice(FONTE.indexOf("export function textoDoDia"));
+  ok_("o texto do dia usa a data numerica",
+    /dataNumerica\(c\.dia\)/.test(FONTE_TEXTO) && !/dataLonga/.test(FONTE_TEXTO));
 }
 
 console.log("");
@@ -174,7 +193,220 @@ console.log("  9) o servidor conta o mesmo que a racha");
   ok_("as duas rotas tem o mesmo `dayOf`", temHelper);
   ok_("o heatmap conta o `updated_at` da biblioteca", /dayOf\(r\.updated_at\)/.test(stats));
   ok_("o heatmap conta as tres datas do diario", /dayOf\(p\.started_at\)/.test(stats) && /dayOf\(p\.finished_at\)/.test(stats) && /dayOf\(p\.updated_at\)/.test(stats));
-  ok_("devolve `dias` ordenados", /dias:\s*\[\.\.\.porDia\.entries\(\)\]/.test(stats) && /a\.dia < b\.dia \? -1 : 1/.test(stats));
+  ok_("devolve `dias` ordenados", /dias:\s*\[\.\.\.porDia\.keys\(\)\]/.test(stats) && /a\.dia < b\.dia \? -1 : 1/.test(stats));
+  // A reparticao que o texto do rato mostra: quantos titulos e quantos
+  // episodios nesse dia. Sai de `watched_at` (a data em que marcaste) e de
+  // `finished_at` (o dia em que acabaste o episodio) — e NAO de `updated_at`,
+  // que tambem muda quando se mexe na nota.
+  ok_("manda a reparticao de filmes e series", /filmes:/.test(stats) && /series:/.test(stats));
+  ok_("os filmes vem de `watched_at` (e nao do ultimo toque)", /watched_at FROM library/.test(stats));
+  // **A assercao que faltava.** Bastava o `SELECT` dizer `watched_at` para o
+  // teste passar — e `SELECT updated_at AS watched_at` tambem diz, e passa, e
+  // volta a mentir sobre quando viste as coisas. Tem de NAO citar `updated_at`.
+  const queryFilmes = (stats.match(/SELECT[^`]*FROM library[^`]*/g) || []).find((q) => /watched_at/.test(q) && !/updated_at/.test(q));
+  const comUpdated = (stats.match(/SELECT[^`]*FROM library[^`]*/g) || []).some((q) => /watched_at/.test(q) && /updated_at/.test(q));
+  ok_("o SELECT dos filmes nao cita o `updated_at`", !!queryFilmes && !comUpdated, comUpdated ? "le o ultimo toque, nao a data em que viste" : "nao encontrei o SELECT");
+  ok_("as series vem de `finished_at`", /dayOf\(p\.finished_at\), "series"/.test(stats));
+  // o `n` que a racha partilha NAO pode ter mudado de significado: e' o mesmo
+  // numero que `/achievements` conta, e divergir era o bug que o aviso do
+  // `stats.js` descreve.
+  ok_("o `n` continua a ser a contagem da racha (nao a reparticao)",
+    /n: porDia\.get\(dia\)/.test(stats));
+}
+
+console.log("");
+console.log("  10) o texto do rato: quantos titulos e em quantas series");
+{
+  // O `t` de mentira tem de SUBSTITUIR as chaves, como o de verdade
+  // (`traduzir(texto, valores)`). Um duende que devolvesse o texto tal e qual
+  // faria o teste passar com `{n} {o}` no ecra — que e' exactamente o bug que
+  // esta seccao existe para apanhar.
+  const t = (chave, valores) =>
+    String(chave).replace(/\{(\w+)\}/g, (todo, k) =>
+      valores && valores[k] !== undefined ? String(valores[k]) : todo
+    );
+  const semNada = textoDoDia({ dia: "2026-10-14", n: 0, filmes: 0, episodios: 0 }, t);
+  ok_("um dia sem nada diz 'sem atividade'", semNada.includes("sem atividade"), semNada);
+
+  // **A regra.** So' se escreve a parte que NAO e' zero. Um dia em que so viste
+  // um episodio nao pode dizer "0 titulos, 1 episodio": o zero e' ruido, e o
+  // rato ja' diz que o dia teve atividade.
+  const umaSerie = textoDoDia({ dia: "2026-10-14", n: 1, filmes: 0, series: 1 }, t);
+  ok_("so' uma serie escreve so' a serie", umaSerie.includes("1") && !/\b0\b/.test(umaSerie), umaSerie);
+  ok_("e diz quantas", umaSerie.includes("série"), umaSerie);
+
+  const umFilme = textoDoDia({ dia: "2026-10-14", n: 1, filmes: 1, episodios: 0 }, t);
+  ok_("so' um filme escreve so' o filme", umFilme.includes("título"), umFilme);
+  ok_("e nao fala de series", !/série/.test(umFilme), umFilme);
+
+  const osDois = textoDoDia({ dia: "2026-10-14", n: 4, filmes: 2, series: 3 }, t);
+  ok_("os dois aparecem juntos", osDois.includes("título") && osDois.includes("série"), osDois);
+  ok_("e com os numeros certos", osDois.includes("2") && osDois.includes("3"), osDois);
+  // **O separador.** `/` e' uma fracao; um ponto lia-se como fim de frase.
+  ok_("as duas partes sao separadas por ` / `", osDois.includes(" / "), osDois);
+  ok_("e nao por um ponto (que lia-se como fim de frase)", !osDois.includes(" · "), osDois);
+
+  ok_("uma celula sem reparticao nao rebenta", typeof textoDoDia({ dia: "2026-10-14" }, t) === "string");
+  ok_("uma celula sem dia nao rebenta", typeof textoDoDia({}, t) === "string");
+}
+
+console.log("");
+console.log("  11) os dias da semana ao lado, e so' tres");
+{
+  ok_("sao segunda, quarta e sexta", JSON.stringify(ROTULOS_DIA) === "[1,3,5]", JSON.stringify(ROTULOS_DIA));
+  ok_("a abreviatura da segunda e' seg", ABREVIATURA_DIA[1] === "seg", ABREVIATURA_DIA[1]);
+  ok_("a abreviatura da quarta e' qua", ABREVIATURA_DIA[3] === "qua", ABREVIATURA_DIA[3]);
+  ok_("a abreviatura da sexta e' sex", ABREVIATURA_DIA[5] === "sex", ABREVIATURA_DIA[5]);
+  ok_("ha uma abreviatura por dia da semana", ABREVIATURA_DIA.length === 7, String(ABREVIATURA_DIA.length));
+}
+
+console.log("");
+console.log("  12) mais de um ano, sem encolher o mapa");
+{
+  ok_("o omissao e' um ano", PERIODO_OMISSAO === 53, String(PERIODO_OMISSAO));
+  ok_("ha mais periodos que um ano", PERIODOS.some((p) => p.semanas > 53));
+  ok_("os periodos estao por ordem", PERIODOS.every((p, i, a) => i === 0 || p.semanas > a[i - 1].semanas));
+
+  // "Tudo" tem de cobrir a historia e nunca encolher abaixo do omissao: com meia
+  // semana de atividade, "tudo" dava uma coluna e o mapa encolhia para um
+  // quadradinho, que e' pior do que mostrar um ano.
+  ok_("sem dados, 'tudo' e' o periodo por omissao", semanasAte([]) === PERIODO_OMISSAO, String(semanasAte([])));
+  const mes = semanasAte([{ dia: "2026-10-01", n: 1 }], { fim: "2026-10-16" });
+  ok_("com poucos dias nao encolhe", mes >= PERIODO_OMISSAO, String(mes));
+  const antigo = semanasAte([{ dia: "2020-01-05", n: 3 }, { dia: "2026-10-01", n: 1 }], { fim: "2026-10-16" });
+  ok_("com seis anos de historico cobre tudo", antigo > 300, String(antigo));
+  ok_("o omissao nunca e' menos que um ano", semanasAte([{ dia: "2026-10-16", n: 9 }], { fim: "2026-10-16" }) >= 53);
+}
+
+console.log("");
+console.log("  13) a reparticao chega a cada celula");
+{
+  const cols = semanasDoMapa([{ dia: "2026-10-14", n: 3, filmes: 2, series: 5 }], {
+    semanas: 2,
+    fim: "2026-10-16",
+  });
+  const todas = cols.flat();
+  const alvo = todas.find((c) => c.dia === "2026-10-14");
+  ok_("a celula do dia traz os filmes", alvo && alvo.filmes === 2, alvo ? String(alvo.filmes) : "dia nao encontrado");
+  ok_("a celula do dia traz as series", alvo && alvo.series === 5, alvo ? String(alvo.episodios) : "-");
+  ok_("e o n da racha nao mudou", alvo && alvo.n === 3, alvo ? String(alvo.n) : "-");
+  const vazio = todas.find((c) => c.dia === "2026-10-15");
+  ok_("um dia sem dados traz zeros, nao undefined",
+    vazio && vazio.filmes === 0 && vazio.series === 0,
+    vazio ? JSON.stringify({ f: vazio.filmes, s: vazio.series }) : "-");
+}
+
+console.log("");
+console.log("  14) o desenho: a coluna dos dias nao desliza com o mapa");
+{
+  const JSX = fs.readFileSync(path.join(RAIZ, "web", "src", "components", "HeatmapAtividade.jsx"), "utf8");
+  const CSS = fs.readFileSync(path.join(RAIZ, "web", "src", "styles.css"), "utf8");
+  ok_("a coluna dos dias existe", /className="heatmap-lateral"/.test(JSX));
+  ok_("e escreve as tres abreviaturas", /ROTULOS_DIA\.map/.test(JSX));
+  // **O que importa:** o rotulo tem de estar FORA do contentor que desliza, senao
+  // o "seg" sai do ecra mal se mexe no mapa.
+  const lateral = JSX.indexOf('className="heatmap-lateral"');
+  const scroll = JSX.indexOf('className="heatmap-scroll"');
+  ok_("os rotulos vem ANTES do contentor que desliza", lateral >= 0 && scroll >= 0 && lateral < scroll);
+  ok_("o scroll esta no contentor do mapa, nao na figura toda",
+    /\.heatmap-scroll\s*\{[\s\S]{0,160}overflow-x:\s*auto/.test(CSS));
+  // E a figura nao pode deslizar: se deslizar, os rotulos dos dias vao com ela e o
+  // "seg" sai do ecra — que e' o defeito que a coluna fixa resolve.
+  //
+  // **Todas** as regras, nao a primeira: uma segunda regra `.heatmap` mais abaixo
+  // (um `overflow-x` acrescentado depois) faria o teste passar se ele so olhasse
+  // para a primeira — e foi exactamente assim que a mutacao escapou.
+  const regrasHeatmap = CSS.match(/\.heatmap\s*\{[\s\S]*?\}/g) || [];
+  ok_("a figura tem pelo menos uma regra (o teste esta' a ver o ficheiro)", regrasHeatmap.length > 0, String(regrasHeatmap.length));
+  ok_("nenhuma regra da figura tem scroll (senao os rotulos saem com ela)",
+    !regrasHeatmap.some((r) => /overflow-x/.test(r)),
+    regrasHeatmap.filter((r) => /overflow-x/.test(r)).map((r) => r.replace(/\s+/g, " ").slice(0, 50)).join(" | "));
+  ok_("a figura e' uma grelha de duas colunas",
+    /\.heatmap\s*\{[\s\S]{0,240}grid-template-columns:\s*auto/.test(CSS));
+  ok_("o topo dos meses ja nao tem min-width fixo", !/\.heatmap-topo\s*\{[\s\S]{0,240}min-width/.test(CSS));
+  ok_("o texto do rato vem da funcao pura", /textoDoDia\(/.test(JSX));
+  ok_("ha selector de periodo", /heatmap-periodos/.test(JSX) && /setEscolhido/.test(JSX));
+
+  // **O acoplamento que deu uma linha errada.** O rotulo do dia tem de cair na
+  // MESMA linha da celula que nomeia: `seg` na segunda, `qua` na quarta. Com o
+  // rotulo posicionado a partir do topo da figura e sem somar a linha de meses, o
+  // "seg" alinhava com o domingo — e parece correcto, que e' o que o torna pior
+  // do que nao ter rotulo nenhum.
+  //
+  // A garantia nao e' comparar dois numeros escritos a mao (que divergem no
+  // primeiro refactor): e' que o CSS NAO tenha numeros proprios. `--topo` e
+  // `--passo` sao posto pelo componente e as duas colunas leem-nos.
+  ok_("o componente define a altura da linha de meses", /const ALTURA_TOPO = \d+/.test(JSX));
+  ok_("e passa as medidas ao CSS", /"--passo": PASSO \+ "px"/.test(JSX) && /"--topo": ALTURA_TOPO \+ "px"/.test(JSX));
+  ok_("a coluna dos dias usa essas medidas, nao numeros proprios",
+    /\.heatmap-lateral\s*\{[\s\S]{0,800}grid-template-rows:\s*var\(--topo\) repeat\(7, var\(--passo\)\)/.test(CSS),
+    "a coluna escreve o numero no CSS e pode divergir do JSX");
+  ok_("a linha de meses usa a MESMA medida",
+    /\.heatmap-topo\s*\{[\s\S]{0,240}height:\s*var\(--topo/.test(CSS));
+  ok_("o rotulo vai por linha de grelha, e nao por `top` em pixels",
+    /gridRow: li \+ 2/.test(JSX) && !/style=\{\{ top: /.test(JSX));
+  // Uma caixa cujos filhos sao `absolute` mede zero, e a coluna ficava com 0 px
+  // de largura com o "seg" por cima da primeira coluna do mapa.
+  ok_("a coluna dos dias nao e' so' filhos `absolute` (que mediriam zero)",
+    !/\.heatmap-lateral span\s*\{[\s\S]{0,140}position:\s*absolute/.test(CSS));
+  // A propria coluna: `position: absolute` nela tira-a da grelha da figura e o
+  // mapa perde a coluna. O teste so olhava para os filhos e passava por cima.
+  //
+  // **Sem comentarios.** O comentario que explica o CSS diz, ele proprio,
+  // "e nao `position: absolute`" — e a assercao lia essa frase como se fosse a
+  // propriedade. E' o mesmo que happened com `testar-acento.mjs`.
+  const cssLimpo = CSS.replace(/\/\*[\s\S]*?\*\//g, "");
+  const regraLateral = (cssLimpo.match(/\.heatmap-lateral\s*\{[\s\S]*?\}/) || [""])[0];
+  ok_("a coluna dos dias e' uma grelha",
+    /display:\s*grid/.test(regraLateral), regraLateral.replace(/\s+/g, " ").slice(0, 60));
+  ok_("a coluna dos dias nao esta' `position: absolute` (sairia da grelha da figura)",
+    !/position:\s*absolute/.test(regraLateral), regraLateral.replace(/\s+/g, " ").slice(0, 60));
+}
+
+console.log("");
+console.log("  15) o texto do dia esta' NO DOM, e funciona ao toque");
+{
+  const JSX = fs.readFileSync(path.join(RAIZ, "web", "src", "components", "HeatmapAtividade.jsx"), "utf8");
+  const CSS = fs.readFileSync(path.join(RAIZ, "web", "src", "styles.css"), "utf8");
+
+  // **A razao de ser disto tudo.** O `<title>` do SVG e' um tooltip do browser:
+  // aparece com o rato e NUNCA com o dedo, e vive fora do DOM onde nenhum teste
+  // o alcanca. A app usa-se muito ao toque, portanto um dia que so'`title` nao
+  // mostra o numero a quem toca no quadradinho.
+  // Sem comentarios: o codigo explica que NAO usa `<title>`, e a frase aparecia
+  // no teste como se fosse o elemento. (Ja aconteceu duas vezes, com o CSS.)
+  const jsxLimpo = JSX.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
+  ok_("as celulas NAO usam `<title>`", !/<title>/.test(jsxLimpo), "ainda ha um <title> no codigo");
+  ok_("o texto e' um elemento no DOM", /className="heatmap-dica"/.test(JSX));
+  ok_("e usa a funcao pura", /textoDoDia\(destaque, t\)/.test(JSX));
+
+  ok_("o rato mostra o texto", /onMouseEnter=\{\(ev\) => mostrar\(celula, false, ev\)\}/.test(JSX));
+  ok_("e o toque tambem", /onClick=\{\(ev\) => mostrar\(celula, true, ev\)\}/.test(JSX));
+  ok_("o teclado tambem", /onFocus=\{\(ev\) => mostrar/.test(JSX) && /onBlur=\{\(\) => soltar/.test(JSX));
+  ok_("Esc fecha o que ficou preso", /e.key === "Escape"/.test(JSX));
+
+  // Um toque prende o texto; o fundo so' existe nesse caso, senao ficava um painel
+  // invisivel por cima do mapa a comer os cliques.
+  ok_("o fundo so' aparece depois de um toque",
+    /destaque && destaque\.preso && \([\s\S]{0,160}heatmap-fundo/.test(JSX));
+
+  // `fixed`, nao `absolute`: as coordenadas vem do ecra. Com `absolute` o texto
+  // prendia-se a figura e as colunas do mapa que desliza (que vao alem da figura)
+  // punham o texto longe do dia.
+  const cssLimpo = CSS.replace(/\/\*[\s\S]*?\*\//g, "");
+  ok_("o texto e' `position: fixed` (senao prende-se a figura)",
+    /\.heatmap-dica\s*\{[\s\S]{0,200}position:\s*fixed/.test(cssLimpo));
+  ok_("e o fundo nao tapa o mapa sem ser preciso",
+    /\.heatmap-fundo\s*\{[\s\S]{0,200}background:\s*transparent/.test(cssLimpo));
+
+  // A posicao mede a largura real do texto em vez de adivinhar uma margem fixa.
+  ok_("a margem usa a largura medida do texto",
+    /const meia = el\.offsetWidth \/ 2/.test(JSX) && /Math\.max\(meia, Math\.min\(destaque\.x/.test(JSX));
+  ok_("e nao volta a ter um numero fixo na mao", !/Math\.max\(100, Math\.min/.test(JSX));
+
+  // O numero tambem fica dentro do quadradinho, para se ler sem passar o rato.
+  ok_("o dia seleccionado escreve o numero dentro da celula",
+    /className="heatmap-leitura"/.test(JSX));
 }
 
 console.log("");

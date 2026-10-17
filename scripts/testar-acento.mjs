@@ -73,6 +73,7 @@ const css = ler("web/src/styles.css");
 const cssSemComentarios = css.replace(/\/\*[\s\S]*?\*\//g, "");
 const settings = ler("web/src/settings/SettingsContext.jsx");
 const settingsJsx = ler("web/src/pages/Settings.jsx");
+const acento = ler("web/src/settings/acento.js");
 
 const FUNDO = "#070708";
 const SUPERFICIE = "#15151b";
@@ -116,7 +117,7 @@ console.log("  3) O `--accent-text` existe em CSS E em JS, e com o mesmo valor")
 const mRoot = css.match(/--accent-text:\s*(#[0-9a-fA-F]{6})/);
 ok_("o `:root` declara `--accent-text`", !!mRoot);
 ok_("o `SettingsContext` define-o", /setProperty\("--accent-text"/.test(settings));
-ok_("com o MESMO clareamento (0.35) que o valor medido", /shade\(accent,\s*0\.35\)/.test(settings));
+ok_("com o MESMO clareamento (0.35) que o valor medido", /shade\(accent\s*\|\|\s*"#c90303",\s*0\.35\)/.test(acento));
 if (mRoot) {
   ok_(
     "o valor por omissao do CSS e' o do acento por omissao clareado",

@@ -72,6 +72,16 @@ export function getUserById(id) {
   return r ? toProfile(r) : null;
 }
 
+// Devolve so' o avatar de um utilizador (para servir por /api/users/:id/avatar).
+// O perfil completo (/users/:username) continua a incluir o avatar inline porque
+// e' uma pagina individual, nao uma lista.
+export function getUserAvatar(userId) {
+  const r = db
+    .prepare("SELECT avatar FROM users WHERE id = ?")
+    .get(userId);
+  return r ? r.avatar ?? null : null;
+}
+
 export function getProfileByUsername(username) {
   const r = db
     .prepare("SELECT id, username, avatar, bio, is_public, created_at FROM users WHERE username = ?")
@@ -809,8 +819,10 @@ export function removeListTitle(userId, listId, tmdbId, type) {
    deixar o SQLite explodir. */
 
 function toUserCard(u) {
-  return { id: u.id, username: u.username, avatar: u.avatar ?? null };
+  return { id: u.id, username: u.username };
 }
+
+export { toUserCard };
 
 export function followUser(followerId, followeeId) {
   if (Number(followerId) === Number(followeeId)) return { ok: false, error: "self" };
@@ -950,7 +962,7 @@ function commentLikes(id) {
   return db.prepare("SELECT COUNT(*) c FROM comment_likes WHERE comment_id = ?").get(id).c;
 }
 
-function toApiComment(r, viewerId) {
+export function toApiComment(r, viewerId) {
   return {
     id: r.id,
     tmdbId: r.external_id,
@@ -963,7 +975,7 @@ function toApiComment(r, viewerId) {
     deleted: Boolean(r.deleted_at),
     createdAt: r.created_at,
     updatedAt: r.updated_at ?? null,
-    author: { id: r.user_id, username: r.username, avatar: r.avatar ?? null },
+    author: { id: r.user_id, username: r.username },
     likes: commentLikes(r.id),
     likedByMe: Boolean(
       viewerId &&
@@ -1077,7 +1089,7 @@ export function listNotifications(userId, limite = 40) {
     .map(toApiNotification);
 }
 
-function toApiNotification(r) {
+export function toApiNotification(r) {
   return {
     id: r.id,
     kind: r.kind,
@@ -1091,10 +1103,11 @@ function toApiNotification(r) {
     season: r.season,
     episode: r.episode,
     actor: r.actor_id
-      ? { id: r.actor_id, username: r.actor_username || "?", avatar: r.actor_avatar || null }
+      ? { id: r.actor_id, username: r.actor_username || "?" }
       : null,
   };
 }
+
 
 /** Quantas nao lidas. E' o numero do sino. */
 export function countUnread(userId) {

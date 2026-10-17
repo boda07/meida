@@ -108,8 +108,57 @@ export function pecasDaJanela({
   return [primeira, ultima];
 }
 
+// ---------------------------------------------------------------------------
+// O QUE TORNA UM infoHash ACEITAVEL
+// ---------------------------------------------------------------------------
+// Duas verificacoes, e sao duas coisas diferentes:
+//
+// 1. `infoHashValido` — o formato. Um infoHash de verdade sao 40 hexadecimais.
+//    Sem isto, um parametro com `&tr=` ou `&ws=` codificado entrava no magnet
+//    (ver a nota em `addTorrent`) e o torrent que se descargava nao era o que o
+//    URL dizia ser.
+//
+// 2. `magnetConhecido` — a origem. O hash tem de ser um que o `/torrents` nos
+//    devolveu. E' esta a que fecha o "portal de torrents": sem ela, qualquer
+//    pessoa escrevia `/api/stream/<coisa>` e mandava o servidor descarregar o
+//    que quisesse, pagando a largura de banda de um alojamento gratis.
+//
+// NOTA HONESTA SOBRE O CUSTO: o `magnetCache` vive em memoria e perde-se quando
+// o processo arranca. Ate aqui, um `<video>` que voltasse a pedir o mesmo hash
+// depois de um reinicio voltava a descarregar o torrent a partir do magnet
+// "nu". Agora pede-lhe uma nova busca — que e' o que o frontend faz de cada
+// vez (a URL do video sai sempre de um resultado de `/torrents`, ver
+// `Torrents.jsx`). O custo e' um "procura outra vez"; o preco de nao o fazer
+// era o servidor publico a ser um portal de torrents.
+const INFOHASH_RE = /^[a-f0-9]{40}$/i;
+
+// O cache cresce com cada busca (um magnet por resultado). Num servidor publico
+// com gente a procurar coisas o dia todo, isso e' memoria a crescer sem teto, por
+// isso cortamos: quando chega ao limite, sai o mais antigo (um `Map` percorre
+// na ordem de insercao).
+const MAGNET_CACHE_MAX = 2000;
+
+export function infoHashValido(infoHash) {
+  return typeof infoHash === "string" && INFOHASH_RE.test(infoHash);
+}
+
+export function magnetConhecido(infoHash) {
+  return infoHashValido(infoHash) && magnetCache.has(infoHash.toLowerCase());
+}
+
 export function rememberMagnet(infoHash, magnet) {
-  magnetCache.set(infoHash.toLowerCase(), magnet);
+  if (!infoHashValido(infoHash)) return;
+  const key = infoHash.toLowerCase();
+  // Reinserir numa chave que ja existe nao muda a ordem de insercao, por isso
+  // so e' preciso mexer no limite quando a chave e' mesmo nova.
+  if (!magnetCache.has(key)) {
+    while (magnetCache.size >= MAGNET_CACHE_MAX) {
+      const maisAntigo = magnetCache.keys().next();
+      if (maisAntigo.done) break;
+      magnetCache.delete(maisAntigo.value);
+    }
+  }
+  magnetCache.set(key, magnet);
 }
 
 export function getMagnet(infoHash) {
@@ -140,6 +189,26 @@ function erroSemMetadados(infoHash) {
 
 // Adiciona (ou reutiliza) um torrent e resolve quando os METADADOS chegarem.
 async function addTorrent(infoHash) {
+  // **O PORTÃO.** Só entram os torrents que o `/torrents` nos devolveu.
+  //
+  // A linha de baixo (`magnetCache.get(key) || magnet:?xt=urn:btih:${infoHash}`)
+  // punha no `client.add()` o parametro do URL, cru e sem validar. Isso dava:
+  //   - um torrent que ninguem pediu: `/api/stream/<hash-de-alguem>` era
+  //     suficiente para o servidor ir buscar metadados e pecas desse torrent;
+  //   - injeccao no magnet: um `&tr=` codificado no parametro entrava como
+  //     tracker, e um `&ws=` como servidor WebSocket.
+  // E o `/stream/:infoHash` nao pode exigir login (ver a nota na rota): o
+  // `<video src>` nao leva o `Authorization`. Por isso a garantia tem de
+  // vir daqui — o hash tem de ser um que a busca deu, e nao um que veio no URL.
+  if (!magnetConhecido(infoHash)) {
+    const e = new Error(
+      "Este torrent nao foi encontrado nesta pesquisa. Procura-o outra vez."
+    );
+    e.status = 404;
+    e.code = infoHashValido(infoHash) ? "TORRENT_DESCONHECIDO" : "INFOHASH_INVALIDO";
+    e.infoHash = infoHash;
+    throw e;
+  }
   const c = await carregar();
   if (!c) throw new Error(`Torrents indisponiveis: ${motivo}`);
   const key = infoHash.toLowerCase();

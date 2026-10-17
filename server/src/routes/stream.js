@@ -1,8 +1,10 @@
 import { Router } from "express";
 import { searchAllTorrents } from "../services/providers/index.js";
+import { requireAuth } from "../services/auth.js";
 import {
   getTorrentFile,
   getStatus,
+  infoHashValido,
   listActive,
   priorizarPecas,
   removeTorrent,
@@ -11,8 +13,21 @@ import {
 
 export const streamRouter = Router();
 
-// Lista de torrents para um titulo (via vários providers: Torrentio, YTS, ...).
-streamRouter.get("/torrents", async (req, res, next) => {
+// ---------------------------------------------------------------------------
+// QUEM PODE PEDIR O QUE
+// ---------------------------------------------------------------------------
+// Estas rotas custam dinheiro ao dono do servidor: cada `/stream/:infoHash` e'
+// uma descarga a sério (largura de banda, disco, CPU) num alojamento gratis. E
+// ate aqui `/api/stream/<o-que-quisesse>` era publico e sem validacao nenhuma —
+// um portal de torrents aberto, com o `/stream/active` a listar o que toda a
+// gente estava a ver e o `DELETE` a matar-lhe as descargas.
+//
+// A regra que ficou:
+//   - o que se PROCURA (`/torrents`) e o que se GERE (o `DELETE`) exigem login;
+//   - o que se REPRODUZ (`/stream/:infoHash`) nao pode exigir login, porque o
+//     `<video src>` nao leva cabecalhos. A garantia ai e' outra: o hash tem de ter
+//     a forma certa e ter vindo da busca (ver `addTorrent` no motor).
+streamRouter.get("/torrents", requireAuth, async (req, res, next) => {
   try {
     const { type, imdb, title, season, episode } = req.query;
     if (type !== "movie" && type !== "tv") {
@@ -40,19 +55,33 @@ streamRouter.get("/torrents", async (req, res, next) => {
   }
 });
 
+// O hash tem a forma certa? 40 hexadecimais e' um `infoHash`; mais do que isso
+// ou caracteres esquisitos nao sao. A razao de estar aqui e' o magnet: o valor
+// vai parar a `magnet:?xt=urn:btih:<isto>`, e um parametro com `&tr=` dentro
+// entrava como tracker (ou `&ws=` como servidor WebSocket).
+function hashMalFormado(res, infoHash) {
+  if (infoHashValido(infoHash)) return false;
+  res.status(400).json({ error: "infoHash invalido" });
+  return true;
+}
+
 // Estado de download de um torrent (para a barra de progresso).
 streamRouter.get("/stream/:infoHash/status", (req, res) => {
+  if (hashMalFormado(res, req.params.infoHash)) return;
   res.json({ status: getStatus(req.params.infoHash) });
 });
 
 // Lista de torrents ativos (a descarregar/reproduzir agora).
-streamRouter.get("/stream/active", (_req, res) => {
+// Exige login: sem ele, qualquer pessoa sabia o que toda a gente estava a ver.
+streamRouter.get("/stream/active", requireAuth, (_req, res) => {
   res.json({ torrents: listActive() });
 });
 
 // Para de descarregar e remove um torrent (libera disco e ligacoes).
-streamRouter.delete("/stream/:infoHash", async (req, res, next) => {
+// Exige login: sem ele, dava para matar as descargas dos outros.
+streamRouter.delete("/stream/:infoHash", requireAuth, async (req, res, next) => {
   try {
+    if (hashMalFormado(res, req.params.infoHash)) return;
     const removed = await removeTorrent(req.params.infoHash);
     if (!removed) return res.status(404).json({ error: "torrent nao ativo" });
     res.json({ ok: true });
@@ -62,9 +91,16 @@ streamRouter.delete("/stream/:infoHash", async (req, res, next) => {
 });
 
 // Transmite o ficheiro de video com suporte a HTTP Range (seek/play progressivo).
+//
+// **NAO PODE EXIGIR LOGIN, PORQUEM:** um `<video src>` nao manda cabecalhos
+// `Authorization`, e exigir login aqui era o mesmo que dizer "o video nao
+// reproduz". O que o impede de ser um portal e' o motor: `addTorrent` so aceita
+// um hash que o `/torrents` devolveu (`magnetConhecido`), e um hash com a forma
+// errada nem chega la.
 streamRouter.get("/stream/:infoHash", async (req, res, next) => {
   try {
     const { infoHash } = req.params;
+    if (hashMalFormado(res, infoHash)) return;
     const { torrent, file } = await getTorrentFile(infoHash, req.query.fileIdx);
     const total = file.length;
     const type = contentType(file.name);

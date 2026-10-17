@@ -29,6 +29,10 @@ import { statsRouter } from "./routes/stats.js";
 import { log } from "./services/log.js";
 
 const app = express();
+// Quando o servidor roda atras de um proxy (hosting, CDN), req.ip deve refletir
+// o IP do cliente e nao o do proxy. Sem isto, o rate limiter e o bloqueio de IP
+// privado aplicam-se ao proxy e nao ao utilizador real.
+app.set("trust proxy", 1);
 // CORS so e preciso quando o servidor NAO serve o frontend (hosting so-API: a
 // app chama-o de outro dominio, ex.: Electron local -> servidor partilhado, ou
 // PWA num hosting estatico). Quando e o proprio servidor que serve o web/dist,
@@ -36,7 +40,7 @@ const app = express();
 // tentem falar com o servidor local atraves do browser.
 if (process.env.SERVE_WEB !== "1") app.use(cors());
 // Limite generoso para o body: o avatar pode vir como imagem (data URL).
-app.use(express.json({ limit: "4mb" }));
+app.use(express.json({ limit: "100kb" }));
 
 // Healthcheck + aviso se o TMDB nao estiver configurado.
 app.get("/api/health", (req, res) => {

@@ -123,7 +123,7 @@ try {
   process.exit(1);
 }
 
-const { getTorrentFile, priorizarPecas, getStatus, torrentsDisponiveis } = mod;
+const { getTorrentFile, priorizarPecas, getStatus, torrentsDisponiveis, rememberMagnet } = mod;
 
 // `carregar()` so' corre a primeira vez que se pede um torrent (e' um import
 // assincrono), por isso `torrentsDisponiveis()` e' `false` ate la. O que
@@ -136,6 +136,7 @@ ok_("antes de usar, os torrents ainda nao estao carregados (import e' lazy)", to
 // acabar o download — sem buffering nenhum.
 
 const HASH1 = "a".repeat(40);
+rememberMagnet(HASH1, "magnet:?xt=urn:btih:" + HASH1);
 const p1 = getTorrentFile(HASH1, null);
 
 // O `carregar()` e' assincrono (um `import`), por isso o torrent so' existe na
@@ -162,6 +163,7 @@ ok_("o torrent continua NAO descarregado (foi mesmo so' metadados)", t1.ready ==
 /* ---------- 2) Reutilizar um torrent ja' em curso tambem resolve logo ---------- */
 
 const HASH2 = "b".repeat(40);
+rememberMagnet(HASH2, "magnet:?xt=urn:btih:" + HASH2);
 const p2 = getTorrentFile(HASH2, null);
 await new Promise((r) => setTimeout(r, 60));
 const t2 = cliente.torrents[cliente.torrents.length - 1];
@@ -182,6 +184,7 @@ ok_("o segundo pedido do MESMO torrent nao espera por nada", resolvido3 === true
 // video ficava pendurado para sempre (barra de progresso parada sem fim).
 
 const HASH3 = "c".repeat(40);
+rememberMagnet(HASH3, "magnet:?xt=urn:btih:" + HASH3);
 const p4 = getTorrentFile(HASH3, null);
 await new Promise((r) => setTimeout(r, 60));
 const t3 = cliente.torrents[cliente.torrents.length - 1];
@@ -289,6 +292,7 @@ for (const [nome, de, para] of MUTACOES) {
     const m2 = await import(pathToFileURL(path.join(dir2, "motor.mjs")).href);
     // Torrent sem metadados: tem de dar erro num prazo curto.
     const th = "e".repeat(40);
+    m2.rememberMagnet(th, "magnet:?xt=urn:btih:" + th);
     const p = m2.getTorrentFile(th, null);
     // `.catch` vazio: ha' ramos em que o `Promise.race` da' o prazo ganha e a
     // promessa rejeita DEPOIS. Sem este `catch` o Node aborta com
@@ -320,6 +324,7 @@ for (const [nome, de, para] of MUTACOES) {
       // pendurado ate ao prazo: e' exactamente "retomar um episodio fica
       // bloqueado ate o ficheiro inteiro estar em disco".
       const th2 = "f".repeat(40);
+      m2.rememberMagnet(th2, "magnet:?xt=urn:btih:" + th2);
       const p2 = m2.getTorrentFile(th2, null);
       p2.catch(() => {});
       await new Promise((r) => setTimeout(r, 60));

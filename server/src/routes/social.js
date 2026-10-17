@@ -7,6 +7,7 @@ import { Router } from "express";
 import { requireAuth, optionalAuth } from "../services/auth.js";
 import {
   getUserById,
+  getUserAvatar,
   getProfileByUsername,
   followUser,
   unfollowUser,
@@ -67,6 +68,18 @@ socialRouter.get("/users/:username", optionalAuth, (req, res) => {
     isFollowing: req.user ? isFollowing(req.user.id, p.id) : false,
     canView: canViewProfile(req.user?.id, p),
   });
+});
+
+// Avatar de um utilizador, servido separadamente (nao inline nas listas).
+// Devolve o valor armazenado (data URL, "emoji:..." ou URL externa) para que
+// o frontend possa buscar so quando precisa — ex.: ao renderizar o comentario
+// de um utilizador cuja lista de comentarios ja nao traz o avatar.
+socialRouter.get("/users/:id/avatar", optionalAuth, (req, res) => {
+  const avatar = getUserAvatar(Number(req.params.id));
+  if (avatar === null) return res.status(404).json({ error: "Sem avatar." });
+  res.setHeader("Cache-Control", "public, max-age=86400, immutable");
+  res.setHeader("ETag", `"${avatar.length}"`);
+  res.json({ avatar });
 });
 
 // Biblioteca de outro utilizador (respeita a privacidade).

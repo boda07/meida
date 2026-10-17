@@ -36,6 +36,7 @@ const LOCAL_API_PREFIXES = [
   "/api/proxy",
   "/api/debrid",
   "/api/wp",
+  "/api/users",
 ];
 
 function isLocalApiPath(path) {
@@ -94,6 +95,16 @@ export const DEFAULT_SETTINGS = {
   autoplay: true, // reproduzir automaticamente ao abrir uma fonte
   autoskip: false, // tentar saltar intro/genericos automaticamente
   discordPresence: true, // mostrar no Discord o que se está a ver (grátis, local)
+  // A ultima fonte escolhida, POR TIPO de titulo: { movie: "", tv: "", anime: "" }.
+  //
+  // Por tipo e nao por episodio: quem escolheu o MegaPlay porque e' o unico com
+  // legendas nao devia ter de o escolher em cada episodio. E nao por titulo
+  // (tipo:id) porque um provider que serve um filme serve os outros do mesmo
+  // tipo, e uma entrada por titulo enche o localStorage e nunca se limpa.
+  //
+  // `""` = ainda nao escolheu nenhuma, e o Player arranca na primeira fonte como
+  // sempre.
+  lastSource: { movie: "", tv: "", anime: "" },
 };
 export const settingsStore = {
   get() {
@@ -295,6 +306,15 @@ export const api = {
   sources: (opts) => get("/api/sources", opts),
   providersHealth: (refresh) => get("/api/providers/health", { refresh }),
   torrents: (opts) => get("/api/torrents", opts),
+  // Parar uma descarga (libera disco e ligacoes).
+  //
+  // Vai por `del` e nao por um `fetch` cru dentro do componente porque o
+  // `DELETE` do servidor passou a exigir login. O `fetch` cru nao mandava o
+  // cabecalho `Authorization`, o servidor respondia 401 e o `.catch(() => {})`
+  // engolia o erro — o botao jurava que tinha parado e o torrent continuava a
+  // descarregar. Um erro engolido aqui e' pior do que um erro visivel: e' uma
+  // mentira sobre o disco e a rede.
+  stopTorrent: (infoHash) => del(`/api/stream/${encodeURIComponent(infoHash)}`),
   extract: (opts) => get("/api/extract", opts),
   animeEnabled: () => get("/api/anime/enabled"),
   extractEnabled: () => get("/api/extract/enabled"),
@@ -326,6 +346,7 @@ export const api = {
   sugerirUsers: (q) => get("/api/users/suggest", { q: q ?? "" }),
   follow: (id) => post(`/api/users/${id}/follow`, {}),
   unfollow: (id) => del(`/api/users/${id}/follow`),
+  userAvatar: (id) => get(`/api/users/${encodeURIComponent(id)}/avatar`),
 
   // Comentarios por episodio
   comments: (opts) => get("/api/comments", opts),

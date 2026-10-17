@@ -24,7 +24,7 @@ export default function Details() {
   const t = useT();
   const { type, id } = useParams();
   const [searchParams] = useSearchParams();
-  const { settings } = useSettings();
+  const { settings, update } = useSettings();
   const { user } = useAuth();
   const party = useWatchParty();
   const [details, setDetails] = useState(null);
@@ -115,17 +115,75 @@ export default function Details() {
   // que salta de fonte sozinho.
   const [fonteManual, setFonteManual] = useState(false);
 
-  // A ultima fonte escolhida e' guardada por tipo de titulo (anime/filme/serie),
-  // para o utilizador nao ter de a escolher em cada episodio. Se o provider
-  // escolhido morreu entretanto, cai no primeiro vivo como antes.
-  const fonteSalva = (() => {
-    try {
-      const chave = `meida:last-source:${details?.type || ""}:${season || 1}:${episode || 1}`;
-      const v = localStorage.getItem(chave);
-      if (v && embeds.some((e) => e.provider === v)) return v;
-    } catch { /* sem localStorage (privado) */ }
-    return null;
-  })();
+  // A ultima fonte escolhida, POR TIPO (filme / serie / anime), das Definicoes.
+  //
+  // **Antes vivia numa chave que tinha o episodio dentro** (`...:${season}:${episode}`),
+  // o que anulava a ideia: a escolha de um episodio nunca aparecia no seguinte,
+  // que e' exactamente o que se queria evitar. Quem escolheu o MegaPlay porque e'
+  // o unico com legendas tinha de o escolher em cada episodio.
+  //
+  // So' vale se o provider ainda existir nesta lista de fontes; se foi removido
+  // ou mudou de id, cai na primeira viva como antes.
+  // E' uma funcao, e nao um valor calculado no render. Era um valor, e isso
+  // era o segundo bug: quando as fontes chegam (dentro do `.then`) o `embeds` do
+  // estado ainda era o antigo - vazio - logo a fonte guardada dava `null` e o
+  // player arrancava na primeira. O botao do seletor aparecia certo, porque esse
+  // e' desenhado num render seguinte, com a lista ja cheia. Da' a situao mais
+  // enganadora que ha: "a fonte esta' marcada mas o video e' outro".
+  function fonteGuardada(tipo, lista) {
+    const porTipo = settings.lastSource;
+    if (!tipo || !porTipo || typeof porTipo !== "object") return null;
+    const v = porTipo[tipo];
+    if (typeof v !== "string" || !v) return null;
+    return (lista || []).some((e) => e.provider === v) ? v : null;
+  }
+  // A mesma coisa, mas ja' com a lista do estado - e' o que o `SourceSelector`
+  // recebe para pintar o botao certo.
+  const fonteSalva = fonteGuardada(details?.type, embeds);
+  // Escolher a fonte a mao. **Uma so funcao para os dois `SourceSelector`** (o de
+// cima e' o de sempre, o de baixo o do separador p2p/torrents) — estavam
+// duplicados e qualquer correccao a um tinha de ser feita duas vezes, que e'
+// como nasce um "aqui funciona, ali nao".
+//
+// Os tres passos, e o terceiro e' o que faltava:
+//   1. abre nesta fonte e posiciona o player nela;
+//   2. trava o auto-fallback (a escolha e' da pessoa);
+//   3. guarda nas Definicoes, POR TIPO, para o proximo episodio ja abrir nela.
+function escolherFonte(e) {
+  setActive(e);
+  const idx = embeds.findIndex((x) => x.provider === e?.provider);
+  setPlayerIndex(idx >= 0 ? idx : 0);
+  setFonteManual(true);
+  const tipo = details?.type;
+  if (!e?.provider || !tipo) return;
+  update({
+    lastSource: {
+      movie: "",
+      tv: "",
+      anime: "",
+      // O que ja estava gravado, para nao perder a escolha de outro tipo. E os
+      // tres chaves acima, para o objecto ter a forma certa mesmo que as
+      // Definicoes venham de uma versao antiga sem `lastSource`.
+      ...(settings.lastSource || {}),
+      [tipo]: e.provider,
+    },
+  });
+}
+
+// Escolhe a fonte inicial E posiciona o player nela.
+//
+// **O `playerIndex` tem de andar junto do `active`.** Antes so o `active` mudava
+// e o `Player` arrancava sempre no indice 0 — isto e', a fonte que a pessoa
+// escolheu aparecia marcada no seletor mas o video comecava noutra. E' o mesmo
+// sintoma do "volta ao primeiro provider", so que desta vez sem dar erro nenhum.
+function abrirEscolhendo(embedsList) {
+  const escolhido = pickDefault(embedsList, fonteGuardada(details?.type, embedsList));
+  setActive(escolhido);
+  const idx = embedsList.findIndex((e) => e.provider === escolhido?.provider);
+  setPlayerIndex(idx >= 0 ? idx : 0);
+  return escolhido;
+}
+  // mesma — senao cada um fica no 1o provider, que pode estar partido ("nao vejo nada").
   // Watch Party: fonte (provider) que o host escolheu, para os convidados verem a
   // mesma — senao cada um fica no 1o provider, que pode estar partido ("nao vejo nada").
   const wantedSourceRef = useRef(null);
@@ -134,9 +192,8 @@ export default function Details() {
 
   // Fonte inicial: a escolhida pelo host da watch party, ou a primeira viva
   // (salta os que o health-check marcou como mortos).
-  function pickDefault(embedsList) {
+  function pickDefault(embedsList, saved) {
     const want = wantedSourceRef.current;
-    const saved = fonteSalva;
     // Se ha uma fonte salva e nao esta morta pelo health-check, usa-a como
     // ponto de partida. Se nao existe ja (o provider foi removido ou mudou o
     // id), cai no primeiro vivo como antes.
@@ -345,10 +402,10 @@ const animeAudio = localAudio || settings.animeAudio;
     setDetails(null);
     setError(null);
     setActive(null);
-    // Titulo novo: a escolha manual de fonte foi para o titulo anterior. O
-    // proximo volta ao auto-fallback normal (se a primeira fonte nao responder,
-    // salta para a seguinte). Dentro do mesmo titulo, a escolha mantem-se entre
-    // episodios.
+    // Titulo novo: solta-se a TRanca do auto-fallback, mas nao a escolha. A fonte
+    // continua guardada nas Definicoes e e' por onde o player arranca (ver
+    // `abrirEscolhendo`) — o que muda e' que a partir de agora, se essa fonte nao
+    // responder, o player salta para a seguinte em vez de ficar preso nela.
     setFonteManual(false);
     api
       .details(type, id)
@@ -459,7 +516,12 @@ const animeAudio = localAudio || settings.animeAudio;
       .animeEpisodes(details.malId)
       .then((d) => {
         const seasons = d.seasons || [];
-        if (!seasons.length) return fallback();
+        // O servidor devolve SEMPRE pelo menos uma temporada, mesmo sem
+        // episodios (`groupEpisodesBySeason([])` = 1 temporada com 0 eps), por
+        // isso `!seasons.length` nunca era verdade e o fallback nunca corria —
+        // o anime ficava com "Temporada 1 (0 eps)". O que decide e haver
+        //algum episodio em alguma temporada.
+        if (!seasons.some((s) => s.episodes?.length)) return fallback();
         animeEpsLoaded.current = details.malId;
         setAnimeSeasons(seasons);
         const target = resumeEp
@@ -488,7 +550,7 @@ const animeAudio = localAudio || settings.animeAudio;
         })
         .then((d) => {
           setEmbeds(d.embeds);
-          setActive(pickDefault(d.embeds));
+          abrirEscolhendo(d.embeds);
         })
         .catch((e) => setError(e.message));
       return;
@@ -504,7 +566,7 @@ const animeAudio = localAudio || settings.animeAudio;
       .sources(opts)
       .then((d) => {
         setEmbeds(d.embeds);
-        setActive(pickDefault(d.embeds));
+        abrirEscolhendo(d.embeds);
       })
       .catch((e) => setError(e.message));
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -858,21 +920,7 @@ api
             <SourceSelector
               embeds={embeds}
               savedSource={fonteSalva}
-              onSelect={(e) => {
-                setActive(e);
-                // Posiciona o player no indice desta fonte para recomeçar o timeout.
-                const idx = embeds.findIndex((x) => x.provider === e?.provider);
-                setPlayerIndex(idx >= 0 ? idx : 0);
-                // Escolha manual: a partir de agora o player fica nesta fonte.
-                setFonteManual(true);
-                // Guarda a fonte escolhida para o proximo episodio deste tipo.
-                if (e?.provider) {
-                  try {
-                    const chave = `meida:last-source:${details?.type || ""}:${season || 1}:${episode || 1}`;
-                    localStorage.setItem(chave, e.provider);
-                  } catch { /* sem localStorage (privado) */ }
-                }
-              }}
+              onSelect={escolherFonte}
               deadIds={deadProviders}
               title={details.title}
               isMovie={details.isMovie}
@@ -937,20 +985,7 @@ api
             <SourceSelector
               embeds={embeds}
               savedSource={fonteSalva}
-              onSelect={(e) => {
-                setActive(e);
-                const idx = embeds.findIndex((x) => x.provider === e?.provider);
-                setPlayerIndex(idx >= 0 ? idx : 0);
-                // Escolha manual: a partir de agora o player fica nesta fonte.
-                setFonteManual(true);
-                // Guarda a fonte escolhida para o proximo episodio deste tipo.
-                if (e?.provider) {
-                  try {
-                    const chave = `meida:last-source:${details?.type || ""}:${season || 1}:${episode || 1}`;
-                    localStorage.setItem(chave, e.provider);
-                  } catch { /* sem localStorage (privado) */ }
-                }
-              }}
+              onSelect={escolherFonte}
               deadIds={deadProviders}
               title={details.title}
               isMovie={details.isMovie}

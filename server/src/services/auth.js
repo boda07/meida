@@ -16,22 +16,26 @@ function signToken(user) {
   });
 }
 
-export function register(username, password) {
+export async function register(username, password) {
   username = String(username || "").trim();
   password = String(password || "");
-  if (username.length < 3) throw httpError(400, "Utilizador tem de ter 3+ caracteres.");
-  if (password.length < 4) throw httpError(400, "Password tem de ter 4+ caracteres.");
+  if (!/^[A-Za-z0-9_]{3,20}$/.test(username)) {
+    throw httpError(400, "Utilizador tem de ter 3-20 caracteres (letras, numeros e sublinhado).");
+  }
+  if (password.length < 8 || password.length > 72) {
+    throw httpError(400, "Password tem de ter 8-72 caracteres.");
+  }
   if (getUserByUsername(username)) throw httpError(409, "Esse utilizador ja existe.");
 
-  const hash = bcrypt.hashSync(password, 10);
+  const hash = await bcrypt.hash(password, 10);
   const user = createUser(username, hash);
   return { token: signToken(user), user };
 }
 
-export function login(username, password) {
+export async function login(username, password) {
   username = String(username || "").trim();
   const row = getUserByUsername(username);
-  if (!row || !bcrypt.compareSync(String(password || ""), row.password_hash)) {
+  if (!row || !(await bcrypt.compare(String(password || ""), row.password_hash))) {
     throw httpError(401, "Utilizador ou password invalidos.");
   }
   const user = {
@@ -47,17 +51,22 @@ export function login(username, password) {
 // Valida e normaliza um avatar. Aceita: emoji predefinido ("emoji:🦊"), URL
 // http(s) de imagem, ou uma imagem do PC como data URL ("data:image/...;base64,").
 // Devolve null para remover.
-function normalizeAvatar(avatar) {
+//
+// O avatar nao e' devolvido inline nas listas de comentarios, notificacoes,
+// seguidores ou pesquisa: essa informacao vem separadamente via
+// `GET /api/users/:id/avatar`. Assim, uma conversa de 20 comentarios nao
+// carrega o avatar (ate 200 KB) 20 vezes. O teto aqui impede uploads absurdos.
+export function normalizeAvatar(avatar) {
   let value = String(avatar || "").trim();
   if (!value) return null;
 
   if (/^data:image\/(png|jpe?g|webp|gif);base64,/i.test(value)) {
-    // Imagem do computador. Sem cortar (data URLs sao longos); so um teto de
-    // seguranca para nao guardar imagens enormes.
-    if (value.length > 3_000_000) {
+    // ~200 KB de imagem real = ~266 KB de string base64. Cortamos a 300 000
+    // caracteres para ter margem de seguranca.
+    if (value.length > 300_000) {
       throw httpError(
         400,
-        "Essa imagem é demasiado grande. Escolhe uma mais pequena (até ~2MB)."
+        "Essa imagem é demasiado grande. Escolhe uma mais pequena (até ~200 KB)."
       );
     }
   } else if (/^(emoji:|https?:\/\/)/i.test(value)) {

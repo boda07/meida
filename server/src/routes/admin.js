@@ -14,6 +14,7 @@
 // ?force=1.
 import { Router } from "express";
 import { seedFromJson } from "../db/seed.js";
+import { timingSafeEqual } from "node:crypto";
 
 export const adminRouter = Router();
 
@@ -21,7 +22,11 @@ adminRouter.post("/admin/seed", (req, res, next) => {
   try {
     const expected = process.env.ADMIN_TOKEN?.trim();
     const provided = String(req.headers["x-admin-token"] || "");
-    if (!expected || provided !== expected) {
+    if (
+      !expected ||
+      provided.length !== expected.length ||
+      !timingSafeEqual(Buffer.from(provided), Buffer.from(expected))
+    ) {
       return res.status(404).json({ error: "Nao encontrado." });
     }
     const force = req.query.force === "1" || req.query.force === "true";

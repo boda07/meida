@@ -66,7 +66,7 @@ export function CommentItem({
       id={`comentario-${c.id}`}
       className={`comment ${c.deleted ? "is-deleted" : ""}`}
     >
-      <Avatar avatar={c.author.avatar} name={c.author.username} size={34} />
+      <Avatar avatar={c.author.avatar} name={c.author.username} size={34} userId={c.author.id} />
       <div className="comment-body">
         <div className="comment-head">
           <Link className="comment-author" to={`/u/${encodeURIComponent(c.author.username)}`}>
@@ -307,7 +307,7 @@ export default function Comments({ type, tmdbId, season = null, episode = null, 
 
       {user ? (
         <form className="comment-form" onSubmit={submit}>
-          <Avatar avatar={user.avatar} name={user.username} size={36} />
+          <Avatar avatar={user.avatar} name={user.username} size={36} userId={user.id} />
           <div className="comment-form-main">
             <TextoComMencoes
               value={body}

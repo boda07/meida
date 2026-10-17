@@ -381,6 +381,14 @@ export const DICIONARIO = {
     "a ver agora": "a ver agora",
     "A ver ...": "A ver ...",
     "A carregar": "A carregar",
+    "{n} {o}": "{n} {o}",
+    "série": "série",
+    "{n} ano": "{n} ano",
+    "{n} anos": "{n} anos",
+    "tudo": "tudo",
+    "Período mostrado": "Período mostrado",
+    "o getSources não devolveu vídeo em claro":
+      "o getSources não devolveu vídeo em claro",
     "não": "não",
     // --- pesquisa e hero ---
     "A procurar \"{q}\"": "A procurar \"{q}\"",
@@ -999,6 +1007,44 @@ export const DICIONARIO = {
       "Mais tarde podes importar, ligar contas e mudar tudo isto nas Definições.",
     // --- Home: linha dos generos ---
     "Porque escolheste estes": "Porque escolheste estes",
+
+    // --- Seguranca: torrents e proxy (2026-10-16) ---
+    "infoHash invalido": "infoHash invalido",
+    "Este torrent nao foi encontrado nesta pesquisa. Procura-o outra vez.": "Este torrent nao foi encontrado nesta pesquisa. Procura-o outra vez.",
+    "Não foi possível parar a descarga: {erro}": "Não foi possível parar a descarga: {erro}",
+
+    // --- Limite de pedidos no login/registo (2026-10-16) ---
+    "Muitos pedidos. Tenta de novo mais tarde.": "Muitos pedidos. Tenta de novo mais tarde.",
+    "Muitas tentativas falhadas para esta conta. Tenta de novo mais tarde.": "Muitas tentativas falhadas para esta conta. Tenta de novo mais tarde.",
+
+    // --- Assinatura do proxy (2026-10-16) ---
+    "proxy requer assinatura valida": "proxy requer assinatura valida",
+
+    // --- Contraste do texto de destaque (2026-10-16) ---
+    "A cor de destaque escolhida tem pouco contraste sobre o fundo ({ratio}:1). O texto em destaque pode ser dificil de ler — escolha uma cor mais clara.": "A cor de destaque escolhida tem pouco contraste sobre o fundo ({ratio}:1). O texto em destaque pode ser dificil de ler — escolha uma cor mais clara.",
+
+    // --- Assinatura de legendas externas (2026-10-16) ---
+    "legendas requerem assinatura valida": "legendas requerem assinatura valida",
+    "legenda excede o limite de 2 MB": "legenda excede o limite de 2 MB",
+
+    // --- Validacao de registo/login (2026-10-16) ---
+    "Utilizador tem de ter 3-20 caracteres (letras, numeros e sublinhado).": "Utilizador tem de ter 3-20 caracteres (letras, numeros e sublinhado).",
+    "Password tem de ter 8-72 caracteres.": "Password tem de ter 8-72 caracteres.",
+
+    // --- Avatar do utilizador (2026-10-16) ---
+    "Sem avatar.": "Sem avatar.",
+
+    // --- Watch Party (2026-10-16) ---
+    "Codigo de sala invalido (6-12 A-Z0-9).": "Codigo de sala invalido (6-12 A-Z0-9).",
+
+    // --- Watch Party (2026-10-16) ---
+    "Login necessario.": "Login necessario.",
+    "Evento nao permitido.": "Evento nao permitido.",
+    "Payload demasiado grande (max 2 KB).": "Payload demasiado grande (max 2 KB).",
+    "Sala nao encontrada.": "Sala nao encontrada.",
+    "Limite de salas atingido. Tenta mais tarde.": "Limite de salas atingido. Tenta mais tarde.",
+    "Limite de salas por IP atingido.": "Limite de salas por IP atingido.",
+    "Sala cheia (maximo 20 membros).": "Sala cheia (maximo 20 membros).",
   },
 
   en: {
@@ -1346,6 +1392,14 @@ export const DICIONARIO = {
     "a ver agora": "watching now",
     "A ver ...": "Watching ...",
     "A carregar": "Loading",
+    "{n} {o}": "{n} {o}",
+    "série": "series",
+    "{n} ano": "{n} year",
+    "{n} anos": "{n} years",
+    "tudo": "all",
+    "Período mostrado": "Period shown",
+    "o getSources não devolveu vídeo em claro":
+      "getSources did not return the video in clear",
     "não": "not",
     // --- pesquisa e hero ---
     "A procurar \"{q}\"": "Searching \"{q}\"",
@@ -1962,6 +2016,44 @@ export const DICIONARIO = {
       "Later you can import, link accounts and change all of this in Settings.",
     // --- Home: linha dos generos ---
     "Porque escolheste estes": "Because you chose these",
+
+    // --- Seguranca: torrents e proxy (2026-10-16) ---
+    "infoHash invalido": "invalid infoHash",
+    "Este torrent nao foi encontrado nesta pesquisa. Procura-o outra vez.": "This torrent was not found in that search. Look for it again.",
+    "Não foi possível parar a descarga: {erro}": "Couldn't stop the download: {erro}",
+
+    // --- Limite de pedidos no login/registo (2026-10-16) ---
+    "Muitos pedidos. Tenta de novo mais tarde.": "Too many requests. Try again later.",
+    "Muitas tentativas falhadas para esta conta. Tenta de novo mais tarde.": "Too many failed attempts for this account. Try again later.",
+
+    // --- Assinatura do proxy (2026-10-16) ---
+    "proxy requer assinatura valida": "proxy requires a valid signature",
+
+    // --- Contraste do texto de destaque (2026-10-16) ---
+    "A cor de destaque escolhida tem pouco contraste sobre o fundo ({ratio}:1). O texto em destaque pode ser dificil de ler — escolha uma cor mais clara.": "The accent color you chose has low contrast against the background ({ratio}:1). Highlighted text may be hard to read — choose a lighter color.",
+
+    // --- Assinatura de legendas externas (2026-10-16) ---
+    "legendas requerem assinatura valida": "subtitles require a valid signature",
+    "legenda excede o limite de 2 MB": "subtitle exceeds the 2 MB limit",
+
+    // --- Validacao de registo/login (2026-10-16) ---
+    "Utilizador tem de ter 3-20 caracteres (letras, numeros e sublinhado).": "Username must be 3-20 characters (letters, numbers and underscore).",
+    "Password tem de ter 8-72 caracteres.": "Password must be 8-72 characters.",
+
+    // --- Avatar do utilizador (2026-10-16) ---
+    "Sem avatar.": "No avatar.",
+
+    // --- Watch Party (2026-10-16) ---
+    "Codigo de sala invalido (6-12 A-Z0-9).": "Invalid room code (6-12 A-Z0-9).",
+
+    // --- Watch Party (2026-10-16) ---
+    "Login necessario.": "Login required.",
+    "Evento nao permitido.": "Event not permitted.",
+    "Payload demasiado grande (max 2 KB).": "Payload too large (max 2 KB).",
+    "Sala nao encontrada.": "Room not found.",
+    "Limite de salas atingido. Tenta mais tarde.": "Room limit reached. Try again later.",
+    "Limite de salas por IP atingido.": "Room limit per IP reached.",
+    "Sala cheia (maximo 20 membros).": "Room full (max 20 members).",
   },
 };
 

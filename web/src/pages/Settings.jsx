@@ -601,7 +601,7 @@ const TABS = [
 const TAB_KEY = "meida:settings-tab";
 
 export default function Settings() {
-  const { settings, update, erroGuardar } = useSettings();
+  const { settings, update, erroGuardar, avisoAcento } = useSettings();
   const t = useT();
   const { user, updateAvatar, updateProfile } = useAuth();
   const [imgUrl, setImgUrl] = useState("");
@@ -1186,6 +1186,13 @@ export default function Settings() {
           onPick={(v) => update({ accent: v })}
           onCommit={(v) => update({ recentAccent: addRecent(settings.recentAccent, v) })}
         />
+        {avisoAcento && (
+          <p className="vhint vhint-erro" role="alert">
+            {t("A cor de destaque escolhida tem pouco contraste sobre o fundo ({ratio}:1). O texto em destaque pode ser dificil de ler — escolha uma cor mais clara.", {
+              ratio: avisoAcento.ratio,
+            })}
+          </p>
+        )}
       </section>
 
       {/* ===== Cor de fundo ===== */}
@@ -1492,7 +1499,7 @@ export default function Settings() {
         ) : (
           <>
             <div className="set-avatar-current">
-              <Avatar avatar={user.avatar} name={user.username} size={64} />
+              <Avatar avatar={user.avatar} name={user.username} size={64} userId={user.id} />
               <span className="muted">{user.username}</span>
             </div>
 
@@ -1579,7 +1586,13 @@ export default function Settings() {
                   {p.ok ? "●" : "✕"} {p.name}
                 </span>
                 {!p.ok && p.error && (
-                  <span className="ph-reason muted">({p.error})</span>
+                  // `t()` em volta: o motivo vem do servidor, em portugues, e
+                  // sao as razoes que became mais uteis com o probe do nativo
+                  // (ver `probeNativo`). Sem traduzir, quem esta' em ingles le
+                  // o motivo em portugues — e o `t()` devolve a propria chave
+                  // quando nao a conhece, entao os motivos antigos (HTTP 500,
+                  // timeout) ficam como estavam.
+                  <span className="ph-reason muted">({t(p.error)})</span>
                 )}
               </div>
             ))}

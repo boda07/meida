@@ -174,7 +174,7 @@ export default function NotificationBell() {
                 const conteudo = (
                   <>
                     {n.actor ? (
-                      <Avatar avatar={n.actor.avatar} name={n.actor.username} size={30} />
+                      <Avatar avatar={n.actor.avatar} name={n.actor.username} size={30} userId={n.actor.id} />
                     ) : (
                       <span className="notif-avatar-vazio" aria-hidden="true" />
                     )}

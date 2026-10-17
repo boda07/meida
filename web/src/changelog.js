@@ -6,6 +6,27 @@
 export const CHANGELOG = [
 
   {
+      version: "1.5.5",
+      items: [
+        "Corrigido: alguns animes apareciam sem episódios. A lista vinha vazia de um dos sites que consultamos e a app aceitava isso sem tentar mais nada. Agora tenta todos, e se mesmo assim não trouxer os títulos, mostra os episódios que sabe que existem — em vez de escrever «Temporada 1 (0 eps)» e não ter mais para mostrar.",
+        "Corrigido: a app ficou mais difícil de abusar. Já não se pode tentar palavra-passe nenhuma vezes sem parar nem criar contas apresse; os vídeos partilhados e as salas de ver em conjunto só entram com identificação; e os caminhos que traziam legendas ou vídeos de fora deixaram de aceitar pedidos sem uma marca de que vêm da app.",
+        "Corrigido: nas listas e nos comentários, a tua fotografia de perfil já não é carregada uma vez por cada pessoa. Passa a ser buscada uma só vez: a página fica muito mais leve e a lista abre mais depressa.",
+        "Novo: a fonte que escolheste passa a ser lembrada. Escolhes uma num episódio e os seguintes já abrem nessa fonte, sem teres de escolher de cada vez. Se essa fonte deixar de funcionar, volta ao normal sozinha.",
+        "Corrigido: quando o vídeo directo de um anime e o normal dão o mesmo, já não aparecem como duas opções iguais.",
+        "Corrigido: a app já não pode ser mandada abrir páginas da internet sozinha quando carrega um vídeo, e só pede o que tem mesmo a ver.",
+        "Corrigido: as atualizações já não ficam a meio. Se o envio falhar depois de a versão estar criada, o que faltou é enviado sozinho e depois verificado — antes havia versões que apareciam na página de atualizações sem ficheiro para instalar.",
+      ],
+      items_en: [
+        "Fixed: some anime showed up with no episodes. The list came back empty from one of the sites we ask and the app took that without trying anything else. Now it tries them all, and if the titles still don't come, it shows the episodes it knows exist — instead of writing \"Season 1 (0 eps)\" and having nothing to show.",
+        "Fixed: the app is harder to abuse. You can no longer try passwords endlessly or create accounts in a hurry; shared videos and watch-together rooms now need to sign in; and the paths that brought in subtitles or videos from elsewhere no longer accept requests that don't carry a mark saying they come from the app.",
+        "Fixed: in lists and comments, your profile picture is no longer loaded once per person. It's fetched just once: pages get much lighter and lists open faster.",
+        "New: the source you pick is now remembered. Choose one on an episode and the following ones open on that source, without choosing every time. If that source stops working, it goes back to normal on its own.",
+        "Fixed: when an anime's direct video and the normal one give the same thing, they no longer show up as two identical options.",
+        "Fixed: the app can no longer be made to open web pages on its own while loading a video, and it only asks for what it actually has open.",
+        "Fixed: updates no longer stop halfway. If the upload fails after the version is created, whatever was missing is sent on its own and then checked — before, versions would show up on the updates page with no file to install.",
+      ],
+    },
+  {
       version: "1.5.4",
       items: [
         "Corrigido: a app já não fica 40 segundos a dizer que o servidor está a acordar. O ecrã de espera desapareceu: a app abre logo, mesmo quando o servidor de dados tarda ou não responde. Se algo não carregar, é a parte concreta que não carregou que mostra o seu estado, em vez de um ecrã inteiro a dizer uma coisa que ninguém sabe ser verdade.",

@@ -11,18 +11,33 @@ import { useT } from "../i18n/I18nContext.jsx";
 
 const WatchPartyContext = createContext(null);
 
-// Codigo de sala curto e legivel (sem caracteres ambiguos).
+// Codigo de sala curto e legivel (sem caracteres ambiguos): 8 caracteres
+// alfanumericos maiusculos, gerado com crypto (nao Math.random, que e adivinhavel).
 function makeCode() {
   const abc = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  const buf = new Uint8Array(8);
+  crypto.getRandomValues(buf);
   let s = "";
-  for (let i = 0; i < 5; i++) s += abc[Math.floor(Math.random() * abc.length)];
+  for (let i = 0; i < 8; i++) s += abc[buf[i] % abc.length];
   return s;
 }
+
+// Codigo de sala valido: 6-12 A-Z0-9.
+const ROOM_CODE_RE = /^[A-Z0-9]{6,12}$/;
 
 // Mesma base de URL da API (runtime-config.json / same-origin).
 const API_ORIGIN = (typeof window !== "undefined" && window.MEIDA_API_BASE) || "";
 function fullUrl(path) {
   return API_ORIGIN ? `${API_ORIGIN}${path}` : `${window.location.origin}${path}`;
+}
+
+// Token de login (mesmo usado nas demais rotas da API).
+function authToken() {
+  try {
+    return localStorage.getItem("streamapp_token");
+  } catch {
+    return null;
+  }
 }
 
 export function WatchPartyProvider({ children }) {
@@ -49,9 +64,12 @@ export function WatchPartyProvider({ children }) {
   const send = useCallback((kind, data) => {
     const code = roomRef.current;
     if (!code) return;
+    const token = authToken();
+    const headers = { "Content-Type": "application/json" };
+    if (token) headers["Authorization"] = `Bearer ${token}`;
     fetch(fullUrl("/api/wp/send"), {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers,
       body: JSON.stringify({ room: code, from: idRef.current, kind, data }),
     }).catch(() => {});
   }, []);
@@ -109,9 +127,10 @@ export function WatchPartyProvider({ children }) {
       setIsHost(host);
       setMembers([]);
 
+      const token = authToken();
       const es = new EventSource(
         fullUrl(
-          `/api/wp/stream?room=${encodeURIComponent(code)}&client=${encodeURIComponent(idRef.current)}&nick=${encodeURIComponent(nickname)}`
+          `/api/wp/stream?room=${encodeURIComponent(code)}&client=${encodeURIComponent(idRef.current)}&nick=${encodeURIComponent(nickname)}&token=${encodeURIComponent(token || "")}`
         )
       );
       es.onopen = () => {
@@ -149,9 +168,15 @@ export function WatchPartyProvider({ children }) {
   );
 
   const joinRoom = useCallback(
-    (code, nickname) =>
-      connect(String(code).toUpperCase().trim(), nickname || "Convidado", false),
-    [connect]
+    (code, nickname) => {
+      const normalized = String(code).toUpperCase().trim();
+      if (!ROOM_CODE_RE.test(normalized)) {
+        setError(t("Codigo de sala invalido (6-12 A-Z0-9)."));
+        return null;
+      }
+      return connect(normalized, nickname || "Convidado", false);
+    },
+    [connect, t]
   );
 
   const leave = useCallback(() => {

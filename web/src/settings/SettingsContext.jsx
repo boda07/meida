@@ -1,21 +1,14 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { settingsStore } from "../api/client.js";
 import { t } from "../i18n/traduzir.js";
+import {
+  shade,
+  contraste,
+  precisaAviso,
+  textoAcento,
+} from "./acento.js";
 
 const SettingsContext = createContext(null);
-
-// Clareia/escurece uma cor hex (amount em -1..1) para derivar tons de hover.
-function shade(hex, amount) {
-  const m = /^#?([0-9a-f]{6})$/i.exec(hex || "");
-  if (!m) return hex;
-  const n = parseInt(m[1], 16);
-  const ch = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((c) => {
-    const v = amount >= 0 ? c + (255 - c) * amount : c * (1 + amount);
-    return Math.max(0, Math.min(255, Math.round(v)));
-  });
-  return `#${ch.map((c) => c.toString(16).padStart(2, "0")).join("")}`;
-}
-
 // Definições do utilizador (idiomas, legendas, cor, separador inicial). Guardadas
 // em localStorage via settingsStore; este contexto torna-as reativas na UI.
 export function SettingsProvider({ children }) {
@@ -23,6 +16,9 @@ export function SettingsProvider({ children }) {
   // Erro a guardar: so aparece se o localStorage recusou a escrita. Antes nao
   // havia nada — o utilizador via a mudanca no ecra e achava que estava guardada.
   const [erroGuardar, setErroGuardar] = useState(null);
+  // Aviso de contraste do texto de destaque: null se estiver bem, ou
+  // { ratio, accent, bg } se estiver abaixo do minimo (WCAG 2.1 AA = 4,5:1).
+  const [avisoAcento, setAvisoAcento] = useState(null);
 
   // Aplica a cor de destaque escolhida as variaveis CSS (--accent).
   useEffect(() => {
@@ -40,8 +36,20 @@ export function SettingsProvider({ children }) {
     // reescrever a regra, e o `shade()` ja existe e e' o que o `--accent-hover`
     // usa. O `:root` do `styles.css` tem o valor por omissao para o ecra de
     // arranque, que aparece antes de este codigo correr.
-    root.style.setProperty("--accent-text", shade(accent, 0.35));
-  }, [settings.accent]);
+    const texto = textoAcento(accent);
+    root.style.setProperty("--accent-text", texto);
+
+    // O texto do acento sobre o fundo escuro tem de ser legível. O vermelho por
+    // omissao (#c90303) clareado 35% da 5,46:1 sobre #070708, mas uma cor
+    // escolhida a mao pode cair abaixo do minimo — e ai e' o texto que sofre.
+    const bg = settings.bgColor || "#070708";
+    const ratio = Math.round(contraste(texto, bg) * 100) / 100;
+    if (precisaAviso(ratio)) {
+      setAvisoAcento({ ratio, accent, bg });
+    } else {
+      setAvisoAcento(null);
+    }
+  }, [settings.accent, settings.bgColor]);
 
   // Aplica a cor de fundo (e deriva as superficies um pouco mais claras).
   useEffect(() => {
@@ -105,7 +113,7 @@ export function SettingsProvider({ children }) {
   }, [settings.autoplay]);
 
   return (
-    <SettingsContext.Provider value={{ settings, update, erroGuardar }}>
+    <SettingsContext.Provider value={{ settings, update, erroGuardar, avisoAcento }}>
       {children}
     </SettingsContext.Provider>
   );

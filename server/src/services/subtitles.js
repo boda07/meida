@@ -1,4 +1,5 @@
 import { config } from "../config.js";
+import { alvoSeguro } from "./proxy.js";
 
 const OS = "https://api.opensubtitles.com/api/v1";
 
@@ -107,6 +108,8 @@ export async function getSubtitleVtt(fileId) {
 
 // Converte uma legenda de um URL qualquer (ex.: vinda do extractor) para VTT.
 export async function fetchSubtitleAsVtt(url) {
+  const seguro = alvoSeguro(url);
+  if (!seguro.ok) throw new Error(seguro.motivo);
   const res = await fetch(url);
   if (!res.ok) throw new Error(`legenda ${res.status}`);
   return toVtt(await res.text());

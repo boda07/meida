@@ -58,7 +58,7 @@ export default function Users() {
           {results.map((u) => (
             <li key={u.id} className="people-row">
               <Link to={`/u/${encodeURIComponent(u.username)}`} className="people-link">
-                <Avatar avatar={u.avatar} name={u.username} size={40} />
+                <Avatar avatar={u.avatar} name={u.username} size={40} userId={u.id} />
                 <span>{u.username}</span>
               </Link>
             </li>

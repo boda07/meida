@@ -5,6 +5,7 @@
 // serio. Resultado guardado em cache em disco (sobrevive a reinicios) e em
 // memoria; o check corre em background, sem bloquear pedidos.
 import { PROVIDERS, ANIME_PROVIDERS } from "./providers.js";
+import { extrairMegaPlayNativo } from "./megaplayNativo.js";
 import { cacheGet, cacheSet } from "./cache.js";
 import { log } from "./log.js";
 
@@ -128,18 +129,73 @@ async function probe(url) {
   }
 }
 
+/**
+ * Sonda de uma fonte NATIVA (MegaPlay nativo).
+ *
+ * **A pagina do player responder 200 nao prova que o nativo funciona.** Sao duas
+ * coisas independentes, e o `probe()` de cima so vê a primeira:
+ *
+ *   - o nativo pode falhar a desencriptar o `enc` (chave/IV trocados, `enc`
+ *     corrompido) com a pagina perfeitamente saudavel — o health-check dizia
+ *     "ok" e o episodio nao dava;
+ *   - o inverso tambem: a pagina pode responder 200 com um player que ja nao
+ *     funciona, enquanto o `getSources` continua a devolver video em claro.
+ *
+ * Por isso o nativo e' sondado pelo **mesmo caminho que o player usa**: a pagina
+ * -> `data-id` -> `getSources` -> desencriptar o `enc` e confirmar que sai JSON
+ * com `file`. E' `extrairMegaPlayNativo` que faz isso, o mesmo que a rota
+ * `/api/anime/megaplay` chama. Se um dia o health-check disser "ok" e o nativo
+ * falhar, o culpado e' este codigo ter deixado de usar a funcao do player.
+ *
+ * A pagina e' sondada primeiro para dar um motivo legivel (HTTP 500, timeout,
+ * anuncios) em vez do generico "nao deu".
+ */
+async function probeNativo(url) {
+  const pagina = await probe(url);
+  if (!pagina.ok) {
+    return { ...pagina, error: `${pagina.error} (a pagina do player)` };
+  }
+  const t0 = Date.now();
+  let dados = null;
+  try {
+    dados = await extrairMegaPlayNativo({ embedUrl: url, audio: "sub" });
+  } catch (e) {
+    // `extrairMegaPlayNativo` ja nao lanca (devolve null e regista), mas se um dia
+    // lanca, o health-check nao pode rebentar por isso.
+    log.warn("provider:health", `extracao nativa lancou: ${e.message}`);
+  }
+  const ms = Date.now() - t0;
+  if (!dados || !dados.m3u8) {
+    return {
+      ok: false,
+      status: pagina.status,
+      // O `enc` veio, mas nao desencriptou. Ou nao ha `enc`. Ou o `data-id` da
+      // pagina ja nao resolve. Sao falhas diferentes com o mesmo sintoma para
+      // quem ve, e todas valem o mesmo: o nativo nao está a dar.
+      error: "o getSources não devolveu vídeo em claro",
+      ms,
+    };
+  }
+  return { ok: true, status: pagina.status, ms, nativo: true };
+}
+
 function runCheck() {
   const tests = [
     ...PROVIDERS.filter((p) => p.movie).map((p) => ({
       id: p.id,
       name: p.name,
       type: "movie",
+      native: false,
       url: p.movie.replace("{tmdb}", String(TEST_MOVIE)),
     })),
     ...ANIME_PROVIDERS.map((p) => ({
       id: p.id,
       name: p.name,
       type: "anime",
+      // O que separa as DUAS entradas do MegaPlay: uma vai num `<iframe>`, a
+      // outra pelo nosso player. Health-check diferente para cada uma, porque
+      // podem estar vivas uma e morta a outra.
+      native: !!p.native,
       url: p.url
         .replace("{mal}", String(TEST_ANIME))
         .replace("{anilist}", String(TEST_ANIME))
@@ -149,15 +205,33 @@ function runCheck() {
   ];
   return Promise.all(
     tests.map(async (t) => {
-      const r = await probe(t.url);
+      // O `native` decide o probe: o nativo vai pelo `getSources` (ver
+      // `probeNativo`), o iframe pela pagina. Sao entradas SEPARADAS na lista e
+      // com o MESMO URL, por isso sem isto as duas recebiam o resultado uma da
+      // outra — e uma delas ficava "ok" sem nunca ter sido testada a sério.
+      const r = t.native ? await probeNativo(t.url) : await probe(t.url);
       if (!r.ok) {
         log.warn("provider", `${t.name} (${t.id}) falhou`, {
           status: r.status,
           error: r.error,
           url: t.url,
+          nativo: !!t.native,
         });
       }
-      return { id: t.id, name: t.name, type: t.type, ok: r.ok, status: r.status, error: r.error, ms: r.ms };
+      return {
+        id: t.id,
+        name: t.name,
+        type: t.type,
+        // O `id` e' o que o frontend usa para montar o `deadIds` (ver
+        // `useProviderHealth.js`), por isso tem de ser o da entrada e nao o de
+        // outra com o mesmo URL. `native` viaja para a interface poder dizer
+        // "o nativo falhou" em vez de "esta fonte nao funciona".
+        native: !!t.native,
+        ok: r.ok,
+        status: r.status,
+        error: r.error,
+        ms: r.ms,
+      };
     })
   );
 }

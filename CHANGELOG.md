@@ -1,5 +1,143 @@
 # Changelog
 
+## 1.5.5
+
+Sete buracos de segurança fechados no servidor, a lista de episódios de anime
+arrumada (eram dois bugs encadeados, nenhum deles com erro no log), e a
+publicação da app passou a verificar-se sozinha.
+
+### R1 — O proxy de vídeo era um proxy aberto
+
+`/api/proxy?url=...` encaminhava qualquer endereço que lhe dessem. Não exigia
+nada, não tinha limite, e seguia redireções. Na prática dava para usar a máquina
+de quem corre a app para chegar a `127.0.0.1`, à rede local e aos endereços
+internos da cloud onde a app está a correr.
+
+- `buildProxyUrl` assina o alvo com **HMAC-SHA256** e junta `ts`; a assinatura
+  expira a 10 minutos. `handleProxy` recusa (403) o que não vier assinado.
+- `alvoSeguro()` bloqueia loopback, privados e link-local, em v4 e v6 — incluindo
+  a forma mapeada `::ffff:`.
+- `redirect: "manual"`: o alvo final é verificado, não o que veio no pedido.
+
+`scripts/testar-proxy-seguranca.mjs` (13 verificações).
+
+### R2 — `/api/subtitles/vtt` aberto
+
+O mesmo problema nas legendas: qualquer pessoa podia pedir o `.vtt` de qualquer
+endereço. Passou a usar `buildSubtitleVttUrl`/`assinaturaValida` (exportados de
+`proxy.js`), os dois sítios de `play.js` (hianime e stream) passaram a assinar, e
+a rota valida assinatura + `alvoSeguro` + limite de 2 MB (413).
+`scripts/testar-subtitles-seguranca.mjs` (5).
+
+### R3 — O portal de torrents era público
+
+Qualquer pessoa podia mandar um magnet à vontade e ver o que os outros estavam a
+ver. `addTorrent` passou a recusar (`TORRENT_DESCONHECIDO` / `INFOHASH_INVALIDO`)
+o que não esteja em `magnetConhecido`, com cache de 2000 entradas em FIFO;
+`GET /torrents`, `GET /stream/active` e `DELETE /stream/:infoHash` levam
+`requireAuth`. `GET /stream/:infoHash` fica sem login de propósito: é o `<video
+src>`, que não leva cabeçalho — parar aí partia a reprodução.
+`VideoPlayer.jsx` usa `api.stopTorrent()` (que manda `Authorization`) e só chama
+`onRemoved()` no `.then()`. `scripts/testar-stream-portao.mjs` (41).
+
+### R4 — A autenticação não tinha nada que a travasse
+
+`FALHAS_MAX` de 5 para **10** em 15 minutos, `rateLimiter(10, 15min)` no login e
+`rateLimiter(10, 1h)` no registo, rotas de auth assíncronas, bcrypt awaited,
+palavra-passe 8–72 e username `^[A-Za-z0-9_]{3,20}$`, `trust proxy` ligado,
+`express.json({limit:"100kb"})` geral e 4 MB nas duas rotas que o precisam
+(`/auth/profile` e `/export/import`), e comparação do token de admin com
+`timingSafeEqual`. `testar-auth-seguranca.mjs` (6) e `testar-rate-limit.mjs`
+reescrito (36 — antes esperava 15 min e 1 h por caso).
+
+### R5 — As Photographs de perfil vinham repetidas
+
+Cada pessoa numa lista mandava a sua fotografia dentro do JSON. `normalizeAvatar`
+rejeita data URLs acima de 300 000 caracteres (~200 KB), deixou de haver `avatar`
+inline em `toUserCard`/`toApiComment`/`toApiNotification`, e passou a existir
+`GET /api/users/:id/avatar` (com `ETag` e cache de 1 dia). O `Avatar.jsx` aceita
+`userId` e busca por lá. `testar-avatar-listas.mjs` (12 — 20 comentários agora
+dão menos de 100 KB).
+
+### R6 — Qualquer pessoa criava salas de watch party
+
+`ROOM_CODE_RE = /^[A-Z0-9]{6,12}$/`, 500 salas no máximo, 10 por IP, 20 pessoas
+por sala, 2 KB por mensagem, e só os tipos de evento que fazem sentido.
+`/wp/send` exige `Bearer`; `/wp/stream` exige `?token=`. No cliente,
+`makeCode()` passou a usar `crypto.getRandomValues` (8 caracteres).
+`testar-watchparty-seguranca.mjs` (10).
+
+### R7 — O Electron não estava endurecido
+
+`sandbox: true`, `nodeIntegration: false`, `webSecurity: true` e
+`contextIsolation: true`; `will-navigate` e `will-redirect` bloqueiam o que não for
+origem da app e abrem no browser de fora; `setPermissionRequestHandler` só aceita
+`fullscreen`; e os handlers de IPC passaram a validar `isTrustedSender`
+(`open-external`, `app-version`, `check-update`, `get-server-config`).
+
+### Animes sem episódios — "Temporada 1 (0 eps)"
+
+Sintoma: o *Zan Sayonara Zetsubou Sensei* (2009) e outros apareciam com uma
+temporada e zero episódios, sem erro no log nenhum. Eram **dois** bugs:
+
+1. **O espelho Tenrai não devolve o número do episódio.** O Tenrai passou a ser o
+   primário a 1-out-2026 e responde a `/anime/{id}/episodes` só com `title` e
+   `aired` — sem `episode` e sem `mal_id`. O filtro era
+   `(e.episode ?? e.mal_id) != null`: com os dois a `undefined`, o `??` dava
+   `undefined` e o `!= null` era falso para **todas** as linhas, em qualquer anime.
+   `normalizarEpisodios()` usa agora a posição na lista quando não há número (a
+   API devolve por ordem, portanto a posição é o número).
+2. **A lista vazia não caía para o outro site.** Para alguns títulos o Tenrai
+   devolve **HTTP 200 com `data: []`** (base incompleta) e, como não houve erro de
+   rede nem de HTTP, o `jikanFetch` não tentava o Jikan oficial. Passa a tentar.
+
+E, quando mesmo assim a lista não vem, o número sabe-se na mesma: o `/anime/{id}`
+devolve `episodes: 13` para o 6377 e o espelho preenche esse campo sempre. Os
+números são sintetizados com `episodiosPorNumero` — só o número interessa, porque
+os providers resolvem o episódio pelo número e não pelo título.
+
+**O contra, que é o que torna isto difícil de apanhar:**
+`groupEpisodesBySeason([])` devolve **uma** temporada vazia, nunca `[]`. O
+`Details.jsx` caía no seu fallback com `if (!seasons.length)`, que nunca era
+verdade — o fallback existia e estava certo, mas estava morto. Passa a ser
+`seasons.some(s => s.episodes.length)`.
+
+Medido contra a API, depois: 2605 → 12 eps, **6377 → 13 eps**, 3228 → 13,
+Cowboy Bebop → 26, One Piece → 1180, Hunter x Hunter → 148 (todos a bater certo
+com o declarado, sem truncamento). `scripts/testar-episodios-anime.mjs` (32
+verificações, 4 mutações confirmadas a falhar com linha de resumo).
+
+### Fonte lembrada por tipo
+
+`lastSource` guarda a fonte escolhida **por tipo de título** (anime/filme/série),
+não por episódio — guardar por episódio era tautológico, porque o episódio já
+está a ser visto. O `playerIndex` tem de andar com o `active`, senão o botão
+fica marcado na fonte certa e o vídeo arranca noutra. `testar-fonte-lembrada.mjs`
+(41).
+
+### Health-check do nativo separado do iframe
+
+`probeNativo` é uma função à parte, com os seus próprios nomes: o nativo e o
+iframe do mesmo provider deixam de aparecer como duas fontes iguais.
+`testar-health-nativo.mjs` (31).
+
+### `app:publish` que se cura sozinho
+
+Já falhou quatro vezes (1.2.0, 1.2.1, 1.2.2 e 1.3.2), sempre com `422` ao criar a
+release — e a release ficava **publicada e pela metade**, sem dar erro útil.
+`scripts/publicar.cjs` faz a cadeia inteira: `electron-builder` → se falhar,
+`fix-latest.cjs` (que é idempotente) → `prune-releases` → `verificar-release`,
+que confirma os 3 assets e que o `latest.yml` público devolve a versão certa com
+o `sha512` a bater com o do instalador assinado. O `fix-latest.cjs` usa `fetch`
+e não `curl`: o `System32` não está no PATH que o processo Node vê, e o
+`execFileSync("curl")` dava `ENOENT` depois de já ter publicado os assets.
+
+### Também
+
+- `scripts/verificar-cjk.mjs` — verificador de caracteres chineses, reutilizável.
+- Teste de contraste do `--accent-text`.
+- `testar-rate-limit.mjs` reescrito para não esperar 15 minutos por caso.
+
 ## 1.5.4
 
 A app deixa de esconder-se atrás de um ecrã de espera, e traz os primeiros 60

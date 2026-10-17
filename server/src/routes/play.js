@@ -5,7 +5,8 @@ import {
   extrairMegaPlayNativo,
   tracksParaSubtitulos,
 } from "../services/megaplayNativo.js";
-import { handleProxy, buildProxyUrl } from "../services/proxy.js";
+import { handleProxy, buildProxyUrl, buildSubtitleVttUrl, assinaturaValida, alvoSeguro } from "../services/proxy.js";
+import { rateLimiter } from "../services/rateLimit.js";
 import {
   searchSubtitles,
   fetchSubtitleAsVtt,
@@ -15,8 +16,10 @@ import {
 
 export const playRouter = Router();
 
-// Proxy HLS/CORS (m3u8 + segmentos).
-playRouter.get("/proxy", handleProxy);
+// Proxy HLS/CORS (m3u8 + segmentos). Limitado por IP para nao ser um proxy
+// gratis para qualquer um; 300 pedidos/10s e' muito acima do que uma
+// reproducao HLS precisa (playlist + segmentos esparcidos).
+playRouter.get("/proxy", rateLimiter(300, 10_000), handleProxy);
 
 // O extrator de anime (player proprio) esta configurado?
 playRouter.get("/anime/enabled", (req, res) => {
@@ -81,7 +84,7 @@ playRouter.get("/anime/extract", async (req, res) => {
       lang: sub.lang,
       label: sub.label || sub.lang,
       default: sub.default,
-      url: `/api/subtitles/vtt?url=${encodeURIComponent(sub.url)}`,
+      url: buildSubtitleVttUrl(sub.url),
       source: "hianime",
     }));
     res.json({ provider: r.provider, sources, subtitles, intro: r.intro, outro: r.outro });
@@ -123,7 +126,7 @@ playRouter.get("/extract", async (req, res) => {
     const subtitles = (result.subtitles || []).map((sub) => ({
       lang: sub.lang,
       label: sub.label || sub.lang,
-      url: `/api/subtitles/vtt?url=${encodeURIComponent(sub.url)}`,
+      url: buildSubtitleVttUrl(sub.url),
       source: "stream",
     }));
 
@@ -172,11 +175,25 @@ playRouter.get("/subtitles/download/:fileId", async (req, res) => {
 });
 
 // Converte uma legenda de um URL externo (do extractor) para VTT.
-playRouter.get("/subtitles/vtt", async (req, res) => {
+// Limitado: legendas sao pedidas poucas vezes por episodio.
+// Exige assinatura valida (mesmo modelo do /api/proxy), nao segue IPs
+// internos e corta respostas acima de 2 MB.
+playRouter.get("/subtitles/vtt", rateLimiter(20, 60_000), async (req, res) => {
   try {
-    const { url } = req.query;
-    if (!url) return res.status(400).json({ error: "falta url" });
+    const { url, ts, sig } = req.query;
+    if (!url || !ts || !sig || !assinaturaValida(url, ts, sig)) {
+      return res.status(403).json({ error: "legendas requerem assinatura valida" });
+    }
+
+    const seguro = alvoSeguro(url);
+    if (!seguro.ok) {
+      return res.status(403).json({ error: seguro.motivo });
+    }
+
     const vtt = await fetchSubtitleAsVtt(url);
+    if (Buffer.byteLength(vtt) > 2 * 1024 * 1024) {
+      return res.status(413).json({ error: "legenda excede o limite de 2 MB" });
+    }
     res.setHeader("Content-Type", "text/vtt; charset=utf-8");
     res.send(vtt);
   } catch (err) {

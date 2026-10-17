@@ -90,17 +90,22 @@ const DEFAULT_REMOTE_URL = normalizeServerUrl(
 );
 
 // Abrir URLs externos (ex.: login do MyAnimeList) no browser do sistema.
-ipcMain.handle("open-external", (_e, url) => {
+ipcMain.handle("open-external", (event, url) => {
+  if (!isTrustedSender(event)) return { ok: false, error: "Origem nao autorizada." };
   if (/^https?:\/\//i.test(url)) shell.openExternal(url);
 });
 
 // Versao instalada da app (para o "o que mudou" depois de atualizar).
-ipcMain.handle("app-version", () => app.getVersion());
+ipcMain.handle("app-version", (event) => {
+  if (!isTrustedSender(event)) return { ok: false, error: "Origem nao autorizada." };
+  return app.getVersion();
+});
 
 // Procurar atualizacao a pedido (botao nas Definicoes/menu). Se houver uma nova,
 // o autoUpdater descarrega-a e o evento "update-downloaded" mostra o dialogo para
 // reiniciar. Devolve um estado simples para a UI dar feedback imediato.
-ipcMain.handle("check-update", async () => {
+ipcMain.handle("check-update", async (event) => {
+  if (!isTrustedSender(event)) return { ok: false, error: "Origem nao autorizada." };
   if (!app.isPackaged) return { status: "dev" };
   try {
     const r = await autoUpdater.checkForUpdates();
@@ -155,11 +160,14 @@ function isTrustedSender(event) {
 }
 
 // ===== Servidor: usado pela seccao "Servidor" das Definicoes =====
-ipcMain.handle("get-server-config", () => ({
-  mode: serverMode,
-  url: remoteUrl,
-  packaged: app.isPackaged,
-}));
+ipcMain.handle("get-server-config", (event) => {
+  if (!isTrustedSender(event)) return { ok: false, error: "Origem nao autorizada." };
+  return {
+    mode: serverMode,
+    url: remoteUrl,
+    packaged: app.isPackaged,
+  };
+});
 
 ipcMain.handle("set-server-config", (event, cfg) => {
   if (!isTrustedSender(event)) return { ok: false, error: "Origem nao autorizada." };
@@ -464,6 +472,9 @@ function createWindow() {
       ? undefined // empacotado: usa o icone embutido no .exe
       : path.join(__dirname, "..", "build", "icon.png"),
     webPreferences: {
+      sandbox: true,
+      nodeIntegration: false,
+      webSecurity: true,
       contextIsolation: true,
       preload: path.join(__dirname, "preload.cjs"),
     },
@@ -483,6 +494,51 @@ function createWindow() {
   } else {
     installAdBlock(win.webContents.session);
   }
+
+  // Bloqueia navegoes para fora da origem da app (ex.: anuncio dentro de iframe
+  // do player que tenta levar a janela principal para outro site). Abre o URL
+  // externo no browser do sistema em vez de navegar aqui.
+  const appOrigins = new Set([
+    new URL(isDev ? DEV_URL : PROD_URL).origin,
+    ...(serverMode === "remote" && remoteUrl ? [new URL(remoteUrl).origin] : []),
+  ]);
+  function origemPermitida(url) {
+    try {
+      return appOrigins.has(new URL(url).origin);
+    } catch {
+      return false;
+    }
+  }
+
+  win.webContents.on("will-navigate", (event, url) => {
+    if (!origemPermitida(url)) {
+      event.preventDefault();
+      try {
+        shell.openExternal(url);
+      } catch {
+        /* nao conseguiu abrir externamente: bloqueado mesmo assim */
+      }
+    }
+  });
+
+  win.webContents.on("will-redirect", (event, url) => {
+    if (!origemPermitida(url)) {
+      event.preventDefault();
+      try {
+        shell.openExternal(url);
+      } catch {
+        /* nao conseguiu abrir externamente: bloqueado mesmo assim */
+      }
+    }
+  });
+
+  // Sesso de permissao: so aceita fullscreen (video em ecrã inteiro). Nega
+  // tudo o resto (notificacoes, microfone, camara, localizacao, etc.) para
+  // iframes de terceiros nao obterem acessos indevidos.
+  win.webContents.session.setPermissionRequestHandler((webContents, permission) => {
+    if (permission === "fullscreen") return true;
+    return false;
+  });
 
   // Politica de autoplay, so com MEIDA_AUTOPLAY_DEBUG=1 (como o adblock). Fica
   // a forcar "desligado" e a registar cada documento a que toca — foi assim que

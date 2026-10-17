@@ -149,8 +149,14 @@ export const ANIME_PROVIDERS = [
     // Como fica no mesmo lugar da lista (mesmo `idType` e mesma posicao), quem
     // quise so' o iframe tem-no logo a seguir — e `native: true` e' o que diz
     // ao frontend para ir buscar o m3u8 em vez de meter isto num `<iframe>`.
+    //
+    // **O nome diz COMO se ve**, e nao que tipo de titulo e': o outro chama-se
+    // "MegaPlay (anime)" e os dois sao de anime, portanto os dois nomes eram
+    // quase iguais e nao se sabia qual era qual. No ecrã da fonte e' impossivel
+    // distinguir "o nativo" de "o iframe" — que e' justamente a duvida que a
+    // pessoa tem quando uma das duas funciona e a outra nao.
     id: "megaplay-anime-nativo",
-    name: "MegaPlay (nativo)",
+    name: "MegaPlay (nativo, legendas)",
     idType: "anilist",
     native: true,
     url: "https://megaplay.buzz/stream/ani/{anilist}/{ep}/{audio}",
@@ -177,7 +183,7 @@ export const ANIME_PROVIDERS = [
     //    episodio duas vezes na lista, como aconteceu com o "MegaVid 1 e 2".
     //  - As legendas vem emingles.
     id: "megaplay-anime",
-    name: "MegaPlay (anime)",
+    name: "MegaPlay (anime, iframe)",
     idType: "anilist",
     url: "https://megaplay.buzz/stream/ani/{anilist}/{ep}/{audio}",
   },

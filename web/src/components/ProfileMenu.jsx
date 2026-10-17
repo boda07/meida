@@ -57,7 +57,7 @@ export default function ProfileMenu() {
         onClick={() => setOpen((o) => !o)}
         aria-label={t("Conta")}
       >
-        <Avatar avatar={user.avatar} name={user.username} size={38} />
+        <Avatar avatar={user.avatar} name={user.username} size={38} userId={user.id} />
       </button>
       {open && (
         <div className="profile-menu">

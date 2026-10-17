@@ -197,6 +197,27 @@ export function statsFor(userId) {
     if (!dia) return;
     porDia.set(dia, (porDia.get(dia) || 0) + 1);
   };
+  // A reparticao que o rato mostra: quantos titulos marcados e em quantas SERIES
+  // se mexeu nesse dia.
+  //
+  // **Series, nao episodios, e nao por escolha.** O `progress` tem UMA linha por
+  // serie — a chave e' `(user_id, media_type, external_id)` — e avancar um
+  // episodio reescreve essa linha: o episodio anterior deixa de existir. Nao ha
+  // historico de episodios para contar, so' a ultima posicao de cada serie. Contar
+  // "1 serie" como se fosse "1 episodio" seria escrever no ecra um numero que
+  // ninguem pode confirmar; por isso a palavra no texto do rato e' "serie".
+  //
+  // E' uma contagem SEPARADA, que nao entra em `n`: `n` e' a mesma coisa que a
+  // racha conta e nao pode mudar (ver o aviso acima).
+  const detalhe = new Map();
+  const somaDetalhe = (dia, campo) => {
+    if (!dia) return;
+    // As duas chaves tem de estar aqui. `d[campo]++` sobre uma chave em falta da
+    // `undefined++`, que em JS e' `NaN` — e o `NaN` ia parar em silencio ao tooltip.
+    const d = detalhe.get(dia) || { filmes: 0, series: 0 };
+    d[campo] = (d[campo] || 0) + 1;
+    detalhe.set(dia, d);
+  };
   // As duas contagens leem a MESMA linha, por isso basta um passe: o dia para o
   // mapa e a hora para o grafico, sem uma segunda leitura da biblioteca.
   const datas = [];
@@ -214,7 +235,25 @@ export function statsFor(userId) {
     somaDia(dayOf(p.started_at));
     somaDia(dayOf(p.finished_at));
     somaDia(dayOf(p.updated_at));
+    somaDetalhe(dayOf(p.finished_at), "series");
     datas.push(p.started_at, p.finished_at, p.updated_at);
+  }
+
+  // Titulos vistos. `watched_at` e' a data REAL em que marcaste (migracao 9), e
+  // nao o ultimo toque no titulo — por isso aqui nao se usa o `updated_at`, que
+  // tambem muda quando mexes na nota.
+  //
+  // Aviso honesto: `watched_at` so' existe desde a 1.5.3 e **nao** foi
+  // preenchido retroactivamente a proposito (da-lo como `updated_at` punha meses
+  // errados na timeline). Por isso, nos dias anteriores a isso o "N titulos" e'
+  // 0 mesmo having visto coisas — e o tooltip mostra as series, que esses dias tem. Fingir com `updated_at` era trocar um zero honesto por um numero
+  // inventado.
+  for (const t of db
+    .prepare(
+      `SELECT watched_at FROM library WHERE user_id = ? AND watched_at IS NOT NULL`
+    )
+    .all(userId)) {
+    somaDetalhe(dayOf(t.watched_at), "filmes");
   }
 
   // ---- o "melhor" de cada: desempate por nome ------------------------------
@@ -286,8 +325,15 @@ export function statsFor(userId) {
     // So' os dias QUE TIVERAM atividade, ordenados. Mandar os 365 dias todos,
     // com os zeros, seria 4 KB de JSON para o browser preencher com zeros — e o
     // desenho do heatmap faz isso na mesma.
-    dias: [...porDia.entries()]
-      .map(([dia, n]) => ({ dia, n }))
+    //
+    // `filmes`/`series` sao a reparticao do mesmo dia, para o texto que aparece
+    // ao passar o rato: quantos titulos marcados e em quantas series viste
+    // alguma coisa. Vem `0` quando o dia so' teve outro tipo de atividade.
+    dias: [...porDia.keys()]
+      .map((dia) => {
+        const d = detalhe.get(dia);
+        return { dia, n: porDia.get(dia), filmes: d ? d.filmes : 0, series: d ? d.series : 0 };
+      })
       .sort((a, b) => (a.dia < b.dia ? -1 : 1)),
   };
 }

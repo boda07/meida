@@ -5,6 +5,7 @@ import { usePlayerShortcuts } from "./usePlayerShortcuts.js";
 import { useVideoSync } from "../watchparty/useVideoSync.js";
 import { useSettings } from "../settings/SettingsContext.jsx";
 import { useT } from "../i18n/I18nContext.jsx";
+import { api } from "../api/client.js";
 
 // Player HTML5 próprio para streams de torrent (sem anúncios).
 // `startAt` (s): retoma nessa posicao. `onProgress(p, d)`: chamado ~1x/5s com a
@@ -17,6 +18,9 @@ export default function VideoPlayer({ src, infoHash, subtitles = [], startAt, on
   const [status, setStatus] = useState(null);
   const [err, setErr] = useState(false);
   const [removing, setRemoving] = useState(false);
+  // Motivo de o "parar" ter falhado. Antes nao havia estado nenhum: o `catch`
+  // engolia o erro e o `onRemoved` corria na mesma (ver `stop`).
+  const [erroParar, setErroParar] = useState("");
   useVideoSync(videoRef); // Watch Party: sincroniza play/pause/seek
   usePlayerShortcuts(videoRef, containerRef); // Atalhos de teclado
 
@@ -65,14 +69,24 @@ export default function VideoPlayer({ src, infoHash, subtitles = [], startAt, on
 
   const stop = () => {
     if (removing || !infoHash) return;
+    setErroParar("");
     setRemoving(true);
-    fetch(`/api/stream/${infoHash}`, { method: "DELETE" })
-      .catch(() => {})
-      .finally(() => {
+    api
+      .stopTorrent(infoHash)
+      .then(() => {
         setStatus(null);
-        setRemoving(false);
         onRemoved?.();
-      });
+      })
+      .catch((e) => {
+        // **O `onRemoved()` so' corre se o servidor disse que parou.** Antes
+        // estava no `finally`, com o `catch(() => {})` a engolir o 401: o
+        // botao dizia "parado", a barra de estado desaparecia, e o torrent
+        // continuava a ocupar disco e banda sem ninguem saber.
+        setErroParar(
+          t("Não foi possível parar a descarga: {erro}", { erro: e.message })
+        );
+      })
+      .finally(() => setRemoving(false));
   };
 
   return (
@@ -113,6 +127,11 @@ export default function VideoPlayer({ src, infoHash, subtitles = [], startAt, on
       {err && (
         <p className="vhint">
           {t("O browser não consegue reproduzir este ficheiro (provavelmente .mkv ou codec x265). Usa o filtro {filtro} na lista de torrents e escolhe um {formato}.")}
+        </p>
+      )}
+      {erroParar && (
+        <p className="vhint vhint-erro" role="alert">
+          {erroParar}
         </p>
       )}
       {status && (

@@ -31,9 +31,12 @@ function ok_(nome, cond, extra = "") {
   }
 }
 
-const { handleProxy } = await import(
+const { handleProxy, __ativarModoTeste } = await import(
   "file:///" + MOD.replace(/\\/g, "/") + "?v=" + Date.now()
 );
+// O teste chama o `handleProxy` directamente contra um servidor local
+// (127.0.0.1) e sem assinatura: desliga o portao de seguranca so aqui dentro.
+__ativarModoTeste();
 
 // ---- o site de cima --------------------------------------------------------
 // `/bom.m3u8` responde 200 com uma playlist de verdade; `/falso.m3u8` responde

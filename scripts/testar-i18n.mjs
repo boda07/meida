@@ -172,6 +172,11 @@ const IGUAIS_ESPERADOS = new Set([
   "x265",
   // Unidade de tempo, igual nos dois.
   "min",
+  // Gabarito, nao palavra: o que muda entre as linguas e' o que lhe metem dentro
+  // ("titulo" -> "title", "serie" -> "shows"), nao o proprio "{n} {o}". E' o que
+  // permite o singular e o plural num so texto — "1 serie" / "2 series" — sem
+  // quatro chaves no dicionario.
+  "{n} {o}",
 ]);
 
 const semMudar = chavesPt.filter(

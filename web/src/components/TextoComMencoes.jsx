@@ -159,7 +159,7 @@ export function TextoComMencoes({ value, onChange, placeholder, rows = 2, maxLen
                 }}
                 onMouseEnter={() => setActivo(i)}
               >
-                <Avatar avatar={u.avatar} name={u.username} size={22} />
+                <Avatar avatar={u.avatar} name={u.username} size={22} userId={u.id} />
                 <span className="mencao-nome">{u.username}</span>
                 {ligados.includes(u.id) && <span className="mencao-ligacao">{tt("segues")}</span>}
               </button>

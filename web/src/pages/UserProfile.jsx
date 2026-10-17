@@ -285,7 +285,7 @@ export default function UserProfile() {
       {/* Identidade: avatar, nome, bio e accoes. Sem capa e sem sobreposicoes,
           ver o comentario no CSS. */}
       <header className="profile-header">
-        <Avatar avatar={u.avatar} name={u.username} size={76} />
+        <Avatar avatar={u.avatar} name={u.username} size={76} userId={u.id} />
         <div className="profile-id">
           <h2 className="profile-username">{u.username}</h2>
           {u.bio && <p className="profile-bio">{u.bio}</p>}
@@ -433,7 +433,7 @@ export default function UserProfile() {
               {people.map((p) => (
                 <li key={p.id} className="people-row">
                   <Link to={`/u/${encodeURIComponent(p.username)}`} className="people-link">
-                    <Avatar avatar={p.avatar} name={p.username} size={40} />
+                    <Avatar avatar={p.avatar} name={p.username} size={40} userId={p.id} />
                     <span>{p.username}</span>
                   </Link>
                 </li>

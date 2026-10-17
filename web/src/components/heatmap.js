@@ -44,27 +44,21 @@ export function diaDaSemana(chave) {
 }
 
 /**
- * A data por extenso, para o texto que aparece ao passar o rato.
+ * A data como "14/10/2026", para o texto do quadradinho.
  *
- * Recebe o `t` em vez de ter a lingua aqui dentro: sao 12 meses e o "de", e
- * escrever "14 de outubro de 2026" afiado no codigo faria a tooltip sair em
- * portugues mesmo com a app em ingles — que foi o que a auditoria apanhou.
- * Chamada sem `t` (como no teste), fica em portugues.
+ * Numeros e nao "14 de outubro de 2026": dentro de um quadradinho de 11 px o
+ * nome do mes era quase sempre a mesma coisa e so' ocupava espaco — o texto
+ * ficava quase duas vezes mais largo e era preciso puxa-lo para dentro do ecra.
+ *
+ * **Ordem dd/mm/aaaa**, que e' a de Portugal. A barra e' ambigua em ingles (12/10
+ * pode ser 12 de outubro ou 10 de dezembro); quem estiver em ingles e' que le
+ * o dia de outra maneira. Aceita a ambiguidade e poupa o texto.
  */
-export function dataLonga(chave, t) {
-  const d = dataDe(chave);
-  if (!d) return chave;
-  const mes = (t ? t(MESES_LONGOS[d.getMonth()]) : MESES_LONGOS[d.getMonth()]);
-  const de = t ? t("{dia} de {mes} de {ano}") : "{dia} de {mes} de {ano}";
-  return de
-    .replace("{dia}", String(d.getDate()))
-    .replace("{mes}", mes)
-    .replace("{ano}", String(d.getFullYear()));
+export function dataNumerica(chave) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(chave || ""));
+  if (!m) return String(chave || "");
+  return `${m[3]}/${m[2]}/${m[1]}`;
 }
-const MESES_LONGOS = [
-  "janeiro", "fevereiro", "marco", "abril", "maio", "junho",
-  "julho", "agosto", "setembro", "outubro", "novembro", "dezembro",
-];
 
 // ---- o mapa ---------------------------------------------------------------
 
@@ -94,7 +88,13 @@ export function semanasDoMapa(dias, { semanas = 53, fim = null } = {}) {
 
   const mapa = new Map();
   for (const d of dias || []) {
-    if (d && d.dia) mapa.set(d.dia, d.n);
+    if (d && d.dia) {
+      mapa.set(d.dia, {
+        n: d.n,
+        filmes: d.filmes || 0,
+        series: d.series || 0,
+      });
+    }
   }
 
   const cols = [];
@@ -104,9 +104,15 @@ export function semanasDoMapa(dias, { semanas = 53, fim = null } = {}) {
     for (let i = 0; i < DIAS_SEMANA; i++) {
       const antes = cursor < primeiroDia;
       const depois = cursor > chave;
+      const doDia = mapa.get(cursor);
       col.push({
         dia: cursor,
-        n: mapa.get(cursor) || 0,
+        n: doDia ? doDia.n : 0,
+        // A reparticao que o texto do rato mostra. Va com a celula em vez de ir
+        // procurada a parte: o mapa ja' esta a percorrer os dias, e o `n` sem
+        // o resto obrigaria a um segundo mapa so' para isto.
+        filmes: doDia ? doDia.filmes : 0,
+        series: doDia ? doDia.series : 0,
         // Antes do inicio, ou depois de hoje: nao existe, e pintar com "0"
         // pareceria uma semana sem atividade quando e' uma semana que ainda
         // nao chegou.
@@ -145,4 +151,95 @@ export function maximo(dias) {
   let m = 0;
   for (const d of dias || []) if (d && d.n > m) m = d.n;
   return m;
+}
+
+// ---- o texto que aparece ao passar o rato ----------------------------------
+
+/**
+ * O que se le ao passar o rato num quadradinho.
+ *
+ * O GitHub escreve quantos commits houve no dia. Aqui a pergunta e' quanta coisa
+ * se mexeu: quantos titulos marcados e em quantas series viste alguma coisa. Sao
+ * duas contagens separadas no servidor (`watched_at` e `finished_at`)
+ * precisamente para nao ter de adivinhar a partir do `n`.
+ *
+ * **Series, nao episodios:** o `progress` guarda uma linha por serie e nao tem
+ * historico de episodios. Chamar "episodios" aqui seria um numero que ninguem
+ * pode confirmar.
+ *
+ * **So' escreve as partes que nao sao zero.** Um dia em que so mexeste numa serie
+ * diz "1 serie" e nao "0 titulos, 1 serie" — o zero e' ruido, e o rato ja' diz
+ * que o dia teve atividade.
+ *
+ * Recebe `t` porque sao as PALAVRAS ("titulo", "serie", "sem atividade") que
+ * mudam entre as linguas. A data ja' vai em numeros.
+ */
+export function textoDoDia(celula, t) {
+  const c = celula || {};
+  const quando = dataNumerica(c.dia);
+  const partes = [];
+  const filmes = Number(c.filmes) || 0;
+  const series = Number(c.series) || 0;
+  if (filmes > 0) partes.push(t("{n} {o}", { n: filmes, o: filmes === 1 ? t("título") : t("títulos") }));
+  if (series > 0) partes.push(t("{n} {o}", { n: series, o: series === 1 ? t("série") : t("séries") }));
+  if (!partes.length) return `${quando} — ${t("sem atividade")}`;
+  // O separador e' `/` e nao um ponto: "2 titulos / 3 series" le-se como uma
+  // fracao, que e' o que e'. O ponto lia-se como fim de frase.
+  return `${quando} — ${partes.join(" / ")}`;
+}
+
+// ---- os dias da semana ao lado ---------------------------------------------
+
+/**
+ * As linhas que llevan rotulo, de cima para baixo: segunda, quarta e sexta.
+ *
+ * De tres em tres de proposito, como no GitHub. Rotular os sete metia sete
+ * palavras ao lado de uma grelha cujas celulas tem 11 px, e o lado esquerdo
+ * ficava mais largo do que a grelha toda.
+ *
+ * O indice e' o do dia da semana (0 = domingo, ver `diaDaSemana`): 1, 3 e 5 sao
+ * segunda, quarta e sexta, que e' exactamente o que o GitHub escreve.
+ */
+export const ROTULOS_DIA = [1, 3, 5];
+
+/** O texto do rotulo, sem `t()`: as abreviaturas sao iguais nas duas linguas. */
+export const ABREVIATURA_DIA = ["dom", "seg", "ter", "qua", "qui", "sex", "sab"];
+
+/**
+ * Os periodos que o selector oferece, em semanas.
+ *
+ * GitHub mostra um ano e tem um selector ao lado. Um ano ja nao cabe num
+ * telefone, e empurrar o mapa para fora do ecra e' pior do que mostrar menos.
+ */
+export const PERIODOS = [
+  { semanas: 53, chave: "{n} ano", n: 1 },
+  { semanas: 105, chave: "{n} anos", n: 2 },
+  { semanas: 156, chave: "{n} anos", n: 3 },
+];
+
+/** O periodo por omissao: um ano, como o GitHub. */
+export const PERIODO_OMISSAO = PERIODOS[0].semanas;
+
+/**
+ * Quantas semanas sao necessarias para ir do primeiro dia com atividade ate
+ * hoje. Serve para o botao "tudo": o mapa nao pode ser mais curto do que a
+ * historia que tem para mostrar, nem mais longo (uma coluna vazia de 2019 nao
+ * e' informacao).
+ */
+export function semanasAte(dias, { fim = null } = {}) {
+  const chave = fim || chaveDia(new Date());
+  if (!chave) return PERIODO_OMISSAO;
+  let primeiro = null;
+  for (const d of dias || []) {
+    if (!d || !d.dia) continue;
+    if (d.n > 0 && (primeiro === null || d.dia < primeiro)) primeiro = d.dia;
+  }
+  // Sem nenhum dia com atividade: o periodo por omissao. Sem isto, "tudo"
+  // dava 1 coluna e o mapa encolhia para um quadradinho.
+  if (!primeiro) return PERIODO_OMISSAO;
+  const quantos = Math.max(0, Math.round((dataDe(chave) - dataDe(primeiro)) / 86400000));
+  // +1 semana de guarda: as colunas sao semanas completas (domingo a sabado) e
+  // o primeiro dia pode ficar a meio de uma.
+  const semanas = Math.ceil(quantos / DIAS_SEMANA) + 1;
+  return Math.max(PERIODO_OMISSAO, semanas);
 }
