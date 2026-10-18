@@ -1,5 +1,90 @@
 # Changelog
 
+## 1.5.6
+
+O ecrã inteiro (que a 1.5.5 partiu), o idioma dos títulos, e um auditor de
+traduções que estava a dizer "nada por traduzir" com metade do `web/src` por
+auditar.
+
+### O `setPermissionRequestHandler` devolvia valores em vez de chamar o `callback`
+
+Diagnóstico do utilizador, confirmado no código: no Electron o handler de
+pedidos de permissão recebe `(webContents, permission, callback, details)` e a
+decisão dá-se com `callback(true)`/`callback(false)`. **O valor de retorno é
+ignorado.** O código fazia `return true`/`return false` e nunca chamava o
+`callback`, pelo que **todos os pedidos de permissão ficavam pendentes para
+sempre** — sem erro, sem aviso, e com `requestFullscreen()` sem resolver nem
+rejeitar.
+
+- Afectava o botão `.app-fs-btn` (`AppFullscreen.jsx`), o `FullscreenButton`, o
+  `PlayerControls`, o atalho `F` do `usePlayerShortcuts`, o fullscreen dos
+  iframes dos players e o `navigator.clipboard.writeText()` da Watch Party.
+- Corrigido com `PERMISSOES_OK = new Set(["fullscreen", "clipboard-sanitized-write"])`
+  + `callback(ok)`. O `setPermissionCheckHandler` (a pergunta síncrona) mantém o
+  `return ok` e permite `automatic-fullscreen` só à origem da app — é o `check`
+  que o Chromium faz e o `request` que é o `fullscreen`.
+- `web/src/components/ecraInteiro.js` (novo) devolve `{ok, erro}` e escreve o
+  motivo na consola quando o pedido é recusado, com `MEIDA_FS_DEBUG=1` a dizer
+  cada pedido e cada consulta.
+- `scripts/testar-ecra-inteiro.mjs` (38 verificações). Não entra no `npm test`:
+  precisa de um ecrã.
+
+### O idioma dos títulos não seguia o idioma da interface
+
+`DEFAULT_SETTINGS.titleLang` era `"en"`. A interface e o título são **duas
+definições** e só a segunda mandava no catálogo — quem punha a interface em
+português via os títulos em inglês e não tinha onde descobrir que havia outra
+definição.
+
+- O omissão passou a `"auto"`, resolvido **no cliente** (`titleLangEfetivo`): o
+  servidor não sabe o idioma da interface de ninguém, e `"auto"` caía no
+  fallback dele, que é `en-US`.
+- O título gravado é o título no momento em que o título foi visto: `library`,
+  `progress` e `list_items` guardam essa string e mudar o idioma não a reescreve.
+  `GET /api/library` já localizava — e é isso que fazia a biblioteca parecer
+  funcionar. Agora `localizarTitulos`/`preencherTitulosLocalizados`
+  (`services/tmdb.js`) são usados pelas **cinco** rotas que devolvem itens
+  guardados: `/library`, `/lists/:id`, `/progress`, `/users/:username/library`,
+  `/users/:username/lists/:id`.
+- `t.idioma` foi acrescentado às dependências do `useEffect` que carrega o
+  catálogo em `Home`, `Search`, `Category` (×2) e `Details`. Sem isso, mudar o
+  idioma não recarrega nada — e o teste tem de apanhar **as cinco**, porque o
+  defeito do "só a biblioteca localiza" é precisamente o que faz as outras
+  parecerem ter outra causa.
+- `pMap` (concorrência limitada) foi de `routes/library.js` para `services/net.js`:
+  o `tmdb.js` precisa dele e **as rotas não se importam entre si**.
+- Migração `aplicarMigracoes()` com a marca `streamapp_migrou_titlang`: `"en"`
+  guardado passa a `"auto"` uma vez só. Sem a marca, quem escolhesse inglês a
+  propósito via-se a "auto" a cada arranque.
+- `scripts/testar-idioma-titulos.mjs` (68 verificações, 5 mutações confirmadas).
+
+### O auditor de traduções estava cego para metade do `web/src`
+
+O `auditar-pt-por-traduzir.cjs` respondia "nenhum texto por traduzir" — **estava
+a mentir, e sem dar erro nenhum**. Duas falhas encadeadas no mesmo sítio:
+
+- `semComentarios` não sabia o que era uma string. O `//` de
+  `href="https://real-debrid.com/apitoken"` é o início de um URL, não um
+  comentário: o `//` apagava o resto da linha **com a aspa de fecho da string**,
+  a string ficava aberta e `fimDaChamada` corria até ao fim do ficheiro — em
+  silêncio. Em `Settings.jsx` começava na linha 438 e deixava **as 1207 linhas
+  seguintes (73% do ficheiro) por auditar**; em todo o `web/src`, 477 linhas.
+- O mesmo com uma **regex**: `return /[",\n\r]/.test(s)` tem uma aspa dentro, e
+  sem reconhecer regex essa aspa abre uma string fantasma que copia texto em vez
+  de o apagar — o que faz um `//` de comentário deixar de ser apagado.
+- `fimDaChamada`: o guarda `if (chaves === 0)` ignorava o `)` de chamadas feitas
+  *dentro* do objecto de valores mas contava o `(` correspondente, inflando o
+  `nivel` para sempre. Agora o `nivel` desce sempre e o guarda só decide se
+  aquele `)` fecha a chamada.
+- Saiu de lá: `Esconder`/`Mostrar`, `Português`/`Inglês` (×4 cada), `Desligadas`,
+  `momento`, `Comentar`, `Romaji`, `Letterboxd`. E três regras novas: unidade CSS
+  (`184px`) não é texto, nomes próprios via `t()` com identidade, e o marcador
+  `// i18n` passa a valer na linha de cima (entre atributos de JSX é onde pode
+  estar, porque `className={...}` não aceita um `//` no fim da linha).
+- `scripts/testar-auditor-i18n.mjs`: 9 mutações, 27 verificações. As fixtures
+  têm texto por traduzir **depois** do URL e um comentário **depois** da regex —
+  uma fixture única passaria como se tivesse apanhado a mutação.
+
 ## 1.5.5
 
 Sete buracos de segurança fechados no servidor, a lista de episódios de anime

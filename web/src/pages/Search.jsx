@@ -38,7 +38,7 @@ export default function Search() {
         .finally(() => setLoading(false));
     }, 300);
     return () => clearTimeout(t);
-  }, [q, settings.titleLang, settings.overviewLang]);
+  }, [q, settings.titleLang, settings.overviewLang, t.idioma]);
 
   if (!q) return <p className="status muted">{t("Escreve algo na pesquisa.")}</p>;
   if (loading) return <LoadingStatus>{t('A procurar "{q}"', { q })}</LoadingStatus>;

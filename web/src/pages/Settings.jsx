@@ -984,11 +984,17 @@ export default function Settings() {
         <h3>{t("Títulos")}</h3>
         <p className="muted">{t("Idioma dos nomes de filmes, séries e anime.")}</p>
         <div className="set-row">
+          {/* A primeira opcao e' "auto": o titulo segue o idioma da interface.
+              Sem ela, o idioma da interface e o dos titulos sao duas definicoes
+              e quem so muda a primeira nao nota nada nos titulos. */}
+          <Choice value="auto" current={settings.titleLang} onPick={(v) => update({ titleLang: v })}>
+            {t("Igual à interface")}
+          </Choice>
           <Choice value="pt" current={settings.titleLang} onPick={(v) => update({ titleLang: v })}>
-            Português
+            {t("Português")}
           </Choice>
           <Choice value="en" current={settings.titleLang} onPick={(v) => update({ titleLang: v })}>
-            Inglês
+            {t("Inglês")}
           </Choice>
         </div>
       </section>
@@ -998,10 +1004,10 @@ export default function Settings() {
         <p className="muted">{t("Idioma das descrições/sinopses.")}</p>
         <div className="set-row">
           <Choice value="pt" current={settings.overviewLang} onPick={pickOverview}>
-            Português
+            {t("Português")}
           </Choice>
           <Choice value="en" current={settings.overviewLang} onPick={pickOverview}>
-            Inglês
+            {t("Inglês")}
           </Choice>
         </div>
       </section>
@@ -1015,14 +1021,14 @@ export default function Settings() {
             current={settings.genreLang || settings.overviewLang}
             onPick={(v) => update({ genreLang: v })}
           >
-            Português
+            {t("Português")}
           </Choice>
           <Choice
             value="en"
             current={settings.genreLang || settings.overviewLang}
             onPick={(v) => update({ genreLang: v })}
           >
-            Inglês
+            {t("Inglês")}
           </Choice>
         </div>
       </section>
@@ -1034,13 +1040,13 @@ export default function Settings() {
         </p>
         <div className="set-row">
           <Choice value="pt" current={settings.subtitleLang} onPick={(v) => update({ subtitleLang: v })}>
-            Português
+            {t("Português")}
           </Choice>
           <Choice value="en" current={settings.subtitleLang} onPick={(v) => update({ subtitleLang: v })}>
-            Inglês
+            {t("Inglês")}
           </Choice>
           <Choice value="off" current={settings.subtitleLang} onPick={(v) => update({ subtitleLang: v })}>
-            Desligadas
+            {t("Desligadas")}
           </Choice>
         </div>
       </section>
@@ -1067,10 +1073,10 @@ export default function Settings() {
         </p>
         <div className="set-row">
           <Choice value="en" current={settings.animeTitleLang} onPick={(v) => update({ animeTitleLang: v })}>
-            Inglês
+            {t("Inglês")}
           </Choice>
           <Choice value="romaji" current={settings.animeTitleLang} onPick={(v) => update({ animeTitleLang: v })}>
-            Romaji
+            {t("Romaji")}
           </Choice>
         </div>
       </section>
@@ -1082,10 +1088,10 @@ export default function Settings() {
         </p>
         <div className="set-row">
           <Choice value={false} current={settings.showAdult} onPick={(v) => update({ showAdult: v })}>
-            Esconder
+            {t("Esconder")}
           </Choice>
           <Choice value={true} current={settings.showAdult} onPick={(v) => update({ showAdult: v })}>
-            Mostrar
+            {t("Mostrar")}
           </Choice>
         </div>
       </section>
@@ -1095,13 +1101,13 @@ export default function Settings() {
         <p className="muted">{t("Onde abrir por defeito ao ver um título.")}</p>
         <div className="set-row">
           <Choice value="providers" current={settings.defaultTab} onPick={(v) => update({ defaultTab: v })}>
-            Providers
+            {t("Providers")}
           </Choice>
           <Choice value="extract" current={settings.defaultTab} onPick={(v) => update({ defaultTab: v })}>
             {t("Sem anúncios")}
           </Choice>
           <Choice value="torrents" current={settings.defaultTab} onPick={(v) => update({ defaultTab: v })}>
-            Torrents
+            {t("Torrents")}
           </Choice>
         </div>
       </section>

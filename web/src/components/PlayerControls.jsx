@@ -1,5 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useT } from "../i18n/I18nContext.jsx";
+// O pedido de ecrã inteiro passa pelo modulo para o erro deixar de ir para o
+// lixo. O nome local abaixo (`ecraInteiro_`) e' para nao chocar com o import.
+import { ecraInteiro as ecraInteiro_ } from "./ecraInteiro.js";
 
 // Barra de controlos do player, NOSSA.
 //
@@ -176,8 +179,7 @@ export default function PlayerControls({ videoRef, children }) {
     const v = videoRef.current;
     const alvo = v?.closest(".player") || v;
     if (!alvo) return;
-    if (document.fullscreenElement) document.exitFullscreen?.();
-    else (alvo.requestFullscreen || alvo.webkitRequestFullscreen)?.call(alvo);
+    ecraInteiro_(alvo);
   };
 
   const min = (s) => String(Math.floor(s / 60));

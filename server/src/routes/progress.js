@@ -1,6 +1,10 @@
 import { Router } from "express";
 import { requireAuth } from "../services/auth.js";
 import {
+  localizarTitulos,
+  preencherTitulosLocalizados,
+} from "../services/tmdb.js";
+import {
   listProgress,
   getProgress,
   startProgress,
@@ -14,8 +18,18 @@ export const progressRouter = Router();
 progressRouter.use(requireAuth);
 
 // Diario completo + base do "Continua a ver".
+//
+// O `title` guardado e' o titulo no momento em que se comecou a ver — que num
+// PC com a interface em portugues e' em portugues, mas numa watchlist importada
+// vem em ingles. Como a preferencia de idioma se cumpre no catalogo, tem de se
+// cumprir aqui tambem: sao os mesmos titulos, so que guardado noutro idioma.
 progressRouter.get("/progress", (req, res) => {
-  res.json({ items: listProgress(req.user.id) });
+  const items = listProgress(req.user.id);
+  const titleLang = req.query.titleLang;
+  const emFalta = localizarTitulos(items, titleLang);
+  res.json({ items });
+  // Em segundo plano: a proxima abertura ja vem completa.
+  preencherTitulosLocalizados(emFalta, titleLang);
 });
 
 // Posicao atual de um titulo (a pagina de detalhe usa para retomar).

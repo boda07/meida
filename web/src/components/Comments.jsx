@@ -327,7 +327,7 @@ export default function Comments({ type, tmdbId, season = null, episode = null, 
                   title={t("Momento do vídeo (opcional). Aceita 2:05 ou 125.")}
                   maxLength={8}
                 />
-                <span>momento</span>
+                <span>{t("momento")}</span>
               </label>
               {/* So com os nossos players, que dizem a posicao. Nos providers
                   (iframe) nao ha tempo a que pegar, por isso o botao nao aparece
@@ -343,7 +343,7 @@ export default function Comments({ type, tmdbId, season = null, episode = null, 
                 </button>
               )}
               <button className="lib-watched" disabled={busy || !body.trim() || atErrado}>
-                Comentar
+                {t("Comentar")}
               </button>
             </div>
           </div>

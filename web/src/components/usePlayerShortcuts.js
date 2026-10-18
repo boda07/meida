@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { ecraInteiro } from "./ecraInteiro.js";
 
 // Atalhos de teclado para os players HTML5 próprios (torrent/HLS).
 // Ativos quando o rato está por cima do player, quando o player tem foco
@@ -82,11 +83,10 @@ export function usePlayerShortcuts(videoRef, containerRef) {
         case "f":
         case "F":
           e.preventDefault();
-          if (document.fullscreenElement) {
-            document.exitFullscreen?.();
-          } else {
-            (container.requestFullscreen || container.webkitRequestFullscreen)?.call(container);
-          }
+          // Pelo modulo: o pedido de ecra inteiro e' recusado com uma promessa
+          // rejeitada, e sem `catch` isso e' indistinguivel de "o atalho nao
+          // faz nada". Ver `components/ecraInteiro.js`.
+          ecraInteiro(container);
           break;
         default:
           break;

@@ -17,12 +17,12 @@ import {
   removeListTitle,
 } from "../store.js";
 import { requireAuth } from "../services/auth.js";
-import { getMeta, getGenreVocab, getLocalizedMeta, getLocalizedMetaCached } from "../services/tmdb.js";
+import { getMeta, getGenreVocab, getLocalizedMetaCached, localizarTitulos, preencherTitulosLocalizados } from "../services/tmdb.js";
 import { getAnimeRatingsBatch } from "../services/jikan.js";
 import { status as malStatus, getMeanScores, shouldAutoSync, markAutoSync, unmarkAutoSync, importMalList } from "../services/mal.js";
 import { status as anilistStatus, shouldAutoSync as shouldAutoSyncAni, markAutoSync as markAutoSyncAni, unmarkAutoSync as unmarkAutoSyncAni, importAnilistList, syncCrossWithMal, shouldAutoSyncCross, markAutoSyncCross, unmarkAutoSyncCross } from "../services/anilist.js";
 import { getCachedRating, getCachedRatings, getRatings as getLetterboxdRatings } from "../services/letterboxd.js";
-import { isOnline } from "../services/net.js";
+import { isOnline, pMap } from "../services/net.js";
 import { cacheGet, cacheSet } from "../services/cache.js";
 
 // Estados que um item pode ter na coluna `status` da biblioteca. NULL = usa as
@@ -54,17 +54,9 @@ function applyMeta(userId, item, meta) {
   }
 }
 
-// Corre `fn` sobre `arr` com concorrencia limitada (para listas grandes).
-async function pMap(arr, concurrency, fn) {
-  let idx = 0;
-  const workers = Array.from({ length: Math.min(concurrency, arr.length) }, async () => {
-    while (idx < arr.length) {
-      const cur = idx++;
-      await fn(arr[cur]);
-    }
-  });
-  await Promise.all(workers);
-}
+// O `pMap` (concurrencia limitada) vive em `services/net.js`: o `tmdb.js` tambem
+// precisa dele para o preenchimento dos titulos localizados, e as rotas nao se
+// importam entre si.
 
 // Lista completa da biblioteca do utilizador. Faz backfill (uma vez) da media da
 // comunidade E dos generos dos itens antigos que ainda nao os tenham (ex.: filmes
@@ -140,13 +132,9 @@ libraryRouter.get("/library", async (req, res) => {
 
   // Titulos E cartazes de filmes/series no idioma escolhido (ex.: watchlist
   // importada do Letterboxd vinha em ingles) — os ja conhecidos, sem pedidos.
-  const localizable = items.filter((i) => i.type === "movie" || i.type === "tv");
   const titleLang = req.query.titleLang;
-  for (const i of localizable) {
-    const m = getLocalizedMetaCached(i.type, i.tmdbId, titleLang);
-    if (m?.title) i.title = m.title;
-    if (m?.poster) i.poster = m.poster;
-  }
+  const localizable = items.filter((i) => i.type === "movie" || i.type === "tv");
+  const semTituloLocalizado = localizarTitulos(items, titleLang);
 
   // Valida + traduz os generos: so mostra generos conhecidos (TMDB + MAL), corrige
   // maiusculas, traduz para o idioma escolhido e remove duplicados. Assim some o
@@ -184,14 +172,16 @@ libraryRouter.get("/library", async (req, res) => {
   );
   if (pending && online) {
     // Sem await: corre em paralelo e a proxima abertura ja vem completa.
-    runBackfill(req.user.id, items, titleLang);
+    runBackfill(req.user.id, items, titleLang, semTituloLocalizado);
   }
 
   res.json({ items, pending, online });
 });
 
 // Preenchimento em background do que a lista ainda nao tinha em cache.
-async function runBackfill(userId, items, titleLang) {
+// `semTituloLocalizado` vem do `localizarTitulos` desta mesma resposta: sao os
+// itens que ficaram sem titulo no idioma pedido.
+async function runBackfill(userId, items, titleLang, semTituloLocalizado) {
   try {
     // Filmes: scraping do Letterboxd so para os que nao tem nota conhecida.
     const movies = items.filter((i) => i.type === "movie");
@@ -215,17 +205,18 @@ async function runBackfill(userId, items, titleLang) {
       );
     }
 
-    // Titulo/cartaz localizados em falta.
-    const localizable = items.filter((i) => i.type === "movie" || i.type === "tv");
-    const needLoc = localizable.filter(
-      (i) => !getLocalizedMetaCached(i.type, i.tmdbId, titleLang)
-    );
+    // Titulo/cartaz localizados em falta. A lista ja foi calculada no pedido
+    // anterior (`semTituloLocalizado`); recalcular aqui cobre o caso de o
+    // pedido ter respondido sem cache nenhum.
+    const needLoc = semTituloLocalizado?.length
+      ? semTituloLocalizado
+      : items.filter(
+          (i) =>
+            (i.type === "movie" || i.type === "tv") &&
+            !getLocalizedMetaCached(i.type, i.tmdbId, titleLang)
+        );
     if (needLoc.length) {
-      await pMap(needLoc, 12, async (i) => {
-        const m = await getLocalizedMeta(i.type, i.tmdbId, titleLang);
-        if (m?.title) i.title = m.title;
-        if (m?.poster) i.poster = m.poster;
-      });
+      await preencherTitulosLocalizados(needLoc, titleLang);
     }
   } catch {
     /* best-effort: a proxima abertura tenta outra vez */
@@ -332,11 +323,16 @@ libraryRouter.post("/lists", (req, res) => {
   res.json({ list: createList(req.user.id, name) });
 });
 
-// Conteudo de uma lista.
+// Conteudo de uma lista. Os titulos localized-se ao sair, como na biblioteca: a
+// lista guarda o titulo do momento em que o titulo foi acrescentado.
 libraryRouter.get("/lists/:id", (req, res) => {
   const list = getList(req.user.id, Number(req.params.id));
   if (!list) return res.status(404).json({ error: "lista nao encontrada" });
+  const titleLang = req.query.titleLang;
+  const emFalta = localizarTitulos(list.items, titleLang);
   res.json({ list });
+  // Em segundo plano: a proxima abertura ja vem completa.
+  preencherTitulosLocalizados(emFalta, titleLang);
 });
 
 // Renomeia uma lista.

@@ -56,25 +56,112 @@ const NAO_E_ESTRUTURA = [
   /^[\w.-]+@[\w.-]+$/,                                 // email
 ];
 
+/**
+ * O `/` deste sitio abre uma REGEX, ou e' uma divisao?
+ *
+ * `return /[",\n\r]/.test(s)` tem uma aspa dentro da regex. Se o `/` for tratado
+ * como o inicio de uma string, essa aspa abre uma string que vai parar muito
+ * mais abaixo, e a partir dai os comentarios deixam de ser apagados — que e'
+ * como o auditor passou a apontar o comentario da linha 785 do `Settings.jsx`
+ * como se fosse texto de interface.
+ *
+ * A distincao e' o caractere significativo anterior: depois de `(`, `,`, `=`,
+ * `[`, `:`, `;`, `&`, `|`, `!`, `?`, `{` ou `}` e' regex; depois de uma letra,
+ * `)` ou `]` e' divisao. Ha uma excepção para as palavras-chave que podem ser
+ * seguidas de regex (`return /x/`, `typeof /x/`).
+ */
+function abreRegex(codigo, pos) {
+  let j = pos - 1;
+  while (j >= 0 && /\s/.test(codigo[j])) j--;
+  if (j < 0) return true;
+  const c = codigo[j];
+  if (!/[A-Za-z0-9_$)\]]/.test(c)) return true;
+  const m = /([A-Za-z]+)$/.exec(codigo.slice(Math.max(0, j - 12), j + 1));
+  const palavra = m ? m[1] : "";
+  return [
+    "return", "typeof", "case", "in", "of", "new", "delete", "void",
+    "instanceof", "do", "else", "yield", "await",
+  ].includes(palavra);
+}
+
 /** Apaga comentarios mas mantem o numero de caracteres (para os indices
- *  baterem certo com o ficheiro original). */
+ *  baterem certo com o ficheiro original).
+ *
+ *  Este e' um tokenizador minimo, e precisa de ser: tem de reconhecer **strings**
+ *  e **regex**, porque tanto uma como outra podem conter um `//` ou uma aspa
+ *  que, lidos a olho, sao um comentario e o fim de uma string.
+ *
+ *  Sem reconhecer strings: o `//` de `href="https://real-debrid.com/apitoken"`
+ *  apagava o resto da linha **com a aspa de fecho**, a string ficava aberta e o
+ *  scanner perdia o fio ate ao fim do ficheiro. Em `Settings.jsx` isso
+ *  comecava na linha 438 e deixava **as 1207 linhas seguintes por auditar** —
+ *  incluindo a seccao de conteudo adulto, cujos botoes estavam por traduzir
+ *  enquanto o auditor dizia "limpo". Eram 477 linhas em todo o `web/src`.
+ *
+ *  Sem reconhecer regex: `/[",\n\r]/` abre uma string na aspa e o mesmo
+ *  acontece a partir dai.
+ *
+ *  Uma limitacao que fica escrita: um apostrofo em texto de JSX seria lido como
+ *  abertura de string. Nao acontece neste codigo (o portugues nao usa apostrofo)
+ *  e `testar-auditor-i18n.mjs` vigia isso.
+ */
 function semComentarios(codigo) {
   let saida = "";
   let i = 0;
   const n = codigo.length;
   while (i < n) {
     const dois = codigo.slice(i, i + 2);
+
     if (dois === "//") {
       while (i < n && codigo[i] !== "\n") { saida += " "; i++; }
-    } else if (dois === "/*") {
+      continue;
+    }
+
+    if (dois === "/*") {
       saida += "  "; i += 2;
       while (i < n && codigo.slice(i, i + 2) !== "*/") {
         saida += codigo[i] === "\n" ? "\n" : " "; i++;
       }
       saida += "  "; i += 2;
-    } else {
-      saida += codigo[i]; i++;
+      continue;
     }
+
+    const c = codigo[i];
+
+    if (c === '"' || c === "'" || c === "`") {
+      saida += c;
+      i++;
+      while (i < n) {
+        if (codigo[i] === "\\") { saida += codigo.slice(i, i + 2); i += 2; continue; }
+        saida += codigo[i];
+        const fecha = codigo[i] === c;
+        i++;
+        if (fecha) break;
+      }
+      continue;
+    }
+
+    if (c === "/" && abreRegex(codigo, i)) {
+      saida += c;
+      i++;
+      let classe = false;
+      while (i < n) {
+        if (codigo[i] === "\\") { saida += codigo.slice(i, i + 2); i += 2; continue; }
+        // Uma regex nao passa de uma linha neste codigo: se Findsmos um fim de
+        // linha, ja' nao era uma regex — e o `</div>` de um fecho de etiqueta cai
+        // aqui. O resto da linha fica como esta, o numero de chars mantem-se.
+        if (codigo[i] === "\n") break;
+        saida += codigo[i];
+        if (codigo[i] === "[") classe = true;
+        else if (codigo[i] === "]") classe = false;
+        else if (codigo[i] === "/" && !classe) { i++; break; }
+        i++;
+      }
+      continue;
+    }
+
+    saida += c;
+    i++;
   }
   return saida;
 }
@@ -231,6 +318,11 @@ function pareceTextoDeTag(texto) {
   // So' numeros, pontuacao ou simbolos ("2024", "·", "✕", "↓").
   if (!/[A-Za-zÀ-ÿ]/.test(limpo)) return false;
   if (/^[\d\s.,:·|/\\-]+$/.test(limpo)) return false;
+  // Uma unidade CSS sozinha, como o `px` de `{settings.cardW || 184}px`, nao e'
+  // texto: e' o valor que ja e' um numero.
+  if (/^(px|em|rem|ex|ch|vh|vw|vmin|vmax|pt|cm|mm|in|pc|ms|s|%)$/i.test(limpo)) {
+    return false;
+  }
   return true;
 }
 
@@ -401,15 +493,22 @@ function fimDaChamada(codigo, pos) {
     else if (c === "}") chaves--;
     else if (c === "(") nivel++;
     else if (c === ")") {
-      // As DUAS profundidades contam. Um `)` dentro de `{ ... }` e' o fecho de
-      // um `t()` aninhado no objecto de valores — `{ a: <b>{t("x")}</b> }` — e
-      // nao o fecho da chamada que estamos a saltar. Contar so' os parenteses
-      // devolvia a posicao errada e o scanner voltava a descer para dentro do
-      // objecto, que e' exactamente o buraco que este salto veio fechar.
-      if (chaves === 0) {
-        nivel--;
-        if (nivel === 0) return i + 1;
-      }
+      // O `nivel` desce SEMPRE. O guarda `chaves === 0` decide so' se este `)`
+      // fecha a chamada que estamos a saltar — e nao pode decidir se o `)` conta.
+      //
+      // O guarda dizia "um `)` dentro de `{ ... }` e' o fecho de um `t()`
+      // aninhado no objecto de valores". Verdade, mas o `(` correspondente ja'
+      // tinha somado ao `nivel`: ignorar os dois lados ao mesmo tempo e' o que
+      // desfaz a conta. Em `{ ligacao: (<a/>), fim: t("x") }` o nivel ia a 3 e
+      // nunca mais voltava a 0, a funcao corria ate ao fim do ficheiro e o
+      // scanner saltava **todo o resto do `.jsx`** — sem dar erro nenhum.
+      //
+      // Em Settings.jsx isso deixava por auditar tudo o que vem a seguir a linha
+      // 438, em 1645 linhas: 73% do ficheiro, incluindo a seccao de conteudo
+      // adulto, cujos botoes estavam por traduzir enquanto o auditor dizia
+      // "limpo".
+      nivel--;
+      if (chaves === 0 && nivel === 0) return i + 1;
     }
     i++;
   }
@@ -429,11 +528,20 @@ for (const abs of ficheiros(SRC)) {
   // de `tempo.js`) ou um valor que se traduz no momento de mostrar. O marcador
   // fica no codigo, e nao numa lista do auditor, para ninguem os "arranjar" sem
   // ver que a traducao ja la esta.
+  //
+  // A marca tambem vale na LINHA ANTERIOR, porque entre atributos de JSX o
+  // comentario tem de tar numa linha propria — e `className={...}` (que o
+  // scanner pointed uma vez) nao aceita o `//` no fim da linha:
+  //
+  //     <button
+  //       // i18n: isto e' codigo, nao interface
+  //       className={"ob-genero" + (escolhido ? " on" : "")}
+  //     >
   const marcadas = new Set();
   fs.readFileSync(abs, "utf8").split(/\r?\n/).forEach((l, i) => {
     if (/\/\/\s*i18n\b/.test(l)) marcadas.add(i + 1);
   });
-  const marcada = (linha) => marcadas.has(linha);
+  const marcada = (linha) => marcadas.has(linha) || marcadas.has(linha - 1);
 
   for (let i = 0; i < codigo.length; i++) {
     const c = codigo[i];

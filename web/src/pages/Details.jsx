@@ -435,7 +435,7 @@ const animeAudio = localAudio || settings.animeAudio;
         }
       })
       .catch((e) => setError(e.message));
-  }, [type, id, settings.titleLang, settings.overviewLang, user]);
+  }, [type, id, settings.titleLang, settings.overviewLang, t.idioma, user]);
 
   // Carregar episódios quando a temporada muda
   useEffect(() => {

@@ -48,7 +48,7 @@ export default function Home({ generos = "" }) {
       })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
-  }, [settings.titleLang, settings.overviewLang]);
+  }, [settings.titleLang, settings.overviewLang, t.idioma]);
 
   // A linha dos generos. **Falha em silencio**: se o `/api/discover` nao
   // responder, a Home mostra o catalogo de sempre — o que e' o caso normal, e

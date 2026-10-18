@@ -215,6 +215,119 @@ ok_(
   saidaCodigo.trim().slice(0, 60)
 );
 
+/* ---------- 5b) O `semComentarios` tinha de saber strings e REGEX ---------- */
+// O buraco mais silencioso de todos, e o que escondeu o caso que o utilizador
+// reportou (os botoes "Esconder"/"Mostrar" por traduzir no ecra).
+//
+// `semComentarios` apagava comentarios **sem saber o que era uma string**.
+// O `//` de `href="https://exemplo.pt/x"` e' o inicio de um URL, nao um
+// comentario: o `//` apagava o resto da linha **com a aspa de fecho da string**.
+// A string ficava aberta, o scanner perdia o fio e `fimDaChamada` corria ate ao
+// fim do ficheiro — sem dar erro nenhum, e o auditor dizia "limpo".
+//
+// Em `web/src` isso eran 477 linhas. Em `Settings.jsx` comecava na linha 438 e
+// deixava as 1207 seguintes por auditar.
+//
+// A segunda forma e' a mesma com uma regex: `/[",\n\r]/` tem uma aspa dentro, e
+// sem reconhecer regex a aspa abre uma string que vai parar muito mais abaixo.
+//
+// Nenhum dos dois se apanha com `grep`: so' se prova pondo o texto POR TRADUZIR
+// DEPOIS do URL e vendo se ainda e' apontado.
+const COM_URL = `import { useT } from "../i18n/I18nContext.jsx";
+export default function X() {
+  const t = useT();
+  return (
+    <div>
+      <p>
+        {t("Cola o token (obtém-no em {ligacao}){fim}", {
+          ligacao: <a href="https://exemplo.pt/x">exemplo.pt/x</a>,
+          fim: t(" (resto)"),
+        })}
+      </p>
+      <button>Esconder</button>
+    </div>
+  );
+}
+`;
+
+const saidaUrl = auditarCom({ "X.jsx": COM_URL });
+ok_(
+  "texto depois de um URL dentro de uma string continua a ser apontado",
+  saidaUrl.includes("Esconder"),
+  "o auditor parou no URL: " + saidaUrl.trim().slice(0, 60)
+);
+// E o inverso: o URL nao pode ser lido como interface.
+ok_("o URL nao vira texto de interface", !saidaUrl.includes("exemplo.pt"));
+
+// A forma com uma REGEX e' diferente da do URL e e' facil de escrever mal: uma
+// string que se abre sozinha nao DESTROI o texto, copia-o tal e qual. O que
+// estraga e' um `//` ficar dentro dessa string — ai deixa de ser apagado, e se
+// o comentario tiver aspas dentro o scanner le essas aspas como uma string e
+// aponta o comentario como interface. E' o que acontecia no `Settings.jsx`, na
+// linha 767 (`return /[",\n\r]/.test(s) ? ...`), com o comentario da 785.
+const COM_REGEX = `export default function Y() {
+  const celula = (v) => /[",\\n\\r]/.test(v);
+  // Vazio = "nao se sabe quando foi visto".
+  return (
+    <div>
+      {celula("x") ? <b>Conquistas</b> : null}
+    </div>
+  );
+}
+`;
+
+const saidaRegex = auditarCom({ "Y.jsx": COM_REGEX });
+ok_(
+  "um comentario com aspas, depois de uma regex, NAO vira texto de interface",
+  !saidaRegex.includes("nao se sabe quando"),
+  "o // ficou dentro da string aberta pela aspa da regex"
+);
+ok_(
+  "e o texto de verdade depois dela continua a ser apontado",
+  saidaRegex.includes("Conquistas"),
+  "o auditor parou na regex: " + saidaRegex.trim().slice(0, 60)
+);
+
+// O `px` de `{settings.cardW || 184}px` nao e' interface: e' o valor de um
+// numero. Sem esta regra o auditor aponta "px" duas vezes no Settings.jsx.
+const SO_UNIDADE = `export default function P() {
+  const w = 184;
+  return (
+    <label>
+      <b>{w}px</b>
+    </label>
+  );
+}
+`;
+ok_(
+  "uma unidade CSS sozinha nao e' apontada como texto",
+  !auditarCom({ "P.jsx": SO_UNIDADE }).includes("px")
+);
+
+// O marcador `// i18n` vale na linha de cima tambem: entre atributos de JSX o
+// comentario tem de tar sozinho na linha, e e' ai que fica quando o achado e' um
+// `className={...}`.
+const COM_MARCADOR = `export default function M() {
+  const ligado = true;
+  return (
+    <button
+      // i18n: className e' codigo
+      className={"ob-genero" + (ligado ? " on" : "")}
+    >
+      Apagar
+    </button>
+  );
+}
+`;
+const saidaMarcador = auditarCom({ "M.jsx": COM_MARCADOR });
+ok_(
+  "o // i18n na linha de cima silencia o achado",
+  !saidaMarcador.includes("+ (ligado"),
+  saidaMarcador.trim().slice(0, 60)
+);
+// E tem de silenciar mesmo: o resto do ficheiro continua a ser auditado.
+ok_("mas o resto do ficheiro continua a ser auditado", saidaMarcador.includes("Apagar"));
+
 /* ---------- 6) MUTACOES: e' isto que da valor ao ficheiro ---------- */
 // Cada mutacao parte um bocado do auditor. O ficheiro de teste tem de
 // DEIXAR de apontar o texto misturado com cada uma delas — se continuasse a
@@ -249,6 +362,26 @@ const MUTACOES = [
   ["a regra de texto de uma palavra desaparece",
    "(pareceTextoDeTag(texto) || pareceTexto(texto) || pareceFrase(texto))",
    "(pareceTexto(texto) || pareceFrase(texto))"],
+// --- As 3 novas entradas e as 4 mutacoes novas do teste do auditor. ---
+// Escrito num ficheiro a parte para nao passar pelo `edit` (que choca com o
+// backtick do codigo do auditor) nem por aspas do PowerShell.
+["semComentarios deixa de reconhecer strings",
+ "if (c === '\"' || c === \"'\" || c === \"`\") {",
+ "if (false) {"],
+  // E a mesma forma, mas com uma REGEX: `/[",\n\r]/` tem uma aspa dentro, e sem
+  // reconhecer regex essa aspa abre uma string que vai parar muito mais abaixo.
+  ["semComentarios deixa de reconhecer regex",
+ "if (c === \"/\" && abreRegex(codigo, i)) {",
+ "if (false) {"],
+  // A regra da unidade CSS: `184px` nao e' interface, e' o valor de um numero.
+  ["uma unidade CSS volta a ser apontada",
+ "if (/^(px|em|rem|ex|ch|vh|vw|vmin|vmax|pt|cm|mm|in|pc|ms|s|%)$/i.test(limpo)) {\n    return false;\n  }",
+ ""],
+  // O marcador `// i18n` na linha de cima. Entre atributos de JSX e' onde ele
+  // pode tar: `className={...}` nao aceita um `//` no fim da linha.
+  ["o marcador // i18n so vale na propria linha",
+ "const marcada = (linha) => marcadas.has(linha) || marcadas.has(linha - 1);",
+ "const marcada = (linha) => marcadas.has(linha);"],
 ];
 
 console.log("");
@@ -274,11 +407,35 @@ for (const [nome, de, para] of MUTACOES) {
   //   - o guarda das aspas        -> o `COM_MIX` volta a dar falso positivo
   //   - o salto do objecto        -> o `COM_VALORES` da texto a `onde:`
   //   - o `semExpressoes`         -> o `COM_MIX` traz `{erro}` colado ao texto
+  //   - sem reconhecer strings    -> o `COM_URL` deixa de chegar ao "Esconder"
+  //   - sem reconhecer regex      -> o `COM_REGEX` deixa de chegar ao "Conquistas"
+  //   - sem a regra do `px`       -> o `SO_UNIDADE` passa a ser apontado
+  //   - marcador so na propria ln -> o `COM_MARCADOR` volta a apontar o className
+  //
+  // Os quatro ultimos nao se veriam nos tres primeiros ficheiros de teste, por
+  // isso sao comparados aqui. Um mutation check que so olha para uma fixture
+  // passa como se tivesse apanhado a mutacao.
   const base1 = auditarCom({ "Exemplo.jsx": COM_MIX });
   const base2 = auditarCom({ "V.jsx": COM_VALORES });
   const base3 = auditarCom({ "U.jsx": UMA_PALAVRA });
   const depois3 = auditarCom({ "U.jsx": UMA_PALAVRA }, partido);
-  if (semValores === base1 && comValores === base2 && depois3 === base3) {
+  const base4 = auditarCom({ "X.jsx": COM_URL });
+  const depois4 = auditarCom({ "X.jsx": COM_URL }, partido);
+  const base5 = auditarCom({ "Y.jsx": COM_REGEX });
+  const depois5 = auditarCom({ "Y.jsx": COM_REGEX }, partido);
+  const base6 = auditarCom({ "P.jsx": SO_UNIDADE });
+  const depois6 = auditarCom({ "P.jsx": SO_UNIDADE }, partido);
+  const base7 = auditarCom({ "M.jsx": COM_MARCADOR });
+  const depois7 = auditarCom({ "M.jsx": COM_MARCADOR }, partido);
+  if (
+    semValores === base1 &&
+    comValores === base2 &&
+    depois3 === base3 &&
+    depois4 === base4 &&
+    depois5 === base5 &&
+    depois6 === base6 &&
+    depois7 === base7
+  ) {
     console.log("  FALHA MUTACAO NAO DETECTADA: " + nome);
     falhou++;
   } else {

@@ -5,6 +5,25 @@
 // versao; quem nao encontra a sua ve o portugues (a lingua original).
 export const CHANGELOG = [
 
+{
+      version: "1.5.6",
+      items: [
+        "Corrigido: o botão de ecrã inteiro voltou a funcionar. Na 1.5.5 deixou de funcionar porque a app respondia ao pedido de autorização com um valor em vez de o aceitar — e como ninguém ia ler esse valor, o pedido ficava à espera para sempre, sem erro nenhum, sem aviso nenhum. Afetava o botão no canto do ecrã, o do leitor de vídeo, o atalho F e a cópia do código da sala de ver em conjunto.",
+        "Corrigido: os títulos dos filmes e das séries passam agora a seguir o idioma que escolheste. Antes o idioma dos títulos era uma definição à parte e o padrão era inglês — por isso escolher português na interface não mudava nada nos títulos. Agora existe uma opção «Igual à interface» e é essa que vem por omissão. Se já tinhas escolhido «Inglês» à mão, passou a «Igual à interface» uma vez só.",
+        "Corrigido: a tua biblioteca, o «Continua a ver» e os perfis públicos mostravam os títulos no idioma em que tinham sido guardados e nunca mais mudavam sozinhos. Agora mostram no idioma que escolheste — e sem apagar nada do que tens.",
+        "Corrigido: alguns botões das Definições estavam por traduzir e apareciam sempre em português mesmo com a interface noutro idioma: «Esconder» e «Mostrar» no conteúdo adulto, os nomes dos idiomas e mais alguns.",
+        "Corrigido: quando mudas o idioma da interface, os títulos da página inicial, da pesquisa, das categorias e da ficha de um título actualizam-se sozinhos. Antes era preciso recarregar a página à mão.",
+        "Interno: quando um pedido de ecrã inteiro é recusado, a app escreve agora o motivo na consola em vez de falhar em silêncio.",
+      ],
+      items_en: [
+        "Fixed: the fullscreen button works again. In 1.5.5 it stopped because the app answered the permission request with a value instead of accepting it — and since nothing was ever going to read that value, the request just sat there forever, with no error and no warning. It hit the corner button, the video player button, the F shortcut, and copying the watch-together room code.",
+        "Fixed: film and series titles now follow the language you picked. Before, the title language was a setting of its own and the default was English — so choosing Portuguese for the interface didn't change a single title. There's now a \"Same as the interface\" option and that's what it defaults to. If you had deliberately picked \"English\", it became \"Same as the interface\" once.",
+        "Fixed: your library, \"Continue watching\" and public profiles showed titles in whatever language they happened to be saved in, and never changed on their own after that. They now follow the language you picked — and nothing you have is deleted.",
+        "Fixed: some Settings buttons were never translated and always showed in Portuguese even with the interface in another language: \"Hide\" and \"Show\" under adult content, the language names, and a few more.",
+        "Fixed: when you change the interface language, the titles on the home page, in search, in categories and on a title's page now refresh by themselves. Before you had to reload the page by hand.",
+        "Internal: when a fullscreen request is refused, the app now writes the reason to the console instead of failing silently.",
+      ],
+    },
   {
       version: "1.5.5",
       items: [

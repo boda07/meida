@@ -172,6 +172,10 @@ const IGUAIS_ESPERADOS = new Set([
   "x265",
   // Unidade de tempo, igual nos dois.
   "min",
+  // "Romaji" e' o nome do sistema de escrita japonês em alfabeto latino. E' um
+  // nome proprio em qualquer lingua: traduzir seria errado, e o utilizador
+  // espera ver a palavra como esta.
+  "Romaji",
   // Gabarito, nao palavra: o que muda entre as linguas e' o que lhe metem dentro
   // ("titulo" -> "title", "serie" -> "shows"), nao o proprio "{n} {o}". E' o que
   // permite o singular e o plural num so texto — "1 serie" / "2 series" — sem

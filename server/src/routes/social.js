@@ -5,6 +5,7 @@
 // publico) e as accoes (seguir/deixar de seguir) exigem requireAuth.
 import { Router } from "express";
 import { requireAuth, optionalAuth } from "../services/auth.js";
+import { localizarTitulos, preencherTitulosLocalizados } from "../services/tmdb.js";
 import {
   getUserById,
   getUserAvatar,
@@ -83,13 +84,21 @@ socialRouter.get("/users/:id/avatar", optionalAuth, (req, res) => {
 });
 
 // Biblioteca de outro utilizador (respeita a privacidade).
+//
+// Os titulos localized-se ao mesmo tempo que os da biblioteca propria: o titulo
+// guardado e' o de quem guardou, no idioma que tinha entao. Sem isto, um perfil
+// publico mostrava os titulos em ingles a quem esta com a interface em portugues.
 socialRouter.get("/users/:username/library", optionalAuth, (req, res) => {
   const p = getProfileByUsername(req.params.username);
   if (!p) return res.status(404).json({ error: "Utilizador nao encontrado." });
   if (!canViewProfile(req.user?.id, p)) {
     return res.status(403).json({ error: "Este perfil é privado." });
   }
-  res.json({ items: publicLibrary(p.id) });
+  const items = publicLibrary(p.id);
+  const titleLang = req.query.titleLang;
+  const emFalta = localizarTitulos(items, titleLang);
+  res.json({ items });
+  preencherTitulosLocalizados(emFalta, titleLang);
 });
 
 // Listas de outro utilizador (so os nomes e contagens).
@@ -111,7 +120,12 @@ socialRouter.get("/users/:username/lists/:id", optionalAuth, (req, res) => {
   }
   const list = getList(p.id, Number(req.params.id));
   if (!list) return res.status(404).json({ error: "Lista nao encontrada." });
+  // Como a biblioteca propria: o titulo guardado e' o de quem guardou, no
+  // idioma que tinha entao. Localiza-se ao sair.
+  const titleLang = req.query.titleLang;
+  const emFalta = localizarTitulos(list.items, titleLang);
   res.json({ list });
+  preencherTitulosLocalizados(emFalta, titleLang);
 });
 
 // Seguidores / a seguir.

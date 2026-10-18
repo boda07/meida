@@ -369,7 +369,9 @@ function startServer() {
     console.error(msg);
     try {
       fs.appendFileSync(logFd, msg);
-    } catch {}
+    } catch {
+      /* ate o log falhou: nao ha mais nada a fazer, e partir aqui seria pior */
+    }
     if (code !== 0 && code !== null) {
       try {
         dialog.showMessageBox({
@@ -384,13 +386,17 @@ function startServer() {
             `Manda essa pasta a quem te deu a app.`,
           buttons: ["Fechar"],
         });
-      } catch {}
+      } catch {
+        /* o dialogo falhou: o backend ja morreu e nao ha ecra para o dizer */
+      }
     }
   });
   serverProc.stderr?.on("data", (d) => {
     try {
       fs.appendFileSync(logFd, String(d));
-    } catch {}
+    } catch {
+      /* o log do stderr e' o ultimo sitio onde ainda ha{proofa */
+    }
   });
 }
 
@@ -532,13 +538,42 @@ function createWindow() {
     }
   });
 
-  // Sesso de permissao: so aceita fullscreen (video em ecrã inteiro). Nega
-  // tudo o resto (notificacoes, microfone, camara, localizacao, etc.) para
-  // iframes de terceiros nao obterem acessos indevidos.
-  win.webContents.session.setPermissionRequestHandler((webContents, permission) => {
-    if (permission === "fullscreen") return true;
-    return false;
-  });
+// Sessao de permissao: so aceita fullscreen (video em ecrã inteiro) e
+// clipboard-sanitized-write (copiar para a area de transferencia). Nega
+// tudo o resto (notificacoes, microfone, camara, localizacao, etc.) para
+// iframes de terceiros nao obterem acessos indevidos.
+//
+// **O `setPermissionRequestHandler` recebe um `callback` e a decisao da-se com
+// `callback(true)`/`callback(false)` — o valor de retorno e' IGNORADO.** Devolveu
+// `true`/`false` durante a 1.5.5 por engano, e por isso todos os pedidos de
+// permissao ficaram pendentes: o fullscreen (botao, player, atalho F) e o
+// copiar da Watch Party nunca arrancavam.
+// **O `setPermissionCheckHandler` SIM devolve boolean: e' a pergunta sincrona
+// que o Chromium faz antes do pedido.**
+//
+// **`automatic-fullscreen` e' o que o Chromium PERGUNTA (o "check") ao passo
+// que `fullscreen` e' o que PEDE (o "request").** O check so e' permitido a
+// nossa propria origem — um iframe de provider nao o recebe (e' o que o R7 quis).
+//
+// Com MEIDA_FS_DEBUG=1 diz cada pedido e cada consulta.
+const PERMISSOES_OK = new Set(["fullscreen", "clipboard-sanitized-write"]);
+const verbosoFs = process.env.MEIDA_FS_DEBUG === "1";
+win.webContents.session.setPermissionRequestHandler((_wc, permission, callback) => {
+  const ok = PERMISSOES_OK.has(permission);
+  if (verbosoFs) console.log(`[fs] pedido ${permission} -> ${ok ? "permitido" : "negado"}`);
+  callback(ok);
+});
+win.webContents.session.setPermissionCheckHandler(
+  (webContents, permission, requestingOrigin) => {
+    const nosso = requestingOrigin ? origemPermitida(requestingOrigin) : false;
+    const ok =
+      permission === "fullscreen" || (permission === "automatic-fullscreen" && nosso);
+    if (verbosoFs) {
+      console.log(`[fs] consulta ${permission} de ${requestingOrigin} -> ${ok ? "permitido" : "negado"}`);
+    }
+    return ok;
+  }
+);
 
   // Politica de autoplay, so com MEIDA_AUTOPLAY_DEBUG=1 (como o adblock). Fica
   // a forcar "desligado" e a registar cada documento a que toca — foi assim que

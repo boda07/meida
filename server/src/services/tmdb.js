@@ -1,6 +1,6 @@
 import { config, assertTmdbConfigured } from "../config.js";
 import { cacheGet, cacheSet, cacheGetTtl } from "./cache.js";
-import { netFetch } from "./net.js";
+import { netFetch, pMap } from "./net.js";
 
 const { baseUrl, language, titleLanguage } = config.tmdb;
 
@@ -476,6 +476,55 @@ export function getLocalizedMetaCached(type, id, titleLang) {
   const disk = cacheGet(`tmeta:${key}`);
   if (disk) localMetaCache.set(key, disk);
   return disk;
+}
+
+/**
+ * Troca o titulo e o cartaz de uma lista de itens pelos do idioma pedido, usando
+ * so o que ja esta em cache. Devolve os que ficaram de fora, para se poder
+ * buscar em segundo plano.
+ *
+ * Existe porque o titulo gravado na base de dados e' o titulo **no momento em
+ * que o titulo foi visto** — uma watchlist importada do Letterboxd vem em
+ * ingles, e fica em ingles para sempre, mesmo depois de escolher portugues nas
+ * Definicoes. As rotas que devolvem itens guardados (biblioteca, "continua a
+ * ver", listas, perfis publicos) passam por aqui para que a preferencia seja
+ * cumprida em todas elas e nao so no catalogo.
+ *
+ * So filmes e series: o anime tem o seu proprio idioma (`animeTitleLang`) e o
+ * `getLocalizedMetaCached` devolve `null` para o resto, que fica como esta.
+ *
+ * Muta os itens no sitio (e' o que a resposta vai serializar) e nao escreve nada
+ * na base de dados: o titulo original continua guardado, para voltar ao idioma
+ * anterior se a preferencia mudar.
+ */
+export function localizarTitulos(items, titleLang) {
+  const emFalta = [];
+  for (const i of items || []) {
+    if (i.type !== "movie" && i.type !== "tv") continue;
+    const m = getLocalizedMetaCached(i.type, i.tmdbId, titleLang);
+    if (m?.title) i.title = m.title;
+    if (m?.poster) i.poster = m.poster;
+    if (!m) emFalta.push(i);
+  }
+  return emFalta;
+}
+
+/**
+ * Busca ao TMDB os titulos que `localizarTitulos` nao tinha em cache.
+ *
+ * Dispara-se sem `await`: a resposta ja foi enviada e a mutacao dos itens nao
+ * altera o que o cliente recebeu. O que serve e' a proxima abertura, que ja vem
+ * completa — e' o mesmo acordo que a biblioteca fazia.
+ */
+export function preencherTitulosLocalizados(emFalta, titleLang, concorrencia = 12) {
+  if (!emFalta?.length) return Promise.resolve();
+  return pMap(emFalta, concorrencia, async (i) => {
+    const m = await getLocalizedMeta(i.type, i.tmdbId, titleLang);
+    if (m?.title) i.title = m.title;
+    if (m?.poster) i.poster = m.poster;
+  }).catch(() => {
+    /* best-effort: a proxima abertura tenta outra vez */
+  });
 }
 
 // Titulo + cartaz de um filme/serie no idioma pedido (titulo com fallback PT->EN;

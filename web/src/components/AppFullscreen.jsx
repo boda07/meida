@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useT } from "../i18n/I18nContext.jsx";
+import { ecraInteiro } from "./ecraInteiro.js";
 
 // Botao fixo no topo esquerdo: mete a APP inteira (a janela) em ecra inteiro,
 // sem precisar do F11. Funciona no browser e na app Electron.
@@ -14,12 +15,9 @@ export default function AppFullscreen() {
   }, []);
 
   function toggle() {
-    if (document.fullscreenElement) {
-      document.exitFullscreen?.();
-    } else {
-      const el = document.documentElement;
-      (el.requestFullscreen || el.webkitRequestFullscreen)?.call(el);
-    }
+    // `ecraInteiro` nunca rejeita: devolve o erro, e o aviso vai para a consola.
+    // Ver o ficheiro — antes era um `?.` que deitava fora a promessa.
+    ecraInteiro(document.documentElement);
   }
 
   return (

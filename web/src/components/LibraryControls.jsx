@@ -109,7 +109,7 @@ export default function LibraryControls({ details }) {
           onClick={() => openExternal(`https://letterboxd.com/tmdb/${details.id}/`)}
           title={t("Abrir no Letterboxd")}
         >
-          Letterboxd
+          {t("Letterboxd")}
         </button>
       )}
 

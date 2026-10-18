@@ -85,7 +85,7 @@ export default function Category({ category, title }) {
       })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
-  }, [category, settings.titleLang, settings.overviewLang, settings.animeTitleLang]);
+  }, [category, settings.titleLang, settings.overviewLang, settings.animeTitleLang, t.idioma]);
 
   // Ao mudar de página/tipo, repoe os controlos e recarrega os géneros.
   useEffect(() => {
@@ -127,7 +127,7 @@ export default function Category({ category, title }) {
     return () => {
       cancel = true;
     };
-  }, [discoverActive, type, sort, dir, genreKey, settings.titleLang, settings.animeTitleLang]);
+  }, [discoverActive, type, sort, dir, genreKey, settings.titleLang, settings.animeTitleLang, t.idioma]);
 
   function loadMore() {
     const next = page + 1;

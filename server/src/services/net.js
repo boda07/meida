@@ -17,6 +17,29 @@ export function isOnline() {
   return online;
 }
 
+/**
+ * Corre `fn` sobre `arr` com concorrencia limitada.
+ *
+ * Vive aqui, e nao em `library.js`, porque as rotas nao se importam entre si e o
+ * `tmdb.js` — que e' quem busca os titulos localizados — precisa disto tanto
+ * como a biblioteca, para o preenchimento em segundo plano.
+ *
+ * Nao apanha erros: quem chama e' que tem de os tratar.
+ */
+export async function pMap(arr, concorrencia, fn) {
+  let idx = 0;
+  const workers = Array.from(
+    { length: Math.min(concorrencia, arr.length) },
+    async () => {
+      while (idx < arr.length) {
+        const cur = idx++;
+        await fn(arr[cur]);
+      }
+    }
+  );
+  await Promise.all(workers);
+}
+
 // Wrapper do fetch que acompanha o estado da rede. Devolve a Response normal
 // (o chamador trata !ok como dava antes); atira o mesmo erro do fetch quando a
 // rede falha.

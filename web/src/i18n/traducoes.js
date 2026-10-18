@@ -1045,6 +1045,19 @@ export const DICIONARIO = {
     "Limite de salas atingido. Tenta mais tarde.": "Limite de salas atingido. Tenta mais tarde.",
     "Limite de salas por IP atingido.": "Limite de salas por IP atingido.",
     "Sala cheia (maximo 20 membros).": "Sala cheia (maximo 20 membros).",
+    // --- Settings.jsx: botoes e nomes de idioma que estavam sem t() ---
+    // O auditor nao os via: `semComentarios` comia o `//` de um URL dentro de
+    // uma string, perdia a aspa de fecho e o scanner deixava de correr (ver
+    // `testar-auditor-i18n.mjs`, caso 7).
+    "Esconder": "Esconder",
+    "Mostrar": "Mostrar",
+    "Português": "Português",
+    "Inglês": "Inglês",
+    "momento": "momento",
+    "Comentar": "Comentar",
+    // --- nomes proprios: iguais nos dois idiomas ---
+    "Romaji": "Romaji",
+    "Igual à interface": "Igual à interface",
   },
 
   en: {
@@ -2054,6 +2067,14 @@ export const DICIONARIO = {
     "Limite de salas atingido. Tenta mais tarde.": "Room limit reached. Try again later.",
     "Limite de salas por IP atingido.": "Room limit per IP reached.",
     "Sala cheia (maximo 20 membros).": "Room full (max 20 members).",
+    "Esconder": "Hide",
+    "Mostrar": "Show",
+    "Português": "Portuguese",
+    "Inglês": "English",
+    "momento": "timestamp",
+    "Comentar": "Comment",
+    "Romaji": "Romaji",
+    "Igual à interface": "Same as the interface",
   },
 };
 

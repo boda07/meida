@@ -334,6 +334,7 @@ export default function Onboarding({ forcar = false, onFechar }) {
             <button
               key={g.id}
               type="button"
+              // i18n: `className` e' codigo, nao texto de interface
               className={"ob-genero" + (escolhido ? " on" : "")}
               aria-pressed={escolhido}
               onClick={() => setGeneros((v) => alternaGenero(v, g))}

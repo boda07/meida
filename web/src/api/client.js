@@ -70,8 +70,16 @@ export const tokenStore = {
 
 // Definições do utilizador (idiomas, etc.) guardadas em localStorage.
 const SETTINGS_KEY = "streamapp_settings";
+// Marca de "a migracao do titleLang ja correu". Ver `aplicarMigracoes`.
+const MIGRACAO_TITULOS_KEY = "streamapp_migrou_titlang";
 export const DEFAULT_SETTINGS = {
-  titleLang: "en", // idioma dos títulos: "en" | "pt"
+  // Idioma dos titulos: "auto" | "pt" | "en".
+  //
+  // "auto" e' o omissao de proposito: o titulo segue o idioma da interface. Antes
+  // era "en", e o efeito era o que o utilizador reportou — escolher portugues
+  // na interface nao mexia nos titulos, porque o idioma da interface e o dos
+  // titulos sao duas definicoes e so a segunda mandava no catalogo.
+  titleLang: "auto",
   overviewLang: "pt", // idioma das sinopses: "en" | "pt"
   genreLang: "", // idioma dos géneros: "en" | "pt" | "" (segue as sinopses)
   animeTitleLang: "en", // títulos de anime: "en" (ingles) | "romaji"
@@ -110,8 +118,9 @@ export const settingsStore = {
   get() {
     const cru = localStorage.getItem(SETTINGS_KEY);
     if (!cru) return { ...DEFAULT_SETTINGS };
+    let guardado;
     try {
-      return { ...DEFAULT_SETTINGS, ...JSON.parse(cru) };
+      guardado = JSON.parse(cru);
     } catch (e) {
       // NAO engolir em silencio. Antes, um `catch { return padroes }` fazia uma
       // definicao corrompida repor tudo sem avise nenhum: o utilizador perdia a
@@ -130,6 +139,7 @@ export const settingsStore = {
       }
       return { ...DEFAULT_SETTINGS };
     }
+    return { ...DEFAULT_SETTINGS, ...aplicarMigracoes(guardado) };
   },
   set(s) {
     try {
@@ -182,13 +192,84 @@ export const audioTituloStore = {
 function langParams() {
   const s = settingsStore.get();
   return {
-    titleLang: s.titleLang,
+    titleLang: titleLangEfetivo(s.titleLang),
     overviewLang: s.overviewLang,
     // Idioma dos géneros: o escolhido ou, se nao houver, segue as sinopses.
     genreLang: s.genreLang || s.overviewLang,
     animeTitleLang: s.animeTitleLang,
     adult: s.showAdult ? "1" : "", // "" e descartado em get()
   };
+}
+
+/**
+ * O idioma efetivo dos titulos, ja resolvido.
+ *
+ * `"auto"` nao chega ao servidor: e' uma preferencia do cliente, e o servidor nao
+ * sabe o idioma da interface de ninguem. Se "auto" escapasse, o `resolveLang` do
+ * servidor caia no seu fallback (`en-US`) — isto e', o titulo ia para ingles,
+ * que e' exactamente o defeito que se quer corrigir.
+ *
+ * Funcao pura (a parte que depende do `localStorage` e' a unica que nao) para
+ * poder ser testada.
+ */
+export function titleLangEfetivo(valor) {
+  return valor === "auto" ? idiomaAtual() : valor;
+}
+
+/**
+ * Migracao das definicoes guardadas: `titleLang: "en"` passa a `"auto"`.
+ *
+ * Feita **uma vez**, com uma marca no `localStorage`. Sem a marca, `"auto"` seria
+ * reescrito para `"en"` em cada arranque e ninguem poderia escolher ingles de
+ * proposito.
+ *
+ * O custo e' que tambem muda a escolha de quem tinha escolhido ingles a mao. Nao
+ * ha forma de distinguir as duas coisas — o valor guardado e' o mesmo. Preferimos
+ * errar para o lado de a interface governar os titulos, porque e' o que a maioria
+ * espera e o que o omissao novo faz de qualquer maneira.
+ *
+ * Exportada para o teste poder chamar as duas metades (com e sem a marca).
+ */
+export function migrarTitleLang(guardado, jaMigrou) {
+  if (jaMigrou) return guardado;
+  return guardado === "en" ? "auto" : guardado;
+}
+
+/**
+ * Aplica as migracoes de Definicoes e grava o resultado.
+ *
+ * A migracao do `titleLang` e' a unica por agora. Corre **uma vez**: a marca
+ * escreve-se no arranque em que a migracao acontece, e a partir dai o valor
+ * guardado e' sempre respeitado — senao quem escolhesse "Ingles" a proposito
+ * via-se a "auto" em cada arranque, sem forma de o travar.
+ */
+function aplicarMigracoes(guardado) {
+  let jaMigrou = false;
+  try {
+    jaMigrou = localStorage.getItem(MIGRACAO_TITULOS_KEY) === "1";
+  } catch {
+    /* sem localStorage: fica sem migrar, que e' o comportamento de antes */
+  }
+  const novo = { ...guardado };
+  let mudou = false;
+  const titulo = migrarTitleLang(guardado?.titleLang, jaMigrou);
+  if (titulo !== guardado?.titleLang) {
+    novo.titleLang = titulo;
+    mudou = true;
+  }
+  if (!jaMigrou) {
+    try {
+      localStorage.setItem(MIGRACAO_TITULOS_KEY, "1");
+    } catch {
+      /* modo privado: a migracao corre outra vez, o que e' inofensivo */
+    }
+  }
+  if (mudou) {
+    // Grava-se para que a migracao fique feita mesmo que o browser feche a
+    // seguir. Se falhar (quota), o `get()` volta a aplica-la — tambem inofensivo.
+    settingsStore.set(novo);
+  }
+  return novo;
 }
 
 // Lista de idiomas (OpenSubtitles) a partir da preferência de legendas.
@@ -334,9 +415,11 @@ export const api = {
 
   // Perfis e seguir utilizadores
   userProfile: (username) => get(`/api/users/${encodeURIComponent(username)}`),
-  userLibrary: (username) => get(`/api/users/${encodeURIComponent(username)}/library`),
+  userLibrary: (username) =>
+    get(`/api/users/${encodeURIComponent(username)}/library`, langParams()),
   userLists: (username) => get(`/api/users/${encodeURIComponent(username)}/lists`),
-  userList: (username, id) => get(`/api/users/${encodeURIComponent(username)}/lists/${id}`),
+  userList: (username, id) =>
+    get(`/api/users/${encodeURIComponent(username)}/lists/${id}`, langParams()),
   userFollowers: (username) => get(`/api/users/${encodeURIComponent(username)}/followers`),
   userFollowing: (username) => get(`/api/users/${encodeURIComponent(username)}/following`),
   searchUsers: (q) => get("/api/users", { q }),
@@ -376,7 +459,7 @@ export const api = {
   createList: (name) => post("/api/lists", { name }),
   renameList: (id, name) => patch_(`/api/lists/${id}`, { name }),
   deleteList: (id) => del(`/api/lists/${id}`),
-  listTitles: (id) => get(`/api/lists/${id}`),
+  listTitles: (id) => get(`/api/lists/${id}`, langParams()),
   addListTitle: (id, entry) => post(`/api/lists/${id}/titles`, entry),
   removeListTitle: (id, tmdbId, type) =>
     del(`/api/lists/${id}/titles`, { tmdbId, type }),
@@ -405,7 +488,7 @@ export const api = {
   anilistSync: () => post("/api/anilist/sync", {}),
 
   // Diário / continua a ver
-  progress: () => get("/api/progress"),
+  progress: () => get("/api/progress", langParams()),
   progressItem: (type, tmdb) => get("/api/progress/item", { type, tmdb }),
   progressStart: (entry) => post("/api/progress/start", entry),
   progressFinish: (entry) => post("/api/progress/finish", entry),
