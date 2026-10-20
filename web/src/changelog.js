@@ -6,6 +6,19 @@
 export const CHANGELOG = [
 
 {
+      version: "1.5.8",
+      items: [
+        "Corrigido: a versão da app que se abre no navegador deixava de responder depois de uma actualização. Ao arrancar, o servidor voltava a reconstruir a página inteira antes de abrir, e o serviço onde está hospedado desistia de o esperar — e a página ficava em baixo até alguém corrigir. Agora abre logo.",
+        "Corrigido: a página da app no GitHub Pages voltou a ser publicada.",
+        "Interno: o servidor agora fica na porta que o serviço de hospedagem lhe dá, mesmo que essa porta esteja ocupada. Antes mudava de porta, e o serviço deixava de o encontrar.",
+      ],
+      items_en: [
+        "Fixed: the version of the app you open in the browser stopped responding after an update. On startup the server rebuilt the whole page before opening, and the service hosting it gave up waiting — so the page stayed down until someone fixed it. It opens straight away now.",
+        "Fixed: the app's page on GitHub Pages is being published again.",
+        "Internal: the server now stays on the port the hosting service gives it, even when that port is busy. Before it moved to another port, and the service stopped being able to find it.",
+      ],
+    },
+  {
       version: "1.5.7",
       items: [
         "Corrigido: um link de vídeo com a marca errada conseguia parar o servidor de vez. Bastava abrir esse link, sem sequer entrar na app. Agora o servidor recusa o pedido e continua a funcionar.",

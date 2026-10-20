@@ -189,15 +189,36 @@ app.use((err, req, res, _next) => {
 // morrer: antes, um EADDRINUSE matava o servidor no arranque e a janela ficava
 // preta sem mostrar nada (foi o que aconteceu num PC de um utilizador, com
 // outra coisa a usar a porta 5175).
-const PORTAS = [config.port, config.port + 1, config.port + 2, config.port + 3];
+//
+// **Mas so' quando a porta nao foi pedida por ninguem.** Quando o `PORT` vem do
+// ambiente, quem o poe e' a plataforma: o Render da a porta 10000 e o scanner
+// dele espera **nessa** porta. Mudar para a 10001 e' das Docs: "Render is
+// usually able to detect and use it" — "usually" nao e' "sempre", e o
+// resultado de falhar e' o deploy nao entrar com "Port scan timeout reached".
+// Quando a porta foi pedida, o certo e' falhar de forma visivel.
+const PORTA_DO_AMBIENTE = Boolean((process.env.PORT || "").trim());
+const PORTAS = PORTA_DO_AMBIENTE
+  ? [config.port]
+  : [config.port, config.port + 1, config.port + 2, config.port + 3];
 let portaEscolhida = null;
 
 function tentar(indice) {
   if (indice >= PORTAS.length) {
-    log.error(
-      "backend",
-      `Nenhuma porta livre entre ${PORTAS[0]} e ${PORTAS[PORTAS.length - 1]}. Abortado.`
-    );
+    if (PORTA_DO_AMBIENTE) {
+      // A plataforma mandou usar esta porta. Ficar noutra e' peor do que
+      // falhar: o Render nao encontraria o servico ("Port scan timeout
+      // reached") e o deploy caia sem explicar nada.
+      log.error(
+        "backend",
+        `A porta ${config.port} (pedida pelo PORT do ambiente) esta' ocupada. ` +
+          "Nao se pode mudar de porta aqui: a plataforma espera esta."
+      );
+    } else {
+      log.error(
+        "backend",
+        `Nenhuma porta livre entre ${PORTAS[0]} e ${PORTAS[PORTAS.length - 1]}. Abortado.`
+      );
+    }
     process.exit(1);
   }
   const porta = PORTAS[indice];

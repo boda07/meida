@@ -14,7 +14,11 @@ services:
     runtime: node
     # instala tambem as dependencias de server/ e web/ (vite vive em web/).
     buildCommand: npm install && npm --prefix server install && npm --prefix web install && npm run build
-    startCommand: npm run start:pwa
+    # **So' arranca o servidor.** O build ja foi feito no buildCommand acima, e
+    # refaze-lo aqui custava ~47 s (medido no Render) — o suficiente para o
+    # scanner de portas do Render desistir: "Port scan timeout reached, no open
+    # ports detected". O servidor abre o porto em 390 ms.
+    startCommand: npm run serve:pwa
     envVars:
       - key: SERVE_WEB
         value: "1"

@@ -1,5 +1,70 @@
 # Changelog
 
+## 1.5.8
+
+A versão web (a que se abre no navegador) não entrava em linha desde um deploy,
+e a página do GitHub Pages não era publicada. Nenhum dos dois é do código que o
+utilizador vê — são o **arranque** e a **publicação**.
+
+### O Render não deployava: o start command reconstruía o site
+
+O deploy falhava com `==> No open ports detected, continuing to scan...` e
+depois `==> Port scan timeout reached, no open ports detected`. **Cada deploy
+novo falhava do mesmo modo** — o sítio ficava em baixo, e a instância antiga
+continuava a servir a versão anterior.
+
+**O servidor não tinha a culpa.** Medido com `PORT=10000` e `SERVE_WEB=1`: liga a
+`0.0.0.0:10000` e responde em **390 ms**. O `bind` está certo
+(`config.host` = `process.env.HOST || "0.0.0.0"`, `config.port` =
+`process.env.PORT || 5175`).
+
+**A causa era o comando de arranque.** O `start:pwa` era
+`npm run build && cross-env SERVE_WEB=1 node server/src/index.js` — reconstruía
+a página inteira (**47 s**, medido no Render: *"built in 47.11s"*) **antes de o
+servidor arrancar**. O Render já tinha construído no passo de build; o start
+command repetia o trabalho. O scanner de portas do Render espera por um listener
+TCP e dá-se por vencido entretanto — e a documentação dele diz exactamente isso
+(*"Keep the start command to one long-running server"*; *"the server only starts
+after the migration, so a slow migration holds the port closed"*). O scanner
+corre **num namespace de rede separado** do processo, por isso só vê o porto
+depois de o abrir.
+
+- `scripts/start-pwa.cjs` (novo) decide se há de construir: compara o mtime do
+  `web/dist/index.html` com o da fonte mais recente em `web/` (ignorando `dist`
+  e `node_modules`). `serve:pwa` é o `--sem-build`: **só arranca**.
+- `start:pwa` continua a construir quando a fonte é mais nova (o caso local), e
+  `MEIDA_FORCE_BUILD=1` força.
+- O `SERVE_WEB=1` passou a ser posto pelo script, e não por `cross-env`: assim o
+  caminho crítico não depende de uma devDependency estar instalada no servidor.
+- **Perigo antigo, agora fechado:** o servidor saltava de porta se a occupied
+  (`PORTAS = [port, port+1, port+2, port+3]`). Isso é útil no PC (a 5175 às
+  vezes está ocupada), mas **no Render é o pior**: a plataforma deu a porta e o
+  scanner espera **essa**. As Docs dizem *"Render is usually able to detect and
+  use it"* — "usually" não é "sempre", e o resultado é o mesmo erro. Agora,
+  quando o `PORT` vem do ambiente, a lista tem **uma** porta e o `EADDRINUSE`
+  sai com uma mensagem que diz porque.
+- `render.yaml` passou a `startCommand: npm run serve:pwa`.
+- **Falta ao utilizador:** o serviço Render em produção (`meida`, criado à mão —
+  o `render.yaml` é só um blueprint) tem o **Start Command** no painel. Tem de
+  passar a `npm run serve:pwa`. O `start:pwa` também fica bom (constrói só se
+  for preciso), por isso a mudança do painel é uma melhoria e não uma
+  urgência — mas sem ela o `serve:pwa` nunca é usado.
+- `scripts/testar-start-pwa.mjs` (14 verificações, entra no `npm test`).
+
+### O Pages do GitHub não estava activo
+
+`actions/configure-pages@v5` dava *"Get Pages site failed... verify that the
+repository has Pages enabled"*. A API do GitHub devolve 404 em
+`GET /repos/{owner}/{repo}/pages` quando não há sítio.
+
+- **Activa-se pela API, sem tocar no painel:**
+  `gh api --method POST repos/boda07/meida/pages -f "build_type=workflow"` —
+  devolve `html_url: https://boda07.github.io/meida/` e `build_type: workflow`.
+- As actions estavam em `v3`/`v4`, que correm em **Node 20, já depreciado** (o
+  GitHub avisava em cada run). Subidas para `checkout@v7`, `setup-node@v7`,
+  `configure-pages@v6`, `upload-pages-artifact@v5`, `deploy-pages@v5` (versões
+  verificadas pela API).
+
 ## 1.5.7
 
 Dez defeitos medidos contra o servidor real antes de serem corrigidos, cada um
