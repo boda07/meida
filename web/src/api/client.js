@@ -189,6 +189,26 @@ export const audioTituloStore = {
 };
 
 // Parametros de idioma (+ conteudo adulto) a juntar aos pedidos de catálogo.
+// O fuso do utilizador, para os endpoints que contam DIAS.
+//
+// **Nao e' uma preferencia, e' um facto sobre a maquina:** o heatmap desenha
+// dias locais (`chaveDia` usa `getFullYear/getDate`) e a racha pergunta "hoje
+// conta?", portanto o servidor tem de agrupar as datas pelas mesmas regras.
+// Sem isto, quem esta' em UTC-3 ve o que ve depois das 21:00 cair na celula de
+// amanha — que o heatmap esconde por ser "depois de hoje".
+//
+// As HORAS ja eram rodadas no cliente (`serieStats.js`) e nao precisam de fuso.
+function fusoParams() {
+  let tz = "";
+  try {
+    tz = Intl.DateTimeFormat().resolvedOptions().timeZone || "";
+  } catch {
+    // Sem `Intl` (ou com um runtime estranho): sem fuso, e o servidor fica em
+    // UTC — o comportamento antigo, que pelo menos e' estavel.
+  }
+  return { tz };
+}
+
 function langParams() {
   const s = settingsStore.get();
   return {
@@ -515,8 +535,8 @@ export const api = {
   exportData: () => get("/api/export"),
 
   // Gamificação (badges + streak)
-  achievements: () => get("/api/achievements"),
-  stats: () => get("/api/stats"),
+  achievements: () => get("/api/achievements", fusoParams()),
+  stats: () => get("/api/stats", fusoParams()),
 
   // Metas e desafios. `setGoal` devolve o alvo gravado (o servidor e' a
   // autoridade sobre a lista de alvos validos e devolve os dois se recusar).

@@ -40,6 +40,22 @@ function authToken() {
   }
 }
 
+// Caminho de navegacao remota: so interno e relativo a raiz.
+//
+// **O `\\` e' o que interessa** (CVE-2025-68470 / GHSA-wrjc-x8rr-h8h6): um
+// caminho com barra invertida e' tratado pelo browser como barra normal, e
+// `navigate()` leva-o ao sitio externo. O mesmo com `//host`, que o browser le
+// como protocolo-relativo. Um membro da sala nao devia poder redireccionar o
+// browser de toda a gente.
+//
+// O servidor aplica a mesma regra (e e' ele que recusa o evento), mas nao
+// dependemos disso: o react-router instalado e' a versao vulneravel e nao ha
+// versao corrigida dentro da major 6.
+const NAV_PATH_RE = /^\/(?![/\\])[^\s\\]{0,300}$/;
+export function navPathValido(path) {
+  return typeof path === "string" && NAV_PATH_RE.test(path);
+}
+
 export function WatchPartyProvider({ children }) {
   const t = useT();
   const navigate = useNavigate();
@@ -87,7 +103,15 @@ export function WatchPartyProvider({ children }) {
       // Navegacao: o contexto trata da rota; o resto vai aos subscritores.
       if (payload.kind === "nav") {
         const path = payload.data?.path;
-        if (path && path !== pathRef.current) {
+        // **Validado antes do `navigate`.** O `path` vem de outro membro da
+        // sala; sem este teste, `\\evil.com` e `//evil.com` tiravam o browser
+        // de dentro da app (CVE-2025-68470, react-router 6.30.4).
+        if (!navPathValido(path)) {
+          // i18n — mensagem para quem develope, nao e' interface.
+          console.warn("[watchparty] caminho de navegacao recusado:", path);
+          return;
+        }
+        if (path !== pathRef.current) {
           suppressNavRef.current = true;
           navigate(path);
         }

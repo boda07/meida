@@ -8,11 +8,14 @@
 import { Router } from "express";
 import { requireAuth } from "../services/auth.js";
 import { statsFor } from "../stats.js";
+import { tzDoPedido } from "../services/dias.js";
 
 export const statsRouter = Router();
 
 statsRouter.use(requireAuth);
 
 statsRouter.get("/stats", (req, res) => {
-  res.json(statsFor(req.user.id));
+  // `?tz` e' o fuso do cliente, e nao uma opcao: sem ele os dias saem em UTC e o
+  // heatmap (que desenha dias locais) esconde a atividade da ultima hora do dia.
+  res.json(statsFor(req.user.id, tzDoPedido(req)));
 });

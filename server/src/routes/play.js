@@ -3,6 +3,7 @@ import { extractStream, extractEnabled } from "../services/extractor/index.js";
 import { extractAnime, animeExtractorEnabled } from "../services/animeStream.js";
 import {
   extrairMegaPlayNativo,
+  embedUrlValido,
   tracksParaSubtitulos,
 } from "../services/megaplayNativo.js";
 import { handleProxy, buildProxyUrl, buildSubtitleVttUrl, assinaturaValida, alvoSeguro } from "../services/proxy.js";
@@ -42,6 +43,13 @@ playRouter.get("/extract/enabled", (req, res) => {
 playRouter.get("/anime/megaplay", async (req, res) => {
   const { url, audio } = req.query;
   if (!url) return res.status(400).json({ error: "falta o parametro url" });
+
+  // O URL vem do cliente e esta rota e' publica: sem esta porta, `lerDataId`
+  // fazia `fetch` ao que lhe dessem (um SSRF cego — 2026-10-19). So o MegaPlay
+  // serve; o resto e' 400, e nao um `native: false` que parece "o site nao tem".
+  if (!embedUrlValido(url)) {
+    return res.status(400).json({ error: "url tem de ser https://megaplay.buzz/stream/..." });
+  }
 
   const r = await extrairMegaPlayNativo({ embedUrl: String(url), audio });
   if (!r) return res.json({ native: false });
@@ -185,7 +193,8 @@ playRouter.get("/subtitles/vtt", rateLimiter(20, 60_000), async (req, res) => {
       return res.status(403).json({ error: "legendas requerem assinatura valida" });
     }
 
-    const seguro = alvoSeguro(url);
+    // `async` desde 2026-10-19: o `alvoSeguro` resolve o nome do hostname.
+    const seguro = await alvoSeguro(url);
     if (!seguro.ok) {
       return res.status(403).json({ error: seguro.motivo });
     }

@@ -3,7 +3,7 @@ import cors from "cors";
 import { fileURLToPath } from "node:url";
 import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
-import { config } from "./config.js";
+import { config, trustProxyBruto } from "./config.js";
 import { catalogRouter } from "./routes/catalog.js";
 import { sourcesRouter } from "./routes/sources.js";
 import { authRouter } from "./routes/auth.js";
@@ -27,12 +27,37 @@ import { adminRouter } from "./routes/admin.js";
 import { notificationsRouter } from "./routes/notifications.js";
 import { statsRouter } from "./routes/stats.js";
 import { log } from "./services/log.js";
+// Efeito de borda: involve o ponto do Express que chama os handlers, para uma
+// rejeicao de um handler `async` chegar ao middleware de erro em vez de matar o
+// processo. Tem de ser importado antes de o servidor atender a um pedido
+// qualquer (ver o ficheiro para o porque).
+import { proteccaoActiva } from "./services/asyncRotas.js";
+
+if (!proteccaoActiva()) {
+  log.error("backend", "AVISO: handlers async sem proteccao; um erro pode matar o servidor");
+}
 
 const app = express();
-// Quando o servidor roda atras de um proxy (hosting, CDN), req.ip deve refletir
-// o IP do cliente e nao o do proxy. Sem isto, o rate limiter e o bloqueio de IP
-// privado aplicam-se ao proxy e nao ao utilizador real.
-app.set("trust proxy", 1);
+// Quantos saltos de proxy ha a frente: `config.trustProxy`, que vem do ambiente
+// (`TRUST_PROXY`) e e' **0 por omissao**.
+//
+// O valor fixo em 1 (2026-10-16) estava errado nos dois sentidos, medido:
+//   - Sem proxy nenhum (servidor local do Electron, exposicao directa), qualquer
+//     cliente mandava `X-Forwarded-For: 1.2.3.4` e o `req.ip` passava a ser o que
+//     ele quisesse: 12 tentativas com senha errada, cada uma com um XFF
+//     diferente, e **nenhum 429** — o limite por IP, o bloqueio de login e o do
+//     watch party deixavam de valer.
+//   - Com dois proxies a frente, toda a gente partilhava um so IP.
+//
+// Quem exponha o servidor atras de um proxy tem de definir `TRUST_PROXY` com o
+// numero de saltos. Se ficar a `0` com proxy a frente, o limite conta para
+// todos em conjunto — por isso o aviso abaixo.
+app.set("trust proxy", config.trustProxy);
+if (trustProxyBruto && !/^\d+$/.test(trustProxyBruto)) {
+  log.error("backend", `TRUST_PROXY="${trustProxyBruto}" nao e' um numero de saltos; a usar 0 (nenhum proxy confiado).`);
+} else if (config.trustProxy === 0 && process.env.NODE_ENV === "production") {
+  log.error("backend", "TRUST_PROXY=0: se houver CDN ou proxy a frente, define TRUST_PROXY com os saltos, senao todos os utilizadores partilham um IP.");
+}
 // CORS so e preciso quando o servidor NAO serve o frontend (hosting so-API: a
 // app chama-o de outro dominio, ex.: Electron local -> servidor partilhado, ou
 // PWA num hosting estatico). Quando e o proprio servidor que serve o web/dist,

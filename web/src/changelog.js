@@ -6,6 +6,33 @@
 export const CHANGELOG = [
 
 {
+      version: "1.5.7",
+      items: [
+        "Corrigido: um link de vídeo com a marca errada conseguia parar o servidor de vez. Bastava abrir esse link, sem sequer entrar na app. Agora o servidor recusa o pedido e continua a funcionar.",
+        "Corrigido: os vídeos partilhados deixavam de funcionar passados dez minutos. Se viasse um filme de três horas, a meio perdias a imagem; e uma pausa de dez minutos estragava o mesmo vídeo. Agora a autorização dura o dia todo.",
+        "Corrigido: quando o endereço de um vídeo mudava de sítio, a imagem ficava a branco. Agora o servidor segue a mudança e o vídeo continua a aparecer.",
+        "Corrigido: a app podia ser mandada buscar ficheiros da tua rede — o computador, a box, o router. E o sítio onde se busca a série de anime podia ser enganado para ir buscar o que quisesse. Agora só aceita endereços públicos, e cada destino é verificado antes de ir lá.",
+        "Corrigido: o limite de tentativas de entrada contava também as entradas certas. Quem entrasse dez vezes seguidas ficava trancado fora da app, mesmo com a password certa. Agora há muito mais folga, e só quem se engana repetidamente fica bloqueado — e já não se pode trocar o endereço de outra pessoa para fugir ao limite.",
+        "Corrigido: a fotografia de perfil às vezes continuava igual depois de a mudares. A app voltava a pedir a antiga ao servidor e ficava com ela. Agora muda logo.",
+        "Corrigido: entrar na app demorava muito mais quando a conta não existia do que quando existia. Essa diferença dava a volta de quem tem conta na app. Agora demora o mesmo nos dois casos.",
+        "Corrigido: a sala de ver em conjunto estava aberta a toda a gente. Qualquer pessoa com conta podia mandar mensagens para uma sala onde nem estava, e um membro da sala podia mandar o browser de toda a gente para fora da app. Agora só quem está na sala pode falar nela, e a app nunca sai de si própria.",
+        "Corrigido: ao fim de dez salas, quem as tinha criado ficava com o limite gasto até o servidor reiniciar. Já não fica.",
+        "Corrigido: o mapa de calor e a racha contavam os dias pelas horas de Londres, e não pelas tuas. O que viste à noite caía no dia seguinte — e desaparecia do mapa. Agora contam pelo teu fuso, como o mapa desenha.",
+      ],
+      items_en: [
+        "Fixed: a video link with a bad mark could stop the server for good. Opening that link was enough, without even signing in. The server now refuses the request and keeps running.",
+        "Fixed: shared videos stopped working after ten minutes. Watch a three-hour film and you'd lose the picture halfway through; and a ten-minute pause would spoil the same video. The authorization now lasts all day.",
+        "Fixed: when a video moved to a different address, the picture went blank. The server now follows the move and the video keeps showing.",
+        "Fixed: the app could be made to fetch files from your own network — the computer, the box, the router. And the site where the anime is looked up could be tricked into fetching whatever it liked. Only public addresses are accepted now, and every destination is checked before it is visited.",
+        "Fixed: the limit on sign-in attempts also counted the successful ones. Ten correct sign-ins in a row left you locked out, even with the right password. There's far more slack now, and only repeated mistakes get you blocked — and you can no longer swap in somebody else's address to dodge the limit.",
+        "Fixed: your profile picture sometimes stayed the same after you changed it. The app asked the server for the old one and kept it. It changes now.",
+        "Fixed: signing in took much longer when the account didn't exist than when it did. That difference gave away who has an account in the app. It now takes the same either way.",
+        "Fixed: the watch-together room was open to everyone. Anyone with an account could post into a room they weren't in, and a member could send the whole room's browser off the app. Only people in the room can talk in it now, and the app never leaves itself.",
+        "Fixed: after ten rooms, whoever had created them was left with the limit spent until the server restarted. Not any more.",
+        "Fixed: the heatmap and the streak counted days by London time, not by yours. What you watched late at night landed on the next day — and vanished from the map. They count by your timezone now, the way the map draws.",
+      ],
+    },
+  {
       version: "1.5.6",
       items: [
         "Corrigido: o botão de ecrã inteiro voltou a funcionar. Na 1.5.5 deixou de funcionar porque a app respondia ao pedido de autorização com um valor em vez de o aceitar — e como ninguém ia ler esse valor, o pedido ficava à espera para sempre, sem erro nenhum, sem aviso nenhum. Afetava o botão no canto do ecrã, o do leitor de vídeo, o atalho F e a cópia do código da sala de ver em conjunto.",

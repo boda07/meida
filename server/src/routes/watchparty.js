@@ -12,6 +12,7 @@
 //   - Login obrigatorio: Bearer em /wp/send, ?token= no SSE de /wp/stream.
 import { Router } from "express";
 import { requireAuth } from "../services/auth.js";
+import { rateLimiter } from "../services/rateLimit.js";
 
 const router = Router();
 
@@ -20,6 +21,19 @@ const router = Router();
 // ---------------------------------------------------------------------------
 const MAX_ROOMS_GLOBAL = 500;   // salas activas no servidor
 const MAX_ROOMS_PER_IP = 10;    // salas activas por IP (evita um IP esgotar tudo)
+// Caminho de navegacao remota: so interno e relativo a raiz.
+//
+// **O `\\` e' o que interessa** (CVE-2025-68470 / GHSA-wrjc-x8rr-h8h6): um
+// caminho com barra invertida e' tratado pelo browser como barra normal, e
+// `navigate()` leva-o ao sitio externo. O mesmo acontece com `//host`, que o
+// browser le como protocolo-relativo. Por isso: comeca por `/`, o segundo
+// caractere nao pode ser `/` nem `\`, e o resto nao tem espacos nem barras
+// invertidas. O limite de 300 caracteres e' o das rotas da app.
+const NAV_PATH_RE = /^\/(?![/\\])[^\s\\]{0,300}$/;
+function navPathValido(path) {
+  return typeof path === "string" && NAV_PATH_RE.test(path);
+}
+
 const MAX_MEMBERS_PER_ROOM = 20; // membros por sala
 const MAX_DATA_BYTES = 2 * 1024; // 2 KB de payload por evento
 
@@ -92,7 +106,16 @@ function authBearer(req, res, next) {
 
 // Publica um evento da sala para todos (menos o autor). Ex.: nav, playback,
 // hello, sync-request.
-router.post("/wp/send", authBearer, (req, res) => {
+//
+// **E' membro da sala?** Antes nao se verificava nada: qualquer pessoa com login
+// publicava em qualquer sala que existisse, com o `from` que lhe apetecesse
+// (medido: um utilizador que nunca entrou na sala mandou eventos e os outros
+// membros receberam). Agora `from` serve so para identificar a ligacao, e essa
+// ligacao tem de pertencer a `req.user.id`.
+//
+// `rateLimiter(60, 10s)`: antes nao havia limite nenhum nesta rota, e cada
+// pedido e'ecoado por todos os outros membros.
+router.post("/wp/send", authBearer, rateLimiter(60, 10_000), (req, res) => {
   const { room, from, kind, data } = req.body || {};
   const code = String(room || "").toUpperCase();
   if (!code || !ROOM_CODE_RE.test(code)) {
@@ -101,12 +124,37 @@ router.post("/wp/send", authBearer, (req, res) => {
   if (!kind || !KIND_ALLOWED.has(kind)) {
     return res.status(400).json({ error: "Evento nao permitido." });
   }
-  const dataStr = data == null ? "" : String(data);
+  // **Mede-se o object'serializado, nao `String(data)`.** O cliente envia sempre
+  // objectos (`{path}`), e `String({...})` da "[object Object]" — 15 bytes, sem
+  // dependencia do tamanho real. O limite de 2 KB nunca disparava: medido, um
+  // `data: {x: "a".repeat(5000)}` passava com 200.
+  let dataStr;
+  try {
+    dataStr = JSON.stringify(data ?? "");
+  } catch {
+    return res.status(400).json({ error: "Payload invalido." });
+  }
   if (Buffer.byteLength(dataStr) > MAX_DATA_BYTES) {
-    return res.status(400).json({ error: "Payload demasiado grande (max 2 KB)." }); }
+    return res.status(400).json({ error: "Payload demasiado grande (max 2 KB)." });
+  }
   const r = rooms.get(code);
   if (!r) return res.status(404).json({ error: "Sala nao encontrada." });
-  broadcast(r, { type: "event", kind, data, from }, from);
+
+  // So' uma navegacao interna e' aceite. Aplicado AQUI para ninguem gravar um
+  // evento nao aceite; o cliente repete a regra antes do `navigate`, porque o
+  // react-router instalado (6.30.4) esta' na versao vulneravel e nao ha
+  // versao corrigida dentro da major 6 (ver AGENTS.md).
+  if (kind === "nav" && !navPathValido(data?.path)) {
+    return res.status(400).json({ error: "Caminho de navegacao invalido." });
+  }
+
+  const cliente = String(from || "");
+  const membro = r.members.get(cliente);
+  if (!membro || membro.userId !== req.user.id) {
+    return res.status(403).json({ error: "Nao es' membro desta sala." });
+  }
+
+  broadcast(r, { type: "event", kind, data, from: cliente }, cliente);
   res.json({ ok: true });
 });
 
@@ -155,7 +203,10 @@ router.get("/wp/stream", (req, res, _next) => {
     res.flushHeaders?.();
     res.write(": connected\n\n");
 
-    const member = { nick, res, ip };
+    // **`userId` guardado no membro.** E' o que permite ao `/wp/send` recusar quem
+// nao esta na sala: sem isto, `from` era uma ligacao e nada ligava essa
+// ligacao a uma conta.
+const member = { nick, res, ip, userId: req.user.id };
     room.members.set(client, member); // reconnect do EventSource: substitui a ligacao
 
     // Snapshot para o proprio + lista atualizada para os outros.
@@ -177,7 +228,14 @@ router.get("/wp/stream", (req, res, _next) => {
         room.members.delete(client);
         if (room.members.size === 0) {
           rooms.delete(code);
-          decRoomIp(ip, code);
+          // **`room.ip`, nunca o `ip` desta ligacao.** A sala foi registada em
+          // `roomsPerIp` com o IP de quem a CRIOU (linha do `incRoomIp`), e nao
+          // com o de quem entrou depois. Ao esvaziar usava-se o IP de quem
+          // saisse por ultimo: se nao fosse o criador, o registo do criador
+          // nunca saia do mapa e, ao fim de 10 salas assim, esse IP levava
+          // "Limite de salas por IP" **ate' o servidor reiniciar**. Nao ha
+          // varrimento nenhum que reconcilie o `roomsPerIp` com o `rooms`.
+          decRoomIp(room.ip, code);
         } else announceMembers(room, client);
       }
     };

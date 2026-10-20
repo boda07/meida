@@ -19,6 +19,7 @@
 import { db } from "./db/index.js";
 import { toApi } from "./store.js";
 import { contaFilmesPorAno, melhoresDoAno } from "./metas.js";
+import { dayOf } from "./services/dias.js";
 
 const parseGenres = (json) => {
   try {
@@ -71,16 +72,12 @@ export function contaPorHora(isos) {
   return porHora.map((n, hora) => ({ hora, n }));
 }
 
-/** "YYYY-MM-DD" a partir de um ISO. Igual ao do `routes/achievements.js`:
- *  as duas rachas e o mapa de calor têm de concordar nas chaves. */
-function dayOf(iso) {
-  if (!iso) return null;
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return null;
-  return d.toISOString().slice(0, 10);
-}
+// O dia local de cada instante e' `dayOf` de `services/dias.js`, com o fuso que o
+// cliente envia. **Antes esta copia vivia aqui, em UTC**, e o heatmap desenha
+// dias locais — a diferenca mandava o que se via depois das 21:00 para a celula
+// de amanha, que o heatmap esconde. Ver o ficheiro para a medicao do custo.
 
-export function statsFor(userId) {
+export function statsFor(userId, tz) {
   const linhas = db
     .prepare("SELECT * FROM library WHERE user_id = ?")
     .all(userId);
@@ -222,7 +219,7 @@ export function statsFor(userId) {
   // mapa e a hora para o grafico, sem uma segunda leitura da biblioteca.
   const datas = [];
   for (const r of linhas) {
-    somaDia(dayOf(r.updated_at));
+    somaDia(dayOf(r.updated_at, tz));
     datas.push(r.updated_at);
   }
 
@@ -232,10 +229,10 @@ export function statsFor(userId) {
     )
     .all(userId);
   for (const p of datasProgresso) {
-    somaDia(dayOf(p.started_at));
-    somaDia(dayOf(p.finished_at));
-    somaDia(dayOf(p.updated_at));
-    somaDetalhe(dayOf(p.finished_at), "series");
+    somaDia(dayOf(p.started_at, tz));
+    somaDia(dayOf(p.finished_at, tz));
+    somaDia(dayOf(p.updated_at, tz));
+    somaDetalhe(dayOf(p.finished_at, tz), "series");
     datas.push(p.started_at, p.finished_at, p.updated_at);
   }
 
@@ -253,7 +250,7 @@ export function statsFor(userId) {
       `SELECT watched_at FROM library WHERE user_id = ? AND watched_at IS NOT NULL`
     )
     .all(userId)) {
-    somaDetalhe(dayOf(t.watched_at), "filmes");
+    somaDetalhe(dayOf(t.watched_at, tz), "filmes");
   }
 
   // ---- o "melhor" de cada: desempate por nome ------------------------------

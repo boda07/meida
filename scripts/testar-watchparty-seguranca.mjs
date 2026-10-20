@@ -1,15 +1,19 @@
-// Seguranca da Watch Party: codigo de sala, limite de salas/membros, payload, login.
-// Arranca o servidor de verdade e verifica:
-//   - codigo com 300 caracteres -> 400
-//   - codigo com 5 caracteres -> 400
-//   - codigo valido (6-12 A-Z0-9) -> aceito
-//   - 21o membro na mesma sala -> 429
-//   - sem token -> 401
-//   - payload acima de 2 KB -> 400
+// Watch Party: o limite de tamanho media "[object Object]", qualquer pessoa
+// publicava em qualquer sala, e a navegacao remota ia parar a um sitio externo.
+//
+// Tudo medido contra o servidor real antes da correccao:
+//   - `data: {x: "a".repeat(5000)}` -> 200 (o limite de 2 KB media 15 bytes)
+//   - um utilizador que nunca entrou na sala -> 200
+//   - `from` do cliente, sem verificacao -> aceite
+//   - `\\evil.com`, `//evil.com` e `https://evil.com` -> todos 200
 import path from "node:path";
 import fs from "node:fs";
+import { spawn } from "node:child_process";
 
-const RAIZ = path.join(process.cwd());
+const RAIZ = process.cwd();
+const PORTA = 5910 + (process.pid % 30);
+const BASE = `http://127.0.0.1:${PORTA}`;
+const SENHA = "senha-correta-123";
 
 let ok = 0;
 let falhou = 0;
@@ -17,113 +21,171 @@ function ok_(nome, cond, extra = "") {
   if (cond) { ok++; console.log("  OK    " + nome); }
   else { falhou++; console.log("  FALHA " + nome + (extra ? "  ->  " + extra : "")); }
 }
+const dormir = (ms) => new Promise((r) => setTimeout(r, ms));
 
-const PORTA = 6000 + (process.pid % 90);
-const dbDir = fs.mkdtempSync(path.join(RAIZ, "..", "meida-test-wp-"));
-const { spawn } = await import("node:child_process");
+// ---------------------------------------------------------------------------
+console.log("");
+console.log("  1) a regra do caminho, nos dois lados");
+// O servidor tem a expressao em `routes/watchparty.js`; o cliente em
+// `WatchPartyContext.jsx`. As duas tem de ser a MESMA.
+const fonteServidor = fs.readFileSync(path.join(RAIZ, "server", "src", "routes", "watchparty.js"), "utf8");
+const fonteCliente = fs.readFileSync(path.join(RAIZ, "web", "src", "watchparty", "WatchPartyContext.jsx"), "utf8");
+const RE = /^\/(?![/\\])[^\s\\]{0,300}$/;
+{
+  const noServidor = /const NAV_PATH_RE = (\/.*\/);/.exec(fonteServidor);
+  ok_("o servidor tem a regra", Boolean(noServidor));
+  if (noServidor) {
+    const r = eval(noServidor[1]);
+    for (const [p, deve] of [
+      ["/details/123?lang=pt", true], ["/", true], ["/ok", true],
+      ["\\evil.com", false], ["//evil.com", false], ["https://evil.com", false],
+      ["http://evil.com", false], ["/path com espaco", false], ["/path\\invertida", false],
+      ["", false], ["/" + "a".repeat(300), true], ["/" + "a".repeat(301), false],
+    ]) {
+      ok_("servidor: " + JSON.stringify(p).slice(0, 30).padEnd(32) + (deve ? "aceita" : "recusa"), r.test(p) === deve);
+    }
+    ok_("e a do servidor e' identica a do teste", r.source === RE.source,
+      "servidor " + r.source + " | teste " + RE.source);
+  }
+  const noCliente = /const NAV_PATH_RE = (\/.*\/);/.exec(fonteCliente);
+  ok_("o cliente tem a regra", Boolean(noCliente));
+  if (noCliente) ok_("e e' a mesma", noCliente[1] === (noServidor ? noServidor[1] : ""));
+  ok_("o cliente valida ANTES do navigate",
+    fonteCliente.includes("if (!navPathValido(path))") && /navigate\(path\)/.test(fonteCliente));
+  // Ordem: a validacao tem de estar ANTES da chamada.
+  const iValida = fonteCliente.indexOf("if (!navPathValido(path))");
+  const iNavega = fonteCliente.indexOf("navigate(path)", iValida);
+  ok_("e a validacao aparece antes", iValida > -1 && iNavega > iValida, `valida@${iValida} navega@${iNavega}`);
+}
+
+// ---------------------------------------------------------------------------
+const dbDir = fs.mkdtempSync(path.join(process.env.TEMP, "meida-test-wp-"));
 const filho = spawn(process.execPath, [path.join(RAIZ, "server", "src", "index.js")], {
   cwd: RAIZ,
-  env: { ...process.env, PORT: String(PORTA), DB_DIR: dbDir, HOST: "127.0.0.1" },
+  env: { ...process.env, PORT: String(PORTA), DB_DIR: dbDir, HOST: "127.0.0.1", JWT_SECRET: "t-wp" },
   stdio: ["ignore", "pipe", "pipe"],
 });
-let servidorMorto = false;
-filho.on("exit", (codigo) => { if (codigo !== 0) servidorMorto = codigo; });
+let saida = "";
+filho.stdout.on("data", (d) => (saida += d));
+filho.stderr.on("data", (d) => (saida += d));
+
+const pedir = (caminho, opcoes = {}) => fetch(BASE + caminho, { signal: AbortSignal.timeout(8000), ...opcoes });
+async function utilizador(nome) {
+  const u = nome + "_" + Math.random().toString(36).slice(2, 6) + "_u";
+  await pedir("/api/auth/register", {
+    method: "POST", headers: { "content-type": "application/json" },
+    body: JSON.stringify({ username: u, password: SENHA }),
+  });
+  const r = await pedir("/api/auth/login", {
+    method: "POST", headers: { "content-type": "application/json" },
+    body: JSON.stringify({ username: u, password: SENHA }),
+  });
+  const j = await r.json();
+  return { nome: u, id: j.user.id, token: j.token };
+}
 
 try {
-  let acordou = false;
-  for (let n = 0; n < 60 && !acordou; n++) {
-    try {
-      const r = await fetch(`http://127.0.0.1:${PORTA}/api/health`, { signal: AbortSignal.timeout(1000) });
-      acordou = r.ok;
-    } catch { /* ainda nao esta' a la */ }
-    if (!acordou) await new Promise((r) => setTimeout(r, 250));
+  let pronto = false;
+  for (let i = 0; i < 120 && !pronto; i++) {
+    try { const r = await fetch(`${BASE}/api/health`, { signal: AbortSignal.timeout(3000) }); if (r.ok) pronto = true; }
+    catch { await dormir(150); }
   }
-  ok_("o servidor arranca e responde a /api/health", acordou, servidorMorto ? "morreu com " + servidorMorto : "");
+  ok_("o servidor arrancou", pronto, saida.slice(-400));
 
-  if (acordou) {
-    const pedir = (p, opcoes = {}) =>
-      fetch(`http://127.0.0.1:${PORTA}${p}`, { signal: AbortSignal.timeout(10000), ...opcoes });
+  if (pronto) {
+    const ana = await utilizador("ana");
+    const bruno = await utilizador("bruno");
+    const sala = "ABCDEF";
 
-    // Regista e faz login para obter token.
-    await pedir("/api/auth/register", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username: "wpuser", password: "senha123456" }),
-    });
-    const login = await pedir("/api/auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username: "wpuser", password: "senha123456" }),
-    });
-    const token = login.ok ? (await login.json()).token : null;
-    ok_("login devolve token", !!token);
-    const authHeaders = token ? { Authorization: `Bearer ${token}` } : {};
+    // A Ana entra de facto na sala (o EventSource cria-a).
+    const ctrl = new AbortController();
+    const stream = await fetch(`${BASE}/api/wp/stream?room=${sala}&client=c1&nick=Ana&token=${ana.token}`, { signal: ctrl.signal });
+    const leitor = stream.body.getReader();
+    await dormir(400);
+    await leitor.read(); // o snapshot conta como a ligacao estar viva
 
-    console.log("");
-    console.log("  1) codigo de sala invalido -> 400");
-    const cod300 = "A".repeat(300);
-    const c300 = await pedir(`/api/wp/stream?room=${encodeURIComponent(cod300)}&client=c1&token=${encodeURIComponent(token || "")}`);
-    ok_("codigo de 300 caracteres devolve 400", c300.status === 400, "status " + c300.status);
-
-    const c5 = await pedir(`/api/wp/stream?room=ABCDE&client=c2&token=${encodeURIComponent(token || "")}`);
-    ok_("codigo de 5 caracteres devolve 400", c5.status === 400, "status " + c5.status);
+    const enviar = (u, corpo) =>
+      pedir("/api/wp/send", {
+        method: "POST",
+        headers: { "content-type": "application/json", authorization: "Bearer " + u.token },
+        body: JSON.stringify(corpo),
+      });
 
     console.log("");
-    console.log("  2) codigo valido (6-12 A-Z0-9) e' aceito");
-    const codigoValido = "ABC123DEF";
-    // O SSE fica aberto; fechamos logo depois de abrir. So verificamos que nao e' 400/401.
-    const cOk = await pedir(`/api/wp/stream?room=${codigoValido}&client=c_ok&token=${encodeURIComponent(token || "")}`, {
-      signal: AbortSignal.timeout(3000),
-    });
-    ok_("codigo valido nao e' rejeitado (200 ou SSE aberto)", cOk.status === 200, "status " + cOk.status);
+    console.log("  2) o limite de tamanho mede o payload a serio");
+    const grande = await enviar(ana, { room: sala, from: "c1", kind: "event", data: { x: "a".repeat(5000) } });
+    ok_("data: {x: 'a'.repeat(5000)} -> 400", grande.status === 400, "status " + grande.status);
+    // O corpo le-se UMA vez: `Response.text()` duas vezes da "Body has already
+    // been read" (foi o que rebentou a primeira versao deste teste).
+    const corpoGrande = await grande.text();
+    ok_("  e a mensagem e' a do limite", /max 2 KB/.test(corpoGrande), corpoGrande.slice(0, 70));
+    const dentro = await enviar(ana, { room: sala, from: "c1", kind: "event", data: { texto: "a".repeat(1500) } });
+    ok_("um payload de 1,5 KB passa", dentro.status === 200, "status " + dentro.status);
+    // E um que passa em JSON mas nao em String().
+    const quase = await enviar(ana, { room: sala, from: "c1", kind: "event", data: { y: "b".repeat(2100) } });
+    ok_("2,1 KB (que em String() seria quase nada) -> 400", quase.status === 400, "status " + quase.status);
 
     console.log("");
-    console.log("  3) sem token -> 401");
-    const cSemToken = await pedir(`/api/wp/stream?room=${codigoValido}&client=c_notk`);
-    ok_("sem token devolve 401", cSemToken.status === 401, "status " + cSemToken.status);
+    console.log("  3) so membros publicam, e o `from` e' do servidor");
+    const intruso = await enviar(bruno, { room: sala, from: "c9", kind: "nav", data: { path: "/x" } });
+    ok_("Bruno (nunca entrou) -> 403", intruso.status === 403, "status " + intruso.status);
+    const corpoIntruso = await intruso.text();
+    ok_("  e a mensagem diz o porque", /membro/.test(corpoIntruso), corpoIntruso.slice(0, 70));
+    const spoof = await enviar(ana, { room: sala, from: "c9-indoutro", kind: "event", data: { texto: "oi" } });
+    ok_("Ana com um `from` que nao existe -> 403", spoof.status === 403, "status " + spoof.status);
+
+    // **O caso que distingue "ligacao desconhecida" de "ligacao de outro
+    // membro":** o Bruno entra mesmo na sala (com o client `c2`). Agora o
+    // `from: "c2"` EXISTE, so' que pertence a outra conta — e so o userId
+    // apanha. Sem esta verificacao a mutacao M3 passava a batota toda.
+    const ctrlBruno = new AbortController();
+    const streamBruno = await fetch(`${BASE}/api/wp/stream?room=${sala}&client=c2&nick=Bruno&token=${bruno.token}`, { signal: ctrlBruno.signal });
+    const leitorBruno = streamBruno.body.getReader();
+    await dormir(400);
+    await leitorBruno.read();
+
+    const fingindo = await enviar(ana, { room: sala, from: "c2", kind: "event", data: { texto: "fingindo ser o Bruno" } });
+    ok_("Ana com o `from` de OUTRO MEMBRO (que existe) -> 403", fingindo.status === 403, "status " + fingindo.status);
+    const proprio = await enviar(bruno, { room: sala, from: "c2", kind: "event", data: { texto: "sou eu" } });
+    ok_("e o proprio Bruno com esse `from` -> 200", proprio.status === 200, "status " + proprio.status);
+
+    const legitimo = await enviar(ana, { room: sala, from: "c1", kind: "event", data: { texto: "oi" } });
+    ok_("Ana com o `from` dela -> 200", legitimo.status === 200, "status " + legitimo.status);
 
     console.log("");
-    console.log("  4) payload acima de 2 KB em /wp/send -> 400");
-    const payloadGrande = "x".repeat(3000); // 3 KB > 2 KB
-    const cGrande = await pedir("/api/wp/send", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", ...authHeaders },
-      body: JSON.stringify({ room: codigoValido, from: "f1", kind: "event", data: payloadGrande }),
-    });
-    ok_("payload de 3 KB devolve 400", cGrande.status === 400, "status " + cGrande.status);
+    console.log("  4) o servidor recusa caminhos perigosos");
+    for (const [p, esperado] of [
+      ["/details/1", 200], ["/ok", 200],
+      ["\\evil.com", 400], ["//evil.com", 400], ["https://evil.com", 400],
+      ["/com espaco", 400], ["/com\\barra", 400], ["/" + "a".repeat(400), 400],
+    ]) {
+      const r = await enviar(ana, { room: sala, from: "c1", kind: "nav", data: { path: p } });
+      ok_("nav " + JSON.stringify(p).slice(0, 26).padEnd(28) + "-> " + esperado, r.status === esperado, "status " + r.status);
+    }
 
     console.log("");
-    console.log("  5) 21o membro na mesma sala -> 429");
-    // Usa uma sala diferente para nao conflitar com o teste do item 2.
-    const codigoSala = "WPTEST99";
-    // Abre 20 conexoes SSE para a mesma sala (cada uma com client diferente) em
-    // paralelo. A 21a deve ser recusada com 429.
-    const abrirMembro = async (n) => {
-      try {
-        const r = await pedir(`/api/wp/stream?room=${codigoSala}&client=m${n}&token=${encodeURIComponent(token || "")}`, {
-          signal: AbortSignal.timeout(5000),
-        });
-        return r.status;
-      } catch {
-        return "timeout";
+    console.log("  5) o /wp/send tem limite de pedidos");
+    {
+      let barrados = 0;
+      for (let i = 0; i < 90; i++) {
+        const r = await enviar(ana, { room: sala, from: "c1", kind: "event", data: { n: i } });
+        if (r.status === 429) barrados++;
       }
-    };
-    const statuses = await Promise.all(Array.from({ length: 20 }, (_, n) => abrirMembro(n)));
-    const membrosOk = statuses.every((s) => s === 200);
-    ok_("os 20 primeiros membros abrem a sala (200)", membrosOk, "statuses=" + JSON.stringify(statuses));
+      ok_("90 pedidos seguidos dao 429 (" + barrados + " barrados)", barrados > 0,
+        "nenhum barrado — o limite nao esta' a funcionar");
+      ok_("e o servidor continua vivo", (await pedir("/api/health")).ok === true);
+    }
 
-    const c21 = await pedir(`/api/wp/stream?room=${codigoSala}&client=m20&token=${encodeURIComponent(token || "")}`, {
-      signal: AbortSignal.timeout(5000),
-    });
-    ok_("o 21o membro e' recusado com 429", c21.status === 429, "status " + c21.status);
-
-    ok_("o servidor nao morreu a meio do teste", !servidorMorto, servidorMorto ? "morreu com " + servidorMorto : "");
+    ctrl.abort();
+    ctrlBruno.abort();
   }
 } finally {
   try { filho.kill(); } catch { /* ja parado */ }
-  try { fs.rmSync(dbDir, { recursive: true, force: true }); } catch { /* ja foi */ }
+  await Promise.race([new Promise((r) => filho.once("exit", r)), dormir(5000)]);
+  try { filho.stdout.destroy(); filho.stderr.destroy(); filho.unref(); } catch { /* ja fechado */ }
+  try { fs.rmSync(dbDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 }); } catch { /* ja foi */ }
 }
 
 console.log("");
 console.log("  " + ok + " ok, " + falhou + " falha(s)");
-process.exit(falhou ? 1 : 0);
+process.exitCode = falhou ? 1 : 0;

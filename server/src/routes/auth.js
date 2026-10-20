@@ -19,7 +19,12 @@ authRouter.post(
 
 authRouter.post(
   "/auth/login",
-  rateLimiter(10, 15 * 60 * 1000), // 10 tentativas por 15 min por IP
+  // O teto por IP e' largo de proposito (100 em 15 min). Antes eram 10 e
+// contavam **todos** os pedidos, nao so' as falhas — medido: o 11.o login
+// BEM-SUCEDIDO seguidos dava 429, o que parte uma casa, uma escola ou quem
+// troque de conta. O controlo que aperta mesmo e' o de falhas, abaixo
+// (`estaBloqueadoLogin`), que e' por (ip, utilizador) e so' conta senhas erradas.
+rateLimiter(100, 15 * 60 * 1000), // 100 por 15 min por IP: so' anti-abuso
   async (req, res) => {
     const ip = req.ip || req.socket?.remoteAddress || "desconhecido";
     const { username, password } = req.body || {};

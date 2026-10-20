@@ -2,6 +2,7 @@ import { Router } from "express";
 import { requireAuth } from "../services/auth.js";
 import { listLibrary } from "../store.js";
 import { listProgress } from "../store.js";
+import { dayOf, hojeEm, tzDoPedido } from "../services/dias.js";
 
 export const achievementsRouter = Router();
 achievementsRouter.use(requireAuth);
@@ -109,21 +110,27 @@ const BADGES = [
   },
 ];
 
-// Data local "YYYY-MM-DD" a partir de um ISO.
-function dayOf(iso) {
-  if (!iso) return null;
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return null;
-  return d.toISOString().slice(0, 10);
-}
-
+// O dia de cada instante e' `dayOf` de `services/dias.js` — a MESMA funcao que o
+// mapa de calor usa, com o fuso que o cliente envia. **Antes vivia aqui uma
+// copia em UTC**, e por isso a racha quebrava ao meio da noite.
+//
 // Racha atual e historical a partir de um Set de dias de atividade.
-function computeStreak(days) {
+//
+// `tz` e' o fuso do cliente: o "hoje" de quem ve o ecra. Em UTC o servidor
+// contaria o dia de amanha como hoje para quem esta' a oeste, e o dia de ontem
+// para quem esta' a leste — e a racha partia sem que nada tivesse acontecido.
+//
+// **`agora` e' um argumento, nao `new Date()` dentro.** A racha so' e'
+// observavel por um pedido cujo resultado depende de "hoje", o que tornava o
+// teste dependente da data em que corre — e meio dia sem discriminacao nenhuma.
+// Passando o instante, o mesmo caso da o mesmo resultado em qualquer dia. E' o
+// mesmo caminho que se abriu para o `buildActivity()` do Discord.
+export function computeStreak(days, tz, agora = new Date()) {
   if (!days.size) return { streak: 0, bestStreak: 0 };
   const sorted = [...days].sort((a, b) => (a < b ? 1 : -1)); // desc
   // Dia mais recente com atividade.
   const latest = sorted[0];
-  const today = dayOf(new Date().toISOString());
+  const today = hojeEm(tz, agora);
   // Só conta racha "vivo" se a última atividade foi hoje ou ontem.
   const isLive = latest === today || latest === yesterday(today);
   let streak = 0;
@@ -165,6 +172,9 @@ function tomorrow(iso) {
 }
 
 achievementsRouter.get("/achievements", (req, res) => {
+  // O fuso vem do cliente: e' o unico que sabe a que horas "hoje" acaba para
+  // quem esta' a ver. `?tz` repetido chega como array — `tzDoPedido` trata disso.
+  const tz = tzDoPedido(req);
   const library = listLibrary(req.user.id);
   const progress = listProgress(req.user.id);
 
@@ -178,7 +188,7 @@ achievementsRouter.get("/achievements", (req, res) => {
     days: new Set(),
   };
   for (const i of library) {
-    const day = i.updatedAt ? dayOf(i.updatedAt) : null;
+    const day = i.updatedAt ? dayOf(i.updatedAt, tz) : null;
     if (day) counts.days.add(day);
     if (i.watched) {
       counts.watched++;
@@ -189,12 +199,12 @@ achievementsRouter.get("/achievements", (req, res) => {
     if (i.score != null) counts.rated++;
   }
   for (const p of progress) {
-    if (p.startedAt) counts.days.add(dayOf(p.startedAt));
-    if (p.finishedAt) counts.days.add(dayOf(p.finishedAt));
-    if (p.updatedAt) counts.days.add(dayOf(p.updatedAt));
+    if (p.startedAt) counts.days.add(dayOf(p.startedAt, tz));
+    if (p.finishedAt) counts.days.add(dayOf(p.finishedAt, tz));
+    if (p.updatedAt) counts.days.add(dayOf(p.updatedAt, tz));
   }
 
-  const { streak, bestStreak } = computeStreak(counts.days);
+  const { streak, bestStreak } = computeStreak(counts.days, tz);
 
   const data = {
     moviesWatched: counts.movies,

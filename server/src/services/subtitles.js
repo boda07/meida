@@ -108,7 +108,8 @@ export async function getSubtitleVtt(fileId) {
 
 // Converte uma legenda de um URL qualquer (ex.: vinda do extractor) para VTT.
 export async function fetchSubtitleAsVtt(url) {
-  const seguro = alvoSeguro(url);
+  // `async` desde 2026-10-19: o `alvoSeguro` resolve o nome do hostname.
+  const seguro = await alvoSeguro(url);
   if (!seguro.ok) throw new Error(seguro.motivo);
   const res = await fetch(url);
   if (!res.ok) throw new Error(`legenda ${res.status}`);

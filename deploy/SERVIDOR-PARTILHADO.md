@@ -87,6 +87,21 @@ No painel, secção **Environment / Secrets**, adiciona:
 | `MAL_REDIRECT_URI` | `https://O-TEU-ENDERECO/api/mal/callback` | Se usares MAL |
 | `ANILIST_CLIENT_ID` / `ANILIST_CLIENT_SECRET` | só se usares AniList | Opcional |
 | `ANILIST_REDIRECT_URI` | `https://O-TEU-ENDERECO/api/anilist/callback` | Se usares AniList |
+| `TRUST_PROXY` | quantos saltos de proxy há à frente: `0` se não houver nenhum | Só se houver proxy |
+
+> **`TRUST_PROXY` decide quem é o "IP do cliente"** para o limite de pedidos, o
+> bloqueio de login e o do watch party. **Omitir é `0`, e é o certo quando não há
+> nada à frente** — o Render termina o TLS ele próprio, por isso o `0` é o
+> correto aqui.
+>
+> - Deixá-lo a `0` **com** CDN ou proxy à frente → toda a gente partilha o IP do
+>   proxy e o limite conta para todos em conjunto (basta alguém gastar 100
+>   logins em 15 minutos para bloquear a casa toda).
+> - Pôr `1` **sem** proxy à frente → qualquer cliente manda `X-Forwarded-For` e
+>   escolhe o IP que quiser, o que anula o limite por IP.
+>
+> Só se aceitam números (saltos). `true`, `false` e listas de sub-redes são
+> ignorados de propósito: `true` faz o servidor confiar em qualquer `X-Forwarded-For`.
 
 Gera os segredos no teu PC (PowerShell):
 

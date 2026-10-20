@@ -4,6 +4,7 @@
 // proprio. Por isso a leitura usa optionalAuth (nunca bloqueia um perfil
 // publico) e as accoes (seguir/deixar de seguir) exigem requireAuth.
 import { Router } from "express";
+import { createHash } from "node:crypto";
 import { requireAuth, optionalAuth } from "../services/auth.js";
 import { localizarTitulos, preencherTitulosLocalizados } from "../services/tmdb.js";
 import {
@@ -73,13 +74,39 @@ socialRouter.get("/users/:username", optionalAuth, (req, res) => {
 
 // Avatar de um utilizador, servido separadamente (nao inline nas listas).
 // Devolve o valor armazenado (data URL, "emoji:..." ou URL externa) para que
-// o frontend possa buscar so quando precisa — ex.: ao renderizar o comentario
+// o frontend possa buscar so quando precisa - ex.: ao renderizar o comentario
 // de um utilizador cuja lista de comentarios ja nao traz o avatar.
+//
+// **O ETag e' o SHA-1 do VALOR, nunca o comprimento.** Era `avatar.length`, e
+// dois emojis diferentes tem o mesmo `length` (medido: "emoji:😀" e "emoji:😁"
+// dao ambos 8), portanto o ETag nao mudava: o cliente revalidava, levava **304**
+// e ficava com o avatar antigo indefinidamente. O `res.json` do Express trata o
+// `If-None-Match` sozinho, por isso o 304 chegava mesmo.
+//
+// **Sem `immutable`:** num URL que muda, `immutable` + `max-age=86400` dizia ao
+// browser para nao revalidar durante um dia — o avatar novo so aparecia amanha.
+// `max-age=300, must-revalidate` da' 5 minutos sem tocar no servidor e obriga a
+// revalidar depois disso.
+//
+// O SHA-1 de um avatar de 4 MB (data URL) custa ~6 ms (medido). Como o valor
+// vem sempre do mesmo sitio e o `===` de uma string em JS e' imediato, guardar o
+// ultimo hash por utilizador torna as repeticoes gratis.
+const etagsAvatar = new Map(); // id -> { valor, etag }
+function etagDoAvatar(id, valor) {
+  const guardado = etagsAvatar.get(id);
+  if (guardado && guardado.valor === valor) return guardado.etag;
+  const etag = createHash("sha1").update(valor).digest("base64");
+  if (etagsAvatar.size > 2000) etagsAvatar.clear();
+  etagsAvatar.set(id, { valor, etag });
+  return etag;
+}
+
 socialRouter.get("/users/:id/avatar", optionalAuth, (req, res) => {
-  const avatar = getUserAvatar(Number(req.params.id));
+  const id = Number(req.params.id);
+  const avatar = getUserAvatar(id);
   if (avatar === null) return res.status(404).json({ error: "Sem avatar." });
-  res.setHeader("Cache-Control", "public, max-age=86400, immutable");
-  res.setHeader("ETag", `"${avatar.length}"`);
+  res.setHeader("Cache-Control", "public, max-age=300, must-revalidate");
+  res.setHeader("ETag", `"${etagDoAvatar(id, avatar)}"`);
   res.json({ avatar });
 });
 

@@ -2,8 +2,8 @@
 // Arranca o servidor com `MEIDA_PROXY_SECRET` fixo e usa o mesmo segredo no
 // teste para assinar URLs — igual ao que `buildSubtitleVttUrl` faz no servidor.
 import path from "node:path";
+import { pathToFileURL } from "node:url";
 import fs from "node:fs";
-import { createHmac } from "node:crypto";
 
 const RAIZ = path.join(process.cwd());
 const SEGREDO = "teste-seguro-proxy-12345";
@@ -15,9 +15,12 @@ function ok_(nome, cond, extra = "") {
   else { falhou++; console.log("  FALHA " + nome + (extra ? "  ->  " + extra : "")); }
 }
 
-function assinar(targetUrl, ts = String(Date.now())) {
-  return createHmac("sha256", SEGREDO).update(targetUrl + "|" + ts).digest("hex");
-}
+// A chave de assinatura e' derivada no arranque do modulo, por isso a env
+// tem de estar posta ANTES deste import — e o servidor filho recebe a mesma.
+process.env.MEIDA_PROXY_SECRET = SEGREDO;
+const { assinar } = await import(
+  pathToFileURL(path.join(RAIZ, "server", "src", "services", "proxy.js")).href
+);
 
 function vttUrl(targetUrl, adulterarSig = false, ts = String(Date.now())) {
   const p = new URLSearchParams({ url: targetUrl, ts });
@@ -75,8 +78,16 @@ try {
     console.log("  5) o servidor nao morreu a meio do teste", !servidorMorto, servidorMorto ? "morreu com " + servidorMorto : "");
   }
 } finally {
+  // Matar, ESPERAR pela saida, e so' entao apagar. Com `process.exit()` logo a
+  // seguir, o Windows por vezes aborta com `Assertion failed: !(handle->flags &
+  // UV_HANDLE_CLOSING)` do libuv: o processo sai com handles do filho ainda a
+  // fechar. Vi isto acontecer uma vez em cinco corridas.
   try { filho.kill(); } catch { /* ja parado */ }
-  try { fs.rmSync(dbDir, { recursive: true, force: true }); } catch { /* ja foi */ }
+  await Promise.race([
+    new Promise((r) => filho.once("exit", r)),
+    new Promise((r) => setTimeout(r, 5000)),
+  ]);
+  try { fs.rmSync(dbDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 }); } catch { /* ja foi */ }
 }
 
 console.log("");

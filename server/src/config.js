@@ -10,6 +10,23 @@ dotenv.config({ path: resolve(__dirname, "../.env") });
 const DEFAULT_JWT_SECRET = "dev-secret-muda-me-em-producao";
 const jwtSecret = process.env.JWT_SECRET?.trim() || "";
 
+// Quantos saltos de proxy ha A FRENTE do servidor. `0` = nenhum, e e' o
+// omissao de proposito.
+//
+// Com `trust proxy` ligado e NAO ha proxy nenhum (o servidor local do Electron
+// ou exposicao directa), qualquer cliente manda `X-Forwarded-For: 1.2.3.4` e o
+// `req.ip` passa a ser o que ele quizer: o limite por IP, o bloqueio de login e
+// o do watch party deixam de valer. Comsaltos a mais, o oposto — toda a gente
+// partilha o IP do proxy.
+//
+// So' se aceitam numeros (saltos). `true`, `false` ou uma lista de sub-redes
+// ficam de fora de proposito: `true` confia em TUDO e uma lista errada e' mais
+// perigosa que nao confiar em nada.
+const trustProxyBruto = (process.env.TRUST_PROXY || "").trim();
+const trustProxy = /^\d+$/.test(trustProxyBruto) ? Number(trustProxyBruto) : 0;
+
+export { trustProxyBruto };
+
 // Em producao (Render/Electron com NODE_ENV=production) o segredo e obrigatorio:
 // um default publico deixaria qualquer pessoa forjar tokens e entrar noutras contas.
 if (process.env.NODE_ENV === "production" && (!jwtSecret || jwtSecret === DEFAULT_JWT_SECRET)) {
@@ -21,6 +38,8 @@ if (process.env.NODE_ENV === "production" && (!jwtSecret || jwtSecret === DEFAUL
 
 export const config = {
   port: Number(process.env.PORT) || 5175,
+  // Saltos de proxy em que se confia para ler o IP do cliente. Ver a nota acima.
+  trustProxy,
   // Interface onde escutar. O servidor local do Electron liga-se so a 127.0.0.1
   // (nao expoe a app ao resto da rede); nos hostings fica 0.0.0.0.
   host: process.env.HOST?.trim() || "0.0.0.0",

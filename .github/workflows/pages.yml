@@ -13,7 +13,18 @@ name: Pages
 # a partir desse server.
 on:
   push:
-    branches: [gh-pages]
+    branches: [main]
+    # So' publica quando muda o QUE SE PUBLICA. Um commit no servidor, no
+    # electron ou no AGENTS.md nao toca no site e nao deve gastar um deploy.
+    #
+    # Antes isto era `branches: [gh-pages]`, e essa branch nao existe no repo
+    # (medido na API: so' ha `main`) — portanto o caminho automatico nunca
+    # corria. Pior: a workflow NUNCA usava o conteudo da gh-pages, porque o
+    # `checkout` traz o codigo e o deploy e' do artefacto que ela propria
+    # compila. A branch so' existia para acabar de ser ignorada.
+    paths:
+      - "web/**"
+      - ".github/workflows/pages.yml"
   workflow_dispatch:
 
 jobs:
@@ -25,6 +36,12 @@ jobs:
       pages: write
       id-token: write
     environment:
+      # `name` e' OBRIGATORIO. Sem ele o GitHub nao chega a ler o `url` e
+      # rejeita o ficheiro inteiro com "Required property is missing: name"
+      # (linha 28) — que e' o que impedia a workflow de sequer partir.
+      # E' o mesmo `environment` que o workflow oficial do GitHub usa, e e' o
+      # que faz o deploy aparecer na seccao Pages.
+      name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4

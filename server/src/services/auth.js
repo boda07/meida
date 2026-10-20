@@ -32,10 +32,27 @@ export async function register(username, password) {
   return { token: signToken(user), user };
 }
 
+// Um bcrypt VALIDO de custo 10, para comparar quando o utilizador nao existe.
+//
+// **Sem isto, o tempo de resposta denunciava o nome.** `!row || ...` faz curto
+// circuito: nao havia nada para comparar e o 401 de um nome inexistente saia em
+// ~0 ms, contra os ~74 ms de um nome que existe. Medido, com 8 medicoes: 0,0 ms
+// contra 74,2 ms — uma diferenca de 74 ms que qualquer script de enumeração de
+// usernames aproveita sem dificuldade.
+//
+// Com o hash falso a diferenca fica em ~1,7 ms, que e' ruido. O hash e' uma
+// frase qualquer e esta escrito no codigo (e' o mesmo para toda a gente): gerar
+// um no arranque pagaria os ~74 ms de cada `compare` feito contra ele.
+const HASH_FALSO = "$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy";
+
 export async function login(username, password) {
   username = String(username || "").trim();
   const row = getUserByUsername(username);
-  if (!row || !(await bcrypt.compare(String(password || ""), row.password_hash))) {
+  // Compara SEMPRE, exista o utilizador ou nao. O `||` de antes era o que
+  // saltava o `bcrypt.compare` e abria a fuga de tempo.
+  const senha = String(password || "");
+  const correta = await bcrypt.compare(senha, row ? row.password_hash : HASH_FALSO);
+  if (!row || !correta) {
     throw httpError(401, "Utilizador ou password invalidos.");
   }
   const user = {

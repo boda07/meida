@@ -1,9 +1,11 @@
 // Seguranca do `/api/proxy`: assinatura, IP privado bloqueado, redirect manual.
-// Arranca o servidor com `MEIDA_PROXY_SECRET` fixo e usa o mesmo segredo no
-// teste para assinar URLs — igual ao que `buildProxyUrl` faz no servidor.
+// Arranca o servidor com `MEIDA_PROXY_SECRET` fixo e assina os URLs com o
+// `assinar` do proprio servidor — nao com uma copia do HMAC (quando a chave
+// passou a ser derivada, os dois testes que a reimplementavam partiram ao
+// mesmo tempo sem dar erro).
 import path from "node:path";
+import { pathToFileURL } from "node:url";
 import fs from "node:fs";
-import { createHmac } from "node:crypto";
 
 const RAIZ = path.join(process.cwd());
 const SEGREDO = "teste-seguro-proxy-12345";
@@ -15,9 +17,12 @@ function ok_(nome, cond, extra = "") {
   else { falhou++; console.log("  FALHA " + nome + (extra ? "  ->  " + extra : "")); }
 }
 
-function assinar(targetUrl, ts = String(Date.now())) {
-  return createHmac("sha256", SEGREDO).update(targetUrl + "|" + ts).digest("hex");
-}
+// A chave de assinatura e' derivada no arranque do modulo, por isso a env
+// tem de estar posta ANTES deste import — e o servidor filho recebe a mesma.
+process.env.MEIDA_PROXY_SECRET = SEGREDO;
+const { assinar } = await import(
+  pathToFileURL(path.join(RAIZ, "server", "src", "services", "proxy.js")).href
+);
 
 function proxyUrl(targetUrl, adulterarSig = false, ts = String(Date.now())) {
   const p = new URLSearchParams({ url: targetUrl, ts });
@@ -68,9 +73,26 @@ try {
     ok_("assinatura adulterada e' rejeitada com 403", adulterada.status === 403, "status " + adulterada.status);
 
     console.log("");
-    console.log("  4) assinatura expirada (ts de ha mais de 10 min) -> 403");
-    const expirado = await pedir(proxyUrl("https://example.com/", false, String(Date.now() - 20 * 60 * 1000)));
+    console.log("  4) assinatura antiga ainda dentro da validade -> 200");
+    // `rewritePlaylist` assina os segmentos uma vez, quando a playlist e'
+    // lida, e um leitor de VOD nao a volta a ler. Por isso a validade tem de
+    // ser uma SESSAO INTEIRA e nao um pedido: com 10 minutos, um filme de 3
+    // horas partia a meio. Este teste afirmava o contrario (20 min -> 403) e
+    // por isso fixava o bug.
+    const onzeMin = await pedir(proxyUrl("https://example.com/", false, String(Date.now() - 11 * 60 * 1000)));
+    ok_("assinatura de ha 11 min ainda e' aceite", onzeMin.status === 200, "status " + onzeMin.status);
+    const tresHoras = await pedir(proxyUrl("https://example.com/", false, String(Date.now() - 3 * 60 * 60 * 1000)));
+    ok_("assinatura de ha 3 horas ainda e' aceite", tresHoras.status === 200, "status " + tresHoras.status);
+
+    console.log("");
+    console.log("  4b) assinatura fora da validade (13 h) -> 403");
+    const expirado = await pedir(proxyUrl("https://example.com/", false, String(Date.now() - 13 * 60 * 60 * 1000)));
     ok_("assinatura expirada e' rejeitada com 403", expirado.status === 403, "status " + expirado.status);
+
+    console.log("");
+    console.log("  4c) assinatura com ts no futuro -> 403");
+    const futuro = await pedir(proxyUrl("https://example.com/", false, String(Date.now() + 60 * 60 * 1000)));
+    ok_("ts no futuro e' rejeitado com 403", futuro.status === 403, "status " + futuro.status);
 
     console.log("");
     console.log("  5) IP privado (127.0.0.1) com assinatura valida -> 403");

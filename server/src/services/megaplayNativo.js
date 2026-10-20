@@ -33,6 +33,28 @@ import crypto from "node:crypto";
 import { log } from "./log.js";
 
 const BASE = "https://megaplay.buzz";
+
+// O URL do embed tem de ser do MegaPlay, e nada mais. Sem esta porta, a rota
+// `/api/anime/megaplay?url=` (que e' publica) fazia `fetch` ao URL que o cliente
+// mandasse — um SSRF cego, porque a resposta nao voltava mas o pedido saia
+// mesmo (2026-10-19). Os URLs legitimos sao `https://megaplay.buzz/stream/…`
+// (`/stream/ani/…`, `/stream/mal/…`, `/stream/s-2/…`).
+export function embedUrlValido(embedUrl) {
+  if (typeof embedUrl !== "string" || !embedUrl) return false;
+  let u;
+  try {
+    u = new URL(embedUrl);
+  } catch {
+    return false;
+  }
+  // O `origin` compara esquema, dominio E porto — `megaplay.buzz:8443` e'
+  // rejeitado, e `https://MEGAPLAY.BUZZ` tambem (o `URL` normaliza a caixa).
+  if (u.origin !== BASE) return false;
+  if (!u.pathname.startsWith("/stream/")) return false;
+  // `user:pass@megaplay.buzz` tem o mesmo `origin`; nao interessa, mas um
+  // caminho com `..` ou barras invertidas nao.
+  return !u.pathname.includes("..") && !u.pathname.includes("\\");
+}
 const CHAVE_POR_DEFEITO = "i?LMTAx0Q6,:}50U";
 const IV_POR_DEFEITO = "W0;27ToaUpl_P%'c";
 
@@ -53,6 +75,9 @@ const UA =
 // em `dub` a pagina nao tem `data-id` (esse episodio nao existe em dub, e o
 // servidor devolve 404 em vez de um id errado).
 export async function lerDataId(embedUrl) {
+  // Defence em profundidade: a rota ja valida, mas `lerDataId` nao deve assumir
+  // que o chamador lembrou.
+  if (!embedUrlValido(embedUrl)) return null;
   try {
     const r = await fetch(embedUrl, {
       headers: { "User-Agent": UA, Referer: BASE + "/" },
@@ -112,6 +137,9 @@ function headersBase(referer) {
  *   chama cai para o iframe.
  */
 export async function extrairMegaPlayNativo({ embedUrl, dataId, audio = "sub" }) {
+  // Se ha `embedUrl` e ele nao e' do MegaPlay, nao ha nada a fazer. A rota
+  // responde 400 antes de chegar aqui, mas esta e' a segunda linha de defesa.
+  if (embedUrl && !embedUrlValido(embedUrl)) return null;
   try {
     // O `data-id` vem da pagina, e a pagina e' do audio pedido — por isso o
     // sub/dub fica certo sem se pedir nada: e' a pagina que decide.

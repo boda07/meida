@@ -1,5 +1,196 @@
 # Changelog
 
+## 1.5.7
+
+Dez defeitos medidos contra o servidor real antes de serem corrigidos, cada um
+com teste validado por mutação. Seis são de segurança, e três deles eram
+negação de serviço ou exfiltração a partir de um pedido anónimo.
+
+### `sig` não-hexadecimal derrubava o servidor inteiro
+
+`GET /api/proxy?...&sig=zzz…` — 64 caracteres, sem autenticação — matava o
+processo com código 1. **Duas falhas encadeadas:** `assinaturaValida` comparava o
+*comprimento da string* com o do digest, mas `Buffer.from(sig, "hex")` descodifica
+a par e pára no primeiro par inválido, produzindo um buffer de 0 bytes — e o
+`timingSafeEqual` atirava `RangeError`. Como `handleProxy` é `async` e não estava
+ligado a nada, no Express 4 a rejeição ficava sem dono e o Node matava o
+processo por `unhandledRejection`.
+
+- A assinatura passa a validar a **forma** (`/^[0-9a-f]{64}$/i`) antes de
+  comparar, e `routes/admin.js` passou a comparar **bytes** e não caracteres
+  (um emoji são 2 caracteres e 4 bytes — o `timingSafeEqual` exige bytes iguais).
+- **Rede:** `server/src/services/asyncRotas.js` (novo) envolve
+  `Layer.prototype.handle_request`, o ponto onde o Express chama o handler e já
+  apanha o `throw` síncrono mas **ignora a promessa devolvida**. A rejeição
+  passa agora para o middleware de erro que já existia. Envolver os routers no
+  `index.js` não serviria: eles já estão preenchidos quando são importados.
+- `scripts/testar-rota-async.mjs` (50 verificações), **5 mutações confirmadas**.
+
+### A assinatura do proxy durava 10 minutos e partia vídeos
+
+Medido: um segmento dava 200 aos 10 minutos e **403 aos 11**. `rewritePlaylist`
+assina os segmentos uma única vez, no momento em que a playlist é lida — e um
+leitor de VOD não volta a lê-la. Com 10 minutos, um filme de 3 horas partia a
+meio e uma pausa de 10 minutos estragava o mesmo.
+
+- Validade de **10 minutos → 12 horas**, com `ts` no futuro limitado a 5 min de
+  tolerância (desvio de relógio).
+- O segredo vinha de `randomBytes(32)` em cada arranque — e `MEIDA_PROXY_SECRET`
+  não estava definido em lado nenhum, pelo que **um reinício invalidava todas as
+  URLs assinadas**. Agora deriva de `MEIDA_PROXY_SECRET` ou do `config.jwtSecret`,
+  com `update("meida/proxy/hls/v1")` para que um HMAC do proxy nunca sirva para
+  forjar um token de login.
+- `scripts/testar-validade-assinatura.mjs` (26 verificações), **4 mutações**.
+
+### O proxy devolvia 302 sem `Location`
+
+Com `redirect: "manual"` (posto na 1.5.5 para fechar o SSRF) a cópia de
+cabeçalhos só trazia `content-type`, `content-length`, `content-range` e
+`accept-ranges` — **a resposta nunca tinha `Location`**. Um 302 sem `Location` é
+um beco sem saída.
+
+- `seguirRedirectos()` salta **um de cada vez**, e **cada destino passa por
+  `alvoSeguro` antes de ser buscado** — é isso que fecha o SSRF sem fechar o
+  vídeo. Limite de 5 saltos (a seguir, 502).
+- O URL final passa a ser a base de `rewritePlaylist`: os segmentos de uma
+  playlist são quase sempre relativos, e resolvidos contra o URL do pedido davam
+  o caminho errado.
+- `scripts/testar-proxy-redirect.mjs` (26 verificações), **5 mutações**.
+
+### O filtro de destinos tinha 15 buracos em 30 casos
+
+`localtest.me` e `127.0.0.1.nip.io` devolviam `{"ok":true}` — **um bypass
+completo**, porque os hostnames nunca eram resolvidos.
+
+- Os IPv6 literais passavam todos: `url.hostname` traz os parênteses (`[::1]`) e
+  `isIP("[::1]")` dá 0, pelo que `if (ip === 4 || ip === 6)` nunca era verdade.
+- O CGNAT estava errado nos dois sentidos: `100.(64–79|8\d|9\d|1[0-1]\d|2[0-5]\d)`
+  saltava de `119` para `200` — bloqueava `100.200.x.x` (público) e deixava
+  passar `100.120.x.x`..`100.127.x.x` (que é CGNAT). Substituído por
+  `net.BlockList` com `100.64.0.0/10`.
+- Agora há `dns.lookup(host, { all: true })` e **todos** os endereços são
+  julgados, com cache de 60 s.
+- `/api/anime/megaplay` era um **SSRF cego**: a rota é pública e fazia `fetch` ao
+  `url` que o cliente mandasse. Agora `embedUrlValido()` só aceita
+  `origin === https://megaplay.buzz` e pathname `/stream/…`, e o resto é 400.
+- `scripts/testar-filtro-alvos.mjs` (96 verificações), **7 mutações**.
+
+### `trust proxy` fixo em 1, e o limite de login a contar sucessos
+
+**Medido:** 12 logins **corretos** seguidos davam `10x 200, 2x 429` — partia uma
+casa, uma escola, ou quem troca de conta. E 12 tentativas com senha errada, cada
+uma com um `X-Forwarded-For` diferente, davam **zero 429** — sem proxy à frente,
+`app.set("trust proxy", 1)` faz o `req.ip` ser o que o cliente quiser.
+
+- `TRUST_PROXY` no ambiente, **número de saltos, 0 por omissão**. Só se aceitam
+  números: `true`, `false` e listas de sub-redes são ignorados de propósito
+  (`true` faz o Express confiar em TUDO).
+- O limite do login passou a **contar falhas** (`registarFalhaLogin` /
+  `estaBloqueadoLogin`, por ip+utilizador, 10 falhas → 15 min) e subiu para 100
+  em 15 min.
+- Documentado em `deploy/SERVIDOR-PARTILHADO.md` e `server/.env.example`.
+- `scripts/testar-trust-proxy.mjs` (31 verificações), **4 mutações**.
+
+### O ETag do avatar era o comprimento
+
+Dois emojis diferentes têm o mesmo `length` (medido: `emoji:😀` e `emoji:😁` dão
+ambos **8**), pelo que o ETag não mudava. O `res.json` do Express trata o
+`If-None-Match` sozinho, pelo que o cliente revalidava, levava **304** e ficava
+com o avatar antigo indefinidamente.
+
+- O ETag passou a ser o **SHA-1 do valor**, e o `Cache-Control` a
+  `public, max-age=300, must-revalidate` (sem `immutable`, que num URL que muda
+  adiava a mudança para o dia seguinte). O SHA-1 de um avatar de 4 MB custa ~6 ms
+  (medido), por isso há um memo por utilizador.
+- `scripts/testar-avatar-etag.mjs` (22 verificações), **4 mutações**.
+
+### O tempo de resposta do login denunciava que contas existiam
+
+**Medido:** com `!row || (await bcrypt.compare(...))`, o `||` faz curto-circuito —
+um nome inexistente não tinha nada para comparar e não gastava o bcrypt.
+**Mediana de 8: 0,0 ms contra 74,2 ms.** Uma diferença de 74 ms que qualquer
+script de enumeração de usernames aproveita sem dificuldade.
+
+- Passa a comparar-se sempre, contra um `HASH_FALSO` quando o utilizador não
+  existe: **hash bcrypt válido de custo 10, escrito no código** (gerar um no
+  arranque pagaria os ~74 ms de cada `compare`). **Depois: 1,3 ms de diferença.**
+- Os ganchos de teste (`__ativarModoTeste`, `__permitirHostsNoTeste`) passaram a
+  exigir `NODE_ENV=test` e **atiram** a quem os chama de fora — antes nada
+  impedia um import acusinho de os deixar activos num servidor público.
+- `scripts/testar-timing-login.mjs` (15 verificações), **5 mutações**.
+
+### Watch Party: limite de tamanho inútil, sem verificação de membro, e navegação para fora da app
+
+Quatro defeitos, medidos contra o servidor real:
+
+- **O limite de 2 KB media `"[object Object]".** O cliente envia sempre objectos
+  (`{path}`) e o servidor media `String(data)` — 15 bytes, sem dependência do
+  tamanho real. **Medido: `data: {x: "a".repeat(5000)}` devolvia 200.** Agora
+  mede-se `Buffer.byteLength(JSON.stringify(data ?? ""))`.
+- **Não havia verificação de membro.** `member = { nick, res, ip }` — sem conta
+  nenhuma ligada à ligação. **Medido: um utilizador que nunca entrou na sala
+  publicou eventos e os outros membros receberam.** O membro passa a guardar
+  `userId`, e `/wp/send` exige `membro.userId === req.user.id` (403 caso
+  contrário).
+- **`/wp/send` não tinha rate limit.** Cada pedido é ecoado por todos os outros
+  membros. Agora `rateLimiter(60, 10_000)`.
+- **`navigate(payload.data.path)` sem validar nada.** **Medido: `\\evil.com`,
+  `//evil.com` e `https://evil.com` passavam todos com 200.** A regra
+  `^\/(?![/\\])[^\s\\]{0,300}$` aplica-se **no servidor e no cliente**, antes do
+  `navigate`. O `\` é o que importa (CVE-2025-68470): um caminho com barra
+  invertida é lido pelo browser como barra normal, e `//host` como
+  protocolo-relativo.
+- `scripts/testar-watchparty-seguranca.mjs` (39 verificações), **6 mutações**.
+
+### O contador de salas por IP ficava preso até reiniciar o servidor
+
+A sala é registada em `roomsPerIp` com o IP de **quem a cria**, mas o `cleanup`
+fazia `decRoomIp(ip, code)` com o IP de **quem saísse por último**. Se não fosse
+o criador, o registo do criador nunca saía do mapa — e `roomsPerIp` **não tem
+varrimento nenhum** que o reconcilie com `rooms` (o único `setInterval` do
+ficheiro é o ping de 20 s do SSE). **Medido: A cria 10 salas e da 11.ª leva 429,
+para sempre.**
+
+- Corrigido para `decRoomIp(room.ip, code)`.
+- `scripts/testar-wp-ip.mjs` (13 verificações), **3 mutações**.
+
+### O mapa de calor e a racha contavam dias em UTC
+
+`dayOf` vivia **duplicada** (`server/src/stats.js` e
+`server/src/routes/achievements.js`), nas duas a fazer
+`toISOString().slice(0, 10)` — **UTC**. O heatmap desenha dias **locais**
+(`chaveDia` usa `getFullYear/getDate`), e `semanasDoMapa` marca `fora: true` para
+`cursor > chave`. Em UTC-3, o que se vê depois das 21:00 cai no dia de **amanhã**
+e **desaparece do mapa**.
+
+- O fuso vem do cliente (`?tz=Intl.DateTimeFormat().resolvedOptions().timeZone`),
+  e entra em **`/api/stats` E `/api/achievements`** — a racha é a outra ponta da
+  mesma coisa. Sem fuso, o servidor fica em UTC, que é o comportamento antigo.
+- `dayOf` passou a `server/src/services/dias.js` (novo), uma **fonte de verdade**
+  para as duas rotas.
+- **`en-CA` foi verificado, não assumido:** é o locale cujo formato curto já é
+  `YYYY-MM-DD`. Se um runtime devolvesse `17/10/2026`, as chaves deixavam de
+  bater com a `chaveDia` e o mapa desenhava vazio **sem erro nenhum** — por isso
+  há uma verificação ao arrancar que cai para `formatToParts`.
+- **Medido:** `toLocaleDateString("en-CA", { timeZone })` dentro do `dayOf` custa
+  **45,96 µs por chamada** contra 0,98 µs do `toISOString()` — e o `dayOf` corre
+  **por linha** (até 15 000 num pedido): 689 ms. Com o formatador **em cache**
+  (`format()` em vez de `toLocaleDateString()`): **1,19 µs**, 18 ms.
+- `scripts/testar-dias-fuso.mjs` (75 verificações), **10 mutações**.
+
+### A workflow de Pages não arrancava
+
+`.github/workflows/pages.yml` tinha `environment:` sem `name`. O GitHub lê essa
+chave como uma **environment do repositório** e um objecto `environment` exige
+`name` — sem ele rejeita o ficheiro inteiro, antes de a workflow sequer partir.
+Corrigido para `name: github-pages` + `url:`, igual ao workflow oficial.
+
+O gatilho era `push: branches: [gh-pages]`, e **essa branch não existe no
+repo** (medido na API: só há `main`) — o caminho automático nunca corria. Pior: a
+workflow nunca usava o conteúdo da `gh-pages`, porque o `checkout` traz o código
+e o deploy é do artefacto que ela própria compila. Agora dispara em `push` para
+`main` filtrado por `paths: ["web/**", ".github/workflows/pages.yml"]`.
+
 ## 1.5.6
 
 O ecrã inteiro (que a 1.5.5 partiu), o idioma dos títulos, e um auditor de

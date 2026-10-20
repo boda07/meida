@@ -189,10 +189,16 @@ console.log("  9) o servidor conta o mesmo que a racha");
   const ach = fs.readFileSync(path.join(RAIZ, "server", "src", "routes", "achievements.js"), "utf8");
   // As DUAS rotas tem de usar o mesmohelper de dia, senao as chaves nao batem
   // e o heatmap e a racha mostram dias diferentes.
-  const temHelper = /function dayOf/.test(stats) && /function dayOf/.test(ach);
-  ok_("as duas rotas tem o mesmo `dayOf`", temHelper);
-  ok_("o heatmap conta o `updated_at` da biblioteca", /dayOf\(r\.updated_at\)/.test(stats));
-  ok_("o heatmap conta as tres datas do diario", /dayOf\(p\.started_at\)/.test(stats) && /dayOf\(p\.finished_at\)/.test(stats) && /dayOf\(p\.updated_at\)/.test(stats));
+  // As DUAS rotas tem de usar o MESMO helper de dia, senao as chaves nao
+  // batem e o heatmap e a racha mostram dias diferentes. Antes cada uma tinha a
+  // sua copia em UTC; agora vem de `services/dias.js`, que e' o que garante que
+  // nao voltam a divergir — e o `?tz` do cliente entra pelas duas.
+  const temHelper =
+    /import \{[^}]*dayOf[^}]*\} from "\.\/services\/dias\.js"/.test(stats) &&
+    /import \{[^}]*dayOf[^}]*\} from "\.\.\/services\/dias\.js"/.test(ach);
+  ok_("as duas rotas importam o `dayOf` do modulo partilhado", temHelper);
+  ok_("o heatmap conta o `updated_at` da biblioteca", /dayOf\(r\.updated_at, tz\)/.test(stats));
+  ok_("o heatmap conta as tres datas do diario", /dayOf\(p\.started_at, tz\)/.test(stats) && /dayOf\(p\.finished_at, tz\)/.test(stats) && /dayOf\(p\.updated_at, tz\)/.test(stats));
   ok_("devolve `dias` ordenados", /dias:\s*\[\.\.\.porDia\.keys\(\)\]/.test(stats) && /a\.dia < b\.dia \? -1 : 1/.test(stats));
   // A reparticao que o texto do rato mostra: quantos titulos e quantos
   // episodios nesse dia. Sai de `watched_at` (a data em que marcaste) e de
@@ -206,7 +212,7 @@ console.log("  9) o servidor conta o mesmo que a racha");
   const queryFilmes = (stats.match(/SELECT[^`]*FROM library[^`]*/g) || []).find((q) => /watched_at/.test(q) && !/updated_at/.test(q));
   const comUpdated = (stats.match(/SELECT[^`]*FROM library[^`]*/g) || []).some((q) => /watched_at/.test(q) && /updated_at/.test(q));
   ok_("o SELECT dos filmes nao cita o `updated_at`", !!queryFilmes && !comUpdated, comUpdated ? "le o ultimo toque, nao a data em que viste" : "nao encontrei o SELECT");
-  ok_("as series vem de `finished_at`", /dayOf\(p\.finished_at\), "series"/.test(stats));
+  ok_("as series vem de `finished_at`", /dayOf\(p\.finished_at, tz\), "series"/.test(stats));
   // o `n` que a racha partilha NAO pode ter mudado de significado: e' o mesmo
   // numero que `/achievements` conta, e divergir era o bug que o aviso do
   // `stats.js` descreve.

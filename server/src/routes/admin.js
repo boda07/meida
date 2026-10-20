@@ -22,10 +22,17 @@ adminRouter.post("/admin/seed", (req, res, next) => {
   try {
     const expected = process.env.ADMIN_TOKEN?.trim();
     const provided = String(req.headers["x-admin-token"] || "");
+    // Compara-se em BYTES, nao em caracteres: `timingSafeEqual` exige buffers do
+    // mesmo tamanho e `provided.length` conta unidades de codigo UTF-16. Um
+    // token com tantos caracteres quanto o certo mas mais bytes (uma letra
+    // acentuada, por exemplo) passava o teste de comprimento e fazia o
+    // `timingSafeEqual` atirar `RangeError` — respondia 500 em vez de 404.
+    const esperadoBuf = expected ? Buffer.from(expected, "utf8") : null;
+    const fornecidoBuf = Buffer.from(provided, "utf8");
     if (
-      !expected ||
-      provided.length !== expected.length ||
-      !timingSafeEqual(Buffer.from(provided), Buffer.from(expected))
+      !esperadoBuf ||
+      fornecidoBuf.length !== esperadoBuf.length ||
+      !timingSafeEqual(fornecidoBuf, esperadoBuf)
     ) {
       return res.status(404).json({ error: "Nao encontrado." });
     }

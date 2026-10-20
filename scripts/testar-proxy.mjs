@@ -31,6 +31,9 @@ function ok_(nome, cond, extra = "") {
   }
 }
 
+// Os ganchos de teste do `proxy.js` so' funcionam com `NODE_ENV=test` (2026-10-19):
+// atiram em vez de desligar a seguranca em silencio.
+process.env.NODE_ENV = "test";
 const { handleProxy, __ativarModoTeste } = await import(
   "file:///" + MOD.replace(/\\/g, "/") + "?v=" + Date.now()
 );
@@ -174,7 +177,15 @@ for (const [nome, de, para] of MUTACOES) {
   // que por sua vez importa o pacote `subtitle` de `server/node_modules`. Com a
   // pasta fora do repo, o sub-teste rebentava com "Cannot find package" e o
   // harness dizia "mutacao nao apanhada" sem ser verdade.
-  const dirMut = fs.mkdtempSync(path.join(RAIZ, "server", "src", "services", ".mutproxy-"));
+  //
+  // A pasta e' `server/src/.mutproxy-*` e **nao** `server/src/services/`: o
+  // `proxy.js` importa tambem `../config.js`, que a partir de `services/`
+  // resolveria para `services/config.js` (que nao existe) e o sub-teste
+  // rebentava com ERR_MODULE_NOT_FOUND ANTES de imprimir uma verificacao
+  // sequer — o que o harness lia, ao contrario, como "mutacao nao apanhada".
+  // Um nivel acima, `../config.js` da' o `config.js` verdadeiro e `./legendas.js`
+  // continua a ser a copia local.
+  const dirMut = fs.mkdtempSync(path.join(RAIZ, "server", "src", ".mutproxy-"));
   const modMut = path.join(dirMut, "proxy.js");
   fs.writeFileSync(modMut, original.replace(de, para));
   fs.copyFileSync(path.join(RAIZ, "server", "src", "services", "legendas.js"), path.join(dirMut, "legendas.js"));
