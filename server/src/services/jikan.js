@@ -4,7 +4,7 @@
 // MAL (MegaPlay/VidLink/VidSrc.cc). O TMDB so serve para filmes e series — e para
 // arranjar o IMDB id que os torrents precisam (match best-effort).
 import { findTmdbMatch, getExternalImdb, getGenreVocab } from "./tmdb.js";
-import { cacheGet, cacheSet } from "./cache.js";
+import { cacheGet, cacheGetTtl, cacheSet } from "./cache.js";
 import { netFetch } from "./net.js";
 import { log } from "./log.js";
 
@@ -553,8 +553,18 @@ export async function getAnimeRatingsBatch(malIds) {
 
 // AniList por id do MyAnimeList: id (alguns providers usam) + bannerImage (fundo
 // widescreen do anime, muito melhor que o poster para o fundo dos detalhes).
-// Cache em memoria; falha em silencio.
+//
+// **O id do AniList de um anime NAO MUDA.** Por isso vai para o cache em DISCO:
+// antes so' vivia em memoria, e perdia-se a cada reinicio do servidor. Medido em
+// 2026-10-21, com a AniList globalmente desligada (HTTP 403, "temporarily
+// disabled due to severe stability issues"): o `anilistId` vinha `null`, e como
+// **todos** os providers de anime precisam desse id, o anime ficava sem fontes
+// nenhuma — nem com o cache em memoria, porque um servidor recem-arrancado nao
+// tem nada.
+//
+// O banner pode mudar, por isso esse tem prazo; o id, nao.
 const anilistMetaCache = new Map();
+const ANILIST_META_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 export async function getAnilistMeta(malId) {
   const key = Number(malId);
   if (anilistMetaCache.has(key)) return anilistMetaCache.get(key);
@@ -575,6 +585,21 @@ export async function getAnilistMeta(malId) {
     };
   } catch {
     /* sem AniList -> sem banner */
+  }
+  if (out.id) {
+    // O id: para sempre. O banner: 30 dias.
+    cacheSet("anilistid:" + key, out.id);
+    cacheSet("anilistmeta:" + key, out);
+  } else {
+    // A AniList nao respondeu. O id do disco serve na mesma (e' imutavel); o
+    // banner e' uma decoracao e pode perder-se.
+    const emDisco = cacheGetTtl("anilistmeta:" + key, ANILIST_META_TTL_MS);
+    if (emDisco.found && emDisco.value?.id) {
+      out = emDisco.value;
+    } else {
+      const soId = cacheGet("anilistid:" + key);
+      if (soId) out = { id: soId, banner: null };
+    }
   }
   anilistMetaCache.set(key, out);
   return out;
@@ -642,6 +667,15 @@ export async function malToAnilist(malId) {
     anilistCache.delete(key);
   }
 
+  // **O id do AniList de um anime nao muda.** O cache em memoria perdia-se a
+  // cada reinicio, e com a AniList em baixo o anime ficava sem fontes (e sao
+  // **todos** os providers de anime que precisam deste id). O disco resolve.
+  const emDisco = cacheGet("anilistid:" + key);
+  if (emDisco) {
+    anilistCache.set(key, { id: emDisco, ate: Infinity });
+    return emDisco;
+  }
+
   try {
     const res = await netFetch("https://graphql.anilist.co", {
       method: "POST",
@@ -659,6 +693,7 @@ export async function malToAnilist(malId) {
     const id = j?.data?.Media?.id ?? null;
     if (id != null) {
       anilistCache.set(key, { id, ate: Infinity });
+      cacheSet("anilistid:" + key, id);
       return id;
     }
     // Nem erro nem id: pode ser um id que a AniList nao conhece. Nao vale a pena

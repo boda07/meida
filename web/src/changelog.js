@@ -6,6 +6,17 @@
 export const CHANGELOG = [
 
 {
+      version: "1.5.9",
+      items: [
+        "Corrigido: quando um anime ficava sem fontes, a app dizia que faltava um parâmetro do catálogo de filmes — o que não tinha nada a ver com o problema. A app agora diz o que está realmente a acontecer, e a culpa é de um serviço externo que está temporariamente desligado.",
+        "Corrigido: a app já não perde as referências dos animes de cada vez que reinicia. Antes, um anime que já tinha funcionado deixava de ter fontes depois de um reinício do servidor.",
+      ],
+      items_en: [
+        "Fixed: when an anime ended up with no sources, the app said a film catalogue parameter was missing — which had nothing to do with the problem. The app now says what is actually going on, and the cause is an outside service that is temporarily switched off.",
+        "Fixed: the app no longer loses its references to anime every time it restarts. Before, an anime that had already worked stopped having sources after the server restarted.",
+      ],
+    },
+  {
       version: "1.5.8",
       items: [
         "Corrigido: a versão da app que se abre no navegador deixava de responder depois de uma actualização. Ao arrancar, o servidor voltava a reconstruir a página inteira antes de abrir, e o serviço onde está hospedado desistia de o esperar — e a página ficava em baixo até alguém corrigir. Agora abre logo.",

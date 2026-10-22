@@ -543,6 +543,12 @@ const animeAudio = localAudio || settings.animeAudio;
       setActive(null);
       api
         .sources({
+          // **`type` tem de vir.** O servidor usa-o para saber que e' um anime:
+          // sem `type`, um anime que nao tem fontes caia na mensagem de filme
+          // ("falta o parametro tmdb"), que manda quem investiga para o lado
+          // errado — o problema e' a AniList, nao o TMDB. Ate' 2026-10-20 este
+          // `type` faltava e a mensagem de anime nunca era mostrada.
+          type: "anime",
           mal: details.malId,
           anilist: details.anilistId,
           episode: details.isMovie ? 1 : episode,

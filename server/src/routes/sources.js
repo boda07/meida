@@ -33,7 +33,16 @@ sourcesRouter.get("/providers/health", async (req, res, next) => {
 // /api/sources?type=tv&tmdb=123&season=1&episode=2
 sourcesRouter.get("/sources", async (req, res, next) => {
   try {
-    const { type, tmdb, imdb, season, episode, mal, anilist, audio } = req.query;
+    const { type: tipoCru, tmdb, imdb, season, episode, mal, anilist, audio } = req.query;
+
+    // **Um anime nao leva `type` no pedido** — o frontend so' manda `mal`/`anilist`.
+    // Sem isto, um anime sem fontes caia na mensagem de filme ("falta o parametro
+    // tmdb"), que manda quem investiga para o lado errado: o problema nao e' o
+    // TMDB, e' a AniList. A mensagem certa (a de anime) existia desde 2026-10-08
+    // para este caso exacto, mas **nunca era mostrada** — porque o `type` nunca
+    // chegava. Medido: `?mal=21` dava "falta o parametro tmdb" e
+    // `?type=anime&mal=21` dava a mensagem de anime.
+    const type = tipoCru === "anime" || (!tipoCru && (mal || anilist)) ? "anime" : tipoCru;
 
     // Os providers de anime usam id do AniList. O catalogo e do MyAnimeList, por
     // isso o anilistId pode vir a null (falha do Jikan/AniList ao carregar os

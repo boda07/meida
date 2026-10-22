@@ -200,6 +200,20 @@ Notas de PowerShell que custaram tempo:
 
 ## Bugs corrigidos (não repetir erros)
 
+- **Um anime sem fontes dizia "falta o parametro tmdb" — a mensagem mandava para o lado errado (2026-10-21)**. Bug do utilizador (o do MEIDA de um amigo). Medido contra o servidor real.
+  - **A causa immediate era externa:** a **API da AniList esta' globalmente desligada** — HTTP 403 com *"The AniList API has been temporarily disabled due to severe stability issues"*. Nao e' do MEIDA nem do utilizador; e' uma paragem da AniList.
+  - **E a causa do MEIDA era a mensagem.** O ramo anime do frontend (`Details.jsx`, `.sources({mal, anilist, episode, audio})`) **nao mandava `type`**. O servidor so' sabia que era anime pelo `type`, portanto um anime sem fontes caia na resposta de filme. **Medido:** `?mal=21` dava `falta o parametro tmdb` e `?type=anime&mal=21` dava *"Nao consegui obter as fontes deste anime agora..."*.
+  - **A mensagem certa EXISTIA e era INALCANCAVEL.** O servidor tinha a mensagem de anime desde 2026-10-08 (o caso do Dragon Ball, quando a AniList nao respondeu) — mas como o `type` nunca chegava, nunca era mostrada. **Um teste por texto nao apanha isto; so' a conta com o servidor a correr.**
+  - **Corrigido nas duas pontas:** o frontend manda `type: "anime"`, e o servidor deriva o tipo (`!tipoCru && (mal || anilist)` -> anime) para nenhum outro chamador cair no mesmo buraco.
+  - **`buildAnimeEmbedSources` so' inclui um provider SE TIVER o id de que ele precisa**, e os tres de anime (MegaPlay nativo, MegaPlay, VidNest) precisam do **id do AniList**. Com a AniList em baixo, `malToAnilist` falha -> `anilistId` fica null -> **zero fontes**. O `mal` sozinho nao chega.
+  - **O id do AniList vivia SO' em memoria** (`anilistMetaCache` e `anilistCache`), e perdia-se a cada reinicio. Agora vai **para o disco** (`anilistid:<mal>`): o id de um anime **nao muda**, e o banner (que pode mudar) fica com 30 dias. Com isto, um servidor que ja viu o anime continua a servir as fontes mesmo com a AniList em baixo.
+  - `scripts/testar-fontes-anime.mjs` (13 verificacoes, entra no `npm test`).
+
+- **O `!tmdb` do `/api/sources` e' na verdade "o parametro NAO VEIO"** (2026-10-21). `tmdb` vem de `req.query`, e portanto e' uma **string**: `tmdb=0` e `tmdb=abc` sao **truthy** e passam; so' a **ausencia** do parametro e' falsy. Medido: `?type=movie&tmdb=0` -> 200, `?type=movie` -> 400. Vale a pena saber porque o `get()` do cliente **omite** o parametro quando o valor e' `undefined`/`null`/`""` — e um `id` que chega vazio do servidor desaparece em silencio, sem aviso nenhum.
+
+- **Um teste de frontend tem de ser lido como o que e' (2026-10-21)**. A verificacao de que o ramo anime manda `type: "anime"` e' **por texto** (o pedido e' feito no browser). O que prova o comportamento de verdade e' a seccao 2 do mesmo teste, contra o servidor a correr. **Uma verificacao de texto passa quando o texto la esta — e nao diz nada sobre o que o browser faz com ele.**
+
+
 - **O Render nao deployava a versao web: o start command reconstruia o site (2026-10-20)**. Bug do utilizador (log do Render). O sitio ficou em baixo **para sempre**, nao so um deploy: cada deploy novo falhava do mesmo modo.
   - **O sintoma:** `==> No open ports detected, continuing to scan...` e depois `==> Port scan timeout reached, no open ports detected`.
   - **A causa nao era o servidor.** Medido: com `PORT=10000` e `SERVE_WEB=1`, o servidor liga a `0.0.0.0:10000` e responde em **390 ms**. O `bind` esta' certo (`config.host` = `process.env.HOST || "0.0.0.0"`, `config.port` = `process.env.PORT || 5175`).

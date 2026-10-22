@@ -1,5 +1,69 @@
 # Changelog
 
+## 1.5.9
+
+Um anime sem fontes dizia *"falta o parametro tmdb"* — que manda quem investiga
+para o lado errado. E a causa immediate era uma paragem global da AniList.
+
+### A API da AniList está globalmente desligada
+
+Medido hoje: `POST https://graphql.anilist.co` devolve **HTTP 403** com
+
+> *"The AniList API has been temporarily disabled due to severe stability issues."*
+
+Não é do MEIDA nem do utilizador — é uma paragem da AniList, e afecta toda a
+gente. **Consequência no MEIDA:** `buildAnimeEmbedSources` só inclui um provider
+**se tiver o id de que esse provider precisa**, e os três de anime (MegaPlay
+nativo, MegaPlay, VidNest) precisam do **id do AniList**. Com a AniList em baixo,
+`malToAnilist` falha, o `anilistId` fica `null` e o anime fica com **zero
+fontes** — o `mal` sozinho não chega.
+
+### A mensagem errada era do MEIDA
+
+O ramo anime do frontend (`web/src/pages/Details.jsx`) mandava
+`.sources({ mal, anilist, episode, audio })` — **sem `type`**. O servidor só
+sabia que era anime pelo `type`, portanto um anime sem fontes caía na resposta
+de filme.
+
+**Medido, contra o servidor real:**
+
+| pedido | resposta |
+| --- | --- |
+| `/api/sources?mal=21` | 400 `falta o parametro tmdb` ← o que a app mandava |
+| `/api/sources?type=anime&mal=21` | 400 *"Não consegui obter as fontes deste anime agora…"* |
+
+**A mensagem certa existia e era inalcançável.** O servidor tem a mensagem de
+anime desde 2026-10-08 (o caso do Dragon Ball, quando a AniList também não
+respondeu) — mas como o `type` nunca chegava, nunca era mostrada.
+
+- O frontend passa a mandar `type: "anime"`.
+- O servidor deriva o tipo (`!tipoCru && (mal || anilist)` → anime), para nenhum
+  outro chamador cair no mesmo buraco.
+- Um filme ou uma série **sem** tmdb continuam a dar *"falta o parametro tmdb"* —
+  a correcção não trocou uma mensagem pela outra.
+
+### O id do AniList só vivia em memória
+
+`anilistMetaCache` e `anilistCache` eram `Map` em memória: perdiam-se a cada
+reinício do servidor. E o id do AniList de um anime **não muda**, portanto cabe
+num cache em disco sem prazo.
+
+- `anilistid:<mal>` — o id, sem prazo.
+- `anilistmeta:<mal>` — o id + o banner, com 30 dias (o banner pode mudar).
+
+Com isto, um servidor que já viu o anime continua a servir as fontes mesmo com a
+AniList em baixo.
+
+### Detalhe que vale a pena saber
+
+O `!tmdb` do `/api/sources` é, na prática, *"o parâmetro não veio"*: `tmdb` vem
+de `req.query`, e portanto é uma **string** — `tmdb=0` e `tmdb=abc` são truthy e
+passam. E o `get()` do cliente **omite** o parâmetro quando o valor é
+`undefined`/`null`/`""`, pelo que um id que chegue vazio do servidor desaparece
+em silêncio.
+
+`scripts/testar-fontes-anime.mjs` (13 verificações, entra no `npm test`).
+
 ## 1.5.8
 
 A versão web (a que se abre no navegador) não entrava em linha desde um deploy,
