@@ -36,7 +36,6 @@ const LOCAL_API_PREFIXES = [
   "/api/proxy",
   "/api/debrid",
   "/api/wp",
-  "/api/users",
 ];
 
 function isLocalApiPath(path) {

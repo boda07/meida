@@ -1,5 +1,26 @@
 # Changelog
 
+## 1.6.0
+
+O perfil e a biblioteca de outro utilizador davam *"utilizador não encontrado"* porque o pedido ia para o servidor local em vez do servidor partilhado (FadeHost).
+
+### `/api/users` saiu da lista de rotas locais
+
+O `web/src/api/client.js` tem uma lista `LOCAL_API_PREFIXES` de rotas que não vão para o servidor remoto (ex.: catálogo, search, details). `"/api/users"` estava nessa lista, o que fazia com que `/api/users/:username`, `/api/users/:username/library`, `/api/users/:id/avatar`, seguir/seguir em seguida e a pesquisa de utilizadores (`/api/users?q=...`) fossem sempre para o servidor local ou para a origem do navegador. Como o servidor local não tem o utilizador "Boda" (ele vive no FadeHost), o perfil dava 404.
+
+O `"/api/users"` foi removido da lista. Agora:
+
+- `/api/users/:username` — perfil de outro utilizador — vai para o servidor remoto
+- `/api/users/:username/library` — biblioteca pública — vai para o servidor remoto
+- `/api/users/:username/lists` — listas públicas — vai para o servidor remoto
+- `/api/users/:id/avatar` — avatar de outro utilizador — vai para o servidor remoto
+- `/api/users?q=...` — pesquisa de utilizadores — vai para o servidor remoto
+- Seguir / deixar de seguir — vão para o servidor remoto
+
+Medido em produção: `GET https://meida.fadehost.app/api/users/Boda` devolve 200 com o perfil correcto.
+
+O `npm test` passou (37 testes, 0 falhas). `npm run build` passou. CJK limpo. Lint sem erros novos.
+
 ## 1.5.9
 
 Um anime sem fontes dizia *"falta o parametro tmdb"* — que manda quem investiga

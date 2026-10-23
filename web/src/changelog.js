@@ -6,6 +6,21 @@
 export const CHANGELOG = [
 
 {
+      version: "1.6.0",
+      items: [
+        "Corrigido: abrir um perfil (o teu ou de outra pessoa) dava \"utilizador não encontrado\" mesmo estando logado. A app estava a pedir o perfil ao servidor local em vez do servidor partilhado (FadeHost). Agora volta a funcionar.",
+        "Corrigido: abrir a biblioteca e as listas de outra pessoa também dava erro por causa do mesmo problema. Agora carregam corretamente.",
+        "Corrigido: seguir e deixar de seguir utilizadores deixou de funcionar porque o pedido ia para o servidor errado.",
+        "Corrigido: os avatares nos comentários e nas menções (@) voltaram a carregar.",
+      ],
+      items_en: [
+        "Fixed: opening your profile (or someone else's) said \"user not found\" even when logged in. The app was asking the local server instead of the shared server (FadeHost). It works again.",
+        "Fixed: opening someone else's library and lists also failed because of the same problem. They load correctly again.",
+        "Fixed: following and unfollowing users stopped working because the request went to the wrong server.",
+        "Fixed: avatars in comments and mentions (@) are back.",
+      ],
+    },
+  {
       version: "1.5.9",
       items: [
         "Corrigido: quando um anime ficava sem fontes, a app dizia que faltava um parâmetro do catálogo de filmes — o que não tinha nada a ver com o problema. A app agora diz o que está realmente a acontecer, e a culpa é de um serviço externo que está temporariamente desligado.",
