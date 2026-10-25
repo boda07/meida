@@ -16,7 +16,9 @@ import { api } from "../api/client.js";
 
 export default function Avatar({ avatar, name = "?", size = 38, userId }) {
   const style = { width: size, height: size, fontSize: Math.round(size * 0.5) };
-  const [resolvedAvatar, setResolvedAvatar] = useState(avatar);
+  // O valor buscado via API (só usado quando não há avatar direto).
+  // Guardado em estado porque vem de uma promise assíncrona.
+  const [buscado, setBuscado] = useState(null);
 
   useEffect(() => {
     // So busca se nao houver valor direto e houver um id para consultar.
@@ -25,7 +27,7 @@ export default function Avatar({ avatar, name = "?", size = 38, userId }) {
     api
       .userAvatar(userId)
       .then(({ avatar: a }) => {
-        if (!cancelled && a) setResolvedAvatar(a);
+        if (!cancelled && a) setBuscado(a);
       })
       .catch(() => {
         // Falhou a busca: fica sem avatar, mostra a inicial. Nao e' grave.
@@ -35,7 +37,9 @@ export default function Avatar({ avatar, name = "?", size = 38, userId }) {
     };
   }, [avatar, userId]);
 
-  const a = resolvedAvatar;
+  // O valor direto (prop) tem prioridade sobre o buscado, e muda sempre que o
+  // prop muda — não fica preso a um valor antigo.
+  const a = avatar || buscado;
 
   if (a && /^(https?:\/\/|data:image\/)/i.test(a)) {
     return <img className="avatar-img" src={a} alt={name} style={style} />;

@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.6.1
+
+O avatar não atualizava quando se mudava de perfil ou de utilizador nos comentários, e as páginas de comentários/notificações faziam pedidos desnecessários para baixar avatares.
+
+### O `Avatar.jsx` não atualizava quando as props mudavam
+
+O `web/src/components/Avatar.jsx` usava `useState(avatar)` para guardar o valor buscado da API. Como o `useState` só lê o valor na primeira renderização, mudar o `avatar` (por exemplo, ao navegar de um perfil para outro) não tinha efeito — continuava a mostrar o avatar antigo.
+
+O `avatar` direto agora tem prioridade sobre o valor buscado (`const a = avatar || buscado`), e o valor buscado é redefinido sempre que o `avatar` ou o `userId` mudam.
+
+### `u.avatar` deixava de ser buscado nas consultas de comentários
+
+As consultas `SELECT c.*, u.username, u.avatar FROM comments c` traziam o `avatar` de cada autor, mas o `toApiComment` nunca o usava — o avatar é buscado separadamente pelo componente `Avatar`. Cada comentário de 200 KB era carregado por nada em cada linha.
+
+O `u.avatar` foi removido dessas consultas. Agora só se busca o que é usado.
+
 ## 1.6.0
 
 O perfil e a biblioteca de outro utilizador davam *"utilizador não encontrado"* porque o pedido ia para o servidor local em vez do servidor partilhado (FadeHost).

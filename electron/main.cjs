@@ -268,11 +268,22 @@ function limparPortaAntiga() {
   }
 }
 function prodUrl() {
-  try {
-    const p = parseInt(fs.readFileSync(PORT_FILE(), "utf8").trim(), 10);
-    if (p > 0 && p < 65536) return `http://127.0.0.1:${p}`;
-  } catch {
-    /* sem ficheiro: usa a porta por omissao */
+  // Espera ate 5s que o servidor escreva o ficheiro da porta.
+  // Sem isto, se o servidor ainda nao arrancou, usamos a porta por omissao
+  // (5175), que pode estar ocupada por outro processo, fazendo com que a janela
+  // nao consiga ligar e fique em branco.
+  for (let i = 0; i < 50; i++) {
+    try {
+      const p = parseInt(fs.readFileSync(PORT_FILE(), "utf8").trim(), 10);
+      if (p > 0 && p < 65536) return `http://127.0.0.1:${p}`;
+    } catch {
+      /* sem ficheiro ainda: o servidor nao terminou de arrancar */
+    }
+    // Aguarda 100ms antes de tentar novamente
+    const start = Date.now();
+    while (Date.now() - start < 100) {
+      /* espera */
+    }
   }
   return `http://127.0.0.1:${PROD_PORT_DEFAULT}`;
 }

@@ -1230,7 +1230,7 @@ export function addComment(entry) {
 
   const row = db
     .prepare(
-      `SELECT c.*, u.username, u.avatar FROM comments c
+      `SELECT c.*, u.username FROM comments c
        JOIN users u ON u.id = c.user_id WHERE c.id = ?`
     )
     .get(novoId);
@@ -1242,7 +1242,7 @@ export function addComment(entry) {
 export function listComments({ type, tmdbId, season, episode, viewerId }) {
   const rows = db
     .prepare(
-      `SELECT c.*, u.username, u.avatar FROM comments c
+      `SELECT c.*, u.username FROM comments c
        JOIN users u ON u.id = c.user_id
        WHERE c.media_type = ? AND c.external_id = ? AND c.season IS ? AND c.episode IS ?
        ORDER BY c.created_at ASC`
@@ -1262,7 +1262,7 @@ export function listComments({ type, tmdbId, season, episode, viewerId }) {
 export function getComment(id, viewerId) {
   const r = db
     .prepare(
-      `SELECT c.*, u.username, u.avatar FROM comments c
+      `SELECT c.*, u.username FROM comments c
        JOIN users u ON u.id = c.user_id WHERE c.id = ?`
     )
     .get(id);

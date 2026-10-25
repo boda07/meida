@@ -6,6 +6,17 @@
 export const CHANGELOG = [
 
 {
+      version: "1.6.1",
+      items: [
+        "Corrigido: o avatar não mudava quando se alterava de perfil ou de utilizador nos comentários. O avatar ficava preso ao valor antigo até recarregar a página.",
+        "Corrigido: a página de comentários e as notificações faziam pedidos desnecessários para baixar o avatar de cada autor — agora só pedem o que precisam.",
+      ],
+      items_en: [
+        "Fixed: the avatar didn't update when switching profiles or users in comments. The avatar stayed stuck on the old value until you reloaded the page.",
+        "Fixed: the comments page and notifications made unnecessary requests to download each author's avatar — now they only fetch what they need.",
+      ],
+    },
+  {
       version: "1.6.0",
       items: [
         "Corrigido: abrir um perfil (o teu ou de outra pessoa) dava \"utilizador não encontrado\" mesmo estando logado. A app estava a pedir o perfil ao servidor local em vez do servidor partilhado (FadeHost). Agora volta a funcionar.",

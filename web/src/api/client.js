@@ -350,7 +350,9 @@ async function handle(res) {
     } catch {
       /* corpo nao e JSON: fica o erro por defeito */
     }
-    throw new Error(msg);
+    const err = new Error(msg);
+    err.status = res.status;
+    throw err;
   }
   return res.json();
 }
