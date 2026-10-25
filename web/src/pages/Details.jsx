@@ -20,7 +20,18 @@ import Comments from "../components/Comments.jsx";
 import { clearPresence, showPresence } from "../discord.js";
 import { useT } from "../i18n/I18nContext.jsx";
 
-export default function Details() {
+export default function Details() {  // Nome da temporada: o servidor devolve o nome do espelho (ex. "Temporada 1"
+  // ou "Season 1"). O cliente deve mostrar no idioma da interface. Nomes
+  // próprios (ex. "Parte 2") sao mostrados tal como estao.
+  function nomeTemporada(s, t) {
+    if (!s.seasonNumber) return t("Especiais");
+    if (!s.name || /^(Temporada|Season)\s*\d+$/i.test(s.name)) {
+      return t("Temporada {n}", { n: s.seasonNumber });
+    }
+    return s.name;
+  }
+
+
   const t = useT();
   const { type, id } = useParams();
   const [searchParams] = useSearchParams();
@@ -808,12 +819,12 @@ api
                 {details.type === "tv"
                   ? details.seasons?.map((s) => (
                       <option key={s.seasonNumber} value={s.seasonNumber}>
-                        {s.name} ({s.episodeCount} eps)
+                        {nomeTemporada(s, t)} ({s.episodeCount} eps)
                       </option>
                     ))
                   : animeSeasons.map((s) => (
                       <option key={s.seasonNumber} value={s.seasonNumber}>
-                        {t(s.label)} ({s.episodes.length} eps)
+                        {nomeTemporada(s, t)} ({s.episodes.length} eps)
                       </option>
                     ))}
               </select>

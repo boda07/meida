@@ -837,6 +837,8 @@ export const DICIONARIO = {
     "Começou": "Começou",
     "Acabou": "Acabou",
     "Temporada": "Temporada",
+    "Temporada {n}": "Temporada {n}",
+    "Especiais": "Especiais",
     "Começou: {data}": "Começou: {data}",
     // --- identicos nos dois idiomas (codecs, unidades, marcas) ---
     "x264": "x264",
@@ -1863,7 +1865,9 @@ export const DICIONARIO = {
     "Começou": "Started",
     "Acabou": "Finished",
     "Temporada": "Season",
-    "Começou: {data}": "Started: {data}",
+    "Temporada {n}": "Season {n}",
+    "Especiais": "Specials",
+      "Começou: {data}": "Started: {data}",
     // --- identicos nos dois idiomas (codecs, unidades, marcas) ---
     "x264": "x264",
     "x265": "x265",
