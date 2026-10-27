@@ -2,12 +2,14 @@
 
 Lista viva de ideias para a app.
 
-**Como se organiza:** as secções do topo são o que **ainda não está feito** — só
-listas `[ ]`. Quando uma coisa se faz, a linha vai para a secção **Feitas**, no
-fim do ficheiro, e mantém o texto com a explicação do *como* e do *porquê*
-(que é a parte que se perde e é a mais difícil de reconstruir). As secções
-"Social / comunidade", "O CSS e as estatísticas" e "O que não há que ir buscar
-lá" são análises do projeto antigo e ficam onde estão.
+**Como se organiza:**
+- As secções do topo são o que **ainda não está feito** — só listas `[ ]`.
+- **Decidido não fazer** fecha as ideias que não avançam, com o motivo, para não
+  voltarem à mesa.
+- **Feitas**, no fim, guarda o que já está na app com a explicação do *como* e do
+  *porquê* — a parte que se perde e é a mais difícil de reconstruir.
+- As secções "Social / comunidade" e "O CSS e as estatísticas" são análises do
+  projeto antigo; o que lá está `[ ]` continua a ser trabalho por fazer.
 
 ## Antes de escolher uma ideia: o servidor adormece
 
@@ -49,7 +51,7 @@ decidida. A metade visual do calendário de estreias **não** tem este bloqueio 
 
   **Cuidados que a ideia tem de trazer, senão sai mal:**
   - **Um botão por comentário, nunca automático.** Traduzir tudo estraga os comentários que já estão na tua língua, e ninguém aguenta.
-  - **Dizer de onde veio** — "Traduzido de inglês", com o original sempre acessível. Sem isso, o texto traduzido passa por uma opinião de outra pessoa em vez de Commentário de quem escreveu.
+  - **Dizer de onde veio** — "Traduzido de inglês", com o original sempre acessível. Sem isso, o texto traduzido passa por uma opinião de outra pessoa em vez de um comentário de quem escreveu.
   - **Cache no servidor** (`cache.js` já existe): o mesmo comentário não se traduz duas vezes, e a cota não se gasta em cliques repetidos.
   - **O alvo é o idioma da interface** (`t.idioma`), que já é pt ou en. Não precisa de um seletor novo.
   - **A cota é por IP/dia e é partilhada** — vale a pena avisar quando está a acabar, em vez de o botão falhar em silêncio.
@@ -75,10 +77,6 @@ decidida. A metade visual do calendário de estreias **não** tem este bloqueio 
 - [ ] **Plano de maratona** — dizes "acabar até dia X" e a app calcula episódios
   por dia a partir da duração média **real** dessa série (que se sabe do
   progresso), não de uma média genérica. É isso que o ajusta ao teu ritmo.
-- [ ] ~~Sagas e ordem de visionamento~~ — via `relations` do AniList. **Não fazer
-  assim:** as relations do AniList são ruidosas e inconsistentes, e "por onde
-  começar" derived delas dá recomendações erradas com mais confiança do que a
-  informação merece. Se se quiser, fazer com uma lista curada à mão.
 - [ ] **"Onde ver"** — o `watch/providers` do TMDB. Nota: **não é plano B para
   quando as fontes falham** — as fontes da MEIDA são o próprio conteúdo, o TMDB
   dá onde comprar/alugar. Duas coisas diferentes, com expectativas diferentes.
@@ -94,22 +92,14 @@ decidida. A metade visual do calendário de estreias **não** tem este bloqueio 
 - [ ] **Estadísticas comparadas com a média dos utilizadores** (rating global por título).
 
 ## Player / visual
-- [ ] **Modo cinema**: player em fullscreen com UI limpa e auto-hide dos controlos. **(Decidido: o fullscreen/auto-hide nativo do `<video>` chega — não fazer.)**
 - [ ] **Dark mode unificado** + tema custom por utilizador (a app já é maioritariamente escura; falta terminar).
 - [ ] **Bookmarks/timestamps por episódio** (notas de episódio, não só da série).
 - [ ] **Outros serviços de debrid além do Real-Debrid** (AllDebrid, TorBox, Debrid-Link). O `debrid.js` está escrito contra a API do RD: é preciso uma camada comum (`checkToken` / `instantInfo` / `addMagnet` / `createDownload`) e um selector de serviço no campo do token em Definições. TorBox é o único com plano grátis permanente, mas limitado a 1 download/dia.
-- [ ] **Avisar no Watch Party quando a fonte não sincroniza** — o `useVideoSync` só funciona no nosso player (o `postMessage` não atravessa o cross-origin do iframe do provider). Quem está numa sala e escolheu um iframe vê o play/pausa dos outros e o seu não mexe, e não há forma de saber se é a app ou o provider. Um aviso discreto na barra da sala evita que pareça partido.
 - [ ] **Estatísticas do modo grátis**: quanto do episódio veio de P2P e quanto da net, por fonte. É o que diz se o `critical` e o `priorizarPecas` estão a servir para alguma coisa — hoje não há forma de ver.
-
-- [ ] **Mostrar o estado das fontes** (online / lenta / em baixo) e passar à seguinte se uma não arrancar em X segundos. O trabalho difícil **já está feito**: o `providerHealth.js` sabe o estado de cada fonte e o `Player` já cai para a seguinte. Falta **mostrar** — e é a informação que faltava quando uma fonte não dá, porque agora a queda é silenciosa.
-- [ ] **Picture-in-Picture** — a API do browser (`requestPictureInPicture`) já serve para o `<video>` do nosso player. Falta ligar o botão, e escondê-lo nos iframes cross-origin, onde não háHIP.
+- [ ] **Picture-in-Picture** — a API do browser (`requestPictureInPicture`) já serve para o `<video>` do nosso player. Falta ligar o botão e escondê-lo nos iframes cross-origin, onde não há PiP.
 - [ ] **Mini-player que continua a tocar enquanto se navega no catálogo**, mais um "ainda estás a ver?" depois de N episódios em autoplay. A posição já se guarda para o "continua a ver"; falta manter o vídeo vivo enquanto a rota muda.
 
 ## Providers de anime / player nativo
-
-- [ ] **Lembrar a fonte escolhida** — o `Player` tem `manual`/`fonteManual`, mas isso vive na sessão: ao mudar de episódio volta ao primeiro provider. Guardar em `settings` a última fonte por tipo (filme / série / anime) e abrir nessa. Quem escolheu o MegaPlay porque é o único com legendas não devia ter de o escolher em cada episódio.
-
-- [ ] **Health-check do nativo separado do iframe** — o `providerHealth.js` sonda `p.url`, que é a **página** do player. O nativo pode falhar a desencriptar com a página a responder 200 (o health-check diz "ok" e o episódio não dá), e o inverso também (página morta, nativo a desencriptar à mesma). O `probe()` tem de ir buscar o `getSources` e ver se o `enc` volta em claro. As duas entradas também precisam de estado próprio — hoje têm nomes quase iguais e partilham o resultado.
 
 - [ ] **Legendas de anime em português** — o `settings.subtitleLang` vale para filmes e séries (OpenSubtitles, `subtitles.js`), mas o anime só traz o "English" do MegaPlay. O caminho limpo é procurar por **MAL id** (o `malToAnilist()` já existe, o inverso também deve dar), **não** traduzir legendas.
 
@@ -119,49 +109,11 @@ decidida. A metade visual do calendário de estreias **não** tem este bloqueio 
 - [ ] **Keyboard shortcut "o"** para marcar visto/nota na Library (como no /compare).
 
 - [ ] **Paleta de comandos (Ctrl/Cmd+K)** — pesquisar, navegar e agir (marcar visto, dar nota, mudar a cor, "escolhe algo para mim"). Combina com o desktop e é o que faz uma app com muitas páginas ser usável sem rato.
-- [x] **Onboarding nos primeiros 60 segundos** — importar de MAL, Letterboxd ou CSV, escolher géneros e cor, para o perfil nascer já cheio. **Feito em 2026-10-15, como folha de lado (não modal).**
-  - **As três importações já existiam** (`/api/mal/import`, `/api/letterboxd/import`, `/api/export/import`) e vivem nas Definições. O que faltava era o **quando** e o **onde** — quem entrava via `/register` ia para `/` e via a app vazia, sem pista de que havia três portas.
-  - **Mostra-se a quem está VAZIO, não a quem se registou há pouco.** Quem já tem 400 títulos importados não precisa de um wizard a perguntar de onde os trouxe. E a condição é `count === 0` **do `LibraryContext`**, com `null` a significar *ainda a carregar* — que **não** é zero. Mostrar o wizard a quem tem 300 títulos porque o pedido ainda não voltou importava por cima do que a pessoa já tinha, e é o estrago mais caro da funcionalidade.
-  - **Uma porta só é oferecida se for capaz de importar.** O único CSV que o import aceita é o exportado pela MEIDA: `toLibraryEntry()` lê `o.tmdbId` e a rota descarta o que não o tem (`if (!e.type || !e.tmdbId) continue`). Um CSV do Letterboxd (`Date, Name, Year` — **sem tmdbId**) importava **zero, sem erro**: um "Importados 0 títulos" que não diz a ninguém que o ficheiro estava no formato errado. Daí `opcoesDe()` esconder o MAL e o AniList sem as **duas** metades (servidor configurado *e* conta ligada) — com o `MAL_CLIENT_ID` a menos, o link de autorização dá 500 e um botão que rebenta é pior que nenhum botão.
-  - **A porta em primeiro é a mais barata, não a mais popular.** O Letterboxd escreve-se um username e está; MAL e AniList são dois cliques com o browser a sair da app. Quem vê primeiro a porta cara desiste antes de chegar a uma que resolve em dez segundos.
-  - **A folha é de lado, não modal** (`aria-modal="false"`): em `/library` é a biblioteca que está a ser escrita e o contexto importa, e um fundo escuro a bloquear impede de ver o import acontecer. Monta-se **fora do `ErrorBoundary`** — quem acabou de criar a conta pode estar a ver um erro de rede, e um wizard que depende da página para aparecer é um wizard que nunca aparece. **`z-index: 75`**, acima da barra de baixo (65/66) e abaixo do Changelog (80).
-  - **A cor aplica-se AO CLICAR, não no fim.** A primeira versão guardava-a no último passo: escolher a cor, fechar pelo **X** (ou pelo link "Definições") e a cor **perdia-se**, voltando ao vermelho sem uma palavra. E aplica-se ao vivo porque é a única forma de saber se a cor escolhida se lê no fundo da app.
-  - **Os géneros alimentam `/api/discover` e aparecem como a PRIMEIRA linha da Home** ("Porque escolheste estes"). **O `discover` quer IDs, não nomes** — medido: `?genres=Terror` devolve **0 itens** e `?genres=27` devolve **20**, porque a rota mete o valor directo no `with_genres` do TMDB. E um nome passa **sem erro**: devolve lista vazia, e a linha desaparece em silêncio. Por isso se guarda `{ id, name }` e se manda só o id.
-  - **O nome do campo que diz "isto está ligado" é diferente em rotas que fazem o mesmo.** `/api/letterboxd/status` responde `{ username }` (é o que o `LetterboxdSection` das Definições lê) e o MAL/AniList respondem `{ linked }`. Perguntar pelo campo errado dava `undefined` e a porta do Letterboxd **nunca aparecia**, sem erro nenhum. O teste de ponta a ponta apanhou-o a ver a resposta real da rota.
-  - **O `catch` de cada pedido de estado devolve a MESMA forma que o sucesso.** Um `catch: () => ({})` daria `undefined`, que é falsy — resultado certo por acidente, e uma falha de rede indistinguível de "não está ligado".
-  - **O passo dos géneros é curto de propósito: máximo 4, e o quinto NÃO substitui o primeiro** (substituir apagava a escolha sem aviso). Os nomes **mudam de sessão para sessão** com uma semente que é um contador — com `Date.now()` duas chamadas no mesmo segundo dão a mesma lista, que era exactamente o que se queria evitar.
-  - **Um bug que só o browser apanhou, e que nenhuma das outras ferramentas vê:** o `const [estado, setEstado]` estava 60 linhas abaixo de `deveMostrar`, que o lê **durante o desenho**. `ReferenceError: Cannot access 'ae' before initialization` no bundle minificado, que **derruba a app inteira** — ecrã em branco, sem mensagem. Nem o ESLint (não vê ordem dentro de um componente), nem `node --check` (não parseia JSX), nem o build, nem os 143 testes puros. Há agora uma secção que verifica a **ordem das declarações** como texto, e a reintrodução do bug confirma que a apanha.
-  - **Fica o atalho "Assistente de importação" nas Definições**, por `window.abrirOnboarding`. É o caminho que o `deveMostrar` não dá: quem já tem títulos nunca vê o wizard sozinho, e sem este botão o assistente só existia no primeiro minuto de vida de uma conta.
-  - Testes: `testar-onboarding.mjs` (146 verificações, 40 mutações) e `testar-onboarding-fim.mjs` (20, com o servidor a sério — a biblioteca vazia vs. cheia é o que decide, e nenhuma lista inventada o prova).
 
 ## Importação / dados
-- [ ] **Filtrar Library por nota/estado/tipo** (mais filtros no `LibraryControls`).
+- [ ] **Filtrar a Library por faixa de nota** — o estado, o tipo, o género e a ordenação por nota já existem na página; falta o intervalo (ex.: "80+").
 - [ ] **Filtros e ordenação da library a viverem na URL** (`?ordem=nota&filtro=vistos&genero=Ação`). Hoje o `LibraryControls` não usa `useSearchParams`, por isso uma vista filtrada não se pode partilhar, marcar nos favoritos, nem sobreviver ao botão "voltar". O ProdSound faz isto com um helper de ~15 linhas que reescreve os parâmetros existentes em vez de os substituir (`exUrl()`), e é o que torna cada vista um link.
 
-## Ferramentas e processo
-
-Coisas que não são funcionalidades mas que já custaram tempo, e que só se resolvem
-se ficarem escritas.
-
-- [x] **`app:publish` que se cura sozinho no `422`.** O `fix-latest.cjs` sabe reparar a release pela metade, mas é preciso **alguém se lembrar de o correr**: o `electron-builder` sai com código 1, o `&&` a seguir não corre, e a release fica publicada com 1 asset de 3 sem nenhum aviso. Falhou **cinco vezes** (1.2.0, 1.2.1, 1.2.2, 1.3.2 e 1.5.3), **sempre com um asset diferente em falta**, o que prova que a verificação tem de ser contar os assets e não ler o erro do log. Fazer o `publish` correr `fix-latest` quando falha, e sair com erro só se a reparação não resolver.
-- [x] **`verificar-release.mjs` ligado ao `app:publish`.** O script provou a 1.5.3 (16 verificações, com o sha512 do `.exe` público a bater com o do `latest.yml`). Agora o `scripts/publicar.cjs` corre-o no fim de cada `app:publish`, antes de dar a release por boa: conta os 3 assets, compara o `sha512` do `.exe` público com o do `latest.yml`, confirma que a tag aponta para o main e que o `MEIDA.exe` é x64. Não dá para pôr no `npm test` sem rede, mas no publish já se usa rede. **Feito a 2026-10-16** (`scripts/publicar.cjs` chama `scripts/verificar-release.mjs`).
-- [x] **Teste de contraste do `--accent-text`.** O `SettingsContext` calcula a variável com `shade(accent, 0.35)` e mediu-se que dá 5,36:1 no preset por omissão — mas **quando a pessoa escolhe outra cor, ninguém mede**. São duas linhas: calcular o rácio a partir da cor escolhida e avisar se ficar abaixo de 4,5:1. Hoje o acento é livre e é o texto que tem de se aguentar.
-
-  **Feito a 2026-10-16.** `web/src/settings/acento.js` (novo): `luminancia`, `contraste`, `textoAcento`, `precisaAviso` — funções puras, extraídas do `SettingsContext` para poderem ser testadas sem montar o React. `web/src/settings/SettingsContext.jsx` importa de `acento.js` e escreve `avisoAcento` no estado quando o rácio fica abaixo de 4,5:1. `web/src/pages/Settings.jsx` mostra o aviso (`vhint-erro`) abaixo do seletor de cor. Tradução em `pt` e `en`. Teste: `scripts/testar-contraste-acento.mjs` (16 verificações, 2 mutações, todas apanhadas). O teste pré-existente `testar-acento.mjs` (22 verificações) foi atualizado para ler `acento.js` em vez de procurar `shade()` no `SettingsContext.jsx`.
-
-- [x] **`/api/proxy` e `/api/subtitles/vtt` deixaram de ser abertos.** `buildProxyUrl` e `buildSubtitleVttUrl` assinam o URL alvo com HMAC-SHA256 + expiração de 10 min; `handleProxy` e a rota `/subtitles/vtt` rejeitam com 403 qualquer pedido sem assinatura válida, bloqueiam IPs privados/loopback/link-local (`alvoSeguro`) e usam `redirect: "manual"` para não seguir redirecionamentos cegos. O `subtitles/vtt` corta respostas acima de 2 MB. **Feito a 2026-10-16** (`server/src/services/proxy.js`, `server/src/routes/play.js`, `server/src/services/subtitles.js`, `scripts/testar-proxy-seguranca.mjs`, `scripts/testar-subtitles-seguranca.mjs`).
-- [x] **Avatares nao repetidos em listas (R5)** — avatar limitado a ~200 KB, servido por `/api/users/:id/avatar` com Cache-Control/ETag, nao inline nas listas.
-  
-  **Feito a 2026-10-16.** `server/src/services/auth.js` (normalizeAvatar rejeita data URLs acima de ~300 000 caracteres ~200 KB), `server/src/store.js` (toUserCard, toApiComment, toApiNotification nao levam avatar inline; nova funcao getUserAvatar), `server/src/routes/social.js` (GET /api/users/:id/avatar com Cache-Control e ETag), `web/src/api/client.js` (api.userAvatar), `web/src/components/Avatar.jsx` (busca o avatar via userId quando nao tem valor direto, com cache de efeito e cancelled-flag), todos os componentes Avatar passam userId. Teste: `scripts/testar-avatar-listas.mjs` (12 verificacoes: avatar grande rejeitado, funcoes do store sem avatar inline, listComments com 20 comentarios < 100 KB, rota de avatar responde).
-- [x] **Autenticacao sem protecao (R4)** — rate limit no login/registo, bcrypt assincrono, password minima 8, username charset, trust proxy, body limit menor, admin token com timing-safe equal.
-  
-  **Feito a 2026-10-16.** `server/src/services/rateLimit.js` (FALHAS_MAX 5→10), `server/src/routes/auth.js` (login rateLimiter(10, 15 min), register rateLimiter(10, 1 hora), rotas async), `server/src/services/auth.js` (await bcrypt.hash/compare, password 8-72, username ^[A-Za-z0-9_]{3,20}$), `server/src/index.js` (app.set("trust proxy", 1), express.json({ limit: "100kb" }) geral, 4mb so em /auth/profile e /export/import), `server/src/routes/admin.js` (crypto.timingSafeEqual em vez de !==). Testes: `scripts/testar-auth-seguranca.mjs` (6 verificacoes: 11o login -> 429, body 1MB -> 413) e `scripts/testar-rate-limit.mjs` (36 verificacoes: bloqueio apos 10 falhas, rateLimiter geral).
-- [x] **Watch Party aberta e sem limites (R6)** — codigo de sala validado com `^[A-Z0-9]{6,12}$` e gerado com `crypto.getRandomValues`; limite de salas globais e por IP; limite de membros por sala (20); payload limitado a 2 KB; lista fechada de `kind`; login obrigatorio (Bearer em `/wp/send`, `?token=` no SSE).
-  
-  **Feito a 2026-10-16.** `server/src/routes/watchparty.js` (validacao de codigo, limites, auth), `web/src/watchparty/WatchPartyContext.jsx` (makeCode com crypto, validacao de entrada, token no SSE e Bearer no POST). Testes: `scripts/testar-watchparty-seguranca.mjs` (10 verificacoes: codigo 300 chars -> 400, codigo 5 chars -> 400, codigo valido aceito, sem token -> 401, payload > 2KB -> 400, 20 membros OK, 21o membro -> 429).
-- [x] **Electron: navegação e permissões (R7)** — `will-navigate`/`will-redirect` bloqueiam o que não for a origem da app e abrem com `shell.openExternal`; `setPermissionRequestHandler` só aceita `fullscreen`; todos os `ipcMain.handle` validam `isTrustedSender`; `sandbox: true`, `nodeIntegration: false`, `webSecurity: true`.
-  
-  **Feito a 2026-10-16.** `electron/main.cjs` (will-navigate/will-redirect, permission handler, isTrustedSender em todos os handlers, webPreferences hardening). Verificação manual: `win.loadURL("https://example.com")` no devtools fica bloqueado.
 ## Social / comunidade — o que o projeto antigo (ProdSound) já resolveu
 
 Analisei a fundo `C:\Users\white\Documents\RAI PAP` (o projeto da escola do
@@ -190,7 +142,7 @@ A MEIDA **não tem tabela de bloqueio nenhum**. E não é um extra: há comentá
 abertos, `@menções` e `follow`. Bloquear tem de:
 
 1. esconder o perfil e os comentários um do outro;
-2. refuse as `@menções` (hoje mentions notificam sem filtro nenhum);
+2. recusar as `@menções` (hoje as menções notificam sem filtro nenhum);
 3. **apagar o follow nos dois sentidos** e **todas as notificações trocadas**.
 
 O ponto 3 é o que o ProdSound faz num único `INSERT` de bloqueio
@@ -352,7 +304,7 @@ com `0.14` — e **nenhum passa por um token**. A MEIDA não tem `--line`,
 valores repetidos à mão, o que significa que mudar a cor de uma borda é procurar
 158 sítios.
 
-### O que lá está bem pensado, e vale bring
+### O que lá está bem pensado, e vale trazer
 
 **1. Um sistema com intenção escrita.** O `style.css` abre com uma frase que
 decide tudo o que vem a seguir:
@@ -412,16 +364,6 @@ Ou seja: o **raciocínio** já é o mesmo que o do outro projeto. O que falta é
 - [ ] **Faixa de números no perfil** com os tokens acima — o número grande na cor
       de destaque, o rótulo em maiúsculas, a linha vertical de 1px entre eles, e
       seguidores / a seguir a abrir a lista em vez de só mostrarem um número.
-      em **SVG puro** (`GraficoMensal.jsx`, sem dependências), alimentado por
-      `serieMensal()` em `profileStats.js`. Mede **actividade** (última vez que
-      mexeste num título), não visionamento, e a legenda diz-o. Três decisões que
-      vieram do outro projecto: a escala cresce contra o **maior** mês (e não
-      contra o total), um mês vazio fica a **3 px em vez de nada** — o zero é
-      informação, e sumir fazia o eixo mentir —, e a cor vem do mesmo token que o
-      resto da app. O eixo X leva o ano só quando muda. Só aparece com 3+ meses de
-      dados. Testado em `scripts/testar-grafico-mensal.mjs` (55 verificações,
-      incluindo que a barra mais alta usa pelo menos 80% da altura — defeito
-      encontrado no perfil real, onde o eixo dava 0/500/1000 com a barra a 53%).
 - [ ] **Separar o público do privado** nas estatísticas do perfil: números de
       biblioteca e seguidores são públicos; o gráfico de meses e a distribuição por
       estado de visionamento são só de quem é dono.
@@ -444,6 +386,20 @@ essa linha escrita.
 
 ---
 
+## Dívida técnica
+
+- [ ] **react-router 7.18+** — o `npm audit` marca **duas** vulnerabilidades (GHSA-wrjc-x8rr-h8h6 e GHSA-337j-9hxr-rhxg) e nenhuma se corrige dentro da major 6. A subida toca 29 ficheiros de `web/src`. A mitigação actual (validar o caminho antes do `navigate`, no servidor e no cliente) fecha o caminho de exploração desta app; falta decidir se a subida de major compensa.
+- [ ] **Duplicação no `npm test`** — o `testar-watchparty-seguranca.mjs` está listado **duas vezes** no script do `package.json`, por isso corre duas vezes sem necessidade.
+
+## Decidido não fazer
+
+Ideias fechadas por medição ou por decisão. Ficam com o motivo, para não voltarem
+à mesa.
+
+- **Modo cinema** (fullscreen com UI limpa e auto-hide) — o fullscreen/auto-hide nativo do `<video>` chega; um modo próprio duplicaria o que o browser já faz.
+- **Sagas e ordem de visionamento via `relations` do AniList** — as relations são ruidosas e inconsistentes; "por onde começar" derivado delas dá recomendações erradas com mais confiança do que a informação merece. Se se quiser, fazer com uma lista curada à mão.
+- **Menu de qualidade no player nativo** — medido em 5 episódios a 2026-10-12: o `master.m3u8` do MegaPlay traz **uma só variante jogável** (1080p) mais um `#EXT-X-I-FRAME-STREAM-INF` (360p, que é para saltar no vídeo, não outra qualidade). O `hls.js` reporta `levels.length === 1` e o menu esconde-se — o que está certo. Só passa a fazer sentido se a fonte der mais variantes; aí o menu aparece sozinho (`niveis.length > 1`).
+
 ## O que **não** há que ir buscar lá (anotado para não voltar)
 
 Regra geral: **copiar a decisão, nunca o código.** O ProdSound é PHP com SQL
@@ -458,7 +414,7 @@ dentro do código, passwords em `md5` sem sal, e há código morto espalhado.
 | **Níveis / progresso dos badges** | Lá o badge é binário ("tens 50 seguidores, já cá está"). Falta mostrar "faltam 2" — que é o que dá vontade de continuar. |
 | **Comentários aninhados** | Já cá está (`.comment-cita`). |
 | **Notificações com `ENUM`** | Já cá está, em `kind` + `refId`. |
-| **Upload de ficheiros** | Os validadores são bons (extensão **e** MIME, `random_bytes`), mas uma app defilms não tem porque guardar o filme. |
+| **Upload de ficheiros** | Os validadores são bons (extensão **e** MIME, `random_bytes`), mas uma app de filmes não tem porque guardar o filme. |
 | **Tipos de publicação como interruptor de formulário** | Lá são 2 tipos com números mágicos escritos em 4 ficheiros. Na MEIDA `anime`/`filme`/`manga` é uma faceta de filtro, não uma regra de validade. |
 | **`md5()` sem sal** | A MEIDA usa bcrypt. Nunca voltar atrás. |
 | **Acções destrutivas em `?action=` de GET sem CSRF** | Um `<img src="perfil?action=bloquear">` num site terceiro bloqueia outra pessoa. Em React o CSRF está resolvido por defeito, mas o padrão de origem importa. |
@@ -476,7 +432,7 @@ de cima quando se fez — a linha original dizia só o quê, não o como.
 ### Lingua / tradução
 
 - **Interface inteira em português e inglês** — escolha nas Definições (Detalhe → Conteúdo), detetada do browser na primeira vez e memorizada. A tradução é só do lado do cliente: o servidor não sabe o idioma do pedido, e a chave é o próprio texto em português. Uma função pura partilhada (`web/src/i18n/traduzir.js`) é usada pelo contexto e pelo `api/client.js`, para as mensagens de erro do servidor também saírem traduzidas.
-- **Auditor que garante que nada fica por traduzir** — `scripts/auditar-pt-por-traduzir.cjs`, ligado ao `npm test`. Apanha texto em português em JSX, em atributos de texto, em strings e em templates. **Já teve cinco buracos** (cada um com um ficheiro de teste e uma mutação): texto misturado com expressão, imports lidos como JSX, crases de fecho de template, o objecto de valores do `t()` lido como texto, e texto de **uma palavra** (que nenhuma das duas regras via, por ser indistinguível de um identificador). A lição: "não há nada por traduzir" nunca é resposta suficiente — mutar.
+- **Auditor que garante que nada fica por traduzir** — `scripts/auditar-pt-por-traduzir.cjs`, ligado ao `npm test`. Apanha texto em português em JSX, em atributos de texto, em strings e em templates. **Já teve seis buracos** (cada um com um ficheiro de teste e uma mutação): texto misturado com expressão, imports lidos como JSX, crases de fecho de template, o objecto de valores do `t()` lido como texto, texto de **uma palavra** (que nenhuma das duas regras via, por ser indistinguível de um identificador), e o pior de todos — **o `//` de um URL lido como comentário**, que apagava o resto da linha *com a aspa de fecho da string* e deixava o scanner a ler até ao fim do ficheiro em silêncio: em `Settings.jsx` isso deixava **1207 linhas (73% do ficheiro)** por auditar, e **477 linhas em todo o `web/src`**. O mesmo acontecia com uma **regex** que tenha uma aspa dentro. A lição: "não há nada por traduzir" nunca é resposta suficiente — mutar, e desconfiar de um auditor que diz que está tudo limpo sobre um ficheiro que ele não conseguiu ler.
 
 ### Library / notas
 
@@ -489,7 +445,7 @@ de cima quando se fez — a linha original dizia só o quê, não o como.
   - **O import/export leva a data** (JSON `watchedAt`, CSV `visto_em`), para não se perder ao mudar de PC. E o import **não fabrica datas**: sem data no ficheiro fica NULL.
   - Testes: `testar-timeline.mjs` (75 verificações, 10 mutações) e `testar-timeline-fim.mjs` (19, com o servidor a sério — os três casos da regra de escrita só existem quando o SQL corre).
 
-### Estatísticas / perfil
+### Visual / interface
 
 - **Acento sempre legível** — contraste do texto com a cor de destaque escolhida. **Feito, e a medição confirma a previsão da ideia.**
   - **O problema era real:** dois presets de oito não passam para texto normal — `#c90303` (o por omissão) dava 3,30:1 e `#e50914` 4,20:1 (WCAG 2.1, medido a 2026-10-13).
@@ -497,6 +453,9 @@ de cima quando se fez — a linha original dizia só o quê, não o como.
   - **Remedido a 2026-10-15:** `#dc5b5b` dá **5,36:1** sobre o fundo da página e **4,84:1** sobre a superfície de um cartão — acima dos 4,5:1 do AA para texto normal. O acento inteiro continua nos 3,30:1.
   - **O texto sobre o acento inteiro é que tem de ser escuro, e é.** Os botões que ficam com o acento no fundo (`.lib-watched.on`, `.tf-chip.active`, `.metas-escolha-btn.on`, `.episode-btn.active`, `.source-btn.active`) põem `#fff`; o `.quick-add:hover` põe `--bg-main`. **Nenhum usa `--accent-text` sobre `--accent`**, que é a combinação que daria 1,3:1.
   - **Bordas e fundos ficam com a cor cheia** — `--accent-text` é só para texto. Foi essa a separação que a ideia pedia, e é a que evita o pior dos dois.
+
+### Estatísticas / perfil
+
 - **Mapa de calor de atividade por dia** (o `heatmap` do GitHub) — as datas já existem na `library` e na `progress`, e a racha já as calcula. Feito em SVG à mão, pelas mesmas razões que o resto dos gráficos: uma célula é um `<rect>` e o ficheiro inteiro fica abaixo de 4 KB. **Feito em 2026-10-13.**
 - **Décadas** — a API já devolvia `decadas` desde sempre e **nada o desenhava** (só o número da "década favorita"). Saiu sem trabalho de servidor.
 - **Hora do dia** — sai do `updated_at` (a hora a que mexeste em cada título), mas o servidor pode estar em UTC (Render e FadeHost estão). Por isso o servidor devolve `horasUtc`, 24 baldes, e **o cliente roda o histograma**: um histograma rodado é exacto e custa 24 números em vez de milhares de datas.
@@ -520,10 +479,13 @@ de cima quando se fez — a linha original dizia só o quê, não o como.
 ### Multi-utilizador / social
 
 - **Discord Rich Presence** — mostrar no perfil do Discord o que se está a ver (título, `S1E2`, `12:34 / 45:00` + cartaz), como no Stremio/Crunchyroll. 100% grátis e local: protocolo RPC do Discord implementado à mão em `electron/discord-presence.cjs` (zero dependências), sem servidor e sem API paga. Interruptor em Definições → Discord. Só na app de computador (Electron); nos providers com iframe só se sabe que a fonte foi escolhida.
-- **Listas públicas/compartilháveis** (link para mostreres a tua biblioteca) — perfis em `/u/:username` com biblioteca e listas, privacidade à escolha (público/privado), seguir utilizadores e pesquisa de pessoas (`/users`).
+- **Listas públicas/compartilháveis** (link para mostrares a tua biblioteca) — perfis em `/u/:username` com biblioteca e listas, privacidade à escolha (público/privado), seguir utilizadores e pesquisa de pessoas (`/users`).
 
 ### Player / visual
 
+- **Lembrar a fonte escolhida** — a última fonte escolhida fica em `settings.lastSource`, por tipo (filme / série / anime), em vez de viver só na sessão. Ao mudar de episódio, o `Player` arranca nessa fonte se ela ainda existir e não estiver marcada como morta; senão cai na primeira viva. (`fonteGuardada`/`fonteSalva` em `Details.jsx`, `scripts/testar-fonte-lembrada.mjs`.)
+- **Mostrar o estado das fontes** — as mortas ficam riscadas no seletor com a etiqueta "em baixo"; o `Player` salta-as na escolha automática. O `useProviderHealth` já existia — faltava mostrá-lo, e agora a queda deixa de ser silenciosa.
+- **Avisar no Watch Party quando a fonte não sincroniza** — nas fontes em iframe aparece um aviso na barra da sala e na página do título: o `postMessage` não atravessa o cross-origin do provider, por isso o play/pausa não sincroniza. O aviso diz que os separadores Torrents e Sem anúncios sincronizam, em vez de deixar parecer que a app está partida.
 - **Suporte Real-Debrid**: cola o token em Definições; os torrents em cache no RD reproduzem logo (o que faz o Stremio parecer "instantâneo"). Torrents sem cache caem para o WebTorrent local. Badge "⚡ Debrid" + filtro só cache + os instant ficam no topo. Rotas: `/api/debrid/*`.
 - **Multi-provider de torrents**: framework agregador no backend (`server/src/services/providers/`) que junta resultados de vários indexadores (Torrentio + YTS). Adicionar um provider = criar um ficheiro na pasta `providers/` e registá-lo no `index.js`. Mostra o badge da fonte (ex.: YTS) em cada torrent.
 - **Redirecionamento/links para sites externos**: botão para abrir diretamente no RidoMovies (com slug exato por série/época/episódio ou filme) e pesquisa no Google quando os providers internos falham ou a pedido do utilizador.
@@ -548,7 +510,7 @@ de cima quando se fez — a linha original dizia só o quê, não o como.
 
 ### Providers de anime / player nativo
 
-- **Escolher a qualidade** — o menu existe e funciona, mas **hoje nunca aparece**: medido em 5 episódios a 2026-10-12, o `master.m3u8` do MegaPlay traz **uma só variante jogável** (1080p) mais um `#EXT-X-I-FRAME-STREAM-INF` (360p, que é para saltar no vídeo, não outra qualidade). O `hls.js` reporta `levels.length === 1` e o menu esconde-se — o que está certo. **A ideia original dizia "1080p/720p" e era especulação minha, não medição.** Para o menu ser útil teria de ser a fonte a dar mais variantes; não é trabalho do lado da MEIDA. Se um dia o site passar a dar mais, o menu aparece sozinho (basta `niveis.length > 1`).   **Fechada a 2026-10-12 por medição, não construída.**
+- **Health-check do nativo separado do iframe** — o `probe()` do nativo vai buscar o `getSources` e verifica se o `enc` volta em claro; as duas entradas do MegaPlay (`megaplay-anime` e `megaplay-anime-nativo`) têm estado próprio, apesar de partilharem o mesmo URL. Sem isto, a página responder 200 dava "ok" às duas e o nativo podia falhar sem o health-check dar por isso. (`scripts/testar-health-nativo.mjs`.)
 
 ### UX / fluxos rápidos
 
@@ -564,6 +526,20 @@ de cima quando se fez — a linha original dizia só o quê, não o como.
   - Testes: `scripts/testar-nav-baixo.mjs` (98 verificações, 21 mutações). Entre elas, `node --check` **não** serve para os `.jsx` (dá `ERR_UNKNOWN_FILE_EXTENSION`), e uma mutação que punha `display: none` a seguir ao `flex` — a última declaração a ganhar a cascata — provou que o teste via a regra.
   - **O que a ideia previa e não aconteceu:** o botão "Descarregar a app" só aparece no site **fora de `localhost`**, por isso a folha tem 10 itens em desenvolvimento e 11 em `meida.onrender.com`. A nota dizia que a nav ficava "ainda mais larga" com ele — o que era verdade para a pílula, e deixou de ser relevante porque os links saem todos de lá abaixo do limite.
   - **Fica por fazer (a ideia dizia que a barra trazia a altura para isso):** o convite a instalar no ecrã principal. Não há nenhum `beforeinstallprompt` na app; a barra é o sitio onde ele entraria.
+- **Onboarding nos primeiros 60 segundos** — importar de MAL, Letterboxd ou CSV, escolher géneros e cor, para o perfil nascer já cheio. **Feito em 2026-10-15, como folha de lado (não modal).**
+  - **As três importações já existiam** (`/api/mal/import`, `/api/letterboxd/import`, `/api/export/import`) e vivem nas Definições. O que faltava era o **quando** e o **onde** — quem entrava via `/register` ia para `/` e via a app vazia, sem pista de que havia três portas.
+  - **Mostra-se a quem está VAZIO, não a quem se registou há pouco.** Quem já tem 400 títulos importados não precisa de um wizard a perguntar de onde os trouxe. E a condição é `count === 0` **do `LibraryContext`**, com `null` a significar *ainda a carregar* — que **não** é zero. Mostrar o wizard a quem tem 300 títulos porque o pedido ainda não voltou importava por cima do que a pessoa já tinha, e é o estrago mais caro da funcionalidade.
+  - **Uma porta só é oferecida se for capaz de importar.** O único CSV que o import aceita é o exportado pela MEIDA: `toLibraryEntry()` lê `o.tmdbId` e a rota descarta o que não o tem (`if (!e.type || !e.tmdbId) continue`). Um CSV do Letterboxd (`Date, Name, Year` — **sem tmdbId**) importava **zero, sem erro**: um "Importados 0 títulos" que não diz a ninguém que o ficheiro estava no formato errado. Daí `opcoesDe()` esconder o MAL e o AniList sem as **duas** metades (servidor configurado *e* conta ligada) — com o `MAL_CLIENT_ID` a menos, o link de autorização dá 500 e um botão que rebenta é pior que nenhum botão.
+  - **A porta em primeiro é a mais barata, não a mais popular.** O Letterboxd escreve-se um username e está; MAL e AniList são dois cliques com o browser a sair da app. Quem vê primeiro a porta cara desiste antes de chegar a uma que resolve em dez segundos.
+  - **A folha é de lado, não modal** (`aria-modal="false"`): em `/library` é a biblioteca que está a ser escrita e o contexto importa, e um fundo escuro a bloquear impede de ver o import acontecer. Monta-se **fora do `ErrorBoundary`** — quem acabou de criar a conta pode estar a ver um erro de rede, e um wizard que depende da página para aparecer é um wizard que nunca aparece. **`z-index: 75`**, acima da barra de baixo (65/66) e abaixo do Changelog (80).
+  - **A cor aplica-se AO CLICAR, não no fim.** A primeira versão guardava-a no último passo: escolher a cor, fechar pelo **X** (ou pelo link "Definições") e a cor **perdia-se**, voltando ao vermelho sem uma palavra. E aplica-se ao vivo porque é a única forma de saber se a cor escolhida se lê no fundo da app.
+  - **Os géneros alimentam `/api/discover` e aparecem como a PRIMEIRA linha da Home** ("Porque escolheste estes"). **O `discover` quer IDs, não nomes** — medido: `?genres=Terror` devolve **0 itens** e `?genres=27` devolve **20**, porque a rota mete o valor directo no `with_genres` do TMDB. E um nome passa **sem erro**: devolve lista vazia, e a linha desaparece em silêncio. Por isso se guarda `{ id, name }` e se manda só o id.
+  - **O nome do campo que diz "isto está ligado" é diferente em rotas que fazem o mesmo.** `/api/letterboxd/status` responde `{ username }` (é o que o `LetterboxdSection` das Definições lê) e o MAL/AniList respondem `{ linked }`. Perguntar pelo campo errado dava `undefined` e a porta do Letterboxd **nunca aparecia**, sem erro nenhum. O teste de ponta a ponta apanhou-o a ver a resposta real da rota.
+  - **O `catch` de cada pedido de estado devolve a MESMA forma que o sucesso.** Um `catch: () => ({})` daria `undefined`, que é falsy — resultado certo por acidente, e uma falha de rede indistinguível de "não está ligado".
+  - **O passo dos géneros é curto de propósito: máximo 4, e o quinto NÃO substitui o primeiro** (substituir apagava a escolha sem aviso). Os nomes **mudam de sessão para sessão** com uma semente que é um contador — com `Date.now()` duas chamadas no mesmo segundo dão a mesma lista, que era exactamente o que se queria evitar.
+  - **Um bug que só o browser apanhou, e que nenhuma das outras ferramentas vê:** o `const [estado, setEstado]` estava 60 linhas abaixo de `deveMostrar`, que o lê **durante o desenho**. `ReferenceError: Cannot access 'ae' before initialization` no bundle minificado, que **derruba a app inteira** — ecrã em branco, sem mensagem. Nem o ESLint (não vê ordem dentro de um componente), nem o `node --check` (não parseia JSX), nem o build, nem os testes puros. Há agora uma secção que verifica a **ordem das declarações** como texto, e a reintrodução do bug confirma que a apanha.
+  - **Fica o atalho "Assistente de importação" nas Definições**, por `window.abrirOnboarding`. É o caminho que o `deveMostrar` não dá: quem já tem títulos nunca vê o wizard sozinho, e sem este botão o assistente só existia no primeiro minuto de vida de uma conta.
+  - Testes: `testar-onboarding.mjs` (146 verificações, 40 mutações) e `testar-onboarding-fim.mjs` (20, com o servidor a sério — a biblioteca vazia vs. cheia é o que decide, e nenhuma lista inventada o prova).
 - **Botão "Descarregar a app" no site** — no cabeçalho, só na versão web (`meida.onrender.com`). Na app de desktop e em `localhost` não aparece: quem já a tem não precisa de a descarregar, e em desenvolvimento o botão só ia atrapalhar. A regra está em `web/src/lib/web.js`, testada em `scripts/testar-web.mjs` (19 verificações, 2 mutações). Aponta para a página da release no GitHub, que é um URL estável (o do `.exe` leva a versão no nome e passaria a desatualizar).
 - **Quick add à library** dos cartões do catalogo (home/search/category): ícone `+` no canto — adiciona à watchlist ou marca como visto sem abrir a ficha, com optimistic update. (`LibraryContext`, `MediaCard.jsx`). Também mostra as badges de visto/watchlist em todos os cartões.
 
@@ -572,14 +548,14 @@ de cima quando se fez — a linha original dizia só o quê, não o como.
 - **Exportar a tua biblioteca/diário (CSV/JSON)** — botão nas Definições → "Os teus dados". JSON para backup, CSV para Excel/Sheets. Servidor entrega JSON em `GET /api/export`; o CSV é gerado no browser.
 - **Importar o ficheiro exportado (JSON/CSV)** — secção "Importar dados" nas Definições. Merge conservador (`upsertLibrarySafe` + `importProgress`): não apaga notas/visto que o ficheiro não traga; parse CSV no backend (`parseCsv` com aspas/escapes).
 
-### O CSS e as estatísticas — o que o ProdSound faz melhor
+### Gráficos e estatísticas
 
 - **Gráfico de "ao longo do tempo" no perfil** — 12 meses de barras verticais
   em **SVG puro** (`GraficoMensal.jsx`, sem dependências), alimentado por
   `serieMensal()` em `profileStats.js`. Mede **actividade** (última vez que
   mexeste num título), não visionamento, e a legenda diz-o. Três decisões que
   vieram do outro projecto: a escala cresce contra o **maior** mês (e não
-  contra o total), um mês vazio fica a **3 px em vez de nada** — o zero é
+  contra o total), um mês vazio fica a **4 px em vez de nada** — o zero é
   informação, e sumir fazia o eixo mentir —, e a cor vem do mesmo token que o
   resto da app. O eixo X leva o ano só quando muda. Só aparece com 3+ meses de
   dados. Testado em `scripts/testar-grafico-mensal.mjs` (55 verificações,
@@ -591,13 +567,27 @@ de cima quando se fez — a linha original dizia só o quê, não o como.
 - **Sistema de conquistas/badges** — página `/achievements` + link no menu. Badges calculados a partir da library/diário (Primeiro passo, Matiné, Cinéfilo, Maratonista, Otaku, Crítico, Biblioteca, Centenário, …) com ícones SVG (sem emojis).
 - **Streak/racha diária** — dias consecutivos com atividade (baseado nas datas do diário/progresso e da library); racha atual + melhor racha.
 
+### Ferramentas de processo
+
+- **`app:publish` que se cura sozinho no `422`** — o `fix-latest.cjs` repara a release pela metade e é idempotente. Falhou cinco vezes (1.2.0, 1.2.1, 1.2.2, 1.3.2 e 1.5.3), sempre com um asset diferente em falta — daí a verificação contar assets em vez de ler o erro do log.
+- **`verificar-release.mjs` ligado ao `app:publish`** — `scripts/publicar.cjs` corre-o antes de dar a release por boa: conta os 3 assets, compara o `sha512` do `.exe` público com o do `latest.yml`, confirma que a tag aponta para o `main` e que o `MEIDA.exe` é x64.
+- **Teste de contraste do `--accent-text`** — `scripts/testar-contraste-acento.mjs` (16 verificações, 2 mutações) cobre a função pura de `acento.js`; a correção está em "Acento sempre legível".
+
+### Segurança
+
+- **`/api/proxy` e `/api/subtitles/vtt` deixaram de ser abertos** — URLs assinados com HMAC-SHA256 e validade de 12 h (o tempo de uma sessão de vídeo), bloqueio de IPs privados/loopback/link-local com resolução DNS, e redirects seguidos um a um com validação do destino em cada salto. O `.vtt` corta acima de 2 MB. Testes: `testar-proxy-seguranca.mjs`, `testar-subtitles-seguranca.mjs`, `testar-proxy-redirect.mjs`, `testar-filtro-alvos.mjs`, `testar-validade-assinatura.mjs`.
+- **Autenticação** — bcrypt assíncrono, password 8-72, username `^[A-Za-z0-9_]{3,20}$`, rate limit no login/registo, `TRUST_PROXY` por ambiente (0 por omissão, porque com proxy à frente o limite conta para todos) e limite de falhas por (IP, utilizador). Testes: `testar-auth-seguranca.mjs`, `testar-rate-limit.mjs`, `testar-trust-proxy.mjs`, `testar-timing-login.mjs`.
+- **Watch Party** — código `^[A-Z0-9]{6,12}$` gerado com `crypto`, limites de salas/membros, payload medido em bytes, `kind` fechado, login obrigatório, verificação de membro em `/wp/send` e caminho de navegação validado nos dois lados. Testes: `testar-watchparty-seguranca.mjs`, `testar-wp-ip.mjs`.
+- **Avatares** — limite de ~200 KB, rota própria `/api/users/:id/avatar` com ETag (SHA-1) e `must-revalidate`, e nunca inline nas listas. Testes: `testar-avatar-listas.mjs`, `testar-avatar-etag.mjs`.
+- **Electron** — `will-navigate`/`will-redirect` só deixam passar a origem da app, permissões limitadas a `fullscreen` e `clipboard-sanitized-write` (com `callback(ok)`, não `return`), e todos os `ipcMain.handle` validam `isTrustedSender`. Teste: `testar-ecra-inteiro.mjs`.
+
 ## Ferramentas de verificação (para não voltar a cair nos mesmos buracos)
-- **Auditor de tradução** (`scripts/auditar-pt-por-traduzir.cjs`, no `npm test`) e o seu teste (`scripts/testar-auditor-i18n.mjs`, 16 verificações, 5 mutações).
+- **Auditor de tradução** (`scripts/auditar-pt-por-traduzir.cjs`, no `npm test`) e o seu teste (`scripts/testar-auditor-i18n.mjs`, 27 verificações, 9 mutações).
 - **Testes com mutação por omissão** — cada ficheiro novo em `scripts/` parte o código de propósito e confirma que o teste o apanha. Um teste que passa porque o código está certo não prova nada; um teste que continua a passar quando o código está partido prova que não está a testar nada.
-- **Um teste que arranca o servidor de verdade** (`testar-anikoto.mjs`). Nenhum dos outros arranca o `index.js`, e foi por isso que um `aquecerCatalogo()` sem `return` matou o servidor ao arrancar com "Cannot read properties of undefined (reading 'catch')" sem nenhum teste dar por isso. A lição: uma função pública chamada no arranque tem de ter um teste que arranque o servidor.
+- **Um teste que arranca o servidor de verdade** (`testar-anikoto.mjs`). Na altura em que o bug apareceu **nenhum** teste arrancava o `index.js`, e foi por isso que um `aquecerCatalogo()` sem `return` matou o servidor ao arrancar com "Cannot read properties of undefined (reading 'catch')" sem nenhum teste dar por isso. Hoje são **19** os testes que arrancam o servidor (o `testar-anikoto`, `testar-cartao-fim`, `testar-onboarding-fim`, `testar-dias-fuso`, os do avatar, `testar-proxy-seguranca`, `testar-rota-async`, `testar-stream-portao`, `testar-subtitles-seguranca`, `testar-trust-proxy`, …), mas a lição mantém-se: **uma função pública chamada no arranque tem de ter um teste que arranque o processo**, porque os testes puros não vêem o arranque.
 - **Testes que batem em APIs de terceiros** (o Anikoto, o MegaPlay) usam uma base de dados temporária e saltam com aviso quando a rede falha, em vez de falhar — um teste que rebenta porque o outro mudou o site não diz nada sobre o código.
-- **`npm test` tem 37 passos** — confirmar que o que se mexeu entrou lá.
-- **`verificar-release.mjs`** — prova uma release a sério, sem acreditar no `exit code`: conta os três assets, descarrega o `.exe` público e compara o `sha512` com o do `latest.yml`, confirma que a tag aponta para o HEAD e lê o cabeçalho PE do `MEIDA.exe` para ser x64. Nasceu do `422` da 1.5.3, em que a release ficou publicada com 1 asset de 3. **Corre à mão, depois de publicar** (ver "Ferramentas e processo").
+- **`npm test` corre a bateria toda** — **67 passos, 66 distintos**, contados a 2026-10-26 (o `testar-watchparty-seguranca.mjs` está duplicado no script; ver "Dívida técnica"). Confirmar que o que se mexeu entrou lá.
+- **`verificar-release.mjs`** — prova uma release a sério, sem acreditar no `exit code`: conta os três assets, descarrega o `.exe` público e compara o `sha512` com o do `latest.yml`, confirma que a tag aponta para o HEAD e lê o cabeçalho PE do `MEIDA.exe` para ser x64. Nasceu do `422` da 1.5.3, em que a release ficou publicada com 1 asset de 3. **Corre sozinho no fim do `app:publish`** (é o `publicar.cjs` que o chama, ver "Ferramentas de processo"), e pode repetir-se à mão a qualquer momento com `node scripts/verificar-release.mjs` — a versão é lida do `package.json`, não se passa por argumento.
 
 ## Feitas sem detalhe (só o inventário)
 Isto aqui não tem a explicação do *como* — a de cima é que a tem.

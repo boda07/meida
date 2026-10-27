@@ -1,5 +1,45 @@
 # Changelog
 
+## 1.6.2
+
+Player: controles que escondem, recuperação de falhas, progresso ao recuar, volume/mudo lembrados, qualidade lembrada, atalhos sem conflitos com o navegador, Watch Party sincronizada no salto de intro, tempo com horas, zona carregada, velocidade de reprodução e picture-in-picture.
+
+### Barra de controlos que esconde (V1)
+`web/src/components/PlayerControls.jsx`: `segundo` saiu das dependências do `useEffect` que mostra/esconde a barra. Agora a barra esconde-se após 2,6 s sem interação e reinicia apenas com `onPlay`/`onMouseMove`.
+
+### Recuperação de falhas do hls.js (V2)
+`web/src/components/HlsPlayer.jsx` e `web/src/components/Player.jsx`: novo `hls.on(Hls.Events.ERROR)` que atua apenas em `dados.fatal` — `NETWORK_ERROR` tenta `startLoad()` até 3 vezes, `MEDIA_ERROR` tenta `recoverMediaError()` uma vez; se esgotar, destrói o hls e chama `onErro()`, que o `Player` usa para passar à fonte seguinte (mesma lógica do timeout de 15 s) ou mostrar mensagem.
+
+### Progresso guardado ao recuar (V3)
+`web/src/components/HlsPlayer.jsx`: o efeito de `onProgress` usa `Math.abs(now - last) >= 5` (antes ficava negativo ao recuar) e reporta também em `pause`, `ended` e no `cleanup` do efeito.
+
+### Botão do som repõe o volume (V4)
+`web/src/components/PlayerControls.jsx`: `alternarMudo` repõe o som quando está a 0 (usa `ultimoVolumeRef`, default 0.5) e guarda o volume atual antes de mutar.
+
+### Volume e mudo lembrados entre episódios (V5)
+`web/src/components/PlayerControls.jsx`: `localStorage` chaves `meida:volume` e `meida:mudo`, aplicadas ao montar um vídeo novo e guardadas em `volumechange`.
+
+### Qualidade lembrada entre episódios (V6)
+`web/src/components/HlsPlayer.jsx`: nova `nivelEscolhidoRef` guarda a fixação do utilizador; reaplicada em `MANIFEST_PARSED` quando o nível existe no novo episódio. O estado React reseta (`nivelAuto=true`, `ativo=0`) no início de cada `src` para não ficar dessincronizado com o hls.js.
+
+### Atalhos sem conflitos com o navegador (V7)
+`web/src/components/usePlayerShortcuts.js`: ignora `ctrlKey`/`metaKey`/`altKey` e `e.repeat` nas teclas de alternância (espaço/k/m/f).
+
+### Watch Party sincronizada no salto de intro (V8)
+`web/src/components/HlsPlayer.jsx`: o autoskip usa `saltarPara()` (que dispara `seeked`) em vez de `video.currentTime = destino` direto.
+
+### Tempo com horas acima de 1 h (V9a)
+`web/src/components/PlayerControls.jsx`: nova `formatarTempo()` mostra `M:SS` abaixo de 1 h e `H:MM:SS` acima (ex.: `1:05:00`).
+
+### Zona carregada e indicador de buffering (V9b)
+`web/src/components/PlayerControls.jsx` + `web/src/styles.css`: nova faixa `.pc-seek-carregado` pintada a partir de `video.buffered`; estado `buffering` via eventos `waiting`/`canplay`/`canplaythrough` com spinner ao lado do tempo.
+
+### Velocidade de reprodução (V9c)
+`web/src/components/PlayerControls.jsx`: botão que cicla `0.5×`, `1×`, `1.5×`, `2×` e aplica `video.playbackRate`.
+
+### Picture-in-picture (V9d)
+`web/src/components/PlayerControls.jsx`: botão que chama `video.requestPictureInPicture()` / `document.exitPictureInPicture()` com try/catch silencioso.
+
 ## 1.6.1
 
 O avatar não atualizava quando se mudava de perfil ou de utilizador nos comentários, e as páginas de comentários/notificações faziam pedidos desnecessários para baixar avatares.

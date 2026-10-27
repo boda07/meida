@@ -154,6 +154,7 @@ const IGUAIS_ESPERADOS = new Set([
   "Torrents",          // termo tecnico, igual nos dois
   "Providers",         // termo tecnico (ver AGENTS.md: "provider"), igual nos dois
   "Trailer",           // mesma palavra nos dois
+  "Picture-in-picture", // termo tecnico de video, igual nos dois idiomas
   "...",               // reticencias: iguais nos dois
   "{r} ({n})",         // rotulo de um grupo de resultados: so' pontuacao e numeros
   "DUB",               // sigla de "dubbed", igual nos dois

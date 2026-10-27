@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import FullscreenButton from "./FullscreenButton.jsx";
 import HlsPlayer from "./HlsPlayer.jsx";
 import { useSettings } from "../settings/SettingsContext.jsx";
@@ -71,6 +71,8 @@ export default function Player({
   // Fonte que foi trocada sozinha (para o utilizador saber o que aconteceu em
   // vez de o player mudar de marca sem explicação).
   const [trocada, setTrocada] = useState(null);
+  // Fonte nativa que falhou mesmo apos tentar recuperar (erro fatal do hls.js).
+  const [erroFonte, setErroFonte] = useState(null);
 
   // O `deadIds` num ref, e nao nas dependencias do efeito que reinicia o player.
   // O health-check chega DEPOIS do video estar a dar (o backend local gasta uns
@@ -208,6 +210,22 @@ export default function Player({
   }, [deadIds]);
   /* eslint-enable react-hooks/exhaustive-deps */
 
+  // Erro fatal do hls.js na fonte nativa: mesma logica do timeout de 15 s.
+  // Tenta a proxima fonte viva; se nao houver, fica com a mensagem de erro.
+  const onErroNativo = useCallback(() => {
+    const proximo = nextAlive(index, lista, deadRef.current);
+    if (proximo === index) {
+      setErroFonte(active?.name || null);
+      setLoaded(true);
+      return;
+    }
+    setTrocada(active?.name || null);
+    setIndex(proximo);
+    setReloadKey((k) => k + 1);
+    setLoaded(false);
+    setErroFonte(null);
+  }, [index, lista, active]);
+
   // Timeout de fallback: 15 s sem `load` -> proxima fonte.
   //
   // `arrancado` entra nas dependencias e na guarda: com o autoplay desligado
@@ -278,6 +296,7 @@ export default function Player({
         startAt={startAt}
         onProgress={onProgress}
         onLoaded={marcarCarregado}
+        onErro={onErroNativo}
         // Tempos de abertura e de fim que o MegaPlay devolve. Sem isto o
         // "Autoskip" das Definicoes nao fazia nada aqui: so' funcionava nos
         // iframes, e porque o `Player` acrescentava `?autoSkipIntro=` ao URL
@@ -341,6 +360,14 @@ export default function Player({
         <span className="player-loading-hint muted" style={{ position: "absolute", left: 8, bottom: 8, fontSize: 12 }}>
           {t("{fonte} nao carregou · a usar {nome}", {
             fonte: trocada,
+            nome: active?.name,
+          })}
+        </span>
+      )}
+      {arrancado && erroFonte && loaded && (
+        <span className="player-loading-hint muted" style={{ position: "absolute", left: 8, bottom: 8, fontSize: 12, color: "#c90303" }}>
+          {t("{fonte} falhou · a usar {nome}", {
+            fonte: erroFonte,
             nome: active?.name,
           })}
         </span>

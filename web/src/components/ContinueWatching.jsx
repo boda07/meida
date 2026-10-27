@@ -17,11 +17,10 @@ function resumeLink(it) {
   return `/details/${it.type}/${it.tmdbId}${qs ? `?${qs}` : ""}`;
 }
 
-function posLabel(it) {
-  if (it.type === "movie") return "Filme";
-  if (it.season != null) return `T${it.season} · E${it.episode}`;
-  return `Ep. ${it.episode}`;
-}
+function posLabel(it, t) {
+  if (it.type === "movie") return t("Filme");
+  if (it.season != null) return t("T{s} · E{e}", { s: it.season, e: it.episode });
+  return t("Ep. {n}", { n: it.episode });
 
 // Barra de progresso do episódio (posição guardada / duração).
 function cwProgress(it) {
@@ -86,7 +85,7 @@ export default function ContinueWatching() {
               >
                 ✕
               </button>
-              <span className="cw-badge">{posLabel(it)}</span>
+              <span className="cw-badge">{posLabel(it, t)}</span>
               {cwProgress(it)}
               <div className="card-footer">
                 <h3 className="card-title">{it.title}</h3>

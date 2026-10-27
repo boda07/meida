@@ -22,6 +22,7 @@ export default function HlsPlayer({
   startAt,
   onProgress,
   onLoaded,
+  onErro, // falha fatal irrecuperavel: o Player passa para a fonte seguinte
   intro = null,
   outro = null,
 }) {
@@ -50,6 +51,12 @@ export default function HlsPlayer({
   // lenta e' uma escolha errada: fica a trocar de qualidade a meio e a bloquear.
   // O menu deixa a pessoa fixar uma.
   const hlsRef = useRef(null);
+  const errosRef = useRef({ network: 0, media: 0 }); // tentativas de recuperacao ja feitas
+  const onErroRef = useRef(onErro);
+  onErroRef.current = onErro;
+  // Escolha de qualidade do utilizador (null = auto, numero = nivel fixo).
+  // Persiste entre episodios para nao perder a fixacao ao mudar de episodio.
+  const nivelEscolhidoRef = useRef(null);
   const [niveis, setNiveis] = useState([]); // rotulos, ou [] quando nao ha' o que escolher
   const [nivelAuto, setNivelAuto] = useState(true);
   const [ativo, setAtivo] = useState(0);
@@ -58,6 +65,7 @@ export default function HlsPlayer({
     const hls = hlsRef.current;
     if (!hls) return;
     const auto = valor === "auto";
+    nivelEscolhidoRef.current = auto ? null : Number(valor);
     setNivelAuto(auto);
     // -1 e' o "automatico" do hls.js: volta a escolher pela ligacao.
     hls.currentLevel = auto ? -1 : Number(valor);
@@ -78,9 +86,9 @@ export default function HlsPlayer({
         duracao,
       });
       if (destino != null) {
-        jaSaltou.current.add("intro");
-        video.currentTime = destino;
-        setPulando(null);
+        // Usa o mesmo caminho do salto manual: dispara `seeked`, que e' o que
+        // mantem a Watch Party sincronizada.
+        saltarPara(destino, "intro");
         return;
       }
     }
@@ -146,6 +154,13 @@ export default function HlsPlayer({
     let hls;
 
     if (Hls.isSupported() && sources[0]?.isM3U8 !== false) {
+      // Novo episodio: o hls.js arranca sempre em Auto, por isso resetamos o
+      // estado do React para nao ficar dessincronizado (menu a mostrar 720p
+      // fixo enquanto o hls esta em Auto). A escolha do utilizador e' reaplicada
+      // abaixo em MANIFEST_PARSED, se o nivel existir neste episodio.
+      errosRef.current = { network: 0, media: 0 };
+      setNivelAuto(true);
+      setAtivo(0);
       hls = new Hls({ enableWorker: true });
       hls.loadSource(src);
       hls.attachMedia(video);
@@ -158,8 +173,38 @@ export default function HlsPlayer({
         const nivel = dados?.levels?.length || 0;
         // Uma variante e' so' a variante. Duas ou mais e' que ha' o que escolher.
         setNiveis(nivel > 1 ? dados.levels.map((l, i) => rotuloNivel(l, i)) : []);
+        // Reaplicar a escolha guardada do utilizador, se o nivel existir aqui.
+        const guardado = nivelEscolhidoRef.current;
+        if (guardado != null && guardado < nivel && hlsRef.current) {
+          hlsRef.current.currentLevel = guardado;
+          setNivelAuto(false);
+          setAtivo(guardado);
+        }
       });
       hls.on(Hls.Events.LEVEL_SWITCHED, (_e, dados) => setAtivo(dados?.level ?? 0));
+      // Erro fatal: tenta recuperar conforme o tipo. Se esgotar as tentativas,
+      // destroi o hls e avisa o Player para passar à fonte seguinte.
+      hls.on(Hls.Events.ERROR, (_event, dados) => {
+        if (!dados || !dados.fatal) return;
+        const hlsInst = hlsRef.current;
+        if (!hlsInst) return;
+        if (dados.type === Hls.ErrorTypes.NETWORK_ERROR) {
+          if (errosRef.current.network < 3) {
+            errosRef.current.network += 1;
+            hlsInst.startLoad();
+            return;
+          }
+        } else if (dados.type === Hls.ErrorTypes.MEDIA_ERROR) {
+          if (errosRef.current.media < 1) {
+            errosRef.current.media += 1;
+            hlsInst.recoverMediaError();
+            return;
+          }
+        }
+        hlsInst.destroy();
+        hlsRef.current = null;
+        onErroRef.current?.();
+      });
     } else {
       // Safari (HLS nativo) ou ficheiro progressivo.
       video.src = src;
@@ -187,20 +232,36 @@ export default function HlsPlayer({
   }, [src, startAt, onLoaded]);
 
   // Reporta a posicao periodicamente (nao a cada timeupdate: spam desnecessario).
+  // Reporta tambem em pause, em ended e ao desmontar, para o "Continua a ver"
+  // nunca ficar parado num tempo antigo quando se recua no video.
   useEffect(() => {
     if (!onProgress) return;
     const video = videoRef.current;
     if (!video) return;
     let last = 0;
+    const reportar = () => {
+      const now = Math.floor(video.currentTime || 0);
+      last = now;
+      onProgress(now, Math.floor(video.duration || 0));
+    };
     const onTime = () => {
-      const now = Math.floor(video.currentTime);
-      if (now - last >= 5) {
-        last = now;
-        onProgress(now, Math.floor(video.duration || 0));
+      const now = Math.floor(video.currentTime || 0);
+      // Math.abs: depois de recuar, now - last fica negativo e nunca chegava a 5.
+      if (Math.abs(now - last) >= 5) {
+        reportar();
       }
     };
+    const onPause = () => reportar();
+    const onEnded = () => reportar();
     video.addEventListener("timeupdate", onTime);
-    return () => video.removeEventListener("timeupdate", onTime);
+    video.addEventListener("pause", onPause);
+    video.addEventListener("ended", onEnded);
+    return () => {
+      video.removeEventListener("timeupdate", onTime);
+      video.removeEventListener("pause", onPause);
+      video.removeEventListener("ended", onEnded);
+      reportar();
+    };
   }, [src, onProgress]);
 
   if (!src) return <p className="muted">{t("Sem fonte.")}</p>;

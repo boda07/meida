@@ -30,6 +30,16 @@ export default function Details() {  // Nome da temporada: o servidor devolve o 
     }
     return s.name;
   }
+  // Nome do episódio: o servidor pode devolver "Episódio 5" mesmo quando a
+  // interface está em inglês. Traduzimos para o idioma atual.
+  function nomeEpisodio(s: string, t: any) {
+    if (!s) return s;
+    const m = /^(Episódio|Episode)\s+(\d+)$/i.exec(s);
+    if (m) return t("Episódio {n}", { n: Number(m[2]) });
+    return s;
+  }
+
+
 
 
   const t = useT();
@@ -856,7 +866,7 @@ api
                 onClick={() => setEpisode(ep.episodeNumber)}
               >
                 <span className="ep-num">{ep.episodeNumber}</span>
-                <span className="ep-name">{ep.name}</span>
+                <span className="ep-name">{nomeEpisodio(ep.name, t)}</span>
               </button>
             ))}
           </div>

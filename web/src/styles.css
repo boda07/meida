@@ -3347,6 +3347,21 @@ h2 {
   background: var(--accent, #c90303);
 }
 
+/* Zona carregada (buffered): faixa fina atras da barra de progresso, mais escura. */
+.pc-seek-carregado {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 0;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.18);
+  pointer-events: none;
+}
+
+.pc-seek:hover .pc-seek-carregado {
+  height: 6px;
+}
+
 .pc-seek-bolinha {
   position: absolute;
   top: 50%;
@@ -3406,6 +3421,21 @@ h2 {
   color: #fff;
   padding: 0 6px;
   white-space: nowrap;
+}
+
+/* Indicador de buffering (a aguardar dados) ao lado do tempo. */
+.pc-buffering {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  margin-right: 4px;
+  color: var(--accent, #c90303);
+  animation: pc-girar 0.8s linear infinite;
+  vertical-align: middle;
+}
+
+@keyframes pc-girar {
+  to { transform: rotate(360deg); }
 }
 
 .pc-tempo-de {

@@ -45,6 +45,14 @@ export function usePlayerShortcuts(videoRef, containerRef) {
       const video = videoRef.current;
       if (!video) return;
 
+      // Ignora combinações do browser (Ctrl+F, Alt+←, etc.).
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+
+      // Teclas de alternância (play/pausa, mudo, ecrã inteiro) não repetem:
+      // segurar a tecla não deve ciclar o estado.
+      const naoRepete = e.repeat && (e.key === " " || e.key === "k" || e.key === "K" || e.key === "m" || e.key === "M" || e.key === "f" || e.key === "F");
+      if (naoRepete) return;
+
       const seek = (delta) => {
         const t0 = video.currentTime || 0;
         const dur = Number.isFinite(video.duration) ? video.duration : Infinity;

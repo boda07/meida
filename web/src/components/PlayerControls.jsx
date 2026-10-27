@@ -27,6 +27,9 @@ import { ecraInteiro as ecraInteiro_ } from "./ecraInteiro.js";
 
 const OCULTAR_MS = 2600;
 
+const VOLUME_KEY = "meida:volume";   // 0..1, lembrado entre episódios
+const MUDO_KEY = "meida:mudo";      // "true" | "false"
+
 export default function PlayerControls({ videoRef, children }) {
   const t = useT();
   const [aDar, setADar] = useState(true); // a reproduzir? (para esconder a barra)
@@ -35,11 +38,16 @@ export default function PlayerControls({ videoRef, children }) {
   const [volume, setVolume] = useState(1);
   const [mudo, setMudo] = useState(false);
   const [barraVisivel, setBarraVisivel] = useState(true);
+  const [buffering, setBuffering] = useState(false); // a aguardar dados (waiting/canplay)
+  const [velocidade, setVelocidade] = useState(1); // x0.5 / 1 / 1.5 / 2
+  const [piP, setPiP] = useState(false); // picture-in-picture ativo
 
   const preenchimentoRef = useRef(null);
   const bolinhaRef = useRef(null);
   const arrastoRef = useRef(null); // {fracao} enquanto se arrasta
   const temporizadorRef = useRef(null);
+  const ultimoVolumeRef = useRef(1); // volume antes de se por a 0 / mudo
+  const carregadoRef = useRef(null); // zona carregada (buffered) na barra de seek
 
   // ---- mostrar/esconder ----------------------------------------------------
   // Esconde-se quando esta' a dar e o rato esta' parado. Quando esta' em pausa
@@ -58,7 +66,32 @@ export default function PlayerControls({ videoRef, children }) {
   useEffect(() => {
     mostrar();
     return () => clearTimeout(temporizadorRef.current);
-  }, [mostrar, segundo]);
+  }, [mostrar]);
+
+  // Lembra o volume e o mudo entre episódios: aplica ao montar um vídeo novo.
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    try {
+      const v = localStorage.getItem(VOLUME_KEY);
+      const m = localStorage.getItem(MUDO_KEY);
+      if (v != null) {
+        const vol = Number(v);
+        if (Number.isFinite(vol)) {
+          video.volume = vol;
+          setVolume(vol);
+          ultimoVolumeRef.current = vol;
+        }
+      }
+      if (m != null) {
+        const mud = m === "true";
+        video.muted = mud;
+        setMudo(mud);
+      }
+    } catch (e) {
+      // localStorage indisponível (modo privado, etc.): ignora e fica com o padrão.
+    }
+  }, [videoRef]);
 
   // ----estado do video -----------------------------------------------------
   useEffect(() => {
@@ -72,12 +105,32 @@ export default function PlayerControls({ videoRef, children }) {
       // Por REF: e' a cada `timeupdate` e nao pode ser um setState.
       if (preenchimentoRef.current) preenchimentoRef.current.style.width = pct;
       if (bolinhaRef.current) bolinhaRef.current.style.left = pct;
+
+      // Zona carregada (buffered): faixa fina atras da barra de progresso.
+      // Mostra ate onde o video ja baixou, para a pessoa saber se vale a pena
+      // esperar ou mudar de fonte.
+      if (carregadoRef.current && d > 0 && video.buffered.length > 0) {
+        // Segmento carregado que cobre a posicao atual (ou o ultimo, se nao houver cobertura).
+        let carregadoAte = 0;
+        for (let i = 0; i < video.buffered.length; i++) {
+          const start = video.buffered.start(i);
+          const end = video.buffered.end(i);
+          if (video.currentTime >= start && video.currentTime <= end) {
+            carregadoAte = end;
+            break;
+          }
+          carregadoAte = Math.max(carregadoAte, end);
+        }
+        carregadoRef.current.style.width = ((carregadoAte / d) * 100).toFixed(2) + "%";
+      }
     };
 
     const onMeta = () => {
       setDuracao(Number.isFinite(video.duration) ? video.duration : 0);
       setVolume(video.volume);
       setMudo(video.muted);
+      // Aplica a velocidade escolhida (default 1x).
+      video.playbackRate = velocidade;
       pintar();
     };
     const onTime = () => {
@@ -92,7 +145,20 @@ export default function PlayerControls({ videoRef, children }) {
     const onVol = () => {
       setVolume(video.volume);
       setMudo(video.muted);
+      // Lembra entre episódios (mesmo valor aplicado ao montar acima).
+      try {
+        localStorage.setItem(VOLUME_KEY, String(video.volume));
+        localStorage.setItem(MUDO_KEY, String(video.muted));
+      } catch (e) {}
     };
+    const onWaiting = () => setBuffering(true); // a aguardar dados
+    const onCanPlay = () => setBuffering(false); // dados chegaram
+    const onRateChange = () => {
+      // Mantem o estado sincronizado com o video (ex.: se o site mudar a taxa).
+      setVelocidade(video.playbackRate || 1);
+    };
+    const onEnterPiP = () => setPiP(true);
+    const onLeavePiP = () => setPiP(false);
 
     video.addEventListener("loadedmetadata", onMeta);
     video.addEventListener("durationchange", onMeta);
@@ -100,6 +166,12 @@ export default function PlayerControls({ videoRef, children }) {
     video.addEventListener("play", onPlay);
     video.addEventListener("pause", onPause);
     video.addEventListener("volumechange", onVol);
+    video.addEventListener("waiting", onWaiting);
+    video.addEventListener("canplay", onCanPlay);
+    video.addEventListener("canplaythrough", onCanPlay);
+    video.addEventListener("ratechange", onRateChange);
+    video.addEventListener("enterpictureinpicture", onEnterPiP);
+    video.addEventListener("leavepictureinpicture", onLeavePiP);
     return () => {
       video.removeEventListener("loadedmetadata", onMeta);
       video.removeEventListener("durationchange", onMeta);
@@ -107,6 +179,12 @@ export default function PlayerControls({ videoRef, children }) {
       video.removeEventListener("play", onPlay);
       video.removeEventListener("pause", onPause);
       video.removeEventListener("volumechange", onVol);
+      video.removeEventListener("waiting", onWaiting);
+      video.removeEventListener("canplay", onCanPlay);
+      video.removeEventListener("canplaythrough", onCanPlay);
+      video.removeEventListener("ratechange", onRateChange);
+      video.removeEventListener("enterpictureinpicture", onEnterPiP);
+      video.removeEventListener("leavepictureinpicture", onLeavePiP);
     };
   }, [videoRef, mostrar]);
 
@@ -163,7 +241,22 @@ export default function PlayerControls({ videoRef, children }) {
   const alternarMudo = () => {
     const video = videoRef.current;
     if (!video) return;
-    video.muted = !video.muted;
+    if (video.muted || video.volume === 0) {
+      // Repõe o som: tira o mudo e, se o volume estava a 0, devolve o ultimo
+      // volume (ou 0.5 se nunca houve um).
+      video.muted = false;
+      setMudo(false);
+      if (video.volume === 0) {
+        const v = ultimoVolumeRef.current || 0.5;
+        video.volume = v;
+        setVolume(v);
+      }
+    } else {
+      // Guarda o volume atual e silencia.
+      ultimoVolumeRef.current = video.volume;
+      video.muted = true;
+      setMudo(true);
+    }
   };
 
   const mudarVolume = (e) => {
@@ -171,8 +264,11 @@ export default function PlayerControls({ videoRef, children }) {
     if (!video) return;
     const v = Number(e.target.value);
     video.volume = v;
+    ultimoVolumeRef.current = v;
     // Tocar no volume tira o mudo — como em qualquer player.
     if (v > 0) video.muted = false;
+    setMudo(video.muted);
+    setVolume(v);
   };
 
   const ecraInteiro = () => {
@@ -182,8 +278,42 @@ export default function PlayerControls({ videoRef, children }) {
     ecraInteiro_(alvo);
   };
 
-  const min = (s) => String(Math.floor(s / 60));
-  const seg = (s) => String(Math.floor(s % 60)).padStart(2, "0");
+  // Velocidade de reproducao: cicla entre 0.5x, 1x, 1.5x, 2x.
+  const VELOCIDADES = [0.5, 1, 1.5, 2];
+  const alternarVelocidade = () => {
+    const video = videoRef.current;
+    if (!video) return;
+    const atual = video.playbackRate || 1;
+    const prox = VELOCIDADES.find((v) => v > atual) || VELOCIDADES[0];
+    video.playbackRate = prox;
+    setVelocidade(prox);
+  };
+
+  // Picture-in-picture: sai do vídeo para uma janela flutuante.
+  const alternarPiP = async () => {
+    const video = videoRef.current;
+    if (!video) return;
+    try {
+      if (piP) {
+        await document.exitPictureInPicture();
+      } else {
+        await video.requestPictureInPicture();
+      }
+    } catch (e) {
+      // Nao suportado ou bloqueado pelo browser: ignora silenciosamente.
+    }
+  };
+
+  // Formata o tempo: M:SS abaixo de 1 h, H:MM:SS acima de 1 h (ex.: 1:05:00).
+  const formatarTempo = (s) => {
+    const total = Math.max(0, Math.floor(s || 0));
+    const h = Math.floor(total / 3600);
+    const m = Math.floor((total % 3600) / 60);
+    const sec = total % 60;
+    const mm = String(m).padStart(2, "0");
+    const ss = String(sec).padStart(2, "0");
+    return h > 0 ? `${h}:${mm}:${ss}` : `${m}:${ss}`;
+  };
 
   return (
     <div className={`pc-barra ${barraVisivel ? "visivel" : "escondida"}`} onMouseMove={mostrar}>
@@ -203,6 +333,8 @@ export default function PlayerControls({ videoRef, children }) {
         aria-valuenow={segundo}
       >
         <div className="pc-seek-trilho">
+          {/* Zona carregada (buffered), atras da barra de progresso. */}
+          <div className="pc-seek-carregado" ref={carregadoRef} />
           <div className="pc-seek-cheio" ref={preenchimentoRef} />
           <div className="pc-seek-bolinha" ref={bolinhaRef} />
         </div>
@@ -220,8 +352,9 @@ export default function PlayerControls({ videoRef, children }) {
         </button>
 
         <span className="pc-tempo">
-          {min(segundo)}:{seg(segundo)}
-          <span className="pc-tempo-de">/{min(duracao)}:{seg(duracao)}</span>
+          {buffering && <span className="pc-buffering" aria-hidden="true">⟳</span>}
+          {formatarTempo(segundo)}
+          <span className="pc-tempo-de">/{formatarTempo(duracao)}</span>
         </span>
 
         <div className="pc-vazio" />
@@ -260,6 +393,24 @@ export default function PlayerControls({ videoRef, children }) {
           aria-label={t("Ecra inteiro")}
         >
           <IconEcraInteiro />
+        </button>
+        <button
+          type="button"
+          className="pc-btn"
+          onClick={alternarVelocidade}
+          title={`×${velocidade} ${t("Velocidade")}`}
+          aria-label={`×${velocidade} ${t("Velocidade")}`}
+        >
+          <IconVelocidade velocidade={velocidade} />
+        </button>
+        <button
+          type="button"
+          className="pc-btn"
+          onClick={alternarPiP}
+          title={piP ? t("Sair do picture-in-picture") : t("Picture-in-picture")}
+          aria-label={piP ? t("Sair do picture-in-picture") : t("Picture-in-picture")}
+        >
+          <IconPiP ativo={piP} />
         </button>
       </div>
     </div>
@@ -307,6 +458,26 @@ function IconEcraInteiro() {
   return (
     <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
       <path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M8 21H5a2 2 0 0 1-2-2v-3M16 21h3a2 2 0 0 0 2-2v-3" />
+    </svg>
+  );
+}
+
+function IconVelocidade({ velocidade }) {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
+      <polygon points="5 3 19 12 5 21" />
+      <path d="M15 10h2M15 14h2M11 10h2M11 14h2" stroke-linecap="round" />
+      <text x="11" y="20" font-size="10" fill="currentColor">{velocidade}x</text>
+    </svg>
+  );
+}
+
+function IconPiP({ ativo }) {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
+      <rect x="3" y="3" width="13" height="13" />
+      <rect x="8" y="8" width="13" height="13" />
+      {ativo && <path d="M12 15l-3-3 3-3" stroke-linecap="round" stroke-linejoin="round" />}
     </svg>
   );
 }

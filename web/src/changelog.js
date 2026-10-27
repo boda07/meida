@@ -6,6 +6,37 @@
 export const CHANGELOG = [
 
 {
+      version: "1.6.2",
+      items: [
+        "A barra de controlos do vídeo agora desaparece passados alguns segundos sem mexer o rato, e volta a aparecer ao mexer.",
+        "Se um episódio falhar a meio (erro de rede ou segmento perdido), o player tenta recuperar e, se não conseguir, passa automaticamente para a fonte seguinte em vez de ficar parado.",
+        "O progresso visto agora guarda-se quando se recua no vídeo, quando se pausa e no fim — ao mudar de episódio o \"Continua a ver\" retoma no sítio certo.",
+        "O botão do som repõe o volume quando está a zero — não precisa de arrastar o slider para voltar a ouvir.",
+        "O volume e o modo mudo são lembrados entre episódios: muda de episódio e continua com o mesmo volume.",
+        "A qualidade escolhida (por exemplo 720p) é lembrada entre episódios, em vez de voltar ao automático.",
+        "Os atalhos do teclado (espaço, setas, mudo, ecrã inteiro) já não entram em conflito com combinações do navegador (Ctrl+F, Alt+seta, etc.).",
+        "Ao saltar a introdução automaticamente, a Watch Party fica sincronizada — os outros participantes veem o salto em vez de ficarem dessincronizados.",
+        "O tempo do vídeo agora mostra horas acima de uma hora (ex.: 1:05:00 em vez de 65:00).",
+        "A barra de progresso mostra a zona já carregada do vídeo, e aparece um indicador quando está a aguardar dados.",
+        "Nova opção de velocidade de reprodução: 0.5×, 1×, 1.5× e 2×.",
+        "Novo botão de picture-in-picture: o vídeo continua a ver-se numa janela flutuante enquanto navega noutra página.",
+      ],
+      items_en: [
+        "The video controls now hide after a few seconds without moving the mouse, and reappear when you move it.",
+        "If an episode fails mid-way (network error or lost segment), the player tries to recover and, if it can't, automatically switches to the next source instead of staying stuck.",
+        "Watched progress now saves when you rewind the video, pause, or reach the end — when changing episode, \"Continue watching\" resumes in the right place.",
+        "The sound button restores volume when it's at zero — no need to drag the slider to hear again.",
+        "Volume and mute are remembered between episodes: change episode and keep the same volume.",
+        "The chosen quality (e.g. 720p) is remembered between episodes, instead of going back to automatic.",
+        "Keyboard shortcuts (space, arrows, mute, fullscreen) no longer clash with browser combinations (Ctrl+F, Alt+arrow, etc.).",
+        "When automatically skipping the intro, the Watch Party stays in sync — other participants see the jump instead of getting out of sync.",
+        "The video time now shows hours above one hour (e.g. 1:05:00 instead of 65:00).",
+        "The progress bar shows the already-loaded part of the video, and an indicator appears when it's waiting for data.",
+        "New playback speed option: 0.5×, 1×, 1.5× and 2×.",
+        "New picture-in-picture button: the video keeps playing in a floating window while you browse another page.",
+      ],
+    },
+  {
       version: "1.6.1",
       items: [
         "Corrigido: o avatar não mudava quando se alterava de perfil ou de utilizador nos comentários. O avatar ficava preso ao valor antigo até recarregar a página.",

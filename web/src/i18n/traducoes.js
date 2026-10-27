@@ -368,6 +368,9 @@ export const DICIONARIO = {
     "Desligadas": "Desligadas",
     "Trailer": "Trailer",
     "Ecra inteiro": "Ecra inteiro",
+    "Velocidade": "Velocidade",
+    "Picture-in-picture": "Picture-in-picture",
+    "Sair do picture-in-picture": "Sair do picture-in-picture",
     "Novidades": "Novidades",
     "Algo correu mal": "Algo correu mal",
     "Sem fonte.": "Sem fonte.",
@@ -520,6 +523,8 @@ export const DICIONARIO = {
     "Mais recentes": "Mais recentes",
     "para veres as tuas conquistas.": "para veres as tuas conquistas.",
     "Episódio {n}": "Episódio {n}",
+    "T{s} · E{e}": "T{s} · E{e}",
+    "Ep. {n}": "Ep. {n}",
     "Atualizaste a MEIDA para a versão {v}. Novidades:":
       "Atualizaste a MEIDA para a versão {v}. Novidades:",
     "Destaques": "Destaques",
@@ -773,6 +778,8 @@ export const DICIONARIO = {
     "{nome} · a carregar...": "{nome} · a carregar...",
     "{fonte} nao carregou · a usar {nome}":
       "{fonte} nao carregou · a usar {nome}",
+    "{fonte} falhou · a usar {nome}":
+      "{fonte} falhou · a usar {nome}",
     "{n} com nota": "{n} com nota",
     "{pct}% · 👤 {peers} peers · ⬇ {vel} MB/s":
       "{pct}% · 👤 {peers} peers · ⬇ {vel} MB/s",
@@ -1398,6 +1405,9 @@ export const DICIONARIO = {
     "Desligadas": "Off",
     "Trailer": "Trailer",
     "Ecra inteiro": "Fullscreen",
+    "Velocidade": "Speed",
+    "Picture-in-picture": "Picture-in-picture",
+    "Sair do picture-in-picture": "Exit picture-in-picture",
     "Novidades": "What's new",
     "Algo correu mal": "Something went wrong",
     "Sem fonte.": "No source.",
@@ -1550,6 +1560,8 @@ export const DICIONARIO = {
     "Mais recentes": "Most recent",
     "para veres as tuas conquistas.": "to see your achievements.",
     "Episódio {n}": "Episode {n}",
+    "T{s} · E{e}": "S{s} · E{e}",
+    "Ep. {n}": "Episode {n}",
     "Atualizaste a MEIDA para a versão {v}. Novidades:":
       "You updated MEIDA to version {v}. What's new:",
     "Destaques": "Featured",
@@ -1801,6 +1813,7 @@ export const DICIONARIO = {
       "{titulos} rated, in bands of 10 points. Hover a bar for the exact number.",
     "{nome} · a carregar...": "{nome} · loading...",
     "{fonte} nao carregou · a usar {nome}": "{fonte} did not load · using {nome}",
+    "{fonte} falhou · a usar {nome}": "{fonte} failed · using {nome}",
     "{n} com nota": "{n} rated",
     "{pct}% · 👤 {peers} peers · ⬇ {vel} MB/s":
       "{pct}% · 👤 {peers} peers · ⬇ {vel} MB/s",

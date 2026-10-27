@@ -35,10 +35,10 @@ function resumeLink(it) {
   return `/details/${it.type}/${it.tmdbId}${qs ? `?${qs}` : ""}`;
 }
 
-function pos(it) {
+function pos(it, t) {
   if (it.type === "movie") return null;
-  if (it.season != null) return `T${it.season} · E${it.episode}`;
-  return `Ep. ${it.episode}`;
+  if (it.season != null) return t("T{s} · E{e}", { s: it.season, e: it.episode });
+  return t("Ep. {n}", { n: it.episode });
 }
 
 export default function Diary() {
