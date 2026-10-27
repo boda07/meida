@@ -21,6 +21,7 @@ function posLabel(it, t) {
   if (it.type === "movie") return t("Filme");
   if (it.season != null) return t("T{s} · E{e}", { s: it.season, e: it.episode });
   return t("Ep. {n}", { n: it.episode });
+}
 
 // Barra de progresso do episódio (posição guardada / duração).
 function cwProgress(it) {

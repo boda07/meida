@@ -32,7 +32,7 @@ export default function Details() {  // Nome da temporada: o servidor devolve o 
   }
   // Nome do episódio: o servidor pode devolver "Episódio 5" mesmo quando a
   // interface está em inglês. Traduzimos para o idioma atual.
-  function nomeEpisodio(s: string, t: any) {
+  function nomeEpisodio(s, t) {
     if (!s) return s;
     const m = /^(Episódio|Episode)\s+(\d+)$/i.exec(s);
     if (m) return t("Episódio {n}", { n: Number(m[2]) });
