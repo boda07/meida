@@ -1,5 +1,22 @@
 # Changelog
 
+## 1.6.3
+
+Legendas e textos do player: tamanho visível, posição acima da barra de controlos, botão CC no sítio em ecrã inteiro, pausa em inglês.
+
+### Legendas visíveis (S1)
+`web/src/styles.css`: `.player video::cue` usava `calc(5% * var(--sub-tamanho, 1))`. Como o Chromium já usa 5% da altura do vídeo como base para `::cue`, isso dava 5% de 5% (~1,4 px num player de 540 px) — ilegível. Agora usa `calc(100% * var(--sub-tamanho, 1))`, deixando a base do navegador intacta e `--sub-tamanho` como multiplicador.
+
+### Legendas acima da barra (S2)
+`web/src/styles.css`: nova regra `.player:has(.pc-barra:not(.escondida)) video::-webkit-media-text-track-container` desloca a caixa de legendas 64 px para cima enquanto a barra está visível, para a primeira linha não cruzar a barra de progresso nem a segunda ficar sob o gradiente. Quando a barra se esconde, a caixa volta ao sítio normal.
+
+### Botão CC no sítio em ecrã inteiro (S3)
+`web/src/styles.css`: removida a regra `.player:fullscreen .sub-cc` (`bottom: 76px; right: 190px`), que colocava o botão solto acima da barra quando o `.sub-cc` passou a viver dentro da barra de controlos.
+
+### Pausa diz "Pause" em inglês (S4)
+`web/src/components/PlayerControls.jsx`: o botão de pausa agora usa `t("Pausar vídeo")` em vez de `t("Pausar")`, que em inglês era "Put on hold" (o estado da biblioteca, não a ação de pausar).
+`web/src/i18n/traducoes.js`: nova chave `"Pausar vídeo"` → "Pausar vídeo" (pt) / "Pause" (en).
+
 ## 1.6.2
 
 Player: controles que escondem, recuperação de falhas, progresso ao recuar, volume/mudo lembrados, qualidade lembrada, atalhos sem conflitos com o navegador, Watch Party sincronizada no salto de intro, tempo com horas, zona carregada, velocidade de reprodução e picture-in-picture.

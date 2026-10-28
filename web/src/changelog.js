@@ -6,6 +6,21 @@
 export const CHANGELOG = [
 
 {
+      version: "1.6.3",
+      items: [
+        "Legendas de vídeo agora visíveis: o tamanho deixava as letras com cerca de 1 px (5% de 5% da altura); agora usam o tamanho base do navegador e o menu \"Tamanho\" funciona como multiplicador.",
+        "Legendas sobem automaticamente quando a barra de controlos está visível, para não ficar em cima da barra de progresso nem sob o gradiente escuro.",
+        "Botão de legendas (CC) fica na mesma linha dos outros controlos em ecrã inteiro, em vez de aparecer solto acima da barra.",
+        "Botão de pausa do player diz \"Pause\" quando a aplicação está em inglês (antes dizia \"Put on hold\", que é o estado da biblioteca).",
+      ],
+      items_en: [
+        "Video subtitles are now visible: the size left letters at about 1 px (5% of 5% of the height); they now use the browser base size and the \"Size\" menu works as a multiplier.",
+        "Subtitles move up automatically when the player controls bar is visible, so they don't overlap the progress bar or sit under the dark gradient.",
+        "The subtitles (CC) button stays on the same line as the other controls in fullscreen, instead of floating above the bar.",
+        "The player pause button now says \"Pause\" when the app is in English (it used to say \"Put on hold\", which is the library state).",
+      ],
+    },
+  {
       version: "1.6.2",
       items: [
         "A barra de controlos do vídeo agora desaparece passados alguns segundos sem mexer o rato, e volta a aparecer ao mexer.",
