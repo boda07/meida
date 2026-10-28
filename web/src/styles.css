@@ -3503,16 +3503,34 @@ h2 {
 
    O `--sub-tamanho` e' uma ESCALA, nao pixels: o tamanho que o browser escolhe
    para as legendas depende do tamanho do video, e px fixos ficariam gigantes
-   num ecra grande e ilegiveis num pequeno. O 5% e' o valor por omissao do
-   Chrome, para que "normal" seja exactamente o que era antes destas opcoes. */
+   num ecra grande e ilegiveis num pequeno. O Chromium ja usa 5% da altura do
+   video como base para `::cue`, e uma percentagem em `::cue` e' relativa a essa
+   base: `calc(5% * ...)` daria 5% de 5% (cerca de 1,4 px num player de 540 px),
+   que e' ilegivel. Por isso usa-se `100%`, que deixa a base do browser intacta,
+   e `--sub-tamanho` actua como multiplicador ("normal" = 1x do que o browser
+   ja escolhe). */
 .player video::cue {
-  font-size: calc(5% * var(--sub-tamanho, 1));
+  font-size: calc(100% * var(--sub-tamanho, 1));
   color: rgba(255, 255, 255, var(--sub-opacidade, 1));
   /* A caixa de fundo tambem segue a opacidade, mas mais suave: a 0.5 o texto
      fica a meia opacidade e o fundo quase transparente, que e' o que se quer
      quando se poe legendas por cima de uma cena clara. */
   background: rgba(0, 0, 0, calc(0.6 * var(--sub-opacidade, 1)));
   text-shadow: 0 1px 2px rgba(0, 0, 0, calc(0.9 * var(--sub-opacidade, 1)));
+}
+
+/* As legendas (caixa de texto do browser) ficam no fundo do video, exatamente
+   onde a barra de controlos se sobrepoe. Quando a barra esta' visível, desvia a
+   caixa de legendas para cima (64 px ~= altura da barra) para a primeira linha
+   nao cruzar a barra de progresso e a segunda nao ficar sob o gradiente. Quando
+   a barra se esconde, a caixa volta ao lugar normal. */
+.player video::-webkit-media-text-track-container {
+  transition: transform 0.25s;
+  transform: none;
+}
+
+.player:has(.pc-barra:not(.escondida)) video::-webkit-media-text-track-container {
+  transform: translateY(-64px);
 }
 
 .player video.legenda-fonte video::cue {
@@ -4245,10 +4263,6 @@ h2 {
 /* Em ecra inteiro os controlos nativos sao maiores, por isso o botao sobe mais.
    A margem a direita tambem cresce (os botoes do video sao maiores), para
    continuar a esquerda do ⋮. */
-.player:fullscreen .sub-cc {
-  bottom: 76px;
-  right: 190px;
-}
 
 .vhint {
   color: #ffb86c;

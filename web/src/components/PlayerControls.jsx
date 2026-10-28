@@ -345,8 +345,8 @@ export default function PlayerControls({ videoRef, children }) {
           type="button"
           className="pc-btn"
           onClick={alternarPlay}
-          title={aDar ? t("Pausar") : t("Reproduzir")}
-          aria-label={aDar ? t("Pausar") : t("Reproduzir")}
+          title={aDar ? t("Pausar vídeo") : t("Reproduzir")}
+          aria-label={aDar ? t("Pausar vídeo") : t("Reproduzir")}
         >
           {aDar ? <IconPausa /> : <IconPlay />}
         </button>
