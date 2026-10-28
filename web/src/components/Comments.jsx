@@ -1,13 +1,11 @@
-// Comentarios de um episodio (ou de um filme). A chave e' (type, tmdbId,
-// season, episode): ao mudar de episodio, a lista recarrega sozinha.
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { Link } from "react-router-dom";
-import { api } from "../api/client.js";
 import { useAuth } from "../auth/AuthContext.jsx";
 import Avatar from "./Avatar.jsx";
 import { TextoComMencoes, CorpoDoComentario } from "./TextoComMencoes.jsx";
 import { haQuanto, quandoCompleto, paraTempo, paraSegundos } from "../lib/tempo.js";
 import { useT } from "../i18n/I18nContext.jsx";
+import { useComments } from "./useComments.js";
 
 // O tempo no video e a data sao os dois de web/src/lib/tempo.js (com testes).
 // Aqui so' se decide o que se mostra.
@@ -77,15 +75,10 @@ export function CommentItem({
               ⏱ {clock}
             </span>
           )}
-          {/* "ha 10 s atras" em vez de "07 out": numa conversa recem-escrita a
-              data nao diz nada, e obriga a fazer as contas. O title traz a data
-              exacta para quando ja nao e' recente. */}
           <span className="comment-when" title={quandoCompleto(c.createdAt)}>
             {haQuanto(c.createdAt)}
           </span>
         </div>
-        {/* A quem se responde. Nos primeiros niveis a indentacao ja o diz; mais
-            abaixo so' este bloco. Liga ao comentario do pai. */}
         {parent && (
           <a className="comment-cita" href={`#comentario-${parent.id}`} title={t("Ir para esse comentário")}>
             <span className="comment-cita-seta" aria-hidden="true">
@@ -99,37 +92,29 @@ export function CommentItem({
           {c.deleted ? (
             <em className="muted">{t("Comentário apagado")}</em>
           ) : (
-            // Componentes, nao texto solto: e' o que faz "@fulano" virar link
-            // para o perfil sem meter marcacao no que o utilizador escreveu.
             <CorpoDoComentario body={c.body} />
           )}
         </p>
         {!c.deleted && (
           <div className="comment-actions">
-            {/* A contagem aparece sempre, mesmo a zero. Antes so aparecia com
-                likes > 0, o que fazia o botao ser um coracao solto sem
-                contexto — e a pessoa concluia que nao havia likes. */}
             <button
               className={`comment-like ${c.likedByMe ? "on" : ""}`}
               onClick={() => onLike(c)}
               disabled={!user}
               aria-pressed={c.likedByMe ? "true" : "false"}
               title={
-            user
-              ? c.likedByMe
-                ? t("Tirar o gosto")
-                : t("Gostar")
-              : t("Entra para gostar")
-          }
+                user
+                  ? c.likedByMe
+                    ? t("Tirar o gosto")
+                    : t("Gostar")
+                  : t("Entra para gostar")
+              }
             >
               <span className="comment-like-icone" aria-hidden="true">
                 {c.likedByMe ? "♥" : "♡"}
               </span>
               <span>{c.likes}</span>
             </button>
-            {/* Este botao aparece em TODOS os niveis, e antes nao fazia nada nas
-                respostas: o formulario so' sabia desenhar ao nivel de topo, que
-                era o que impedia de responder a uma resposta. */}
             {user && <button className="comment-link" onClick={() => onReply(c.id)}>{t("Responder")}</button>}
             {mine && (
               <button className="comment-link danger" onClick={() => onDelete(c.id)}>
@@ -138,9 +123,6 @@ export function CommentItem({
             )}
           </div>
         )}
-        {/* O formulario vive dentro do comentario, e' o que fez a resposta poder
-            responder a uma resposta. Antes estava no `comments.map`, ao lado do
-            comentario de topo. */}
         {aResponder && user && (
           <div className="comment-reply-form">
             <TextoComMencoes
@@ -164,10 +146,6 @@ export function CommentItem({
             </div>
           </div>
         )}
-        {/* `!cortado` e' o que segura a recursao, nao a frase de baixo. Antes a
-            frase aparecia mas a descida continuava a acontecer, e um ciclo de
-            parent_id nos dados rebentava a pilha com "Maximum call stack size
-            exceeded" — o limite era decorativo. */}
         {c.replies?.length > 0 && !cortado && (
           <ul className={`comment-replies ${fundo ? "comment-replies-fundo" : ""}`}>
             {c.replies.map((r) => (
@@ -214,91 +192,54 @@ function whenTitle(seg, t) {
 export default function Comments({ type, tmdbId, season = null, episode = null, posAtual = null }) {
   const t = useT();
   const { user } = useAuth();
-  const [comments, setComments] = useState([]);
-  const [loading, setLoading] = useState(true);
+
+  // Logica de comentarios via hook.
+  const {
+    comments,
+    loading,
+    error,
+    busy,
+    load,
+    submit,
+    submitReply,
+    toggleLike,
+    remove,
+  } = useComments({ type, tmdbId, season, episode });
+
+  // Estado do formulario (so UI).
   const [body, setBody] = useState("");
   const [atTime, setAtTime] = useState(""); // o que a pessoa escreve: "2:05"
   const atSegundos = paraSegundos(atTime); // null se nao der para interpretar
   const atErrado = atTime.trim() !== "" && atSegundos === null;
   const [replyTo, setReplyTo] = useState(null);
   const [replyBody, setReplyBody] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState(null);
 
-  const load = useCallback(() => {
-    if (!type || !tmdbId) return;
-    setLoading(true);
-    api
-      .comments({ type, tmdbId, season, episode })
-      .then((d) => setComments(d.comments || []))
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, [type, tmdbId, season, episode]);
-
-  useEffect(() => {
-    load();
-  }, [load]);
-
-  async function submit(e) {
+  // Envio de comentario de topo.
+  async function handleSubmit(e) {
     e.preventDefault();
-    if (!body.trim() || busy) return;
-    setBusy(true);
-    setError(null);
-    try {
-      await api.addComment({
-        type,
-        tmdbId,
-        season,
-        episode,
-        body: body.trim(),
-        atSeconds: atSegundos,
-      });
+    await submit({ body, atSeconds: atSegundos });
+    if (!error) {
       setBody("");
       setAtTime("");
       load();
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setBusy(false);
     }
   }
 
-  async function submitReply(parentId) {
-    if (!replyBody.trim() || busy) return;
-    setBusy(true);
-    setError(null);
-    try {
-      await api.addComment({ type, tmdbId, season, episode, parentId, body: replyBody.trim() });
+  // Envio de resposta.
+  async function handleSubmitReply(parentId) {
+    await submitReply(parentId, replyBody);
+    if (!error) {
       setReplyBody("");
       setReplyTo(null);
       load();
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setBusy(false);
     }
   }
 
-  async function toggleLike(c) {
-    if (!user) return;
-    try {
-      if (c.likedByMe) await api.unlikeComment(c.id);
-      else await api.likeComment(c.id);
-      load();
-    } catch {
-      /* ignora: o proximo load repõe o estado real */
-    }
-  }
-
-  async function remove(id) {
+  // Apagar com confirmacao (responsabilidade de UI, nao do hook de rede).
+  async function handleRemove(id) {
     if (!window.confirm(t("Apagar este comentário?"))) return;
-    try {
-      await api.deleteComment(id);
-      if (replyTo === id) setReplyTo(null);
-      load();
-    } catch {
-      /* ignora */
-    }
+    await remove(id);
+    load();
   }
 
   return (
@@ -306,7 +247,7 @@ export default function Comments({ type, tmdbId, season = null, episode = null, 
       <h3 className="comments-title">{t("Comentários")}</h3>
 
       {user ? (
-        <form className="comment-form" onSubmit={submit}>
+        <form className="comment-form" onSubmit={handleSubmit}>
           <Avatar avatar={user.avatar} name={user.username} size={36} userId={user.id} />
           <div className="comment-form-main">
             <TextoComMencoes
@@ -329,9 +270,6 @@ export default function Comments({ type, tmdbId, season = null, episode = null, 
                 />
                 <span>{t("momento")}</span>
               </label>
-              {/* So com os nossos players, que dizem a posicao. Nos providers
-                  (iframe) nao ha tempo a que pegar, por isso o botao nao aparece
-                  em vez de aparecer desactivado. */}
               {posAtual != null && posAtual > 0 && (
                 <button
                   type="button"
@@ -375,12 +313,12 @@ export default function Comments({ type, tmdbId, season = null, episode = null, 
               nivel={0}
               user={user}
               onLike={toggleLike}
-              onDelete={remove}
+              onDelete={handleRemove}
               onReply={(id) => setReplyTo(replyTo === id ? null : id)}
               replyTo={replyTo}
               replyBody={replyBody}
               setReplyBody={setReplyBody}
-              onSubmitReply={submitReply}
+              onSubmitReply={handleSubmitReply}
               onCancelReply={() => setReplyTo(null)}
               busy={busy}
             />

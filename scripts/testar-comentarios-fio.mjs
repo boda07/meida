@@ -114,7 +114,8 @@ if (item && lista) {
   ok(
     "e passa tambem o corpo e quem submete",
     lista.texto.includes("replyBody={replyBody}") &&
-      lista.texto.includes("onSubmitReply={submitReply}")
+      (lista.texto.includes("onSubmitReply={submitReply}") ||
+        lista.texto.includes("onSubmitReply={handleSubmitReply}"))
   );
 
   // 4) A recursao tem de descer com `parent`, para a citacao saber a quem se
