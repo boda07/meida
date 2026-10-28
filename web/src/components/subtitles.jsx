@@ -1,19 +1,19 @@
-import { useEffect, useRef, useState } from "react";
-import { useSettings } from "../settings/SettingsContext.jsx";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useT } from "../i18n/I18nContext.jsx";
 import {
+  cssLegendas,
+  urlComAtraso,
+  ROTULO_TAMANHO,
+  ROTULO_FONTE,
   TAMANHOS,
   FONTES,
   OPACIDADE_MIN,
   OPACIDADE_MAX,
   DELAY_MIN,
   DELAY_MAX,
-  limitar,
-  cssLegendas,
-  urlComAtraso,
-  ROTULO_TAMANHO,
-  ROTULO_FONTE,
 } from "./legendas.js";
+import { useSubtitlePreferences } from "./useSubtitlePreferences.js";
+import { useAutoSubtitle } from "./useAutoSubtitle.js";
 
 // Normaliza codigos de idioma variados (pt, pt-BR, por, en, eng...).
 // Devolve 0 (nao corresponde), 1 (corresponde) ou 2 (corresponde em
@@ -34,8 +34,7 @@ function langScore(lang, pref) {
 }
 
 // Indice da melhor legenda que corresponde ao idioma preferido (-1 se nenhum).
-// Prefere sempre PT-PT (2) a PT-BR (1) quando a preferencia e "pt".
-function preferredIndex(subtitles, pref) {
+export function preferredIndex(subtitles, pref) {
   if (pref === "off") return -1;
   let best = -1;
   let bestScore = 0;
@@ -92,11 +91,22 @@ export function SubtitleTracks({ subtitles = [], delay = 0 }) {
  * posicionado em absoluto.
  */
 export function SubtitleMenu({ videoRef, subtitles = [] }) {
-  const { settings, update } = useSettings();
   const t = useT();
   const [val, setVal] = useState("-1");
   const [aberto, setAberto] = useState(false);
   const caixaRef = useRef(null);
+
+  // Preferencias de exibicao (tamanho, opacidade, fonte, atraso).
+  const {
+    subTamanho,
+    subOpacidade,
+    subFonte,
+    subDelay,
+    updateSubtitles,
+  } = useSubtitlePreferences();
+
+  // Seleciona automaticamente a legenda do idioma preferido.
+  useAutoSubtitle({ videoRef, subtitles });
 
   function apply(idx) {
     const tracks = videoRef.current?.textTracks;
@@ -108,31 +118,21 @@ export function SubtitleMenu({ videoRef, subtitles = [] }) {
     setVal(String(idx));
   }
 
-  // Quando as legendas mudam, liga a do idioma preferido (se existir).
-  useEffect(() => {
-    if (!subtitles.length) return;
-    const idx = preferredIndex(subtitles, settings.subtitleLang);
-    // As textTracks podem ainda não estar prontas; tenta no próximo frame.
-    const id = requestAnimationFrame(() => apply(idx));
-    return () => cancelAnimationFrame(id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [subtitles, settings.subtitleLang]);
-
   // O `<video>` recebe as variaveis de CSS que o `::cue` consome. E' aqui que a
   // opacidade, a fonte e o tamanho mudam — nao ha' componente no meio.
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
     const vars = cssLegendas({
-      tamanho: settings.subTamanho,
-      opacidade: settings.subOpacidade,
-      fonte: settings.subFonte,
+      tamanho: subTamanho,
+      opacidade: subOpacidade,
+      fonte: subFonte,
     });
     for (const [k, v] of Object.entries(vars)) video.style.setProperty(k, v);
     // A fonte precisa de uma classe porque nao da para meter uma pilha com
     // virgulas numa variavel e usa-la em `font-family` sem a classe.
     video.classList.toggle("legenda-fonte", Boolean(vars["--sub-fonte"]));
-  }, [videoRef, settings.subTamanho, settings.subOpacidade, settings.subFonte]);
+  }, [videoRef, subTamanho, subOpacidade, subFonte]);
 
   // Clicar fora fecha o popup. Sem isto ficava aberto por cima do video.
   useEffect(() => {
@@ -153,12 +153,15 @@ export function SubtitleMenu({ videoRef, subtitles = [] }) {
 
   const ligada = val !== "-1";
 
-  // O botao tem de mostrar se a legenda esta' ligada ou nao mesmo sem o rato
-  // em cima: e' a unica forma de saber que ha' legenda num ecra grande. Fora
-  // disso some com os outros botoes do player.
+  if (!subtitles.length) return null;
+
   const classeBotao = `sub-cc-btn ${ligada ? "on" : ""}`;
 
-  if (!subtitles.length) return null;
+  const podeRepor =
+    (subTamanho && subTamanho !== "normal") ||
+    subOpacidade !== 1 ||
+    subFonte ||
+    subDelay !== 0;
 
   return (
     <div className="sub-cc" ref={caixaRef}>
@@ -211,8 +214,8 @@ export function SubtitleMenu({ videoRef, subtitles = [] }) {
             <label className="pc-pop-linha">
               <span>{t("Tamanho")}</span>
               <select
-                value={settings.subTamanho || "normal"}
-                onChange={(e) => update({ subTamanho: e.target.value })}
+                value={subTamanho}
+                onChange={(e) => updateSubtitles("subTamanho", e.target.value)}
               >
                 {TAMANHOS.map((x) => (
                   <option key={x.id} value={x.id}>
@@ -229,15 +232,15 @@ export function SubtitleMenu({ videoRef, subtitles = [] }) {
                 min={OPACIDADE_MIN}
                 max={OPACIDADE_MAX}
                 step="0.05"
-                value={limitar(settings.subOpacidade, OPACIDADE_MIN, OPACIDADE_MAX, 1)}
-                onChange={(e) => update({ subOpacidade: Number(e.target.value) })}
+                value={subOpacidade}
+                onChange={(e) => updateSubtitles("subOpacidade", Number(e.target.value))}
               />
-              <em>{Math.round(limitar(settings.subOpacidade, OPACIDADE_MIN, OPACIDADE_MAX, 1) * 100)}%</em>
+              <em>{Math.round(subOpacidade * 100)}%</em>
             </label>
 
             <label className="pc-pop-linha">
               <span>{t("Fonte")}</span>
-              <select value={settings.subFonte || ""} onChange={(e) => update({ subFonte: e.target.value })}>
+              <select value={subFonte} onChange={(e) => updateSubtitles("subFonte", e.target.value)}>
                 {FONTES.map((f) => (
                   <option key={f.id || "sistema-padrao"} value={f.id}>
                     {t(ROTULO_FONTE[f.id])}
@@ -253,24 +256,24 @@ export function SubtitleMenu({ videoRef, subtitles = [] }) {
                 min={DELAY_MIN}
                 max={DELAY_MAX}
                 step="0.5"
-                value={limitar(settings.subDelay, DELAY_MIN, DELAY_MAX, 0)}
-                onChange={(e) => update({ subDelay: Number(e.target.value) })}
+                value={subDelay}
+                onChange={(e) => updateSubtitles("subDelay", Number(e.target.value))}
               />
               <em>
-                {settings.subDelay > 0 ? "+" : ""}
-                {Number(settings.subDelay || 0)}s
+                {subDelay > 0 ? "+" : ""}
+                {subDelay}s
               </em>
             </label>
 
-            {(settings.subTamanho && settings.subTamanho !== "normal") ||
-            Number(settings.subOpacidade || 1) !== 1 ||
-            settings.subFonte ||
-            Number(settings.subDelay || 0) !== 0 ? (
+            {podeRepor ? (
               <button
                 type="button"
                 className="sub-cc-repor"
                 onClick={() =>
-                  update({ subTamanho: "normal", subOpacidade: 1, subFonte: "", subDelay: 0 })
+                  updateSubtitles("subTamanho", "normal") ||
+                  updateSubtitles("subOpacidade", 1) ||
+                  updateSubtitles("subFonte", "") ||
+                  updateSubtitles("subDelay", 0)
                 }
               >
                 {t("Repor")}
