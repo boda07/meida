@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useT } from "../i18n/I18nContext.jsx";
-// O pedido de ecrã inteiro passa pelo modulo para o erro deixar de ir para o
+// O pedido de ecra inteiro passa pelo modulo para o erro deixar de ir para o
 // lixo. O nome local abaixo (`ecraInteiro_`) e' para nao chocar com o import.
 import { ecraInteiro as ecraInteiro_ } from "./ecraInteiro.js";
+import { useVideoState } from "./useVideoState.js";
+import { useVolumeMemory } from "./useVolumeMemory.js";
 
 // Barra de controlos do player, NOSSA.
 //
@@ -20,34 +22,37 @@ import { ecraInteiro as ecraInteiro_ } from "./ecraInteiro.js";
 // reproducao e a barra de "atraso" do seek. Nao ha' nada no site que as use e
 // sao tres botoes a mais numa barra que ja esta' apertada.
 //
-// O preenchimento da barra do seek e' actualizado por um REF e nao por estado:
-// o `timeupdate` dispara ~4x por segundo, e um render por quarto de segundo
-// faria o componente inteiro (com o menu de legendas e o do video inteiro)
-// redesenhar-se. O tempo em texto so' muda de estado quando muda de segundo.
+// O preenchimento da barra do seek e' actualizado por um REF (via
+// `useVideoState`) e nao por estado: o `timeupdate` dispara ~4x por segundo,
+// e um render por quarto de segundo faria o componente inteiro redesenhar-se.
 
 const OCULTAR_MS = 2600;
-
-const VOLUME_KEY = "meida:volume";   // 0..1, lembrado entre episódios
-const MUDO_KEY = "meida:mudo";      // "true" | "false"
 
 export default function PlayerControls({ videoRef, children }) {
   const t = useT();
   const [aDar, setADar] = useState(true); // a reproduzir? (para esconder a barra)
-  const [segundo, setSegundo] = useState(0); // o tempo EM TEXTO (muda 1x/s)
-  const [duracao, setDuracao] = useState(0);
-  const [volume, setVolume] = useState(1);
-  const [mudo, setMudo] = useState(false);
   const [barraVisivel, setBarraVisivel] = useState(true);
-  const [buffering, setBuffering] = useState(false); // a aguardar dados (waiting/canplay)
   const [velocidade, setVelocidade] = useState(1); // x0.5 / 1 / 1.5 / 2
-  const [piP, setPiP] = useState(false); // picture-in-picture ativo
 
-  const preenchimentoRef = useRef(null);
-  const bolinhaRef = useRef(null);
-  const arrastoRef = useRef(null); // {fracao} enquanto se arrasta
-  const temporizadorRef = useRef(null);
+  // Estado do video (duracao, segundo, volume, mudo, buffering, piP) +
+  // refs da barra de seek e zona carregada. Sincronizado por `useVideoState`.
+  const {
+    duracao,
+    segundo,
+    volume,
+    mudo,
+    buffering,
+    piP,
+    preenchimentoRef,
+    bolinhaRef,
+    carregadoRef,
+  } = useVideoState(videoRef);
+
+  // Persiste volume/mudo no localStorage e restaura ao montar um video novo.
+  useVolumeMemory(videoRef);
+
   const ultimoVolumeRef = useRef(1); // volume antes de se por a 0 / mudo
-  const carregadoRef = useRef(null); // zona carregada (buffered) na barra de seek
+  const temporizadorRef = useRef(null);
 
   // ---- mostrar/esconder ----------------------------------------------------
   // Esconde-se quando esta' a dar e o rato esta' parado. Quando esta' em pausa
@@ -57,8 +62,7 @@ export default function PlayerControls({ videoRef, children }) {
     clearTimeout(temporizadorRef.current);
     temporizadorRef.current = setTimeout(() => {
       const v = videoRef.current;
-      // So' esconde se estiver a dar E nao houver o rato em cima (e' o
-      // behaviour normal de qualquer player).
+      // So' esconde se estiver a dar E nao houver o rato em cima.
       if (v && !v.paused) setBarraVisivel(false);
     }, OCULTAR_MS);
   }, [videoRef]);
@@ -67,126 +71,6 @@ export default function PlayerControls({ videoRef, children }) {
     mostrar();
     return () => clearTimeout(temporizadorRef.current);
   }, [mostrar]);
-
-  // Lembra o volume e o mudo entre episódios: aplica ao montar um vídeo novo.
-  useEffect(() => {
-    const video = videoRef.current;
-    if (!video) return;
-    try {
-      const v = localStorage.getItem(VOLUME_KEY);
-      const m = localStorage.getItem(MUDO_KEY);
-      if (v != null) {
-        const vol = Number(v);
-        if (Number.isFinite(vol)) {
-          video.volume = vol;
-          setVolume(vol);
-          ultimoVolumeRef.current = vol;
-        }
-      }
-      if (m != null) {
-        const mud = m === "true";
-        video.muted = mud;
-        setMudo(mud);
-      }
-    } catch (e) {
-      // localStorage indisponível (modo privado, etc.): ignora e fica com o padrão.
-    }
-  }, [videoRef]);
-
-  // ----estado do video -----------------------------------------------------
-  useEffect(() => {
-    const video = videoRef.current;
-    if (!video) return;
-
-    const pintar = () => {
-      const d = Number.isFinite(video.duration) ? video.duration : 0;
-      const frac = d > 0 ? Math.min(1, Math.max(0, video.currentTime / d)) : 0;
-      const pct = (frac * 100).toFixed(2) + "%";
-      // Por REF: e' a cada `timeupdate` e nao pode ser um setState.
-      if (preenchimentoRef.current) preenchimentoRef.current.style.width = pct;
-      if (bolinhaRef.current) bolinhaRef.current.style.left = pct;
-
-      // Zona carregada (buffered): faixa fina atras da barra de progresso.
-      // Mostra ate onde o video ja baixou, para a pessoa saber se vale a pena
-      // esperar ou mudar de fonte.
-      if (carregadoRef.current && d > 0 && video.buffered.length > 0) {
-        // Segmento carregado que cobre a posicao atual (ou o ultimo, se nao houver cobertura).
-        let carregadoAte = 0;
-        for (let i = 0; i < video.buffered.length; i++) {
-          const start = video.buffered.start(i);
-          const end = video.buffered.end(i);
-          if (video.currentTime >= start && video.currentTime <= end) {
-            carregadoAte = end;
-            break;
-          }
-          carregadoAte = Math.max(carregadoAte, end);
-        }
-        carregadoRef.current.style.width = ((carregadoAte / d) * 100).toFixed(2) + "%";
-      }
-    };
-
-    const onMeta = () => {
-      setDuracao(Number.isFinite(video.duration) ? video.duration : 0);
-      setVolume(video.volume);
-      setMudo(video.muted);
-      // Aplica a velocidade escolhida (default 1x).
-      video.playbackRate = velocidade;
-      pintar();
-    };
-    const onTime = () => {
-      pintar();
-      // O texto so' muda quando muda o segundo inteiro — 1 render por segundo,
-      // em vez de 4.
-      const s = Math.floor(video.currentTime || 0);
-      setSegundo((antes) => (antes === s ? antes : s));
-    };
-    const onPlay = () => { setADar(true); mostrar(); };
-    const onPause = () => { setADar(false); setBarraVisivel(true); };
-    const onVol = () => {
-      setVolume(video.volume);
-      setMudo(video.muted);
-      // Lembra entre episódios (mesmo valor aplicado ao montar acima).
-      try {
-        localStorage.setItem(VOLUME_KEY, String(video.volume));
-        localStorage.setItem(MUDO_KEY, String(video.muted));
-      } catch (e) {}
-    };
-    const onWaiting = () => setBuffering(true); // a aguardar dados
-    const onCanPlay = () => setBuffering(false); // dados chegaram
-    const onRateChange = () => {
-      // Mantem o estado sincronizado com o video (ex.: se o site mudar a taxa).
-      setVelocidade(video.playbackRate || 1);
-    };
-    const onEnterPiP = () => setPiP(true);
-    const onLeavePiP = () => setPiP(false);
-
-    video.addEventListener("loadedmetadata", onMeta);
-    video.addEventListener("durationchange", onMeta);
-    video.addEventListener("timeupdate", onTime);
-    video.addEventListener("play", onPlay);
-    video.addEventListener("pause", onPause);
-    video.addEventListener("volumechange", onVol);
-    video.addEventListener("waiting", onWaiting);
-    video.addEventListener("canplay", onCanPlay);
-    video.addEventListener("canplaythrough", onCanPlay);
-    video.addEventListener("ratechange", onRateChange);
-    video.addEventListener("enterpictureinpicture", onEnterPiP);
-    video.addEventListener("leavepictureinpicture", onLeavePiP);
-    return () => {
-      video.removeEventListener("loadedmetadata", onMeta);
-      video.removeEventListener("durationchange", onMeta);
-      video.removeEventListener("timeupdate", onTime);
-      video.removeEventListener("play", onPlay);
-      video.removeEventListener("pause", onPause);
-      video.removeEventListener("volumechange", onVol);
-      video.removeEventListener("waiting", onWaiting);
-      video.removeEventListener("canplay", onCanPlay);
-      video.removeEventListener("canplaythrough", onCanPlay);
-      video.removeEventListener("ratechange", onRateChange);
-      video.removeEventListener("enterpictureinpicture", onEnterPiP);
-      video.removeEventListener("leavepictureinpicture", onLeavePiP);
-    };
-  }, [videoRef, mostrar]);
 
   // ---- seek ----------------------------------------------------------------
   const fracaoDoPonteiro = (e) => {
@@ -197,8 +81,7 @@ export default function PlayerControls({ videoRef, children }) {
   };
 
   // Enquanto se arrasta, so' se pinta a barra (por ref, sem render). O seek
-  // verdadeiro acontece no `pointerup` — Seek a cada pixel dava saltos e
-  // lutava com o buffer.
+  // verdadeiro acontece no `pointerup`.
   const aoArrancar = (e) => {
     const f = fracaoDoPonteiro(e);
     arrastoRef.current = f;
@@ -224,11 +107,13 @@ export default function PlayerControls({ videoRef, children }) {
     const video = videoRef.current;
     if (!video || !Number.isFinite(video.duration)) return;
     video.currentTime = f * video.duration;
-    // O Watch Party tem de saber: um seek nosso que nao passa pelo `seeked` do
-    // outro jogador deixa os participantes dessincronizados.
+    // O Watch Party tem de saber: um seek nosso que nao passa pelo `seeked`
+    // do outro jogador deixa os participantes dessincronizados.
     video.dispatchEvent(new Event("seeked"));
     e.currentTarget.releasePointerCapture?.(e.pointerId);
   };
+
+  const arrastoRef = useRef(null); // {fracao} enquanto se arrasta
 
   // ---- acoes ---------------------------------------------------------------
   const alternarPlay = () => {
@@ -245,18 +130,17 @@ export default function PlayerControls({ videoRef, children }) {
       // Repõe o som: tira o mudo e, se o volume estava a 0, devolve o ultimo
       // volume (ou 0.5 se nunca houve um).
       video.muted = false;
-      setMudo(false);
       if (video.volume === 0) {
         const v = ultimoVolumeRef.current || 0.5;
         video.volume = v;
-        setVolume(v);
       }
     } else {
       // Guarda o volume atual e silencia.
       ultimoVolumeRef.current = video.volume;
       video.muted = true;
-      setMudo(true);
     }
+    // O evento `volumechange` (capturado por `useVideoState`) atualiza o
+    // estado React (volume/mudo) e o `useVolumeMemory` persiste no localStorage.
   };
 
   const mudarVolume = (e) => {
@@ -267,8 +151,8 @@ export default function PlayerControls({ videoRef, children }) {
     ultimoVolumeRef.current = v;
     // Tocar no volume tira o mudo — como em qualquer player.
     if (v > 0) video.muted = false;
-    setMudo(video.muted);
-    setVolume(v);
+    // O evento `volumechange` (capturado por `useVideoState`) atualiza o
+    // estado React (volume/mudo) e o `useVolumeMemory` persiste no localStorage.
   };
 
   const ecraInteiro = () => {
@@ -289,7 +173,7 @@ export default function PlayerControls({ videoRef, children }) {
     setVelocidade(prox);
   };
 
-  // Picture-in-picture: sai do vídeo para uma janela flutuante.
+  // Picture-in-picture: sai do video para uma janela flutuante.
   const alternarPiP = async () => {
     const video = videoRef.current;
     if (!video) return;
@@ -327,7 +211,7 @@ export default function PlayerControls({ videoRef, children }) {
         onPointerCancel={aoLargar}
         role="slider"
         tabIndex={0}
-        aria-label={t("Posição no vídeo")}
+        aria-label={t("Posicao no video")}
         aria-valuemin={0}
         aria-valuemax={Math.max(0, Math.floor(duracao))}
         aria-valuenow={segundo}
@@ -398,8 +282,8 @@ export default function PlayerControls({ videoRef, children }) {
           type="button"
           className="pc-btn"
           onClick={alternarVelocidade}
-          title={`×${velocidade} ${t("Velocidade")}`}
-          aria-label={`×${velocidade} ${t("Velocidade")}`}
+          title={`x${velocidade} ${t("Velocidade")}`}
+          aria-label={`x${velocidade} ${t("Velocidade")}`}
         >
           <IconVelocidade velocidade={velocidade} />
         </button>
