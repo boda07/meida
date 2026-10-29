@@ -180,6 +180,25 @@ Notas de PowerShell que custaram tempo:
 - **Nunca fazer `git push` sem o utilizador pedir primeiro.** Sempre que o utilizador autorizar push, é **obrigatório** atualizar a versão (`package.json` → `web/src/changelog.js` → `CHANGELOG.md`) **e** publicar a release do Git (tag + `gh release` com binários via `npm run app:publish`).**
 - **A CHANGELOG DA APP (`web/src/changelog.js`) É OBRIGATÓRIA EM TODA A RELEASE.** Nunca fazer bump de versão / commit / release sem acrescentar a entrada dessa versão em `web/src/changelog.js` (linguagem simples, mais recente em cima) — é o que o utilizador vê no "o que mudou" dentro da app. Verificar SEMPRE que fica lá antes de qualquer push.
 
+## Qualidade de código (SOLID)
+
+Ao refatorar ou escrever componentes, seguir os princípios SOLID. O alvo é que cada ficheiro/gancho tenha **uma só responsabilidade** (SRP) e seja fácil de testar isoladamente.
+
+- **SRP — Single Responsibility Principle:** um componente ou gancho faz apenas uma coisa. Se um ficheiro mistura busca de dados, persistência, lógica de negócio e renderização de UI, partilhe em ganchos com responsabilidade única.
+  - Exemplo: `PlayerControls.jsx` (UI e ações) → `useVideoState.js` (estado do vídeo) + `useVolumeMemory.js` (persistência volume/mudo).
+  - Exemplo: `Player.jsx` (iframe + fonte nativa + auto-fallback) → `usePlayerFallback.js` (troca de fonte) + `useNativeVideoSource.js` (fonte nativa MegaPlay).
+- **OCP — Open/Closed Principle:** para adicionar comportamento novo, crie um gancho novo em vez de alterar um existente.
+- **LSP — Liskov Substitution Principle:** qualquer gancho com a mesma assinatura é substituível; o componente depende apenas do contrato de retorno.
+- **ISP — Interface Segregation Principle:** cada gancho expõe apenas o que o componente precisa (não obriga a depender de tudo).
+- **DIP — Dependency Inversion Principle:** o componente depende de abstrações (ganchos), não de implementações concretas (`addEventListener`, `localStorage`, `fetch` direto).
+
+**Quando refatorar:**
+1. Identifique a responsabilidade única de cada bloco de código.
+2. Extraia para um gancho (`use*.js`) com nome descritivo da responsabilidade.
+3. O componente passa a compor ganchos e renderizar UI.
+4. Corra `npm test` e `npm run build` para confirmar que não partiu nada.
+5. Verifique CJK em todos os ficheiros alterados antes de commitar.
+
 ## Servidor partilhado (nuvem)
 
 - Endereço: **`https://meida.fadehost.app`** (grátis, sem cartão, `/data` persistente, hiberna quando parado). Só dados — **vídeo é sempre local**.

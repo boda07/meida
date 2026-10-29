@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.6.5
+
+Correção de bug nos animes: o vídeo não corria e não se conseguia trocar de provider. O player usava sempre o primeiro provider da lista, ignorando a escolha do utilizador no seletor de fontes.
+
+### Correção
+`web/src/components/Player.jsx`: o `active` era sempre `lista[0]`, ignorando o `startIndex` que o `Details.jsx` passa quando o utilizador escolhe um provider diferente. Agora usa `lista[startIndex ?? 0]`, por isso trocar de provider no seletor tem efeito imediato.
+
 ## 1.6.4
 
 Qualidade de código: a barra de controlos, o player, o HlsPlayer, as legendas, os torrents, os comentários, o mapa de calor e a comparação de avaliações foram divididos em pequenos ganchos com uma responsabilidade cada. A app funciona da mesma forma, mas o código é mais fácil de manter e de testar.

@@ -6,6 +6,17 @@
 export const CHANGELOG = [
 
 {
+      version: "1.6.5",
+      items: [
+        "Corrigido: nos animes o vídeo não corria e não se conseguia trocar de provider. O player usava sempre o primeiro provider da lista, ignorando a escolha do utilizador. Agora muda para a fonte escolhida no seletor.",
+        "Corrigido: o player ignorava o índice da fonte escolhida e arrancava sempre no primeiro provider da lista.",
+      ],
+      items_en: [
+        "Fixed: on anime the video wouldn't play and you couldn't switch provider. The player always used the first provider in the list, ignoring your choice. Now it switches to the source you picked in the selector.",
+        "Fixed: the player ignored the index of the chosen source and always started on the first provider in the list.",
+      ],
+    },
+  {
       version: "1.6.4",
       items: [
         "Reforço da qualidade de código: a barra de controlos, o player, o HlsPlayer, as legendas, os torrents, os comentários, o mapa de calor e a comparação de avaliações foram divididos em pequenos ganchos com uma responsabilidade cada. A app funciona da mesma forma, mas o código é mais fácil de manter e de testar.",
