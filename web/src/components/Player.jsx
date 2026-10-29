@@ -190,5 +190,6 @@ export default function Player({
           {arrancado && <FullscreenButton targetRef={iframeRef} />}
         </div>
       )
+    </>
   );
 }
