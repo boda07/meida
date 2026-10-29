@@ -780,6 +780,8 @@ export const DICIONARIO = {
       "{fonte} nao carregou · a usar {nome}",
     "{fonte} falhou · a usar {nome}":
       "{fonte} falhou · a usar {nome}",
+    "{fonte} falhou":
+      "{fonte} falhou",
     "{n} com nota": "{n} com nota",
     "{pct}% · 👤 {peers} peers · ⬇ {vel} MB/s":
       "{pct}% · 👤 {peers} peers · ⬇ {vel} MB/s",
@@ -1815,6 +1817,7 @@ export const DICIONARIO = {
     "{nome} · a carregar...": "{nome} · loading...",
     "{fonte} nao carregou · a usar {nome}": "{fonte} did not load · using {nome}",
     "{fonte} falhou · a usar {nome}": "{fonte} failed · using {nome}",
+    "{fonte} falhou": "{fonte} failed",
     "{n} com nota": "{n} rated",
     "{pct}% · 👤 {peers} peers · ⬇ {vel} MB/s":
       "{pct}% · 👤 {peers} peers · ⬇ {vel} MB/s",

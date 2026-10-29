@@ -94,8 +94,10 @@ export default function Player({
   const onErroNativo = useCallback(() => {
     const proximo = nextAlive(index, lista, deadIds);
     if (proximo === index) {
+      // Sem alternativa: fica com a fonte partida e mostra o botao de tentar
+      // de novo. Nao faz sentido marcar loaded, senão o player fica parado.
       setErroFonte(active?.name || null);
-      setLoaded(true);
+      setLoaded(false);
       return;
     }
     setTrocada(active?.name || null);
@@ -181,13 +183,22 @@ export default function Player({
               })}
             </span>
           )}
-          {arrancado && erroFonte && loaded && (
-            <span className="player-loading-hint muted" style={{ position: "absolute", left: 8, bottom: 8, fontSize: 12, color: "#c90303" }}>
-              {t("{fonte} falhou · a usar {nome}", {
-                fonte: erroFonte,
-                nome: active?.name,
-              })}
-            </span>
+          {arrancado && erroFonte && !loaded && (
+            <div className="player-erro">
+              <span className="player-erro-texto">{t("{fonte} falhou", { fonte: erroFonte })}</span>
+              <button
+                type="button"
+                className="player-reload"
+                onClick={() => {
+                  setErroFonte(null);
+                  setReloadKey((k) => k + 1);
+                  setLoaded(false);
+                }}
+                title={t("Tentar de novo")}
+              >
+                {t("Tentar de novo")}
+              </button>
+            </div>
           )}
           {arrancado && <FullscreenButton targetRef={iframeRef} />}
         </div>

@@ -4248,6 +4248,51 @@ h2 {
   opacity: 1;
 }
 
+/* Mensagem de erro da fonte nativa (falha irrecuperavel): acima da barra,
+   com o acento da app em vez de cor fixa. */
+.player-erro {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  background: rgba(0, 0, 0, 0.8);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.player-erro-texto {
+  flex: 1;
+}
+
+.player-erro .player-reload {
+  position: static;
+  width: auto;
+  height: auto;
+  min-width: 0;
+  padding: 4px 12px;
+  opacity: 1;
+  background: var(--accent);
+  color: #fff;
+  font-size: 12px;
+  border-radius: 6px;
+  font-weight: 600;
+}
+
+.player-erro .player-reload:hover {
+  background: var(--accent-text);
+}
+
+.player:fullscreen .player-reload {
+  opacity: 1;
+}
+
 /* Em fullscreen, o container do player ocupa tudo */
 .player:fullscreen {
   width: 100vw;
