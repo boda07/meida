@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-import { api, imageUrl } from "../api/client.js";
+import { imageUrl } from "../api/client.js";
 import { useAuth } from "../auth/AuthContext.jsx";
 import { useSettings } from "../settings/SettingsContext.jsx";
 import { useT } from "../i18n/I18nContext.jsx";
+import { useCompareRating } from "./useCompareRating.js";
 
 // Título a mostrar: para anime respeita a opção ingles/romaji.
 function displayTitle(it, romaji) {
@@ -19,9 +20,6 @@ function fmtRating(r) {
 
 // Cartão lateral: capa, título e notas de um item.
 function CompareCard({ it, settings, tag }) {
-  // `titulo`, e nao `t`: o `t` e' a funcao de traducao em todo o resto do
-  // ficheiro, e com o mesmo nome qualquer `t("...")` abaixo traduzia o titulo
-  // em vez de o traduzir.
   const titulo = displayTitle(it, settings.animeTitleLang === "romaji");
   return (
     <div className="compare-side">
@@ -47,7 +45,6 @@ function CompareCard({ it, settings, tag }) {
 }
 
 // Controlos no meio: nota exata + botões ↑/↓ para ajustar o título atual.
-// A nota é escrita à vontade e guardada quando se sai do campo (blur).
 function CenterControls({ it, busy, onScore, onAdjust }) {
   const t = useT();
   const [draft, setDraft] = useState(it.score ?? "");
@@ -77,9 +74,7 @@ function CenterControls({ it, busy, onScore, onAdjust }) {
           onChange={(e) => setDraft(e.target.value)}
           onBlur={(e) => commit(e.target.value)}
           onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              e.currentTarget.blur();
-            }
+            if (e.key === "Enter") e.currentTarget.blur();
           }}
         />
       </label>
@@ -104,40 +99,24 @@ export default function CompareRating({ details, onClose }) {
   const t = useT();
   const { user } = useAuth();
   const { settings } = useSettings();
-  const [items, setItems] = useState([]);
-  const [current, setCurrent] = useState(null);
   const [other, setOther] = useState(null);
-  const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState(null);
 
-  const seen = useMemo(() => items.filter((i) => i.watched), [items]);
-  // Referências: títulos que já viste, excluindo o título atual.
-  const refs = useMemo(
-    () =>
-      seen.filter(
-        (i) => !(i.type === details.type && String(i.tmdbId) === String(details.id))
-      ),
-    [seen, details]
-  );
+  const {
+    items,
+    current,
+    seen,
+    refs,
+    busy,
+    saveScore,
+    adjust,
+    setCurrent,
+    setMsg,
+  } = useCompareRating({ details });
 
   useEffect(() => {
-    if (!user) return;
-    api
-      .library()
-      .then((d) => setItems(d.items || []))
-      .catch(() => {});
-    api
-      .libraryItem(details.type, details.id)
-      .then((d) => setCurrent(d.item))
-      .catch(() => {});
-  }, [user, details.type, details.id]);
-
-  // Sobe uma referência aleatória quando a lista carrega.
-  useEffect(() => {
-    if (!other && refs.length) {
-      setOther(refs[Math.floor(Math.random() * refs.length)]);
-    }
-  }, [refs, other]);
+    setMsg(null);
+  }, [msg]);
 
   const curItem = {
     tmdbId: details.id,
@@ -149,32 +128,12 @@ export default function CompareRating({ details, onClose }) {
     score: current?.score ?? null,
   };
 
-  async function saveScore(score) {
-    setBusy(true);
-    setMsg(null);
-    try {
-      const d = await api.saveLibrary({
-        tmdbId: curItem.tmdbId,
-        type: curItem.type,
-        title: curItem.title,
-        poster: curItem.poster,
-        genres: curItem.genres,
-        rating: curItem.rating,
-        score,
-      });
-      setCurrent(d.item);
-    } catch (e) {
-      setMsg(e.message);
-    } finally {
-      setBusy(false);
+  // Sobe uma referência aleatória quando a lista carrega.
+  useEffect(() => {
+    if (!other && refs.length) {
+      setOther(refs[Math.floor(Math.random() * refs.length)]);
     }
-  }
-
-  function adjust(delta) {
-    const cur = current?.score ?? 50;
-    const next = Math.max(1, Math.min(100, cur + delta));
-    saveScore(next);
-  }
+  }, [refs, other]);
 
   function swapRef() {
     const rest = refs.filter(
@@ -183,6 +142,8 @@ export default function CompareRating({ details, onClose }) {
     if (!rest.length) return;
     setOther(rest[Math.floor(Math.random() * rest.length)]);
   }
+
+  if (!user) return null;
 
   return (
     <div className="modal-overlay" onClick={onClose}>
