@@ -95,6 +95,14 @@ export function useHlsEngine({ src, videoRef, onErro }) {
 
     hls.on(Hls.Events.LEVEL_SWITCHED, (_e, dados) => setAtivo(dados?.level ?? 0));
 
+    // Repõe o contador de erros de rede quando um segmento carrega com sucesso.
+    // Uma rede instável pode gerar erros esporádicos ao longo de um filme longo;
+    // sem esta reposição, três erros ao longo de todo o vídeo bastam para
+    // trocar de fonte. Assim, apenas erros consecutivos contam para o limite.
+    hls.on(Hls.Events.FRAG_LOADED, () => {
+      errosRef.current.network = 0;
+    });
+
     // Erro fatal: tenta recuperar conforme o tipo. Se esgotar as tentativas,
     // destroi o hls e avisa o chamador para passar à fonte seguinte.
     hls.on(Hls.Events.ERROR, (_event, dados) => {
