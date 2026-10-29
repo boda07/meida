@@ -15,7 +15,6 @@ export function usePlayerFallback({
   startIndex = 0,
   manual = false,
   arrancado = false,
-  active,
 }) {
   const TIMEOUT_MS = 15000;
   const TIMEOUT_MANUAL_MS = 45000;
@@ -50,6 +49,9 @@ export function usePlayerFallback({
     for (let j = 0; j < i; j++) if (!dead?.has(list[j].provider)) return j;
     return i;
   }
+
+  // Fonte activa: calculada a partir do index, para o Player usar o mesmo que o hook gere.
+  const active = lista?.[index];
 
   // O iframe carregou.
   const marcarCarregado = useCallback(() => {
@@ -117,6 +119,7 @@ export function usePlayerFallback({
 
   return {
     index,
+    active,
     loaded,
     reloadKey,
     trocada,

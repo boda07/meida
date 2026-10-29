@@ -43,17 +43,28 @@ export default function Player({
   const iframeRef = useRef(null);
   const { settings } = useSettings();
 
+  // Com o autoplay DESLIGADO, o iframe so nasce depois de um clique.
+  const [arrancado, setArrancado] = useState(() => settings.autoplay);
+
   // Só entram fontes com URL http(s) — um `data:` URL não é um player.
   const lista = useMemo(
     () => (embeds || []).filter((e) => ePlayerValido(e.embedUrl)),
     [embeds]
   );
-  const active = lista?.[startIndex ?? 0];
-  const finalSrc = active ? applyPlaybackPrefs(active.embedUrl, settings) : null;
 
-  // Auto-fallback de fontes: index, loaded, reloadKey, trocada, marcarCarregado.
+  // Fonte nova (episodio novo, titulo novo, trocar de audio): o portao volta a
+  // aparecer se o autoplay estiver desligado. Nao se mexe quando so o indice muda,
+  // para o auto-fallback de 15s poder trocar de fonte sem pedir outro clique.
+  useEffect(() => {
+    setArrancado(settings.autoplay);
+  }, [lista, settings.autoplay]);
+
+  // Auto-fallback de fontes: index, active, loaded, reloadKey, trocada, marcarCarregado.
+  // O hook gere o index (troca por timeout, health-check ou erro fatal) e devolve
+  // o active correspondente. O Player nao calcula active sozinho antes do hook.
   const {
     index,
+    active,
     loaded,
     reloadKey,
     trocada,
@@ -69,26 +80,17 @@ export default function Player({
     deadIds,
     startIndex,
     manual,
-    arrancado: false,
-    active,
+    arrancado,
   });
+
+  const finalSrc = active ? applyPlaybackPrefs(active.embedUrl, settings) : null;
 
   // Fonte nativa (MegaPlay): o servidor devolve o m3u8 e as legendas em claro.
   const nativoUrl = active?.native ? active.embedUrl : null;
   const { nativoPronto } = useNativeVideoSource({ nativoUrl, audio });
   const isNativoPronto = Boolean(nativoPronto);
 
-  // Com o autoplay DESLIGADO, o iframe só nasce depois de um clique.
-  const [arrancado, setArrancado] = useState(() => settings.autoplay);
-
-  // Fonte nova (episódio novo, título novo, trocar de áudio): o portão volta a
-  // aparecer se o autoplay estiver desligado. Não se mexe quando só o índice muda,
-  // para o auto-fallback de 15s poder trocar de fonte sem pedir outro clique.
-  useEffect(() => {
-    setArrancado(settings.autoplay);
-  }, [lista, settings.autoplay]);
-
-  // Erro fatal do hls.js na fonte nativa: mesma lógica do timeout de 15s.
+  // Erro fatal do hls.js na fonte nativa: mesma logica do timeout de 15s.
   const onErroNativo = useCallback(() => {
     const proximo = nextAlive(index, lista, deadIds);
     if (proximo === index) {
