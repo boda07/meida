@@ -100,7 +100,6 @@ export default function CompareRating({ details, onClose }) {
   const { user } = useAuth();
   const { settings } = useSettings();
   const [other, setOther] = useState(null);
-  const [msg, setMsg] = useState(null);
 
   const {
     items,
@@ -108,15 +107,12 @@ export default function CompareRating({ details, onClose }) {
     seen,
     refs,
     busy,
+    msg,
     saveScore,
     adjust,
     setCurrent,
     setMsg,
   } = useCompareRating({ details });
-
-  useEffect(() => {
-    setMsg(null);
-  }, [msg]);
 
   const curItem = {
     tmdbId: details.id,
