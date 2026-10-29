@@ -5,7 +5,9 @@ import { usePlayerShortcuts } from "./usePlayerShortcuts.js";
 import { useVideoSync } from "../watchparty/useVideoSync.js";
 import { useSettings } from "../settings/SettingsContext.jsx";
 import { useT } from "../i18n/I18nContext.jsx";
-import { api } from "../api/client.js";
+import { useVideoProgress } from "./useVideoProgress.js";
+import { useTorrentStatus } from "./useTorrentStatus.js";
+import { useStopTorrent } from "./useStopTorrent.js";
 
 // Player HTML5 próprio para streams de torrent (sem anúncios).
 // `startAt` (s): retoma nessa posicao. `onProgress(p, d)`: chamado ~1x/5s com a
@@ -15,12 +17,8 @@ export default function VideoPlayer({ src, infoHash, subtitles = [], startAt, on
   const videoRef = useRef(null);
   const containerRef = useRef(null);
   const { settings } = useSettings();
-  const [status, setStatus] = useState(null);
   const [err, setErr] = useState(false);
-  const [removing, setRemoving] = useState(false);
-  // Motivo de o "parar" ter falhado. Antes nao havia estado nenhum: o `catch`
-  // engolia o erro e o `onRemoved` corria na mesma (ver `stop`).
-  const [erroParar, setErroParar] = useState("");
+
   useVideoSync(videoRef); // Watch Party: sincroniza play/pause/seek
   usePlayerShortcuts(videoRef, containerRef); // Atalhos de teclado
 
@@ -36,58 +34,15 @@ export default function VideoPlayer({ src, infoHash, subtitles = [], startAt, on
   }, [src, startAt]);
 
   // Reporta a posicao periodicamente (nao a cada timeupdate: spam desnecessario).
-  useEffect(() => {
-    if (!onProgress) return;
-    const video = videoRef.current;
-    if (!video) return;
-    let last = 0;
-    const onTime = () => {
-      const now = Math.floor(video.currentTime);
-      if (now - last >= 5) {
-        last = now;
-        onProgress(now, Math.floor(video.duration || 0));
-      }
-    };
-    video.addEventListener("timeupdate", onTime);
-    return () => video.removeEventListener("timeupdate", onTime);
-  }, [src, onProgress]);
+  useVideoProgress({ videoRef, onProgress });
 
-  useEffect(() => {
-    if (!infoHash) return;
-    setErr(false);
-    const tick = () =>
-      fetch(`/api/stream/${infoHash}/status`)
-        .then((r) => r.json())
-        .then((d) => setStatus(d.status))
-        .catch(() => {});
-    tick();
-    const id = setInterval(tick, 1500);
-    return () => clearInterval(id);
-  }, [infoHash, src]);
+  // Status do stream (progresso do WebTorrent, peers, velocidade).
+  const { status } = useTorrentStatus({ infoHash, src });
+
+  // Parar o torrent (WebTorrent local).
+  const { stop, removing, erroParar } = useStopTorrent({ infoHash });
 
   const mb = (n) => (n / 1024 / 1024).toFixed(1);
-
-  const stop = () => {
-    if (removing || !infoHash) return;
-    setErroParar("");
-    setRemoving(true);
-    api
-      .stopTorrent(infoHash)
-      .then(() => {
-        setStatus(null);
-        onRemoved?.();
-      })
-      .catch((e) => {
-        // **O `onRemoved()` so' corre se o servidor disse que parou.** Antes
-        // estava no `finally`, com o `catch(() => {})` a engolir o 401: o
-        // botao dizia "parado", a barra de estado desaparecia, e o torrent
-        // continuava a ocupar disco e banda sem ninguem saber.
-        setErroParar(
-          t("Não foi possível parar a descarga: {erro}", { erro: e.message })
-        );
-      })
-      .finally(() => setRemoving(false));
-  };
 
   return (
     <div className="vplayer">
