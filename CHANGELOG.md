@@ -1,5 +1,29 @@
 # Changelog
 
+## 1.6.4
+
+Qualidade de código: a barra de controlos, o player, o HlsPlayer, as legendas, os torrents, os comentários, o mapa de calor e a comparação de avaliações foram divididos em pequenos ganchos com uma responsabilidade cada. A app funciona da mesma forma, mas o código é mais fácil de manter e de testar.
+
+### Refatoração em hooks (SRP)
+Cada gancho tem uma única responsabilidade:
+- `useVideoState.js` — sincroniza estado do vídeo (duração, segundo, volume, mudo, buffering, PiP, barra de seek)
+- `useVolumeMemory.js` — persiste volume/mudo no localStorage entre episódios
+- `usePlayerFallback.js` — auto-fallback de fontes com timeout e troca automática
+- `useNativeVideoSource.js` — fonte nativa MegaPlay (m3u8 + legendas)
+- `useHlsEngine.js` — engine hls.js com qualidade e recuperação de erros
+- `useVideoProgress.js` — reporta posição do vídeo para o "continua a ver"
+- `useSubtitlePreferences.js` — preferências de exibição de legendas (tamanho, opacidade, fonte, atraso)
+- `useAutoSubtitle.js` — seleciona automaticamente a legenda do idioma preferido
+- `useTorrents.js` — busca torrents, disponibilidade Real-Debrid e legendas OpenSubtitles
+- `useTorrentFilters.js` — filtros e ordenação da lista de torrents
+- `useTorrentPlayer.js` — reprodução de torrent (Debrid vs WebTorrent)
+- `useComments.js` — CRUD de comentários (carregar, enviar, like, apagar)
+- `useHeatmapDestaque.js` — estado do destaque/tooltip do mapa de calor
+- `useHeatmapPeriodo.js` — botões de período do mapa de calor
+- `useTorrentStatus.js` — polling do status do stream WebTorrent
+- `useStopTorrent.js` — parar torrent com gestão de erro
+- `useCompareRating.js` — lógica de comparação de avaliações
+
 ## 1.6.3
 
 Legendas e textos do player: tamanho visível, posição acima da barra de controlos, botão CC no sítio em ecrã inteiro, pausa em inglês.

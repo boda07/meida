@@ -6,6 +6,15 @@
 export const CHANGELOG = [
 
 {
+      version: "1.6.4",
+      items: [
+        "Reforço da qualidade de código: a barra de controlos, o player, o HlsPlayer, as legendas, os torrents, os comentários, o mapa de calor e a comparação de avaliações foram divididos em pequenos ganchos com uma responsabilidade cada. A app funciona da mesma forma, mas o código é mais fácil de manter e de testar.",
+      ],
+      items_en: [
+        "Code quality boost: the player controls, player, HLS player, subtitles, torrents, comments, heatmap and rating comparison were split into small hooks, each with one responsibility. The app works the same, but the code is easier to maintain and test.",
+      ],
+    },
+  {
       version: "1.6.3",
       items: [
         "Legendas de vídeo agora visíveis: o tamanho deixava as letras com cerca de 1 px (5% de 5% da altura); agora usam o tamanho base do navegador e o menu \"Tamanho\" funciona como multiplicador.",
