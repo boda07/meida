@@ -48,7 +48,7 @@ export default function Player({
     () => (embeds || []).filter((e) => ePlayerValido(e.embedUrl)),
     [embeds]
   );
-  const active = lista?.[0];
+  const active = lista?.[startIndex ?? 0];
   const finalSrc = active ? applyPlaybackPrefs(active.embedUrl, settings) : null;
 
   // Auto-fallback de fontes: index, loaded, reloadKey, trocada, marcarCarregado.
