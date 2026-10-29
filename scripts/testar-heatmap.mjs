@@ -307,6 +307,8 @@ console.log("  14) o desenho: a coluna dos dias nao desliza com o mapa");
 {
   const JSX = fs.readFileSync(path.join(RAIZ, "web", "src", "components", "HeatmapAtividade.jsx"), "utf8");
   const CSS = fs.readFileSync(path.join(RAIZ, "web", "src", "styles.css"), "utf8");
+  const DESTAQUE = fs.readFileSync(path.join(RAIZ, "web", "src", "components", "useHeatmapDestaque.js"), "utf8");
+  const JSX_TUDO = JSX + "\n" + DESTAQUE;
   ok_("a coluna dos dias existe", /className="heatmap-lateral"/.test(JSX));
   ok_("e escreve as tres abreviaturas", /ROTULOS_DIA\.map/.test(JSX));
   // **O que importa:** o rotulo tem de estar FORA do contentor que desliza, senao
@@ -374,6 +376,8 @@ console.log("  15) o texto do dia esta' NO DOM, e funciona ao toque");
 {
   const JSX = fs.readFileSync(path.join(RAIZ, "web", "src", "components", "HeatmapAtividade.jsx"), "utf8");
   const CSS = fs.readFileSync(path.join(RAIZ, "web", "src", "styles.css"), "utf8");
+  const DESTAQUE = fs.readFileSync(path.join(RAIZ, "web", "src", "components", "useHeatmapDestaque.js"), "utf8");
+  const JSX_TUDO = JSX + "\n" + DESTAQUE;
 
   // **A razao de ser disto tudo.** O `<title>` do SVG e' um tooltip do browser:
   // aparece com o rato e NUNCA com o dedo, e vive fora do DOM onde nenhum teste
@@ -386,10 +390,10 @@ console.log("  15) o texto do dia esta' NO DOM, e funciona ao toque");
   ok_("o texto e' um elemento no DOM", /className="heatmap-dica"/.test(JSX));
   ok_("e usa a funcao pura", /textoDoDia\(destaque, t\)/.test(JSX));
 
-  ok_("o rato mostra o texto", /onMouseEnter=\{\(ev\) => mostrar\(celula, false, ev\)\}/.test(JSX));
-  ok_("e o toque tambem", /onClick=\{\(ev\) => mostrar\(celula, true, ev\)\}/.test(JSX));
-  ok_("o teclado tambem", /onFocus=\{\(ev\) => mostrar/.test(JSX) && /onBlur=\{\(\) => soltar/.test(JSX));
-  ok_("Esc fecha o que ficou preso", /e.key === "Escape"/.test(JSX));
+  ok_("o rato mostra o texto", /onMouseEnter=\{\(ev\) => mostrar\(celula, false, ev\)\}/.test(JSX_TUDO));
+  ok_("e o toque tambem", /onClick=\{\(ev\) => mostrar\(celula, true, ev\)\}/.test(JSX_TUDO));
+  ok_("o teclado tambem", /onFocus=\{\(ev\) => mostrar/.test(JSX_TUDO) && /onBlur=\{\(\) => soltar/.test(JSX_TUDO));
+  ok_("Esc fecha o que ficou preso", /e.key === "Escape"/.test(JSX_TUDO));
 
   // Um toque prende o texto; o fundo so' existe nesse caso, senao ficava um painel
   // invisivel por cima do mapa a comer os cliques.
@@ -407,8 +411,8 @@ console.log("  15) o texto do dia esta' NO DOM, e funciona ao toque");
 
   // A posicao mede a largura real do texto em vez de adivinhar uma margem fixa.
   ok_("a margem usa a largura medida do texto",
-    /const meia = el\.offsetWidth \/ 2/.test(JSX) && /Math\.max\(meia, Math\.min\(destaque\.x/.test(JSX));
-  ok_("e nao volta a ter um numero fixo na mao", !/Math\.max\(100, Math\.min/.test(JSX));
+    /const meia = el\.offsetWidth \/ 2/.test(JSX_TUDO) && /Math\.max\(meia, Math\.min\(destaque\.x/.test(JSX_TUDO));
+  ok_("e nao volta a ter um numero fixo na mao", !/Math\.max\(100, Math\.min/.test(JSX_TUDO));
 
   // O numero tambem fica dentro do quadradinho, para se ler sem passar o rato.
   ok_("o dia seleccionado escreve o numero dentro da celula",
