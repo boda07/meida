@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.6.6
+
+Erro da fonte nativa (anime): quando não há fonte alternativa, o player mostra "{fonte} falhou" com um botão "Tentar de novo" em vez de ficar parado. O botão recarrega a fonte. A mensagem fica acima da barra de controlos e usa a cor de destaque da app.
+
 ## 1.6.5
 
 Correção de bug nos animes: o vídeo não corria e não se conseguia trocar de provider. O player usava sempre o primeiro provider da lista, ignorando a escolha do utilizador no seletor de fontes.

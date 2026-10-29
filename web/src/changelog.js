@@ -6,6 +6,15 @@
 export const CHANGELOG = [
 
 {
+      version: "1.6.6",
+      items: [
+        "Erro da fonte nativa (anime): quando nao ha fonte alternativa, o player mostra '{fonte} falhou' com um botao 'Tentar de novo' em vez de ficar parado. O botao recarrega a fonte. A mensagem fica acima da barra de controlos e usa a cor de acento da app.",
+      ],
+      items_en: [
+        "Native source error (anime): when there is no alternative source, the player shows '{fonte} falhou' with a 'Try again' button instead of staying stuck. The button reloads the source. The message appears above the controls bar and uses the app's accent color.",
+      ],
+    },
+  {
       version: "1.6.5",
       items: [
         "Corrigido: nos animes o vídeo não corria e não se conseguia trocar de provider. O player usava sempre o primeiro provider da lista, ignorando a escolha do utilizador. Agora muda para a fonte escolhida no seletor.",
