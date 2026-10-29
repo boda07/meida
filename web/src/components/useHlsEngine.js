@@ -19,16 +19,38 @@ export function useHlsEngine({ src, videoRef, onErro }) {
   const [ativo, setAtivo] = useState(0);
 
   // Escolha de qualidade do utilizador (null = auto, numero = nivel fixo).
-  // Persiste entre episodios para nao perder a fixacao ao mudar de episodio.
+  // Persiste entre episodios (localStorage) para nao perder a fixacao.
   const nivelEscolhidoRef = useRef(null);
+
+  // Qualidade escolhida pelo utilizador, guardada em localStorage.
+  const QUALIDADE_KEY = "meida:qualidade";
+
+  // Ler a escolha guardada no arranque do hook.
+  useEffect(() => {
+    try {
+      const v = localStorage.getItem(QUALIDADE_KEY);
+      if (v != null) {
+        const n = Number(v);
+        if (Number.isFinite(n)) nivelEscolhidoRef.current = n;
+      }
+    } catch (e) {
+      // localStorage indisponível (modo privado, etc.): ignora.
+    }
+  }, []);
 
   const mudarQualidade = useCallback((valor) => {
     const hls = hlsRef.current;
     if (!hls) return;
     const auto = valor === "auto";
-    nivelEscolhidoRef.current = auto ? null : Number(valor);
+    const n = auto ? null : Number(valor);
+    nivelEscolhidoRef.current = n;
     setNivelAuto(auto);
-    hls.currentLevel = auto ? -1 : Number(valor);
+    hls.currentLevel = auto ? -1 : n;
+    // Lembrar a escolha para episodios seguintes.
+    try {
+      if (n == null) localStorage.removeItem(QUALIDADE_KEY);
+      else localStorage.setItem(QUALIDADE_KEY, String(n));
+    } catch (e) {}
   }, []);
 
   useEffect(() => {
@@ -59,11 +81,15 @@ export function useHlsEngine({ src, videoRef, onErro }) {
       const nivel = dados?.levels?.length || 0;
       setNiveis(nivel > 1 ? dados.levels.map((l, i) => rotuloNivel(l, i)) : []);
       // Reaplicar a escolha guardada do utilizador, se o nivel existir aqui.
+      // Se o nivel exato nao existir (outro episodio com menos variantes),
+      // escolhe o mais proximo abaixo para nao sobrecarregar a ligacao.
       const guardado = nivelEscolhidoRef.current;
-      if (guardado != null && guardado < nivel) {
-        hls.currentLevel = guardado;
+      if (guardado != null && nivel > 0) {
+        let alvo = guardado;
+        if (alvo >= nivel) alvo = nivel - 1;
+        hls.currentLevel = alvo;
         setNivelAuto(false);
-        setAtivo(guardado);
+        setAtivo(alvo);
       }
     });
 
