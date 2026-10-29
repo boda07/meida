@@ -31,7 +31,7 @@ export function AuthProvider({ children }) {
     } catch {
       /* ignora: fica sem utilizador guardado */
     }
-    if (guardado) setUser(guardado.user);
+    if (guardado) setUser(guardado);
 
     let tentativas = 0;
     const maxTentativas = 3;
@@ -52,6 +52,11 @@ export function AuthProvider({ children }) {
           if (e.status === 401) {
             // O servidor diz que o token nao e valido: apaga-o.
             tokenStore.clear();
+            try {
+              localStorage.removeItem(AUTH_USER_KEY);
+            } catch {
+              /* ignorar */
+            }
             setUser(null);
           } else if (tentativas < maxTentativas) {
             tentativas++;
@@ -65,6 +70,18 @@ export function AuthProvider({ children }) {
     }
 
     tentar();
+
+    // Retentar tambem quando volta a ficar online e quando a janela volta a
+    // ficar visivel, para nao ficar parado se o servidor estava em baixo.
+    function tentarSeOnline() {
+      if (navigator.onLine) tentar();
+    }
+    window.addEventListener("online", tentarSeOnline);
+    window.addEventListener("visibilitychange", tentarSeOnline);
+    return () => {
+      window.removeEventListener("online", tentarSeOnline);
+      window.removeEventListener("visibilitychange", tentarSeOnline);
+    };
   }, []);
 
   async function login(username, password) {
