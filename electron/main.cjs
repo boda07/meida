@@ -267,7 +267,7 @@ function limparPortaAntiga() {
     /* nao existia: nada a fazer */
   }
 }
-function prodUrl() {
+async function prodUrl() {
   // Espera ate 5s que o servidor escreva o ficheiro da porta.
   // Sem isto, se o servidor ainda nao arrancou, usamos a porta por omissao
   // (5175), que pode estar ocupada por outro processo, fazendo com que a janela
@@ -279,11 +279,8 @@ function prodUrl() {
     } catch {
       /* sem ficheiro ainda: o servidor nao terminou de arrancar */
     }
-    // Aguarda 100ms antes de tentar novamente
-    const start = Date.now();
-    while (Date.now() - start < 100) {
-      /* espera */
-    }
+    // Aguarda 100ms antes de tentar novamente (sem bloquear o processo principal).
+    await new Promise((r) => setTimeout(r, 100));
   }
   return `http://127.0.0.1:${PROD_PORT_DEFAULT}`;
 }
@@ -674,8 +671,8 @@ win.webContents.session.setPermissionCheckHandler(
   } else {
     // Espera que o backend escreva a porta escolhida (ou que a janela apanhe a
     // porta por omissao) antes de abrir a interface.
-    const abrir = (tentativas) => {
-      const url = prodUrl();
+    const abrir = async (tentativas) => {
+      const url = await prodUrl();
       const teste = http
         .get(`${url}/api/health`, (res) => {
           res.resume();
