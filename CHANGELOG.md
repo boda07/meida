@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.6.7
+
+Eletrron: o arranque da app deixa de travar durante ate 5 segundos. A espera pela porta do servidor deixa de ocupar o processador a 100 % e agora aguarda sem bloquear a janela nem o IPC.
+
+Qualidade de video: o contador de erros de rede do hls.js e reposto a cada segmento carregado, para uma rede instavel nao trocar de fonte so por uns poucos erros esporadicos.
+
+Autenticacao: ao abrir a app com o servidor em baixo, o utilizador guardado na cache e mostrado de imediato; o token so e apagado se o servidor disser 401. A app tenta de novo quando a rede volta ou a janela ganha foco.
+
 ## 1.6.6
 
 Erro da fonte nativa (anime): quando não há fonte alternativa, o player mostra "{fonte} falhou" com um botão "Tentar de novo" em vez de ficar parado. O botão recarrega a fonte. A mensagem fica acima da barra de controlos e usa a cor de destaque da app.

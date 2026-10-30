@@ -6,6 +6,19 @@
 export const CHANGELOG = [
 
 {
+      version: "1.6.7",
+      items: [
+        "Electron: o arranque da app deixa de travar durante ate 5 segundos. A espera pela porta do servidor deixa de ocupar o processador a 100 % e agora aguarda sem bloquear a janela nem o IPC.",
+        "Qualidade de video: o contador de erros de rede do hls.js e reposto a cada segmento carregado, para uma rede instavel nao trocar de fonte so por uns poucos erros esporadicos.",
+        "Autenticacao: ao abrir a app com o servidor em baixo, o utilizador guardado na cache e mostrado de imediato; o token so e apagado se o servidor disser 401. A app tenta de novo quando a rede volta ou a janela ganha foco.",
+      ],
+      items_en: [
+        "Electron: app startup no longer freezes for up to 5 seconds. Waiting for the server port no longer blocks the processor at 100 % — it waits without freezing the window or IPC.",
+        "Video quality: the hls.js network error counter resets on every loaded segment, so an unstable connection no longer switches source over a few sporadic errors.",
+        "Authentication: when opening the app with the server down, the cached user is shown immediately; the token is only removed if the server says 401. The app retries when the network returns or the window regains focus.",
+      ],
+    },
+  {
       version: "1.6.6",
       items: [
         "Erro da fonte nativa (anime): quando nao ha fonte alternativa, o player mostra '{fonte} falhou' com um botao 'Tentar de novo' em vez de ficar parado. O botao recarrega a fonte. A mensagem fica acima da barra de controlos e usa a cor de acento da app.",
