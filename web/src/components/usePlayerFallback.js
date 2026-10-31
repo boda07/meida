@@ -20,7 +20,12 @@ export function usePlayerFallback({
   const TIMEOUT_MANUAL_MS = 45000;
 
   // Indice da fonte activa dentro da lista.
-  const [index, setIndex] = useState(() => firstAlive(lista, deadIds, startIndex));
+  // Se manual (escolha do utilizador), usa o startIndex diretamente, mesmo que a
+  // fonte esteja marcada como morta pelo health-check — a escolha manual tem
+  // prioridade sobre a sinalizacao automatica.
+  const [index, setIndex] = useState(() =>
+    manual ? (startIndex ?? 0) : firstAlive(lista, deadIds, startIndex)
+  );
   const [loaded, setLoaded] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
   // Fonte trocada sozinha (para o utilizador saber o que aconteceu).
@@ -65,11 +70,17 @@ export function usePlayerFallback({
   // Re-inicia o indice activo quando a lista ou a origem mudarem.
   // deadIds NAO entra aqui: o health-check chega depois do episodio arrancar,
   // e antes isto reiniciava o player inteiro.
+  // Se manual (escolha do utilizador), usa o startIndex diretamente — a
+  // escolha manual tem prioridade sobre a sinalizacao automatica de mortos.
   useEffect(() => {
-    setIndex(() => firstAlive(lista, deadRef.current, startIndex));
+    if (manual) {
+      setIndex(startIndex ?? 0);
+    } else {
+      setIndex(() => firstAlive(lista, deadRef.current, startIndex));
+    }
     setReloadKey((k) => k + 1);
     setLoaded(false);
-  }, [lista, startIndex]);
+  }, [lista, startIndex, manual]);
 
   // Reage a health-check: sai da fonte atual APENAS se ela estiver nos mortos.
   useEffect(() => {

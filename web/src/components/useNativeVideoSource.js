@@ -25,11 +25,17 @@ export function useNativeVideoSource({ nativoUrl, audio }) {
         if (d?.native && d.sources?.length) {
           setNativeState({ url: nativoUrl, data: d, erro: false });
         } else {
+          // O servidor devolveu native:false ou sem sources. Regista o motivo
+          // (se o servidor o incluiu) para nao falhar em silencio.
+          console.warn("[nativo] extracao falhou:", d?.error || "native=false / sem sources", { url: nativoUrl, audio });
           setNativeState({ url: nativoUrl, data: null, erro: true });
         }
       })
-      .catch(() => {
-        if (vivo) setNativeState({ url: nativoUrl, data: null, erro: true });
+      .catch((e) => {
+        if (vivo) {
+          console.warn("[nativo] pedido falhou:", e?.message || e, { url: nativoUrl, audio });
+          setNativeState({ url: nativoUrl, data: null, erro: true });
+        }
       });
 
     return () => {
