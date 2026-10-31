@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.6.8
+
+Eletrron: o arranque da app deixa de travar durante ate 5 segundos. A espera pela porta do servidor e agora assincrona, nao bloqueia mais o processo principal nem deixa a janela preta.
+
+Diagnostico: adicionado script scripts/diagnostico-megaplay.mjs para verificar passo a passo as fontes de anime (pagina do player, data-id, getSources, desencriptacao e playlist).
+
 ## 1.6.7
 
 Eletrron: o arranque da app deixa de travar durante ate 5 segundos. A espera pela porta do servidor deixa de ocupar o processador a 100 % e agora aguarda sem bloquear a janela nem o IPC.

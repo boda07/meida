@@ -6,6 +6,17 @@
 export const CHANGELOG = [
 
 {
+      version: "1.6.8",
+      items: [
+        "Correcao: o arranque do Electron nao trava mais o processo principal. A espera pela porta do servidor agora e assincrona, evitando que a janela fique preta no arranque.",
+        "Diagnostico: adicionado script scripts/diagnostico-megaplay.mjs para verificar passo a passo as fontes de anime (pagina do player, data-id, getSources, desencriptacao e playlist).",
+      ],
+      items_en: [
+        "Fix: Electron startup no longer blocks the main process. Waiting for the server port is now asynchronous, preventing a blank window on launch.",
+        "Diagnostics: added scripts/diagnostico-megaplay.mjs to check anime sources step by step (player page, data-id, getSources, decryption and playlist).",
+      ],
+    },
+  {
       version: "1.6.7",
       items: [
         "Electron: o arranque da app deixa de travar durante ate 5 segundos. A espera pela porta do servidor deixa de ocupar o processador a 100 % e agora aguarda sem bloquear a janela nem o IPC.",
