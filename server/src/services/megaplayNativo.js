@@ -34,6 +34,13 @@ import { log } from "./log.js";
 
 const BASE = "https://megaplay.buzz";
 
+// Resultado de falha. Antes a funcao devolvia `null` e a rota respondia
+// `native: false` sem mais nada: quem via a interface caia no iframe sem saber
+// que passo tinha falhado (N1, 2026-11-01). Agora o motivo viaja com a falha.
+function falha(motivo) {
+  return { ok: false, motivo };
+}
+
 // O URL do embed tem de ser do MegaPlay, e nada mais. Sem esta porta, a rota
 // `/api/anime/megaplay?url=` (que e' publica) fazia `fetch` ao URL que o cliente
 // mandasse — um SSRF cego, porque a resposta nao voltava mas o pedido saia
@@ -74,21 +81,33 @@ const UA =
 // `data-id` e' o do dub. Medido: o mesmo episodio em `sub` da `data-id=7827`, e
 // em `dub` a pagina nao tem `data-id` (esse episodio nao existe em dub, e o
 // servidor devolve 404 em vez de um id errado).
+// Devolve `{ id }` ou `{ id: null, motivo }`. O motivo e' o que a rota passa a
+// interface; sem ele so' se sabia que "o nativo nao deu".
 export async function lerDataId(embedUrl) {
   // Defence em profundidade: a rota ja valida, mas `lerDataId` nao deve assumir
   // que o chamador lembrou.
-  if (!embedUrlValido(embedUrl)) return null;
+  if (!embedUrlValido(embedUrl)) {
+    return { id: null, motivo: "url do MegaPlay invalido" };
+  }
   try {
     const r = await fetch(embedUrl, {
       headers: { "User-Agent": UA, Referer: BASE + "/" },
       signal: AbortSignal.timeout(12000),
     });
-    if (!r.ok) return null;
+    if (!r.ok) {
+      log.warn("megaplay", `lerDataId: pagina devolveu HTTP ${r.status} para ${embedUrl}`);
+      return { id: null, motivo: `a pagina do player devolveu HTTP ${r.status}` };
+    }
     const html = await r.text();
     const m = /data-id="(\d+)"/.exec(html);
-    return m ? m[1] : null;
-  } catch {
-    return null;
+    if (!m) {
+      log.warn("megaplay", `lerDataId: data-id nao encontrado na pagina (HTML mudou?) ${embedUrl}`);
+      return { id: null, motivo: "a pagina do player nao tem data-id" };
+    }
+    return { id: m[1] };
+  } catch (e) {
+    log.warn("megaplay", `lerDataId: fetch falhou: ${e.message} para ${embedUrl}`);
+    return { id: null, motivo: `nao consegui abrir a pagina do player (${e.message})` };
   }
 }
 
@@ -132,47 +151,84 @@ function headersBase(referer) {
  * Extrai as fontes NATIVAS de um episodio do MegaPlay.
  *
  * @param {{embedUrl?: string, dataId?: string, audio?: string}} opts
- * @returns {Promise<{m3u8:string, tracks:Array, intro:object, outro:object, audio:string}|null>}
- *   `null` quando nao da' (faltam dados, a cifra mudou, a rede falhou) — quem
- *   chama cai para o iframe.
+ * @returns {Promise<{ok:true, m3u8:string, tracks:Array, intro:object, outro:object, audio:string}
+ *   | {ok:false, motivo:string}>}
+ *   Em caso de falha devolve `{ ok: false, motivo }` — quem chama cai para o
+ *   iframe e pode dizer o que falhou, em vez de um `null` mudo.
  */
 export async function extrairMegaPlayNativo({ embedUrl, dataId, audio = "sub" }) {
   // Se ha `embedUrl` e ele nao e' do MegaPlay, nao ha nada a fazer. A rota
   // responde 400 antes de chegar aqui, mas esta e' a segunda linha de defesa.
-  if (embedUrl && !embedUrlValido(embedUrl)) return null;
-  try {
-    // O `data-id` vem da pagina, e a pagina e' do audio pedido — por isso o
-    // sub/dub fica certo sem se pedir nada: e' a pagina que decide.
-    const id = dataId || (embedUrl ? await lerDataId(embedUrl) : null);
-    if (!id) return null;
+  if (embedUrl && !embedUrlValido(embedUrl)) {
+    log.warn("megaplay", `extrair: embedUrl invalido: ${embedUrl}`);
+    return falha("url do MegaPlay invalido");
+  }
 
-    const url = `${BASE}/stream/getSources?id=${encodeURIComponent(id)}`;
-    const r = await fetch(url, {
+  // O `data-id` vem da pagina, e a pagina e' do audio pedido — por isso o
+  // sub/dub fica certo sem se pedir nada: e' a pagina que decide.
+  let id = dataId || null;
+  if (!id) {
+    if (!embedUrl) {
+      log.warn("megaplay", "extrair: sem embedUrl nem dataId");
+      return falha("sem url do player");
+    }
+    const lido = await lerDataId(embedUrl);
+    if (!lido.id) return falha(lido.motivo);
+    id = lido.id;
+  }
+
+  let r;
+  try {
+    r = await fetch(`${BASE}/stream/getSources?id=${encodeURIComponent(id)}`, {
       headers: headersBase(embedUrl),
       signal: AbortSignal.timeout(15000),
     });
-    if (!r.ok) return null;
-    const dados = await r.json();
-
-    if (dados.enc) {
-      const claro = decifrarEnc(dados.enc, CHAVE_POR_DEFEITO, IV_POR_DEFEITO);
-      if (claro?.file) {
-        return {
-          m3u8: claro.file,
-          tracks: dados.tracks || [],
-          intro: dados.intro || null,
-          outro: dados.outro || null,
-          audio,
-        };
-      }
-    }
-    return null;
   } catch (e) {
-    // Chave/IV trocados pelo servidor, `enc` corrompido, rede a cair: qualquer
-    // um destes e' "nao consegui agora", nunca um erro que chegue ao frontend.
-    log.warn("megaplay", `extracao nativa falhou: ${e.message}`);
-    return null;
+    log.warn("megaplay", `extrair: fetch getSources falhou: ${e.message} para ${embedUrl}`);
+    return falha(`o getSources falhou (${e.message})`);
   }
+
+  if (!r.ok) {
+    log.warn("megaplay", `extrair: getSources devolveu HTTP ${r.status} para ${embedUrl}`);
+    return falha(`o getSources devolveu HTTP ${r.status}`);
+  }
+
+  let dados;
+  try {
+    dados = await r.json();
+  } catch (e) {
+    log.warn("megaplay", `extrair: getSources nao e JSON: ${e.message} para ${embedUrl}`);
+    return falha("o getSources nao devolveu JSON");
+  }
+
+  if (!dados.enc) {
+    log.warn("megaplay", `extrair: getSources sem campo enc para ${embedUrl}`);
+    return falha("o getSources nao trouxe o video (sem enc)");
+  }
+
+  let claro;
+  try {
+    claro = decifrarEnc(dados.enc, CHAVE_POR_DEFEITO, IV_POR_DEFEITO);
+  } catch (e) {
+    // Chave/IV trocados pelo servidor, `enc` corrompido: "nao consegui agora",
+    // nunca um erro que chegue ao frontend.
+    log.warn("megaplay", `extrair: decifra falhou (chave/IV mudaram?): ${e.message} para ${embedUrl}`);
+    return falha("nao consegui decifrar o video (a chave do MegaPlay mudou?)");
+  }
+
+  if (!claro?.file) {
+    log.warn("megaplay", `extrair: enc decifrou mas sem 'file' para ${embedUrl}`);
+    return falha("o video decifrado nao tem endereco");
+  }
+
+  return {
+    ok: true,
+    m3u8: claro.file,
+    tracks: dados.tracks || [],
+    intro: dados.intro || null,
+    outro: dados.outro || null,
+    audio,
+  };
 }
 
 /**

@@ -160,8 +160,8 @@ async function probeNativo(url) {
   try {
     dados = await extrairMegaPlayNativo({ embedUrl: url, audio: "sub" });
   } catch (e) {
-    // `extrairMegaPlayNativo` ja nao lanca (devolve null e regista), mas se um dia
-    // lanca, o health-check nao pode rebentar por isso.
+    // `extrairMegaPlayNativo` ja nao lanca (devolve `{ ok: false, motivo }` e
+    // regista), mas se um dia lancar, o health-check nao pode rebentar por isso.
     log.warn("provider:health", `extracao nativa lancou: ${e.message}`);
   }
   const ms = Date.now() - t0;
@@ -171,8 +171,9 @@ async function probeNativo(url) {
       status: pagina.status,
       // O `enc` veio, mas nao desencriptou. Ou nao ha `enc`. Ou o `data-id` da
       // pagina ja nao resolve. Sao falhas diferentes com o mesmo sintoma para
-      // quem ve, e todas valem o mesmo: o nativo nao está a dar.
-      error: "o getSources não devolveu vídeo em claro",
+      // quem ve, e todas valem o mesmo: o nativo nao está a dar. O `motivo`
+      // (quando existe) e' mais preciso do que esta frase.
+      error: dados?.motivo || "o getSources não devolveu vídeo em claro",
       ms,
     };
   }

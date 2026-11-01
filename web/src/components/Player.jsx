@@ -87,8 +87,16 @@ export default function Player({
 
   // Fonte nativa (MegaPlay): o servidor devolve o m3u8 e as legendas em claro.
   const nativoUrl = active?.native ? active.embedUrl : null;
-  const { nativoPronto } = useNativeVideoSource({ nativoUrl, audio });
+  const {
+    nativoPronto,
+    motivo: nativoMotivo,
+    falhouPedido: nativoFalhouPedido,
+  } = useNativeVideoSource({ nativoUrl, audio });
   const isNativoPronto = Boolean(nativoPronto);
+  // O texto do "pedido falhou" vive aqui (e nao no gancho) porque e' interface.
+  const nativoMotivoTexto = nativoFalhouPedido
+    ? t("O pedido ao servidor falhou.")
+    : nativoMotivo;
 
   // Erro fatal do hls.js na fonte nativa: mesma logica do timeout de 15s.
   const onErroNativo = useCallback(() => {
@@ -181,6 +189,11 @@ export default function Player({
                 fonte: trocada,
                 nome: active?.name,
               })}
+            </span>
+          )}
+          {arrancado && active?.native && nativoMotivoTexto && (
+            <span className="player-loading-hint muted" style={{ position: "absolute", left: 8, top: 8, fontSize: 12 }}>
+              {t("Nativo indisponível: {motivo}", { motivo: nativoMotivoTexto })}
             </span>
           )}
           {arrancado && erroFonte && !loaded && (

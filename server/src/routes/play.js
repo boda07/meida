@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { extractStream, extractEnabled } from "../services/extractor/index.js";
 import { extractAnime, animeExtractorEnabled } from "../services/animeStream.js";
+import { log } from "../services/log.js";
 import {
   extrairMegaPlayNativo,
   embedUrlValido,
@@ -38,8 +39,9 @@ playRouter.get("/extract/enabled", (req, res) => {
 // idioma) e o play/pausa passa a sincronizar no Watch Party, porque nao ha'
 // cross-origin pelo meio.
 //
-// Devolve `native: false` (e nao um erro) quando nao consegue: quem chama
-// mostra o iframe como estava, que continua a funcionar.
+// Devolve `native: false` + `motivo` (e nao um erro) quando nao consegue: quem
+// chama mostra o iframe como estava, que continua a funcionar, e pode dizer o
+// que falhou em vez de cair no iframe em silencio (N1).
 playRouter.get("/anime/megaplay", async (req, res) => {
   const { url, audio } = req.query;
   if (!url) return res.status(400).json({ error: "falta o parametro url" });
@@ -51,22 +53,35 @@ playRouter.get("/anime/megaplay", async (req, res) => {
     return res.status(400).json({ error: "url tem de ser https://megaplay.buzz/stream/..." });
   }
 
-  const r = await extrairMegaPlayNativo({ embedUrl: String(url), audio });
-  if (!r) return res.json({ native: false });
+  // A extracao ja nao lanca (devolve `{ ok: false, motivo }`), mas se um dia
+  // lancar, a rota `async` nao pode deixar o pedido pendurado. No Express 4 o
+  // valor devolvido e' ignorado e a rejeicao fica sem dono.
+  try {
+    const r = await extrairMegaPlayNativo({ embedUrl: String(url), audio });
+    if (!r?.ok) {
+      return res.json({
+        native: false,
+        motivo: r?.motivo || "extracao nativa indisponivel",
+      });
+    }
 
-  res.json({
-    native: true,
-    audio: r.audio,
-    intro: r.intro,
-    outro: r.outro,
-    // O m3u8 vai pelo nosso proxy: e' ele que poem o `Referer` que o MegaPlay
-    // exige e que reescreve os segmentos da playlist tambem por aqui.
-    sources: [{ isM3U8: true, url: buildProxyUrl(r.m3u8, "https://megaplay.buzz/") }],
-    subtitles: tracksParaSubtitulos(r.tracks).map((s) => ({
-      ...s,
-      url: buildProxyUrl(s.url, "https://megaplay.buzz/"),
-    })),
-  });
+    res.json({
+      native: true,
+      audio: r.audio,
+      intro: r.intro,
+      outro: r.outro,
+      // O m3u8 vai pelo nosso proxy: e' ele que poem o `Referer` que o MegaPlay
+      // exige e que reescreve os segmentos da playlist tambem por aqui.
+      sources: [{ isM3U8: true, url: buildProxyUrl(r.m3u8, "https://megaplay.buzz/") }],
+      subtitles: tracksParaSubtitulos(r.tracks).map((s) => ({
+        ...s,
+        url: buildProxyUrl(s.url, "https://megaplay.buzz/"),
+      })),
+    });
+  } catch (e) {
+    log.warn("megaplay", `rota /anime/megaplay rebentou: ${e.message}`);
+    res.json({ native: false, motivo: "erro interno a extrair o video" });
+  }
 });
 
 // Extrai stream + legendas de um episodio de anime (player proprio).

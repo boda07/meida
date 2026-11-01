@@ -339,6 +339,8 @@ export const DICIONARIO = {
     "Recarregar fonte (se nao carregar / erro 520)":
       "Recarregar fonte (se nao carregar / erro 520)",
     "Recarregar fonte": "Recarregar fonte",
+    "Nativo indisponível: {motivo}": "Nativo indisponível: {motivo}",
+    "O pedido ao servidor falhou.": "O pedido ao servidor falhou.",
     "Escreve algo na pesquisa.": "Escreve algo na pesquisa.",
     "Sem resultados para": "Sem resultados para",
     "Resultados para": "Resultados para",
@@ -1379,6 +1381,8 @@ export const DICIONARIO = {
     "Recarregar fonte (se nao carregar / erro 520)":
       "Reload source (if it doesn't load / error 520)",
     "Recarregar fonte": "Reload source",
+    "Nativo indisponível: {motivo}": "Native unavailable: {motivo}",
+    "O pedido ao servidor falhou.": "The request to the server failed.",
     "Escreve algo na pesquisa.": "Type something in the search.",
     "Sem resultados para": "No results for",
     "Resultados para": "Results for",
