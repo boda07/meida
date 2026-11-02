@@ -31,12 +31,15 @@ export default function HlsPlayer({
   const containerRef = useRef(null);
   const { settings } = useSettings();
   const src = sources[0]?.url;
+  // `src` e' string: o `isM3U8` tem de ir a parte, senao o hook nunca o ve'.
+  const isM3U8 = sources[0]?.isM3U8;
   useVideoSync(videoRef); // Watch Party: sincroniza play/pause/seek
   usePlayerShortcuts(videoRef, containerRef); // Atalhos de teclado
 
   // ── Engine hls.js (qualidade + recuperacao de erros) ──
   const { hls, niveis, nivelAuto, ativo, mudarQualidade } = useHlsEngine({
     src,
+    isM3U8,
     videoRef,
     onErro,
   });

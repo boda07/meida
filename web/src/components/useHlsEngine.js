@@ -7,8 +7,12 @@ import Hls from "hls.js";
 // os niveis de qualidade e tentar recuperar de erros fatais (rede/media) antes
 // de desistir e chamar onErro.
 //
+// `isM3U8` vem SEPARADO de `src`: `src` e' a string que o `loadSource` aceita,
+// e um `src.isM3U8` (como ja' esteve) e' sempre `undefined` numa string — o que
+// fazia os ficheiros progressivos (mp4) irem parar ao hls.js.
+//
 // Devolve: { hls, niveis, nivelAuto, ativo, mudarQualidade, setNiveis }
-export function useHlsEngine({ src, videoRef, onErro }) {
+export function useHlsEngine({ src, isM3U8, videoRef, onErro }) {
   const hlsRef = useRef(null);
   const errosRef = useRef({ network: 0, media: 0 });
   const onErroRef = useRef(onErro);
@@ -56,7 +60,7 @@ export function useHlsEngine({ src, videoRef, onErro }) {
   useEffect(() => {
     const video = videoRef.current;
 
-    if (!src || !(Hls.isSupported() && src.isM3U8 !== false)) {
+    if (!src || !(Hls.isSupported() && isM3U8 !== false)) {
       // Safari (HLS nativo) ou ficheiro progressivo.
       if (video) video.src = src;
       hlsRef.current = null;
@@ -74,6 +78,11 @@ export function useHlsEngine({ src, videoRef, onErro }) {
     setAtivo(0);
 
     const hls = new Hls({ enableWorker: true });
+    // **Sem `attachMedia` o hls.js descarrega a master e a playlist e nao pede
+    // um unico segmento**: nao ha' MediaSource ligado ao `<video>`, portanto o
+    // video fica em `readyState 0`, parado em 0:00, e sem erro nenhum. Tem de
+    // vir antes do `loadSource`.
+    if (video) hls.attachMedia(video);
     hls.loadSource(src);
     hlsRef.current = hls;
 
@@ -131,7 +140,10 @@ export function useHlsEngine({ src, videoRef, onErro }) {
       hls?.destroy();
       hlsRef.current = null;
     };
-  }, [src, onErro]);
+    // `onErro` de proposito FORA das dependencias: o callback muda de identidade
+    // a cada render do `Player`, e cada mudanca destruia e recriava o hls (o
+    // video voltava ao inicio). O `onErroRef` ja' serve o valor atualizado.
+  }, [src, isM3U8]);
 
   return { hls: hlsRef.current, niveis, nivelAuto, ativo, mudarQualidade, setNiveis };
 }
