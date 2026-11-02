@@ -350,8 +350,8 @@ function IconVelocidade({ velocidade }) {
   return (
     <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
       <polygon points="5 3 19 12 5 21" />
-      <path d="M15 10h2M15 14h2M11 10h2M11 14h2" stroke-linecap="round" />
-      <text x="11" y="20" font-size="10" fill="currentColor">{velocidade}x</text>
+      <path d="M15 10h2M15 14h2M11 10h2M11 14h2" strokeLinecap="round" />
+      <text x="11" y="20" fontSize="10" fill="currentColor">{velocidade}x</text>
     </svg>
   );
 }
@@ -361,7 +361,7 @@ function IconPiP({ ativo }) {
     <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
       <rect x="3" y="3" width="13" height="13" />
       <rect x="8" y="8" width="13" height="13" />
-      {ativo && <path d="M12 15l-3-3 3-3" stroke-linecap="round" stroke-linejoin="round" />}
+      {ativo && <path d="M12 15l-3-3 3-3" strokeLinecap="round" strokeLinejoin="round" />}
     </svg>
   );
 }

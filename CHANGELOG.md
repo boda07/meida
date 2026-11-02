@@ -2,9 +2,21 @@
 
 ## 1.6.8
 
-Eletrron: o arranque da app deixa de travar durante ate 5 segundos. A espera pela porta do servidor e agora assincrona, nao bloqueia mais o processo principal nem deixa a janela preta.
+Anime (fonte nativa): o episódio ficava parado em 0:00 porque o `hls.js` nunca era ligado ao elemento `<video>`. O `useHlsEngine` agora chama `hls.attachMedia(video)` antes de `hls.loadSource(src)`. O `isM3U8` passou a ser um parâmetro próprio do gancho (o `src` é uma string, por isso `src.isM3U8` era sempre `undefined` e os mp4 seguiam para o `hls.js`), e `onErro` saiu das dependências do `useEffect` — mudar a identidade da função deixava de destruir e recriar o `hls` a cada render.
 
-Diagnostico: adicionado script scripts/diagnostico-megaplay.mjs para verificar passo a passo as fontes de anime (pagina do player, data-id, getSources, desencriptacao e playlist).
+Anime (diagnóstico): quando a fonte nativa falha, a rota `/api/anime/megaplay` responde `{ ok: false, motivo }` em vez de um erro opaco, e o player mostra "Nativo indisponível: {motivo}". O `probeNativo` passou a usar o mesmo motivo.
+
+Anime (escolha manual): a fonte escolhida à mão tem prioridade sobre a lista `deadIds` do health-check, para uma marca antiga não esconder uma fonte que voltou a funcionar.
+
+Torrents: parar uma descarga só fecha o vídeo depois de o servidor confirmar (`onStopped` corre no `.then`, nunca no `finally`) e o erro é mostrado traduzido em vez de desaparecer. O `useTorrentStatus` ficou só com o polling e o `useStopTorrent` duplicado foi removido.
+
+Player: o ícone de velocidade usava atributos HTML (`stroke-linecap`, `font-size`) em JSX; passaram a `strokeLinecap`, `strokeLinejoin` e `fontSize`, eliminando os avisos do React.
+
+Electron: o arranque da app deixa de travar durante até 5 segundos. A espera pela porta do servidor é agora assíncrona, não bloqueia o processo principal nem deixa a janela preta.
+
+Testes: `scripts/testar-hls-attach.mjs` (19 verificações, 6 mutações) monta o gancho real com React e `hls.js` falsos e prova que `attachMedia` recebe o `<video>` e `loadSource` a URL. `scripts/testar-hls-attach-codigo.mjs` verifica o mesmo no código-fonte.
+
+Diagnóstico: adicionado script scripts/diagnostico-megaplay.mjs para verificar passo a passo as fontes de anime (pagina do player, data-id, getSources, desencriptacao e playlist).
 
 ## 1.6.7
 

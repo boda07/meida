@@ -94,6 +94,27 @@ if (Array.isArray(lista) && lista.length) {
   const depois = await rastearParaTeste(1);
   ok_("o rasteio guarda as series da pagina", depois.series > 0, JSON.stringify(depois));
 
+  // A ordem do catalogo mudou (medido a 2026-11-02): o topo da `recent-anime`
+  // passou a trazer series SEM episodios (varias "Mobile Suit SD Gundam" com
+  // 0 eps). Escolher so' o primeiro item da lista fazia o teste falhar por um
+  // dado do site, nao por um bug da app. Procura-se o primeiro candidato que
+  // TENHA episodios, limitado a 6 consultas para nao gastar o limite da API.
+  {
+    const candidatos = [alvo, ...lista.filter((s) => s?.id != null && s.id !== alvo.id)].slice(0, 6);
+    for (const serie of candidatos) {
+      if (!idValidoTeste(serie?.mal_id) && !idValidoTeste(serie?.ani_id)) continue;
+      try {
+        const sr = await fetch(`https://anikotoapi.site/series/${serie.id}`, {
+          headers: { "User-Agent": "Mozilla/5.0", accept: "application/json" },
+          signal: AbortSignal.timeout(15000),
+        });
+        const sj = await sr.json();
+        const eps = sj?.episodes || sj?.data?.episodes || [];
+        if (eps.length > 0) { alvo = serie; break; }
+      } catch { /* tenta o seguinte */ }
+    }
+  }
+
   // Para o teste do fallback (passo 8) precisamos de um titulo que so' tenha
   // `sub` (sem `dub`): e' ai que "pedir dub → devolve a que ha" faz sentido.
   // O rasteio guarda so' a pagina 1 da `recent-anime`. Se `alvo` (primeiro da

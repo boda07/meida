@@ -8,11 +8,21 @@ export const CHANGELOG = [
 {
       version: "1.6.8",
       items: [
+        "Anime: o episodio deixava de arrancar e ficava parado em 0:00 na fonte nativa. Agora o leitor de video liga-se ao video antes de carregar os segmentos, e um ficheiro que nao e' HLS deixa de ser tratado como se fosse.",
+        "Anime: quando a fonte nativa falha, a app mostra o motivo verdadeiro (por exemplo, o site do player mudou) em vez de uma mensagem generica.",
+        "Anime: a escolha manual da fonte nativa passa a valer mesmo que a verificacao de saude a tenha marcado como indisponivel.",
+        "Torrents: parar uma descarga so fecha o video depois de o servidor confirmar, e um erro aparece traduzido em vez de ficar em silencio.",
         "Correcao: o arranque do Electron nao trava mais o processo principal. A espera pela porta do servidor agora e assincrona, evitando que a janela fique preta no arranque.",
+        "Consola: o icone de velocidade do player ja nao gera avisos do React.",
         "Diagnostico: adicionado script scripts/diagnostico-megaplay.mjs para verificar passo a passo as fontes de anime (pagina do player, data-id, getSources, desencriptacao e playlist).",
       ],
       items_en: [
+        "Anime: episodes no longer sat at 0:00 on the native source. The video player now attaches to the video element before loading segments, and a file that is not HLS is no longer treated as one.",
+        "Anime: when the native source fails, the app shows the real reason (for example, the player site changed) instead of a generic message.",
+        "Anime: a manual choice of the native source now counts even if the health check marked it as unavailable.",
+        "Torrents: stopping a download only closes the video after the server confirms, and an error is shown translated instead of silently.",
         "Fix: Electron startup no longer blocks the main process. Waiting for the server port is now asynchronous, preventing a blank window on launch.",
+        "Console: the player speed icon no longer triggers React warnings.",
         "Diagnostics: added scripts/diagnostico-megaplay.mjs to check anime sources step by step (player page, data-id, getSources, decryption and playlist).",
       ],
     },
