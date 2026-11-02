@@ -200,6 +200,14 @@ console.log("  7) o frontend nao volta a mentir sobre o \"parar\"");
 {
   const VP = fs.readFileSync(path.join(RAIZ, "web", "src", "components", "VideoPlayer.jsx"), "utf8");
   const CLI = fs.readFileSync(path.join(RAIZ, "web", "src", "api", "client.js"), "utf8");
+  // O `stop` saiu do VideoPlayer para `useStopTorrent.js` (refactor SOLID). A
+  // verificacao passa a ler o gancho: o que se prova e' o MESMO (cliente com
+  // token, `onStopped` so' depois do servidor, erro mostrado), so' mudou o
+  // ficheiro onde a logica vive.
+  const HOOK = fs.readFileSync(
+    path.join(RAIZ, "web", "src", "components", "useStopTorrent.js"),
+    "utf8"
+  );
 
   ok_("o `api` expoe `stopTorrent`", /stopTorrent:/.test(CLI));
   ok_("**e usa `del`** (que manda o `Authorization`), nao `get` ou `post`",
@@ -207,18 +215,21 @@ console.log("  7) o frontend nao volta a mentir sobre o \"parar\"");
   ok_("o `del` do cliente manda o cabecalho de autenticacao",
     /method: "DELETE", headers: authHeaders\(\)/.test(CLI));
 
-  ok_("o `VideoPlayer` usa o cliente em vez de `fetch` cru",
-    /api\s*\n?\s*\.stopTorrent\(infoHash\)/.test(VP));
+  ok_("o gancho do `stop` usa o cliente em vez de `fetch` cru",
+    /api\s*\n?\s*\.stopTorrent\(infoHash\)/.test(HOOK));
   ok_("**nao ha `fetch(..., { method: \"DELETE\" })` cru**",
-    !/method:\s*"DELETE"/.test(VP),
+    !/method:\s*"DELETE"/.test(HOOK),
     "sem o cabecalho de autenticacao: o botao parava de funcionar");
-  // A mentira silenciosa: o `onRemoved` no `finally` corria mesmo com o 401.
-  const corpo = VP.slice(VP.indexOf("const stop ="), VP.indexOf("const stop =") + 900);
-  ok_("`onRemoved()` so' corre depois do servidor dizer que parou",
-    /\.then\(\(\) => \{[\s\S]{0,200}onRemoved/.test(corpo) && !/finally\([\s\S]{0,200}onRemoved/.test(corpo),
+  // A mentira silenciosa: o `onStopped` no `finally` corria mesmo com o 401.
+  ok_("`onStopped()` so' corre depois do servidor dizer que parou",
+    /\.then\(\(\) => \{[\s\S]{0,200}onStopped/.test(HOOK) && !/finally\(\(\) => \{[\s\S]{0,120}onStopped/.test(HOOK),
     "no `finally`, o botao diz \"parado\" com o torrent ainda a descarregar");
   ok_("o erro do `DELETE` e' mostrado em vez de engolido",
-    /\.catch\(\(e\) => [\s\S]{0,800}setErroParar/.test(corpo));
+    /\.catch\(\(e\) => [\s\S]{0,800}setErroParar/.test(HOOK));
+  // E o `VideoPlayer` tem de ligar o `onRemoved` ao gancho — o refactor tinha
+  // perdido esta chamada e o player ficava aberto depois de parar.
+  ok_("o `VideoPlayer` liga o `onRemoved` ao gancho",
+    /onStopped:\s*onRemoved/.test(VP));
   // A prova de que o `catch` nao e' vazio esta acima: chama `setErroParar`.
   // (O comentario dentro deste proprio `catch` contem literalmente
   // `catch(() => {})`, e uma regex que procurasse esse padrao daria falso

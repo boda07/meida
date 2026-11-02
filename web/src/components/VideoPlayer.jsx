@@ -40,7 +40,10 @@ export default function VideoPlayer({ src, infoHash, subtitles = [], startAt, on
   const { status } = useTorrentStatus({ infoHash, src });
 
   // Parar o torrent (WebTorrent local).
-  const { stop, removing, erroParar } = useStopTorrent({ infoHash });
+  const { stop, removing, erroParar } = useStopTorrent({
+    infoHash,
+    onStopped: onRemoved,
+  });
 
   const mb = (n) => (n / 1024 / 1024).toFixed(1);
 
@@ -86,7 +89,7 @@ export default function VideoPlayer({ src, infoHash, subtitles = [], startAt, on
       )}
       {erroParar && (
         <p className="vhint vhint-erro" role="alert">
-          {erroParar}
+          {t("Não foi possível parar a descarga: {erro}", { erro: erroParar.mensagem })}
         </p>
       )}
       {status && (
