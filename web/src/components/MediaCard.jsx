@@ -75,6 +75,11 @@ export default function MediaCard({ item, landscape = false }) {
           </div>
         )}
          <div className="card-scrim" />
+         <div className="card-play" aria-label={t("Reproduzir")}>
+           <svg viewBox="0 0 24 24" fill="currentColor" width="26" height="26">
+             <path d="M8 5v14l11-7z" />
+           </svg>
+         </div>
          {item.new && <div className="card-badge">NOVO</div>}
          {watched && (
             <div className="card-watched" title="Visto">
