@@ -1253,27 +1253,35 @@ h2 {
 
 .row-arrows {
   display: flex;
-  gap: 8px;
+  gap: 2px;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+
+.row:hover .row-arrows,
+.row-arrows:focus-within {
+  opacity: 1;
 }
 
 .row-arrow {
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  background: rgba(255, 255, 255, 0.08);
+  width: 48px;
+  height: 48px;
+  border: none;
+  background: transparent;
   color: white;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 18px;
-  transition: all 0.2s;
+  padding: 0;
+  filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.65));
+  transition: transform 0.2s ease;
 }
 
 .row-arrow:hover {
-  background: rgba(255, 255, 255, 0.15);
-  border-color: rgba(255, 255, 255, 0.3);
+  transform: scale(1.15);
+  background: transparent;
+  border: none;
 }
 
 .row-scroll {
@@ -1305,8 +1313,7 @@ h2 {
 
 .card:hover {
   transform: translateY(-4px) scale(1.03);
-  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.85),
-    0 18px 40px rgba(0, 0, 0, 0.7), 0 0 26px rgba(255, 255, 255, 0.12);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.7);
 }
 
 .card:hover .card-poster img {

@@ -28,14 +28,38 @@ export default function MediaRow({ title, items }) {
             onClick={() => scroll("left")}
             aria-label={t("Scroll esquerda")}
           >
-            ‹
+            <svg
+              aria-hidden="true"
+              width="30"
+              height="30"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="m15 18-6-6 6-6" />
+            </svg>
           </button>
           <button
             className="row-arrow"
             onClick={() => scroll("right")}
             aria-label={t("Scroll direita")}
           >
-            ›
+            <svg
+              aria-hidden="true"
+              width="30"
+              height="30"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="m9 18 6-6-6-6" />
+            </svg>
           </button>
         </div>
       </div>
