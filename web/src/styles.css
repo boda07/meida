@@ -1242,6 +1242,30 @@ h2 {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 12px;
+}
+
+/* "Ver todos" — o antigo par de setas no cabecalho passou a ser este link. */
+.row-more {
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+  padding: 4px 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: color 0.2s ease, gap 0.2s ease;
+}
+
+.row-more:hover {
+  color: var(--text);
+  gap: 5px;
+}
+
+.row-more svg {
+  flex: 0 0 auto;
 }
 
 .row-title {
@@ -1251,19 +1275,15 @@ h2 {
   margin: 0;
 }
 
-.row-arrows {
-  display: flex;
-  gap: 2px;
-  opacity: 0;
-  transition: opacity 0.25s ease;
-}
-
-.row:hover .row-arrows,
-.row-arrows:focus-within {
-  opacity: 1;
+.row-body {
+  position: relative;
 }
 
 .row-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 5;
   width: 48px;
   height: 48px;
   border: none;
@@ -1274,12 +1294,26 @@ h2 {
   align-items: center;
   justify-content: center;
   padding: 0;
+  opacity: 0;
   filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.65));
-  transition: transform 0.2s ease;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.row-arrow-left {
+  left: 2px;
+}
+
+.row-arrow-right {
+  right: 2px;
+}
+
+.row:hover .row-arrow,
+.row-arrow:focus-visible {
+  opacity: 1;
 }
 
 .row-arrow:hover {
-  transform: scale(1.15);
+  transform: translateY(-50%) scale(1.15);
   background: transparent;
   border: none;
 }

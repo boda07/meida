@@ -65,6 +65,7 @@ export const DICIONARIO = {
     "Editar": "Editar",
     "Continuar": "Continuar",
     "Ver tudo": "Ver tudo",
+    "Ver todos": "Ver todos",
 
     // --- biblioteca ---
     "Vistos": "Vistos",
@@ -1111,6 +1112,7 @@ export const DICIONARIO = {
     "Editar": "Edit",
     "Continuar": "Continue",
     "Ver tudo": "See all",
+    "Ver todos": "See all",
 
     // --- biblioteca ---
     "Vistos": "Watched",

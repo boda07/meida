@@ -20,6 +20,15 @@ function pickHeroes(rows, n = 6) {
   return pool.slice(0, n);
 }
 
+// Para onde vai o "Ver todos" de cada linha da Home. O tipo dos itens manda:
+// so' anime -> /anime, so' series -> /series, e o resto (filmes, ou a mistura
+// de "Em tendencia") -> /movies.
+function hrefDaLinha(row) {
+  if (row.items.every((i) => i.type === "anime")) return "/anime";
+  if (row.items.every((i) => i.type === "tv")) return "/series";
+  return "/movies";
+}
+
 /**
  * @param {object} p
  * @param {string} [p.generos]  os generos escolhidos no onboarding, separados
@@ -100,9 +109,9 @@ export default function Home({ generos = "" }) {
       <Hero items={heroes} />
       <div className="rows">
         <ContinueWatching />
-        {porGenero ? <MediaRow key={porGenero.id} title={porGenero.title} items={porGenero.items} /> : null}
+        {porGenero ? <MediaRow key={porGenero.id} title={porGenero.title} items={porGenero.items} href="/movies" /> : null}
         {rows.map((row) => (
-          <MediaRow key={row.id} title={row.title} items={row.items} />
+          <MediaRow key={row.id} title={row.title} items={row.items} href={hrefDaLinha(row)} />
         ))}
       </div>
     </div>

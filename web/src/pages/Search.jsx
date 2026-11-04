@@ -13,6 +13,9 @@ const TYPE_FILTERS = [
   { id: "anime", label: "Anime" },
 ];
 
+// Para onde vai o "Ver todos" de cada grupo de resultados.
+const HREF_POR_TIPO = { movie: "/movies", tv: "/series", anime: "/anime" };
+
 export default function Search() {
   const t = useT();
   const [params] = useSearchParams();
@@ -76,6 +79,7 @@ export default function Search() {
             key={g.type}
             title={t("{r} ({n})", { r: t(g.label), n: g.items.length })}
             items={g.items}
+            href={HREF_POR_TIPO[g.type]}
           />
         ))}
       </div>
