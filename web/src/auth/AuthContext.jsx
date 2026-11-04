@@ -41,7 +41,16 @@ export function AuthProvider({ children }) {
       api
         .me()
         .then((d) => {
-          setUser(d.user);
+          // Só atualiza o estado se o utilizador mudou. Evita re-render em
+          // cascata quando a janela volta a ficar visível (visibilitychange ao
+          // minimizar/restaurar) e o api.me() devolve o mesmo utilizador —
+          // sem isto, Details.jsx reseta details/active/embeds e o Player
+          // volta a mostrar o botão "Carregar vídeo".
+          setUser((prev) => {
+            if (!prev || !d.user) return d.user;
+            if (prev.id === d.user.id && prev.username === d.user.username) return prev;
+            return d.user;
+          });
           try {
             localStorage.setItem(AUTH_USER_KEY, JSON.stringify(d.user));
           } catch {

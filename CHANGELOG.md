@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.6.9
+
+Correção (minimizar/restaurar): quando a janela voltava ao primeiro plano, o `visibilitychange` do `AuthContext` voltava a pedir `/api/me` e fazia `setUser` com um objeto novo. O `Details.jsx` tem `user` nas dependências do efeito que repõe `details`/`active`/`embeds`, por isso o `Player` recebia uma nova `lista`, o `useEffect([lista, settings.autoplay])` repunha `arrancado = false` e aparecia o botão "Carregar vídeo". Agora o `setUser` só substitui o utilizador quando o `id` ou o `username` mudam.
+
+Nota: a falha era mais visível com o arranque automático desligado, porque nesse caso o portão do "Carregar vídeo" depende de `arrancado`.
+
 ## 1.6.8
 
 Anime (fonte nativa): o episódio ficava parado em 0:00 porque o `hls.js` nunca era ligado ao elemento `<video>`. O `useHlsEngine` agora chama `hls.attachMedia(video)` antes de `hls.loadSource(src)`. O `isM3U8` passou a ser um parâmetro próprio do gancho (o `src` é uma string, por isso `src.isM3U8` era sempre `undefined` e os mp4 seguiam para o `hls.js`), e `onErro` saiu das dependências do `useEffect` — mudar a identidade da função deixava de destruir e recriar o `hls` a cada render.

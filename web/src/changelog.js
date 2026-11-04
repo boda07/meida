@@ -5,7 +5,20 @@
 // versao; quem nao encontra a sua ve o portugues (a lingua original).
 export const CHANGELOG = [
 
-{
+  {
+      version: "1.6.9",
+      items: [
+        "Correção: ao minimizar e voltar a abrir a app, o episódio que estava a dar mantém-se onde estava. Já não aparece o botão 'Carregar vídeo' nem o vídeo volta ao início.",
+        "Correção: a app deixava de recarregar os dados da conta sempre que a janela voltava ao primeiro plano. Esse recarregamento fazia o leitor reiniciar sem necessidade.",
+        "A falha notava-se sobretudo com o arranque automático do vídeo desligado, que era quando o episódio voltava sempre ao ecrã de carregar.",
+      ],
+      items_en: [
+        "Fix: minimising and reopening the app now keeps the episode where it was. The 'Load video' button no longer appears, and the video no longer jumps back to the start.",
+        "Fix: the app no longer reloads the account data every time the window comes back to the front. That reload made the player restart for no reason.",
+        "The problem showed up mostly with automatic video start turned off, which was when the episode always went back to the load screen.",
+      ],
+    },
+  {
       version: "1.6.8",
       items: [
         "Anime: o episodio deixava de arrancar e ficava parado em 0:00 na fonte nativa. Agora o leitor de video liga-se ao video antes de carregar os segmentos, e um ficheiro que nao e' HLS deixa de ser tratado como se fosse.",
