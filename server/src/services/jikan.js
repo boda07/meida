@@ -384,6 +384,31 @@ export async function getAnimeMovies(opts = {}) {
   }
 }
 
+/**
+ * Uma pagina de uma lista curada do Jikan (top anime, temporada, filmes).
+ * O caminho ja' leva `limit=24`; aqui acrescenta-se so' a pagina. E' a mesma
+ * lista que alimenta as rows de anime — o "Ver todos" continua a ser a mesma
+ * coisa, so' que completa.
+ */
+export async function getAnimeListPage(path, page = 1, opts = {}) {
+  const p = Math.max(1, Number(page) || 1);
+  const sep = path.includes("?") ? "&" : "?";
+  const d = await jikanFetch(`${path}${sep}page=${p}`);
+  const pag = d?.pagination || {};
+  const items = dedupe(clean(d, isRomaji(opts)));
+  // O Tenrai nem sempre manda `pagination`. Sem ela, uma pagina cheia quer
+  // dizer "ha' mais"; e' preferivel deixar ir uma pagina a mais (que pode vir
+  // vazia) do que esconder titulos que existem.
+  const totalPages =
+    Number(pag.last_visible_page) ||
+    (pag.has_next_page ? p + 1 : items.length >= 24 ? p + 1 : p);
+  return {
+    items,
+    page: Number(pag.current_page) || p,
+    totalPages: Math.max(1, totalPages),
+  };
+}
+
 // Grelha filtravel/ordenavel de anime (pagina de Anime). Usa /anime do Jikan.
 // sort: "popularity" | "rating" | "recent"; dir: "asc" | "desc".
 export async function discoverAnime(

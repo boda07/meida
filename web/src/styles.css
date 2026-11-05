@@ -3354,6 +3354,88 @@ h2 {
   margin-top: 28px;
 }
 
+/* ===== Lista completa de uma row ("Ver todos") ===== */
+.all-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.all-page-num {
+  font-size: 13px;
+}
+
+.all-page .grid {
+  margin-top: 18px;
+}
+
+/* Mudar de pagina mantem os cartoes que ja' la' estao, so' esbatidos: sem isto
+   a grelha piscava para "a carregar" a cada clique. */
+.all-grid.is-loading {
+  opacity: 0.45;
+  pointer-events: none;
+  transition: opacity 0.15s ease;
+}
+
+/* ===== Paginacao ===== */
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 34px 0 8px;
+}
+
+.page-btn {
+  min-width: 38px;
+  height: 38px;
+  padding: 0 10px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 9px;
+  background: var(--bg-surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.page-btn:hover:not(:disabled):not(.active) {
+  background: var(--bg-surface2);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.page-btn.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.page-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.page-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.page-gap {
+  min-width: 20px;
+  text-align: center;
+  color: var(--text-secondary);
+  font-weight: 700;
+  user-select: none;
+}
+
 /* ===== Modo extrator (legendas) ===== */
 .extract-empty {
   background: var(--bg-surface);

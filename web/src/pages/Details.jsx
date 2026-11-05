@@ -20,9 +20,6 @@ import Comments from "../components/Comments.jsx";
 import { clearPresence, showPresence } from "../discord.js";
 import { useT } from "../i18n/I18nContext.jsx";
 
-// Para onde vai o "Ver todos" de "Se gostaste disto".
-const HREF_POR_TIPO = { movie: "/movies", tv: "/series", anime: "/anime" };
-
 export default function Details() {  // Nome da temporada: o servidor devolve o nome do espelho (ex. "Temporada 1"
   // ou "Season 1"). O cliente deve mostrar no idioma da interface. Nomes
   // próprios (ex. "Parte 2") sao mostrados tal como estao.
@@ -1080,7 +1077,6 @@ api
         <MediaRow
           title={t("Se gostaste disto")}
           items={similar}
-          href={HREF_POR_TIPO[details?.type]}
         />
       )}
 

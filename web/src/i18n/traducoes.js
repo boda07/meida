@@ -473,6 +473,7 @@ export const DICIONARIO = {
     "Utilizador tem de ter 3+ caracteres.":
       "Utilizador tem de ter 3+ caracteres.",
     "Lista nao encontrada.": "Lista nao encontrada.",
+    "linha desconhecida": "linha desconhecida",
     // --- erros do servidor ---
     "lista nao encontrada": "lista nao encontrada",
     "MAL nao configurado no servidor.": "MAL nao configurado no servidor.",
@@ -794,6 +795,10 @@ export const DICIONARIO = {
     "Não consegui carregar o catálogo: {erro}":
       "Não consegui carregar o catálogo: {erro}",
     "Página {p} de {n} · {t} títulos": "Página {p} de {n} · {t} títulos",
+    "Página {p} de {n}": "Página {p} de {n}",
+    "Paginação": "Paginação",
+    "Não consegui carregar esta lista.": "Não consegui carregar esta lista.",
+    "Não há títulos nesta página.": "Não há títulos nesta página.",
     "Recomendações com base nas tags que mais lês na tua lista do MAL{analisados}. Nunca te recomendo nada que já tenhas na lista.":
       "Recomendações com base nas tags que mais lês na tua lista do MAL{analisados}. Nunca te recomendo nada que já tenhas na lista.",
     "({n} títulos analisados)": "({n} títulos analisados)",
@@ -1516,6 +1521,7 @@ export const DICIONARIO = {
     "Utilizador tem de ter 3+ caracteres.":
       "Username must be at least 3 characters.",
     "Lista nao encontrada.": "List not found.",
+    "linha desconhecida": "unknown row",
     // --- erros do servidor ---
     "lista nao encontrada": "list not found",
     "MAL nao configurado no servidor.":
@@ -1833,6 +1839,10 @@ export const DICIONARIO = {
     "Não consegui carregar o catálogo: {erro}":
       "Couldn't load the catalogue: {erro}",
     "Página {p} de {n} · {t} títulos": "Page {p} of {n} · {t} titles",
+    "Página {p} de {n}": "Page {p} of {n}",
+    "Paginação": "Pagination",
+    "Não consegui carregar esta lista.": "Could not load this list.",
+    "Não há títulos nesta página.": "There are no titles on this page.",
     "Recomendações com base nas tags que mais lês na tua lista do MAL{analisados}. Nunca te recomendo nada que já tenhas na lista.":
       "Recommendations based on the tags you read most in your MAL list{analisados}. I never recommend anything you already have.",
     "({n} títulos analisados)": "({n} titles analysed)",

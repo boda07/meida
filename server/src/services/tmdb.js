@@ -403,7 +403,7 @@ export async function discover(
   const params = {
     sort_by: `${field}.${dir === "asc" ? "asc" : "desc"}`,
     include_adult: "false",
-    page: Math.max(1, Number(page) || 1),
+    page: Math.min(500, Math.max(1, Number(page) || 1)),
   };
   if (genres.length) params.with_genres = genres.join(",");
   // Sem um minimo de votos, a ordenacao por nota enche-se de titulos obscuros.
@@ -425,6 +425,31 @@ export async function discover(
     items,
     page: base.page || 1,
     hasMore: (base.page || 1) < (base.total_pages || 1),
+    totalPages: Math.min(Math.max(1, Number(base.total_pages) || 1), 500),
+  };
+}
+
+/**
+ * Uma pagina de uma lista curada do TMDB (popular, trending, top rated, ...).
+ *
+ * E' a MESMA lista que alimenta as rows da Home/Categoria — o "Ver todos" nao
+ * pode mostrar outra coisa qualquer. So' que aqui vai pagina a pagina, em vez
+ * dos 20 titulos que a row mostra.
+ */
+export async function getListPage(path, page = 1, opts = {}) {
+  // O TMDB recusa (400) qualquer pagina acima de 500 — nao devolve vazio, da'
+  // erro. Prende-se aqui para um URL escrito a mao nao parecer "lista partida".
+  const p = Math.min(500, Math.max(1, Number(page) || 1));
+  const params = { page: p };
+  const { overview, title } = langsFrom(opts);
+  const base = await tmdbFetch(path, params, overview);
+  const items = (base.results || []).map(normalizeMedia).filter(Boolean);
+  const meta = await resolveTitleMeta(path, params, title, overview === title ? base : null);
+  return {
+    items: applyMeta(items, meta),
+    page: Number(base.page) || p,
+    // O TMDB nao serve mais de 500 paginas, mesmo quando diz que sim.
+    totalPages: Math.min(Math.max(1, Number(base.total_pages) || 1), 500),
   };
 }
 

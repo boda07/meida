@@ -18,6 +18,7 @@
 const LOCAL_API_PREFIXES = [
   "/api/health",
   "/api/catalog",
+  "/api/rows",
   "/api/discover",
   "/api/search",
   "/api/details",
@@ -45,6 +46,11 @@ function isLocalApiPath(path) {
     return next === undefined || next === "/" || next === "?" || next === "#";
   });
 }
+
+// Exportada para o teste poder provar que uma rota nova (ex.: `/api/rows`) fica
+// LOCAL: se faltar na lista, com dados na nuvem vai para o servidor remoto, onde
+// nao existe — e a resposta e' 401, que parece um problema de login.
+export { isLocalApiPath };
 
 function baseFor(path) {
   const remote =
@@ -398,6 +404,9 @@ export const api = {
   catalog: () => get("/api/catalog", langParams()),
   category: (c) => get(`/api/catalog/${c}`, langParams()),
   discover: (opts) => get("/api/discover", { ...opts, ...langParams() }),
+  // Lista completa de uma row do catalogo ("Ver todos"), com pagina.
+  catalogRow: (row, opts = {}) =>
+    get(`/api/rows/${encodeURIComponent(row)}`, { ...opts, ...langParams() }),
   search: (q) => get("/api/search", { q, ...langParams() }),
   details: (type, id) => get("/api/details", { type, id, ...langParams() }),
   recommendations: (type, id) => get("/api/recommendations", { type, id, ...langParams() }),

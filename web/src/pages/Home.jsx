@@ -20,15 +20,6 @@ function pickHeroes(rows, n = 6) {
   return pool.slice(0, n);
 }
 
-// Para onde vai o "Ver todos" de cada linha da Home. O tipo dos itens manda:
-// so' anime -> /anime, so' series -> /series, e o resto (filmes, ou a mistura
-// de "Em tendencia") -> /movies.
-function hrefDaLinha(row) {
-  if (row.items.every((i) => i.type === "anime")) return "/anime";
-  if (row.items.every((i) => i.type === "tv")) return "/series";
-  return "/movies";
-}
-
 /**
  * @param {object} p
  * @param {string} [p.generos]  os generos escolhidos no onboarding, separados
@@ -109,9 +100,21 @@ export default function Home({ generos = "" }) {
       <Hero items={heroes} />
       <div className="rows">
         <ContinueWatching />
-        {porGenero ? <MediaRow key={porGenero.id} title={porGenero.title} items={porGenero.items} href="/movies" /> : null}
+        {porGenero ? (
+          <MediaRow
+            key={porGenero.id}
+            title={porGenero.title}
+            items={porGenero.items}
+            // A row dos generos nao e' uma lista fixa: leva os escolhidos no
+            // onboarding e o titulo ja' traduzido (o servidor nao sabe qual e').
+            href={`/all/ob-generos?genres=${encodeURIComponent(generos)}&title=${encodeURIComponent(porGenero.title)}`}
+          />
+        ) : null}
         {rows.map((row) => (
-          <MediaRow key={row.id} title={row.title} items={row.items} href={hrefDaLinha(row)} />
+          // "Ver todos" abre a lista COMPLETA desta linha (paginada), nao a
+          // categoria inteira: "Filmes populares" tem de abrir os filmes
+          // populares, e nao a pagina de Filmes com as suas proprias rows.
+          <MediaRow key={row.id} title={row.title} items={row.items} href={`/all/${row.id}`} />
         ))}
       </div>
     </div>

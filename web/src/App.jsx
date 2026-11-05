@@ -23,6 +23,7 @@ const Login = lazy(() => import("./pages/Login.jsx"));
 const Settings = lazy(() => import("./pages/Settings.jsx"));
 const PickForMe = lazy(() => import("./pages/PickForMe.jsx"));
 const Compare = lazy(() => import("./pages/Compare.jsx"));
+const AllRow = lazy(() => import("./pages/AllRow.jsx"));
 const Users = lazy(() => import("./pages/Users.jsx"));
 const UserProfile = lazy(() => import("./pages/UserProfile.jsx"));
 
@@ -127,6 +128,7 @@ export default function App() {
               <Route path="/series" element={<Category key="tv" category="tv" title={t("Séries")} />} />
               <Route path="/anime" element={<Category key="anime" category="anime" title={t("Anime")} />} />
               <Route path="/search" element={<Search />} />
+              <Route path="/all/:rowId" element={<AllRow />} />
               <Route path="/details/:type/:id" element={<Details />} />
               <Route path="/library" element={<Library />} />
               <Route path="/diary" element={<Diary />} />

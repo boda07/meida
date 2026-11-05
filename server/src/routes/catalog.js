@@ -23,6 +23,7 @@ import {
   discoverAnime,
 } from "../services/jikan.js";
 import { getRating as getLetterboxdRating } from "../services/letterboxd.js";
+import { getCatalogRow } from "../services/catalogRows.js";
 import { log } from "../services/log.js";
 
 export const catalogRouter = Router();
@@ -62,6 +63,22 @@ catalogRouter.get("/catalog/:category", async (req, res, next) => {
       }
     }
     res.json({ rows });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Lista completa de uma row do catalogo ("Ver todos"), pagina a pagina.
+catalogRouter.get("/rows/:id", async (req, res, next) => {
+  try {
+    const page = Math.max(1, Number(req.query.page) || 1);
+    const row = await getCatalogRow(
+      req.params.id,
+      { page, genres: req.query.genres },
+      langOpts(req)
+    );
+    if (!row) return res.status(404).json({ error: "linha desconhecida" });
+    res.json(row);
   } catch (err) {
     next(err);
   }
