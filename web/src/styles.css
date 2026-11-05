@@ -1476,12 +1476,22 @@ h2 {
 }
 
 /* ===== Grid (pesquisa/lista) ===== */
+/* Flex e nao grid: numa grelha, uma pagina com 20 titulos num ecra de 8
+   colunas deixava a ultima fila com 4 cartoes encostados a' esquerda e um
+   buraco do tamanho de meia fila a' direita. Com flex-wrap + center a ultima
+   fila fica centrada (os cartoes mantem o tamanho; so' a fila incompleta muda
+   de posicao). Nas filas cheias o resultado e' o mesmo de antes. */
 .grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, var(--card-w, 184px));
+  display: flex;
+  flex-wrap: wrap;
   justify-content: center;
+  align-items: flex-start;
   gap: 26px 18px;
   margin-top: 40px;
+}
+
+.grid > * {
+  flex: 0 0 var(--card-w, 184px);
 }
 
 /* Cartazes nas grelhas: forma fixa pela proporcao (nunca esticam). */

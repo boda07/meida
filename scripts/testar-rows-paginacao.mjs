@@ -146,6 +146,27 @@ ok("o cliente expoe catalogRow", /catalogRow:/.test(ler("web/src/api/client.js")
 const app = ler("web/src/App.jsx");
 ok("a rota /all/:rowId esta' registada", /path="\/all\/:rowId"/.test(app));
 
+/* ---------- 6) A ultima fila da grelha nao fica com um buraco ---------- */
+
+console.log("  6) grelha centrada");
+const css = ler("web/src/styles.css");
+// Numa grelha (`auto-fill`), uma pagina de 20 titulos num ecra de 8 colunas
+// deixava a ultima fila encostada a' esquerda, com metade da largura vazia a'
+// direita. Flex + center centra a ultima fila; nas filas cheias o resultado e'
+// o mesmo de antes. Os cartoes tem de manter a largura (nao esticar).
+const blocoGrid = css.match(/^\.grid\s*\{[^}]*\}/m)?.[0] || "";
+ok(
+  ".grid usa flex-wrap + justify-content: center",
+  /display:\s*flex;/.test(blocoGrid) &&
+    /flex-wrap:\s*wrap;/.test(blocoGrid) &&
+    /justify-content:\s*center;/.test(blocoGrid),
+  blocoGrid.replace(/\s+/g, " ").slice(0, 140)
+);
+ok(
+  "os cartoes mantem a largura fixa (a ultima fila centra, nao estica)",
+  /^\.grid\s*>\s*\*\s*\{[^}]*flex:\s*0\s+0\s+var\(--card-w/m.test(css)
+);
+
 /* ---------- Resumo ---------- */
 
 console.log(`\n${n} ok, ${falhou} falha(s)`);
