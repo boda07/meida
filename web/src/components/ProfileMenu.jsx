@@ -39,56 +39,77 @@ export default function ProfileMenu() {
     return () => document.removeEventListener("mousedown", onClick);
   }, []);
 
-  // Sem sessao: icone que leva ao login. O menu completo (e portanto o
-  // "Procurar atualizacao") fica para quem tem conta; quem nao tem usa
-  // Definis > Avancado, que tambem tem o botao e nao pede login.
-  if (!user) {
-    return (
-      <Link to="/login" className="icon-btn" title={t("Entrar")} aria-label={t("Entrar")}>
-        <UserIcon />
-      </Link>
-    );
-  }
-
+  // Sem sessao: o MESMO icone abre um menu com as portas de entrada. Antes era
+  // um link directo para /login, e as Definicoes (que nao precisam de conta)
+  // ficavam inacessiveis a quem ainda nao tinha sessao — nao havia caminho
+  // nenhum para /settings sem entrar.
   return (
     <div className="profile" ref={ref}>
       <button
-        className="avatar"
+        className={user ? "avatar" : "icon-btn"}
         onClick={() => setOpen((o) => !o)}
         aria-label={t("Conta")}
+        aria-expanded={open}
       >
-        <Avatar avatar={user.avatar} name={user.username} size={38} userId={user.id} />
+        {user ? (
+          <Avatar avatar={user.avatar} name={user.username} size={38} userId={user.id} />
+        ) : (
+          <UserIcon />
+        )}
       </button>
       {open && (
         <div className="profile-menu">
-          <span className="profile-name">{user.username}</span>
-          <Link to="/library" onClick={() => setOpen(false)}>
-            {t("A minha lista")}
-          </Link>
-           <Link to="/diary" onClick={() => setOpen(false)}>
-             {t("Diário")}
-           </Link>
-           <Link to="/achievements" onClick={() => setOpen(false)}>
-             {t("Conquistas")}
-           </Link>
-           <Link to="/stats" onClick={() => setOpen(false)}>
-             {t("Estatísticas")}
-           </Link>
-           <Link to="/compare" onClick={() => setOpen(false)}>
-             {t("Compara as tuas notas")}
-           </Link>
-           <Link to={`/u/${encodeURIComponent(user.username)}`} onClick={() => setOpen(false)}>
-             {t("O meu perfil")}
-           </Link>
-           <Link to="/users" onClick={() => setOpen(false)}>
-             {t("Encontrar pessoas")}
-           </Link>
-          <Link to="/settings" onClick={() => setOpen(false)}>
-            {t("Definições")}
-          </Link>
-          <button onClick={checkUpdate}>{t("Procurar atualização")}</button>
-          {updMsg && <span className="profile-upd-msg">{updMsg}</span>}
-          <button onClick={logout}>{t("Sair")}</button>
+          {user ? (
+            <>
+              <span className="profile-name">{user.username}</span>
+              <Link to="/library" onClick={() => setOpen(false)}>
+                {t("A minha lista")}
+              </Link>
+              <Link to="/diary" onClick={() => setOpen(false)}>
+                {t("Diário")}
+              </Link>
+              <Link to="/achievements" onClick={() => setOpen(false)}>
+                {t("Conquistas")}
+              </Link>
+              <Link to="/stats" onClick={() => setOpen(false)}>
+                {t("Estatísticas")}
+              </Link>
+              <Link to="/compare" onClick={() => setOpen(false)}>
+                {t("Compara as tuas notas")}
+              </Link>
+              <Link to={`/u/${encodeURIComponent(user.username)}`} onClick={() => setOpen(false)}>
+                {t("O meu perfil")}
+              </Link>
+              <Link to="/users" onClick={() => setOpen(false)}>
+                {t("Encontrar pessoas")}
+              </Link>
+              <Link to="/settings" onClick={() => setOpen(false)}>
+                {t("Definições")}
+              </Link>
+              <button onClick={checkUpdate}>{t("Procurar atualização")}</button>
+              {updMsg && <span className="profile-upd-msg">{updMsg}</span>}
+              <button
+                onClick={() => {
+                  setOpen(false);
+                  logout();
+                }}
+              >
+                {t("Sair")}
+              </button>
+            </>
+          ) : (
+            <>
+              <Link to="/login" onClick={() => setOpen(false)}>
+                {t("Entrar")}
+              </Link>
+              <Link to="/register" onClick={() => setOpen(false)}>
+                {t("Criar conta")}
+              </Link>
+              <Link to="/settings" onClick={() => setOpen(false)}>
+                {t("Definições")}
+              </Link>
+            </>
+          )}
         </div>
       )}
     </div>
