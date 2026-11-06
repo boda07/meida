@@ -5,6 +5,7 @@ import { useT } from "../i18n/I18nContext.jsx";
 import { ecraInteiro as ecraInteiro_ } from "./ecraInteiro.js";
 import { useVideoState } from "./useVideoState.js";
 import { useVolumeMemory } from "./useVolumeMemory.js";
+import { ligarEventosDaBarra } from "./barraPlayer.js";
 
 // Barra de controlos do player, NOSSA.
 //
@@ -62,7 +63,8 @@ export default function PlayerControls({ videoRef, children }) {
     clearTimeout(temporizadorRef.current);
     temporizadorRef.current = setTimeout(() => {
       const v = videoRef.current;
-      // So' esconde se estiver a dar E nao houver o rato em cima.
+      // So' esconde se estiver a dar. Mexer o rato (ou tocar) reinicia este
+      // temporizador; em pausa o video nao esta' a dar, por isso fica a' vista.
       if (v && !v.paused) setBarraVisivel(false);
     }, OCULTAR_MS);
   }, [videoRef]);
@@ -71,6 +73,26 @@ export default function PlayerControls({ videoRef, children }) {
     mostrar();
     return () => clearTimeout(temporizadorRef.current);
   }, [mostrar]);
+
+  // O alvo dos eventos e' o CONTENTOR do player, e nao a barra: escondida, a
+  // barra tem `pointer-events: none` e nunca recebia o `mousemove` que a havia
+  // de mostrar — ficava escondida para sempre (B1). O `.player` continua a
+  // receber o rato por cima do <video>.
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    const alvo = video.closest(".player") || video.parentElement || video;
+    // O `aDar` tambem estava sempre a `true` (ninguem o atualizava): o botao
+    // mostrava sempre "Pausar", mesmo com o video parado.
+    setADar(!video.paused);
+    return ligarEventosDaBarra({
+      alvo,
+      video,
+      mostrar,
+      aoPlay: () => setADar(true),
+      aoPause: () => setADar(false),
+    });
+  }, [mostrar, videoRef]);
 
   // ---- seek ----------------------------------------------------------------
   const fracaoDoPonteiro = (e) => {
@@ -200,7 +222,7 @@ export default function PlayerControls({ videoRef, children }) {
   };
 
   return (
-    <div className={`pc-barra ${barraVisivel ? "visivel" : "escondida"}`} onMouseMove={mostrar}>
+    <div className={`pc-barra ${barraVisivel ? "visivel" : "escondida"}`}>
       {/* A barra do seek e' a coisa mais larga de toda a barra: e' onde o rato
           vai por defeito, e e' o que o browser faz. */}
       <div

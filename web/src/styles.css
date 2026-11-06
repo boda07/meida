@@ -3490,6 +3490,13 @@ h2 {
   pointer-events: none;
 }
 
+/* Sem a barra a' vista, o cursor tambem sai. Os elementos que continuam
+   clicaveis (ex.: "Saltar a abertura") tem o seu proprio `cursor: pointer`,
+   por isso nao ficam sem cursor. */
+.player:has(.pc-barra.escondida) {
+  cursor: none;
+}
+
 /* A barra do seek: o alvo do rato e' uma faixa alta (a do browser tambem e'),
    para nao ser preciso acertar numa linha de 4 px. */
 .pc-seek {
