@@ -39,9 +39,10 @@ playRouter.get("/extract/enabled", (req, res) => {
 // idioma) e o play/pausa passa a sincronizar no Watch Party, porque nao ha'
 // cross-origin pelo meio.
 //
-// Devolve `native: false` + `motivo` (e nao um erro) quando nao consegue: quem
-// chama mostra o iframe como estava, que continua a funcionar, e pode dizer o
-// que falhou em vez de cair no iframe em silencio (N1).
+// Devolve `native: false` + `codigo` e `detalhe` (e nao um erro) quando nao
+// consegue: quem chama mostra o iframe como estava, que continua a funcionar, e
+// pode dizer o que falhou em vez de cair no iframe em silencio (N1). O `codigo`
+// e' traduzido no cliente; o `detalhe` tecnico vai so' para a consola (B2).
 playRouter.get("/anime/megaplay", async (req, res) => {
   const { url, audio } = req.query;
   if (!url) return res.status(400).json({ error: "falta o parametro url" });
@@ -53,15 +54,16 @@ playRouter.get("/anime/megaplay", async (req, res) => {
     return res.status(400).json({ error: "url tem de ser https://megaplay.buzz/stream/..." });
   }
 
-  // A extracao ja nao lanca (devolve `{ ok: false, motivo }`), mas se um dia
-  // lancar, a rota `async` nao pode deixar o pedido pendurado. No Express 4 o
-  // valor devolvido e' ignorado e a rejeicao fica sem dono.
+  // A extracao ja nao lanca (devolve `{ ok: false, codigo, detalhe }`), mas se
+  // um dia lancar, a rota `async` nao pode deixar o pedido pendurado. No
+  // Express 4 o valor devolvido e' ignorado e a rejeicao fica sem dono.
   try {
     const r = await extrairMegaPlayNativo({ embedUrl: String(url), audio });
     if (!r?.ok) {
       return res.json({
         native: false,
-        motivo: r?.motivo || "extracao nativa indisponivel",
+        codigo: r?.codigo || "sem_video",
+        detalhe: r?.detalhe || "extracao nativa indisponivel",
       });
     }
 
@@ -80,7 +82,11 @@ playRouter.get("/anime/megaplay", async (req, res) => {
     });
   } catch (e) {
     log.warn("megaplay", `rota /anime/megaplay rebentou: ${e.message}`);
-    res.json({ native: false, motivo: "erro interno a extrair o video" });
+    res.json({
+      native: false,
+      codigo: "sem_video",
+      detalhe: "erro interno a extrair o video",
+    });
   }
 });
 

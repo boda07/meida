@@ -5,6 +5,7 @@ import { useSettings } from "../settings/SettingsContext.jsx";
 import { useT } from "../i18n/I18nContext.jsx";
 import { usePlayerFallback } from "./usePlayerFallback.js";
 import { useNativeVideoSource } from "./useNativeVideoSource.js";
+import { mensagemNativo } from "./mensagemNativo.js";
 
 // Um provider pode devolver um `data:` URL (vi um a servir
 // `data:application/pdf;base64,...` — um PDF disfarçado de página). Não é um
@@ -68,7 +69,6 @@ export default function Player({
     loaded,
     reloadKey,
     trocada,
-    carregouRef,
     marcarCarregado,
     setIndex,
     setLoaded,
@@ -89,14 +89,19 @@ export default function Player({
   const nativoUrl = active?.native ? active.embedUrl : null;
   const {
     nativoPronto,
-    motivo: nativoMotivo,
+    codigo: nativoCodigo,
     falhouPedido: nativoFalhouPedido,
   } = useNativeVideoSource({ nativoUrl, audio });
   const isNativoPronto = Boolean(nativoPronto);
-  // O texto do "pedido falhou" vive aqui (e nao no gancho) porque e' interface.
-  const nativoMotivoTexto = nativoFalhouPedido
+  // O texto do "pedido falhou" e a traducao do codigo vivem aqui (e nao no
+  // gancho) porque sao interface. O `detalhe` tecnico do servidor fica na
+  // consola: mostra-lo no ecra dava frases em portugues sem acentos, mesmo em
+  // ingles (B2).
+  const nativoMensagem = nativoFalhouPedido
     ? t("O pedido ao servidor falhou.")
-    : nativoMotivo;
+    : nativoCodigo
+      ? mensagemNativo(nativoCodigo, t)
+      : null;
 
   // Erro fatal do hls.js na fonte nativa: mesma logica do timeout de 15s.
   const onErroNativo = useCallback(() => {
@@ -191,9 +196,9 @@ export default function Player({
               })}
             </span>
           )}
-          {arrancado && active?.native && nativoMotivoTexto && (
+          {arrancado && active?.native && nativoMensagem && (
             <span className="player-loading-hint muted" style={{ position: "absolute", left: 8, top: 8, fontSize: 12 }}>
-              {t("Nativo indisponível: {motivo}", { motivo: nativoMotivoTexto })}
+              {nativoMensagem}
             </span>
           )}
           {arrancado && erroFonte && !loaded && (

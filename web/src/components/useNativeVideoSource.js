@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { api } from "../api/client.js";
 
 // Fonte nativa de video (MegaPlay sem iframe).
@@ -6,16 +6,17 @@ import { api } from "../api/client.js";
 // Responsabilidade unica: pedir ao servidor o m3u8 e as legendas em claro para
 // uma fonte marcada com `native: true`, e gerir o estado nativo (url/data/erro).
 //
-// Devolve: { nativoPronto, motivo, falhouPedido } — `motivo` diz porque e' que
-// o nativo nao deu (o servidor passou a devolve-lo em `native: false`), para a
-// interface nao cair no iframe em silencio. `falhouPedido` marca o caso em que
-// o pedido nem chegou ao servidor (esse texto e' traduzido no Player).
+// Devolve: { nativoPronto, codigo, detalhe, falhouPedido } — `codigo` diz porque
+// e' que o nativo nao deu (o servidor devolve-o em `native: false`) e e' o
+// cliente que o traduz; `detalhe` e' texto tecnico e fica SO' na consola.
+// `falhouPedido` marca o caso em que o pedido nem chegou ao servidor (esse texto
+// e' traduzido no Player).
 export function useNativeVideoSource({ nativoUrl, audio }) {
   const [nativeState, setNativeState] = useState({
     url: null,
     data: null,
-    erro: false,
-    motivo: null,
+    codigo: null,
+    detalhe: null,
     falhouPedido: false,
   });
 
@@ -24,8 +25,8 @@ export function useNativeVideoSource({ nativoUrl, audio }) {
       setNativeState({
         url: null,
         data: null,
-        erro: false,
-        motivo: null,
+        codigo: null,
+        detalhe: null,
         falhouPedido: false,
       });
       return;
@@ -34,8 +35,8 @@ export function useNativeVideoSource({ nativoUrl, audio }) {
     setNativeState({
       url: nativoUrl,
       data: null,
-      erro: false,
-      motivo: null,
+      codigo: null,
+      detalhe: null,
       falhouPedido: false,
     });
 
@@ -47,27 +48,31 @@ export function useNativeVideoSource({ nativoUrl, audio }) {
           setNativeState({
             url: nativoUrl,
             data: d,
-            erro: false,
-            motivo: null,
+            codigo: null,
+            detalhe: null,
             falhouPedido: false,
           });
         } else {
-          // O servidor devolveu native:false ou sem sources. Regista o motivo
-          // (se o servidor o incluiu) para nao falhar em silencio.
-          const motivo = d?.motivo || d?.error || null;
-          console.warn("[nativo] extraction failed:", motivo, { url: nativoUrl, audio });
+          // O servidor devolveu native:false ou sem sources. O codigo e' para
+          // traduzir; o detalhe tecnico fica na consola (nunca no ecra).
+          const codigo = d?.codigo || null;
+          const detalhe = d?.detalhe || d?.error || null;
+          console.warn("[nativo] extraction failed:", codigo, detalhe, {
+            url: nativoUrl,
+            audio,
+          });
           setNativeState({
             url: nativoUrl,
             data: null,
-            erro: true,
-            motivo,
+            codigo,
+            detalhe,
             falhouPedido: false,
           });
         }
       })
       .catch((e) => {
         if (vivo) {
-          // Sem motivo do servidor (o pedido nem chegou): a interface diz o que
+          // Sem codigo do servidor (o pedido nem chegou): a interface diz o que
           // aconteceu, e o texto fica no Player (que tem o `t`), nao aqui.
           console.warn("[nativo] request failed:", e?.message || e, {
             url: nativoUrl,
@@ -76,8 +81,8 @@ export function useNativeVideoSource({ nativoUrl, audio }) {
           setNativeState({
             url: nativoUrl,
             data: null,
-            erro: true,
-            motivo: null,
+            codigo: null,
+            detalhe: null,
             falhouPedido: true,
           });
         }
@@ -86,13 +91,14 @@ export function useNativeVideoSource({ nativoUrl, audio }) {
     return () => {
       vivo = false;
     };
-  }, [nativoUrl, audio, api]);
+  }, [nativoUrl, audio]);
 
   // O m3u8 so vale para a fonte que o pediu.
   const atual = nativeState.url === nativoUrl ? nativeState : null;
   const nativoPronto = nativoUrl && atual?.data;
-  const motivo = atual?.motivo || null;
+  const codigo = atual?.codigo || null;
+  const detalhe = atual?.detalhe || null;
   const falhouPedido = Boolean(atual?.falhouPedido);
 
-  return { nativoPronto, motivo, falhouPedido };
+  return { nativoPronto, codigo, detalhe, falhouPedido };
 }

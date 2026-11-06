@@ -340,7 +340,20 @@ export const DICIONARIO = {
     "Recarregar fonte (se nao carregar / erro 520)":
       "Recarregar fonte (se nao carregar / erro 520)",
     "Recarregar fonte": "Recarregar fonte",
-    "Nativo indisponível: {motivo}": "Nativo indisponível: {motivo}",
+    "Nativo indisponível: o MegaPlay mudou e já não encontramos este episódio.":
+      "Nativo indisponível: o MegaPlay mudou e já não encontramos este episódio.",
+    "Nativo indisponível: o endereço do MegaPlay não é válido.":
+      "Nativo indisponível: o endereço do MegaPlay não é válido.",
+    "Nativo indisponível: o MegaPlay respondeu com um erro.":
+      "Nativo indisponível: o MegaPlay respondeu com um erro.",
+    "Nativo indisponível: não foi possível contactar o MegaPlay.":
+      "Nativo indisponível: não foi possível contactar o MegaPlay.",
+    "Nativo indisponível: o MegaPlay mudou a proteção do vídeo.":
+      "Nativo indisponível: o MegaPlay mudou a proteção do vídeo.",
+    "Nativo indisponível: o MegaPlay não devolveu nenhum vídeo.":
+      "Nativo indisponível: o MegaPlay não devolveu nenhum vídeo.",
+    "Nativo indisponível: não foi possível reproduzir agora.":
+      "Nativo indisponível: não foi possível reproduzir agora.",
     "O pedido ao servidor falhou.": "O pedido ao servidor falhou.",
     "Escreve algo na pesquisa.": "Escreve algo na pesquisa.",
     "Sem resultados para": "Sem resultados para",
@@ -1388,7 +1401,20 @@ export const DICIONARIO = {
     "Recarregar fonte (se nao carregar / erro 520)":
       "Reload source (if it doesn't load / error 520)",
     "Recarregar fonte": "Reload source",
-    "Nativo indisponível: {motivo}": "Native unavailable: {motivo}",
+    "Nativo indisponível: o MegaPlay mudou e já não encontramos este episódio.":
+      "Native unavailable: MegaPlay changed and this episode can't be found anymore.",
+    "Nativo indisponível: o endereço do MegaPlay não é válido.":
+      "Native unavailable: the MegaPlay address is not valid.",
+    "Nativo indisponível: o MegaPlay respondeu com um erro.":
+      "Native unavailable: MegaPlay returned an error.",
+    "Nativo indisponível: não foi possível contactar o MegaPlay.":
+      "Native unavailable: could not reach MegaPlay.",
+    "Nativo indisponível: o MegaPlay mudou a proteção do vídeo.":
+      "Native unavailable: MegaPlay changed the video protection.",
+    "Nativo indisponível: o MegaPlay não devolveu nenhum vídeo.":
+      "Native unavailable: MegaPlay did not return any video.",
+    "Nativo indisponível: não foi possível reproduzir agora.":
+      "Native unavailable: could not play it right now.",
     "O pedido ao servidor falhou.": "The request to the server failed.",
     "Escreve algo na pesquisa.": "Type something in the search.",
     "Sem resultados para": "No results for",
