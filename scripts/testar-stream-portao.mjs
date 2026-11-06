@@ -187,6 +187,22 @@ try {
 } finally {
   filho.saiuLimpo = true;
   filho.kill();
+  // Esperar que o filho feche antes de seguir. Chamar `process.exit()` com o
+  // processo e os pipes ainda a fechar da' o assert do libuv no Windows
+  // (`!(handle->flags & UV_HANDLE_CLOSING)`) e o teste sai com codigo 1 mesmo
+  // tendo passado — foi assim que a suite inteira caia no fim.
+  const jaSaiu = () => filho.exitCode !== null || filho.signalCode !== null;
+  if (!jaSaiu()) {
+    await new Promise((resolve) => {
+      const limite = setTimeout(resolve, 3000);
+      filho.once("exit", () => {
+        clearTimeout(limite);
+        resolve();
+      });
+    });
+  }
+  filho.stdout?.destroy();
+  filho.stderr?.destroy();
   try { fs.rmSync(dbDir, { recursive: true, force: true }); } catch { /* ja foi */ }
 }
 
@@ -239,4 +255,7 @@ console.log("  7) o frontend nao volta a mentir sobre o \"parar\"");
 // ---------------------------------------------------------------------------
 console.log("");
 console.log("  " + ok + " ok, " + falhou + " falha(s)");
-process.exit(falhou ? 1 : 0);
+// Sem `process.exit()`: no Windows ele aborta com o assert do libuv quando ha'
+// handles a fechar. `exitCode` deixa o processo sair sozinho e o codigo e' o
+// mesmo para quem corre a suite.
+process.exitCode = falhou ? 1 : 0;
