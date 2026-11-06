@@ -6,6 +6,29 @@
 export const CHANGELOG = [
 
   {
+      version: "1.7.0",
+      items: [
+        "Novo visual dos cartazes: ao passar o rato aparece um botão de reprodução e a imagem escurece, como nas apps de streaming.",
+        "As listas ganharam setas nas laterais para percorrer os títulos. Cada seta só aparece quando há mesmo mais títulos para esse lado.",
+        "Cada lista tem agora um \"Ver todos\" no cabeçalho, que abre a lista completa daquela lista — por exemplo, \"Filmes populares\" mostra todos os filmes populares, com paginação numerada.",
+        "A última fila das grelhas fica centrada, em vez de deixar um espaço vazio à direita.",
+        "Quem não tem sessão iniciada passa a ter um menu na conta com Entrar, Criar conta e Definições. As Definições deixam de estar escondidas.",
+        "A barra de controlos do vídeo volta a aparecer quando mexes o rato ou tocas no ecrã, e fica visível quando o vídeo está em pausa.",
+        "O aviso da fonte nativa (anime) aparece na língua da interface e diz o motivo real, em vez de uma mensagem genérica.",
+        "Correção: no fim de um vídeo, o progresso era enviado duas vezes. Agora é enviado uma só vez.",
+      ],
+      items_en: [
+        "New poster look: hovering shows a play button and darkens the image, like on streaming apps.",
+        "Rows now have arrows on the sides to browse titles. Each arrow only appears when there really are more titles in that direction.",
+        "Every row now has a \"See all\" in the header that opens that row's complete list — for example, \"Popular movies\" shows all popular movies, with numbered pages.",
+        "The last row of a grid is now centred, instead of leaving an empty space on the right.",
+        "Signed-out users now get an account menu with Log in, Sign up and Settings. Settings are no longer hidden.",
+        "The video controls bar comes back when you move the mouse or touch the screen, and stays visible while the video is paused.",
+        "The native source (anime) warning now appears in the interface language and gives the real reason instead of a generic message.",
+        "Fix: at the end of a video, progress was sent twice. It is now sent only once.",
+      ],
+    },
+  {
       version: "1.6.9",
       items: [
         "Correção: ao minimizar e voltar a abrir a app, o episódio que estava a dar mantém-se onde estava. Já não aparece o botão 'Carregar vídeo' nem o vídeo volta ao início.",

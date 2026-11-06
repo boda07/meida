@@ -1,5 +1,25 @@
 # Changelog
 
+## 1.7.0
+
+Cartões no estilo das apps de streaming: o `MediaCard` ganhou um botão de reprodução sobreposto (`.card-play`) e, no hover, o cartaz escurece (`filter: brightness(0.55)`) e a sombra fica mais discreta. O `card-scrim` continua a sustentar o texto.
+
+Listas com setas laterais: o `MediaRow` ganhou `href` (mostra "Ver todos" no cabeçalho) e passou a calcular, com `ResizeObserver` e no `scroll`, se há conteúdo para cada lado. Cada seta só aparece quando há mesmo para onde rolar. Os glifos `‹`/`›` foram substituídos por SVGs.
+
+"Ver todos" abre a lista completa da linha: nova página `/all/:rowId` (`AllRow.jsx`) alimentada por `GET /api/rows/:id`, com a mesma fonte que serve a row (TMDB ou Jikan). A paginação numerada (`Pagination.jsx` + `paginacao.js`) mostra a primeira, a última e uma janela à volta da atual. O TMDB recusa páginas acima de 500 com 400. A rota `/api/rows` está classificada como local no cliente, para não ser enviada ao servidor remoto em modo nuvem. A row dos géneros do onboarding leva os géneros e o título no próprio link.
+
+Grelhas: `.grid` passou de `grid` para `flex-wrap` com `justify-content: center`, para a última fila ficar centrada em vez de deixar um buraco à direita. Os cartões mantêm a largura fixa, por isso as filas cheias ficam iguais.
+
+Menu de conta sem sessão: `ProfileMenu.jsx` mostra Entrar, Criar conta e Definições quando não há sessão; o menu com sessão fica igual. Continua a fechar ao clicar fora.
+
+Barra do player: a ligação aos eventos saiu para `barraPlayer.js` (testável com objetos falsos). O alvo passou a ser o contentor `.player` — a barra escondida tem `pointer-events: none` e nunca recebia o `mousemove`. Ouve `mousemove`, `pointerdown`, `touchstart`, `play`, `pause` e `ended`, e o ícone play/pausa passou a seguir o estado real do vídeo.
+
+Aviso da fonte nativa: o servidor passou a devolver um `codigo` (`sem_data_id`, `url_invalido`, `http`, `rede`, `cifra`, `sem_video`) e o `detalhe` técnico em separado. O cliente traduz o código em `mensagemNativo.js`; o detalhe vai só para a consola. As seis mensagens existem em PT e EN.
+
+Progresso do vídeo: a lógica saiu para `progressoVideo.js`. O `pause` deixa de reportar quando `video.ended` já é verdade (no fim o Chromium dispara `timeupdate`, `pause` e `ended` pela mesma posição) e um par (posição, duração) igual ao anterior não se repete. A limpeza continua a reportar a posição final.
+
+Testes: `testar-rows-paginacao.mjs` (53 verificações), `testar-menu-conta.mjs` (17), `testar-barra-player.mjs` (27), `testar-nativo-motivo.mjs` (75) e `testar-progresso-fim.mjs` (46), todos no `npm test`. O `testar-stream-portao.mjs` passou a esperar pela saída do servidor filho e a usar `process.exitCode` em vez de `process.exit()`, eliminando o assert do libuv no Windows que abortava a suite no fim.
+
 ## 1.6.9
 
 Correção (minimizar/restaurar): quando a janela voltava ao primeiro plano, o `visibilitychange` do `AuthContext` voltava a pedir `/api/me` e fazia `setUser` com um objeto novo. O `Details.jsx` tem `user` nas dependências do efeito que repõe `details`/`active`/`embeds`, por isso o `Player` recebia uma nova `lista`, o `useEffect([lista, settings.autoplay])` repunha `arrancado = false` e aparecia o botão "Carregar vídeo". Agora o `setUser` só substitui o utilizador quando o `id` ou o `username` mudam.
