@@ -6,6 +6,19 @@
 export const CHANGELOG = [
 
   {
+      version: "1.7.1",
+      items: [
+        "O botão da velocidade já não mostra um triângulo parecido com o play: mostra só o multiplicador (1x, 1.5x, 2x).",
+        "Quando uma fonte de vídeo está em baixo, a app passa a usar outra automaticamente. O VidAPI estava a devolver uma página de erro em todos os títulos e era a fonte principal; agora fica no fim e o MoviesAPI passa a ser o primeiro.",
+        "O teste de saúde das fontes passou a reconhecer as páginas de erro que vêm disfarçadas de resposta normal, para uma fonte em baixo deixar de aparecer como boa.",
+      ],
+      items_en: [
+        "The speed button no longer shows a triangle that looks like the play button: it shows only the multiplier (1x, 1.5x, 2x).",
+        "When a video source is down, the app now switches to another one automatically. VidAPI was returning an error page for every title and was the main source; it is now last and MoviesAPI is first.",
+        "The source health check now recognises error pages that arrive disguised as a normal response, so a source that is down no longer looks healthy.",
+      ],
+    },
+  {
       version: "1.7.0",
       items: [
         "Novo visual dos cartazes: ao passar o rato aparece um botão de reprodução e a imagem escurece, como nas apps de streaming.",

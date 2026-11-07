@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.7.1
+
+Botão da velocidade: o `IconVelocidade` desenhava o **triângulo do play** (`polygon points="5 3 19 12 5 21"`) com linhas e o `1x` por cima, tudo sobreposto. Passou a ser um `<span className="pc-velocidade">{velocidade}x</span>`, sem SVG. A regra `.pc-velocidade` usa `font-variant-numeric: tabular-nums` para o `1x` não saltar ao passar a `1.5x`. O botão continua 34×34.
+
+VidAPI em baixo (2026-11-07): o `/embed` devolvia **HTTP 200** com a página `404 — Page Not Found` para todos os títulos — incluindo os exemplos da própria homepage (`/embed/movie/1184918`, The Wild Robot) e o Fight Club. Como o status era 200, o `probe` do health-check não a apanhava e o VidAPI continuava a ser a fonte default, por isso o 404 aparecia dentro do player. O provider passou para o **fim** de `PROVIDERS` (não foi apagado: como o MegaPlay, pode voltar) e o MoviesAPI passou a ser o primeiro. Medido no browser: o MoviesAPI serve o South Park S21E06 com **21:41** de duração via VidSpark.
+
+Health-check: o `DEAD_HINTS` ganhou o marcador exacto `404 — page not found` (com o travessão; `page not found` solto aparece no JavaScript de players que funcionam e daria falsos positivos). A detecção saiu para a função pura exportada `motivoDePaginaMorta(text)`, para o teste poder passar o HTML real sem rede. A `CACHE_KEY` passou a `provider-health-2`: a cache antiga podia ter o VidAPI como vivo e a mudança força um check novo depois da actualização, sem esperar as 6 h do TTL.
+
+Testes: `testar-icone-velocidade.mjs` (25 verificações, 4 mutações) e `testar-provider-vidapi.mjs` (24 verificações, 4 mutações), ambos no `npm test`.
+
 ## 1.7.0
 
 Cartões no estilo das apps de streaming: o `MediaCard` ganhou um botão de reprodução sobreposto (`.card-play`) e, no hover, o cartaz escurece (`filter: brightness(0.55)`) e a sombra fica mais discreta. O `card-scrim` continua a sustentar o texto.
