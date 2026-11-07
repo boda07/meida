@@ -15,7 +15,10 @@ const TEST_ANIME = 21; // One Piece (mesmo id no MAL e no AniList)
 
 const TIMEOUT_MS = 8000;
 const TTL_MS = 6 * 60 * 60 * 1000; // 1x de cada 6h (providers morrem/volatilizam-se no dia)
-const CACHE_KEY = "provider-health";
+// A chave leva a versao 2 porque a cache antiga podia ter o VidAPI como vivo:
+// a pagina de erro dele vinha com HTTP 200, por isso o `probe` nao a apanhava.
+// Mudar a chave forca um check novo depois da actualizacao, sem esperar 6h.
+const CACHE_KEY = "provider-health-2";
 // Providers que demoram mais que isto a responder sao marcados como "lentos"
 // (ok=false) — não porque estejam mortos, mas porque degradam a experiência.
 // Medidos: o MegaEmbed dava ~2.3s vs ~0.2s dos restantes.
@@ -32,6 +35,11 @@ const DEAD_HINTS = [
   "no longer available",
   "the content you are looking for",
   "this video is not available",
+  // O VidAPI (2026-11-07) devolvia HTTP 200 com esta pagina para TODOS os
+  // titulos, incluindo os exemplos do proprio site. Tem de ser o texto exacto
+  // (com o travessao): "page not found" solto aparece no JavaScript de players
+  // que funcionam.
+  "404 — page not found",
 ];
 
 // Redes de anuncios / scripts de popunder que aparecem no HTML do player. Um
@@ -79,6 +87,14 @@ function refererFor(url) {
   }
 }
 
+// Procura na pagina um marcador de erro que o status HTTP nao denuncia (ha'
+// providers que devolvem 200 com a pagina de erro dentro). Exportada para o
+// teste poder passar HTML real, sem fazer pedidos de rede.
+export function motivoDePaginaMorta(text) {
+  const low = String(text || "").toLowerCase();
+  return DEAD_HINTS.find((hint) => low.includes(hint)) || null;
+}
+
 // Testa um URL: devolve ok=false + motivo se falhar, vier com anuncios ou for
 // demasiado lento, true se responder bem (rapido e limpo).
 async function probe(url) {
@@ -99,10 +115,9 @@ async function probe(url) {
     const ms = Date.now() - t0;
     if (res.status >= 400) return { ok: false, status: res.status, error: `HTTP ${res.status}`, ms };
     const text = await res.text();
+    const motivo = motivoDePaginaMorta(text);
+    if (motivo) return { ok: false, status: res.status, error: motivo, ms };
     const low = text.toLowerCase();
-    for (const hint of DEAD_HINTS) {
-      if (low.includes(hint)) return { ok: false, status: res.status, error: hint, ms };
-    }
     const ads = AD_MARKERS.filter((m) => low.includes(m));
     if (ads.length >= AD_MIN_HITS) {
       return { ok: false, status: res.status, error: `anuncios (${ads.join(", ")})`, ms };

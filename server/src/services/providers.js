@@ -8,21 +8,16 @@
  * Cada provider define `movie` e `tv`. Se nao suportar series, deixa `tv: null`.
  */
 export const PROVIDERS = [
-  // Ordem = preferência (a 1ª viva é a fonte default). Ordenado por velocidade e
-  // fiabilidade medida (2026-08-02, filme Inception + série Luke Cage):
-  //   vidapi 128ms, moviesapi 123ms, vidlink 203ms,
-//   2embed 210ms, superembed 229ms, smashystream 290ms.
+  // Ordem = preferência (a 1ª viva é a fonte default). O MoviesAPI passou a ser
+  // o primeiro a 2026-11-07, quando o VidAPI ficou em baixo (ver a entrada no
+  // fim da lista). Velocidades medidas a 2026-08-02 (filme Inception + série
+  // Luke Cage): moviesapi 123ms, vidlink 203ms, 2embed 210ms, superembed
+  // 229ms, smashystream 290ms; vidapi 128ms antes de cair.
 // Removidos: megaembed (mgeb.top) — 2280ms no filme (~10x mais lento) e serve
   // áudio PT-BR via Superflix; vidfast — SPA que resolve o vídeo só no browser
 // (a health-check passa mas o stream falhava nos testes).
 // Substituído: 111movies — o domínio morreu (DNS caído) em 2026-10-06; ver o
 // VidLove mais abaixo, que é o servidor de vídeo que ficou de pé.
-  {
-    id: "vidapi",
-    name: "VidAPI",
-    movie: "https://vidapi.xyz/embed/movie/{tmdb}",
-    tv: "https://vidapi.xyz/embed/tv/{tmdb}/{season}/{episode}",
-  },
   {
     // moviesapi.club caiu (DNS morto) -> migrou para moviesapi.to.
     id: "moviesapi",
@@ -105,6 +100,23 @@ export const PROVIDERS = [
     name: "SMASHYStream",
     movie: "https://embed.smashystream.com/playere.php?tmdb={tmdb}",
     tv: "https://embed.smashystream.com/playere.php?tmdb={tmdb}&season={season}&episode={episode}",
+  },
+  {
+    // VidAPI (vidapi.xyz e vidapi.site, os dois dominios oficiais). EM BAIXO a
+    // 2026-11-07: o /embed devolve **HTTP 200** com a pagina
+    // "404 — Page Not Found" para TODOS os titulos — incluindo os exemplos da
+    // propria homepage (/embed/movie/1184918, The Wild Robot). Como o status e'
+    // 200, o health-check antigo nao o apanhava e ele continuava a ser a fonte
+    // default, por isso o utilizador via o 404 dentro do player.
+    //
+    // Fica no FIM (e nao apagado) porque, tal como o MegaPlay, pode voltar. Se
+    // voltar a servir video, sobe-se na lista outra vez. A entrada
+    // "404 — page not found" em DEAD_HINTS (providerHealth.js) faz o check
+    // marca-lo como morto mesmo com o status 200.
+    id: "vidapi",
+    name: "VidAPI",
+    movie: "https://vidapi.xyz/embed/movie/{tmdb}",
+    tv: "https://vidapi.xyz/embed/tv/{tmdb}/{season}/{episode}",
   },
 ];
 
