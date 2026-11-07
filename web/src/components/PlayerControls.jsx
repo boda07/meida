@@ -19,9 +19,8 @@ import { ligarEventosDaBarra } from "./barraPlayer.js";
 // O `<video>` fica SEM `controls`. Tudo o que se perderia (play, volume, seek,
 // ecra inteiro) e' reimplementado aqui em cima do `videoRef`, que ja existia.
 //
-// O que fica de fora, de proposito: Picture-in-Picture, velocidade de
-// reproducao e a barra de "atraso" do seek. Nao ha' nada no site que as use e
-// sao tres botoes a mais numa barra que ja esta' apertada.
+// O que fica de fora, de proposito: a barra de "atraso" do seek. Nao ha'
+// nada no site que a use e seria mais um controlo numa barra ja' apertada.
 //
 // O preenchimento da barra do seek e' actualizado por um REF (via
 // `useVideoState`) e nao por estado: o `timeupdate` dispara ~4x por segundo,
@@ -369,13 +368,10 @@ function IconEcraInteiro() {
 }
 
 function IconVelocidade({ velocidade }) {
-  return (
-    <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
-      <polygon points="5 3 19 12 5 21" />
-      <path d="M15 10h2M15 14h2M11 10h2M11 14h2" strokeLinecap="round" />
-      <text x="11" y="20" fontSize="10" fill="currentColor">{velocidade}x</text>
-    </svg>
-  );
+  // So' o multiplicador, sem triangulo: o triangulo era exactamente o icone
+  // do play e, com as linhas e o texto por cima, parecia um segundo play
+  // avariado. O botao ja' tem o nome "Velocidade" no title e no aria-label.
+  return <span className="pc-velocidade">{velocidade}x</span>;
 }
 
 function IconPiP({ ativo }) {

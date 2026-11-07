@@ -3595,6 +3595,16 @@ h2 {
   outline-offset: -2px;
 }
 
+/* A velocidade e' so' o multiplicador (1x, 1.5x, 2x), sem triangulo: o
+   triangulo era o mesmo desenho do play e, com o texto por cima, parecia um
+   segundo play avariado. */
+.pc-velocidade {
+  font-size: 12.5px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
 .pc-tempo {
   font-size: 12.5px;
   font-variant-numeric: tabular-nums;
