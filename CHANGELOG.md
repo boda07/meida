@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.7.3
+
+Correção do crash no processo principal: a 1.7.2 deixara por definir `origemPermitida` (usada pelo `setPermissionCheckHandler` do fullscreen) e a app morria com `ReferenceError: origemPermitida is not defined` sempre que um iframe de provider ou o próprio leitor pediam ecrã inteiro. A função voltou a existir, antes do handler de navegação.
+
+Tranca de instância única (`requestSingleInstanceLock`): clicar no atalho com a MEIDA já aberta já não arranca uma segunda cópia. A segunda fecha sozinha e a que já está a correr vem para a frente (`second-instance`: `restore()` se minimizada, `show()` e `focus()`). Sem isto, a cópia nova morria com "MEIDA - o servidor não arrancou" porque a porta 5175 já estava ocupada — foi o que aconteceu a dois utilizadores a 2026-11-10.
+
+A correção do MoviesAPI/VidSpark (o episódio abria no browser em vez de tocar no leitor) continua ativa: o `will-redirect` não dispara mais no iframe, o player tem `sandbox` sem pop-ups e dois domínios de anúncios foram bloqueados.
+
+Testes: `testar-instancia-unica.mjs` (15 verificações, 6 mutações), no `npm test`.
+
 ## 1.7.2
 
 O MoviesAPI abria no browser do sistema a cada episódio. A causa era o `will-redirect` do Electron, que **também dispara em subframes**: o `moviesapi.to` responde 302 para o `vidspark.to` **dentro do `<iframe>`** do player, e o handler antigo via ali uma navegação da janela — fazia `preventDefault()` e `shell.openExternal(url)`. O iframe ficava sem player e o browser abria. Reproduzido em Electron real: `WILL-REDIRECT {"url":"https://vidspark.to/tv/1399/1/1","isMainFrame":false}`.

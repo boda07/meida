@@ -520,6 +520,18 @@ function createWindow() {
     ...(serverMode === "remote" && remoteUrl ? [new URL(remoteUrl).origin] : []),
   ]);
 
+  // O `setPermissionCheckHandler` (mais abaixo) usa-a para deixar a nossa
+  // origem pedir `automatic-fullscreen` e negar a um iframe de provider. Tem de
+  // existir: a 1.7.2 removeu-a ao trocar o handler de navegacao e a app morria
+  // com "ReferenceError: origemPermitida is not defined" no processo principal.
+  function origemPermitida(url) {
+    try {
+      return appOrigins.has(new URL(url).origin);
+    } catch {
+      return false;
+    }
+  }
+
   // O 1.o argumento do Electron e' o EVENTO que tambem traz os detalhes
   // (`url`, `isMainFrame`); o `url` solto a seguir esta' deprecated e pode
   // desaparecer. Lemos os dois, mas quem manda e' o detalhe.
@@ -727,7 +739,32 @@ function setupAutoUpdate() {
   setInterval(() => autoUpdater.checkForUpdates().catch(() => {}), 6 * 60 * 60 * 1000);
 }
 
+// Uma so' instancia da app.
+//
+// Sem isto, clicar no atalho com a app ja' aberta arranca uma SEGUNDA copia: o
+// backend dela nao consegue a porta 5175 (a primeira ficou com ela) e aparece
+// "MEIDA - o servidor nao arrancou", ficando uma janela nova por cima da que ja'
+// estava aberta. Foi o que aconteceu a 2026-11-10.
+//
+// O `requestSingleInstanceLock` e' do Electron e usa uma tranca por utilizador.
+// Se ja' houver copia a correr, esta aqui' e' redundante e fecha; a que ja'
+// existe recebe `second-instance` e vem para a frente.
+const instanceLock = app.requestSingleInstanceLock();
+if (!instanceLock) {
+  console.log("[meida] ja' ha' uma instancia a correr; esta copia fecha.");
+  app.quit();
+} else {
+  app.on("second-instance", () => {
+    if (!win) return;
+    if (win.isMinimized()) win.restore();
+    win.show();
+    win.focus();
+  });
+}
+
 app.whenReady().then(() => {
+  // A tranca pode ter sido negada entre o pedido e o ready: nao arrancar nada.
+  if (!instanceLock) return;
   const cfg = readConfig();
   remoteUrl = normalizeServerUrl(cfg.url);
   if (cfg.mode === "remote") {

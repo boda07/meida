@@ -6,6 +6,19 @@
 export const CHANGELOG = [
 
   {
+      version: "1.7.3",
+      items: [
+        "Correção: a app travava com um erro no processo principal ao pedir permissões (ex.: ecrã inteiro do vídeo). Foi o `ReferenceError: origemPermitida is not defined` da 1.7.2.",
+        "Correção: abrir a atalho com a MEIDA já aberta já não arranca uma segunda cópia que morre na porta 5175. A janela que já está aberta vem para a frente.",
+        "O leitor de fontes continua sem abrir o browser ao tocar um episódio (correção do MoviesAPI/VidSpark da 1.7.2).",
+      ],
+      items_en: [
+        "Fix: the app crashed with a main-process error when requesting permissions (e.g. video fullscreen). It was the 1.7.2 `ReferenceError: origemPermitida is not defined`.",
+        "Fix: opening the shortcut with MEIDA already open no longer starts a second copy that dies on port 5175. The window already open comes to the front.",
+        "The source player still doesn't open the browser when playing an episode (MoviesAPI/VidSpark fix from 1.7.2).",
+      ],
+    },
+  {
       version: "1.7.2",
       items: [
         "Correção: ao abrir um episódio, a fonte MoviesAPI deixava de tocar no leitor e abria o site no browser. Agora o episódio toca dentro da app.",

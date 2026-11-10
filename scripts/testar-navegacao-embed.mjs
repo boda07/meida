@@ -147,6 +147,11 @@ ok_(
   (MAIN.match(/shell\.openExternal\s*\(/g) || []).length === 1,
   String((MAIN.match(/shell\.openExternal\s*\(/g) || []).length)
 );
+ok_(
+  "origemPermitida() tem DEFINICAO (a 1.7.2 deixou-a por definir e a app morria)",
+  (MAIN.match(/origemPermitida\(/g) || []).length === 0 ||
+    /function\s+origemPermitida\s*\(/.test(MAIN)
+);
 
 console.log("  3) o iframe do player tem sandbox");
 
@@ -239,6 +244,12 @@ const mutacoes = [
       })();
       return /origensPermitidas\.add\(/.test(b);
     },
+  },
+  {
+    nome: "apaga a definicao de origemPermitida (a app morria no arranque)",
+    fonte: MAIN,
+    mutar: (s) => s.replace("  function origemPermitida(url) {", "  function __semDefinicao(url) {"),
+    passa: (s) => /function\s+origemPermitida\s*\(/.test(s),
   },
   {
     nome: "o sandbox ganha allow-popups",
