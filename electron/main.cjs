@@ -23,6 +23,7 @@ const { autoUpdater } = require("electron-updater");
 const discordPresence = require("./discord-presence.cjs");
 const { installAdBlock } = require("./adblock.cjs");
 const { definirAutoplay } = require("./autoplay.cjs");
+const { deveBloquear } = require("./navegacao.cjs");
 
 // ===== Servidor: local (video) + remoto (dados) =====
 // A app corre SEMPRE localmente (serve o UI e o video/streaming). Em modo "dados
@@ -509,42 +510,42 @@ function createWindow() {
     installAdBlock(win.webContents.session);
   }
 
-  // Bloqueia navegoes para fora da origem da app (ex.: anuncio dentro de iframe
-  // do player que tenta levar a janela principal para outro site). Abre o URL
-  // externo no browser do sistema em vez de navegar aqui.
+  // Uma navegacao so' e' da janela quando e' o frame PRINCIPAL a ir para uma
+  // origem nossa. **O `will-redirect` tambem dispara para iframes**: o MoviesAPI
+  // faz 302 para o vidspark.to dentro do player, e tratar isso como navegacao da
+  // janela abria o browser a cada episodio (e deixava o iframe sem player).
+  // Ver electron/navegacao.cjs — a decisao esta' numa funcao pura, testada.
   const appOrigins = new Set([
     new URL(isDev ? DEV_URL : PROD_URL).origin,
     ...(serverMode === "remote" && remoteUrl ? [new URL(remoteUrl).origin] : []),
   ]);
-  function origemPermitida(url) {
+
+  // O 1.o argumento do Electron e' o EVENTO que tambem traz os detalhes
+  // (`url`, `isMainFrame`); o `url` solto a seguir esta' deprecated e pode
+  // desaparecer. Lemos os dois, mas quem manda e' o detalhe.
+  function aoNavegar(detalhes, urlSolta) {
+    const d = {
+      url: (detalhes && detalhes.url) || urlSolta,
+      isMainFrame: !detalhes || detalhes.isMainFrame !== false,
+    };
+    // A origem onde a janela esta' AGORA tambem conta: se a 5175 estiver ocupada
+    // o backend arranca noutra porta (porta.txt) e a app abre la'; sem isto um
+    // F5 nessa sessao era bloqueado (o `appOrigins` so' tem a porta por omissao).
+    const origensPermitidas = new Set(appOrigins);
     try {
-      return appOrigins.has(new URL(url).origin);
+      const atual = win && win.webContents ? win.webContents.getURL() : "";
+      if (atual) origensPermitidas.add(new URL(atual).origin);
     } catch {
-      return false;
+      /* sem URL atual: ficam so' as origens conhecidas */
     }
+    // Bloqueia sem shell.openExternal: um anuncio dentro do player nao pode
+    // abrir o browser do sistema. Links externos a serio usam o IPC
+    // "open-external", que so' a origem da app consegue chamar.
+    if (deveBloquear(d, origensPermitidas)) detalhes.preventDefault();
   }
 
-  win.webContents.on("will-navigate", (event, url) => {
-    if (!origemPermitida(url)) {
-      event.preventDefault();
-      try {
-        shell.openExternal(url);
-      } catch {
-        /* nao conseguiu abrir externamente: bloqueado mesmo assim */
-      }
-    }
-  });
-
-  win.webContents.on("will-redirect", (event, url) => {
-    if (!origemPermitida(url)) {
-      event.preventDefault();
-      try {
-        shell.openExternal(url);
-      } catch {
-        /* nao conseguiu abrir externamente: bloqueado mesmo assim */
-      }
-    }
-  });
+  win.webContents.on("will-navigate", aoNavegar);
+  win.webContents.on("will-redirect", aoNavegar);
 
 // Sessao de permissao: so aceita fullscreen (video em ecrã inteiro) e
 // clipboard-sanitized-write (copiar para a area de transferencia). Nega

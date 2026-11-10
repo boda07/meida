@@ -6,6 +6,19 @@
 export const CHANGELOG = [
 
   {
+      version: "1.7.2",
+      items: [
+        "Correção: ao abrir um episódio, a fonte MoviesAPI deixava de tocar no leitor e abria o site no browser. Agora o episódio toca dentro da app.",
+        "Os anúncios dos sites das fontes já não conseguem abrir janelas nem levar a app para fora do leitor. O vídeo continua a passar.",
+        "Bloqueados mais dois serviços de anúncios que o MoviesAPI usa, para o leitor carregar mais limpo.",
+      ],
+      items_en: [
+        "Fix: opening an episode from the MoviesAPI source stopped playing in the player and opened the site in the browser. Episodes now play inside the app.",
+        "Ads on the source sites can no longer open windows or take the app away from the player. The video keeps playing.",
+        "Two more ad services used by MoviesAPI are now blocked, so the player loads cleaner.",
+      ],
+    },
+  {
       version: "1.7.1",
       items: [
         "O botão da velocidade já não mostra um triângulo parecido com o play: mostra só o multiplicador (1x, 1.5x, 2x).",

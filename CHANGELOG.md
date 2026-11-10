@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.7.2
+
+O MoviesAPI abria no browser do sistema a cada episódio. A causa era o `will-redirect` do Electron, que **também dispara em subframes**: o `moviesapi.to` responde 302 para o `vidspark.to` **dentro do `<iframe>`** do player, e o handler antigo via ali uma navegação da janela — fazia `preventDefault()` e `shell.openExternal(url)`. O iframe ficava sem player e o browser abria. Reproduzido em Electron real: `WILL-REDIRECT {"url":"https://vidspark.to/tv/1399/1/1","isMainFrame":false}`.
+
+A decisão saiu para a função pura `deveBloquear(details, origensPermitidas)` em `electron/navegacao.cjs`: iframe (`isMainFrame === false`) nunca bloqueia; frame principal para uma origem nossa passa; frame principal para fora bloqueia **sem** abrir o browser. `main.cjs` usa-a nos dois eventos (`will-navigate` e `will-redirect`) e o `shell.openExternal` fica só no IPC `open-external`, que apenas a origem da app consegue chamar.
+
+Detalhe do Electron 44 que o primeiro teste apanhou: o **1.º argumento** do evento é o objeto de detalhes (`url`, `isMainFrame`) e o `url` solto a seguir está deprecated. A versão inicial lia-os ao contrário e bloqueava tudo; o teste no Electron real mostrou o iframe bloqueado (`iframeChegouAoVidspark: false`) e obrigou a corrigir.
+
+Porta alternativa: se a 5175 estiver ocupada, o backend arranca noutra porta (`porta.txt`) e a app abre lá. Como o `appOrigins` só tem a porta por omissão, o handler passou a acrescentar também a origem onde a janela está agora (`webContents.getURL()`); sem isso um F5 nessa sessão era bloqueado (antes abria o browser, por isso ninguém dava por ele).
+
+Defesa extra: o `<iframe>` do player em `web/src/components/Player.jsx` ganhou `sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"` — sem `allow-popups` nem `allow-top-navigation`. Num iframe cross-origin, `allow-same-origin` + `allow-scripts` não lhe permite tirar o próprio sandbox. Medido no browser: com o sandbox o player arranca ("Video Player - Game of Thrones S01E01").
+
+Adblock: acrescentados `anemonytahua.com` (`dn.`) e `tectrixsnavvle.com` (`ca.`), os dois `<script>` do `<head>` do VidSpark. Não servem vídeo — a página continua a pedir `/api/vidora/v1/*` ao próprio `vidspark.to`.
+
+Testes: `scripts/testar-navegacao-embed.mjs` (41 verificações, 7 mutações), no `npm test`. Cobre a decisão com casos sintéticos (incluindo o iframe que falhava), a ligação dos dois eventos no `main.cjs`, a ausência de `shell.openExternal` no handler, o sandbox do iframe e a higiene. As mutações tiram as linhas de comentário antes de comparar: sem isso o comentário que explica porque não se abre o browser fazia a mutação "voltar a abrir o browser" passar por engano.
+
 ## 1.7.1
 
 Botão da velocidade: o `IconVelocidade` desenhava o **triângulo do play** (`polygon points="5 3 19 12 5 21"`) com linhas e o `1x` por cima, tudo sobreposto. Passou a ser um `<span className="pc-velocidade">{velocidade}x</span>`, sem SVG. A regra `.pc-velocidade` usa `font-variant-numeric: tabular-nums` para o `1x` não saltar ao passar a `1.5x`. O botão continua 34×34.

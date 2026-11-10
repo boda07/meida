@@ -149,6 +149,13 @@ export default function Player({
               title={title || active.name || "player"}
               allowFullScreen
               referrerPolicy="origin"
+              // Sem `allow-popups` e sem `allow-top-navigation`: os anuncios
+              // dos providers tentam abrir janelas e levar a app inteira para
+              // o site deles. O iframe e' cross-origin, por isso
+              // `allow-same-origin` + `allow-scripts` nao lhe permite tirar o
+              // proprio sandbox.
+              // i18n: lista de tokens do Chromium, nao e' texto de interface.
+              sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"
               onLoad={marcarCarregado}
               allow={`${settings.autoplay ? "autoplay; " : ""}encrypted-media; fullscreen; picture-in-picture`}
             />

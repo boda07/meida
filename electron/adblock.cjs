@@ -92,6 +92,12 @@ const AD_HOSTS = [
   // O Clarity grava a sessao (cliques, scroll) e envia-a para a Microsoft. Nao
   // e' so' tracking: e' gravacao do que a pessoa fez dentro do player.
   "clarity.ms", // www/scripts/r.clarity.ms
+
+  // --- Medidos no moviesapi.to (que salta para o vidspark.to) a 2026-11-10 ---
+  // Sao os dois <script> de anuncios do <head>. Nao servem video: a pagina
+  // continua a pedir /api/vidora/v1/* ao proprio vidspark.to.
+  "anemonytahua.com", // dn.anemonytahua.com — "p1 GK"
+  "tectrixsnavvle.com", // ca.tectrixsnavvle.com — "p2 GK"
 ];
 
 // Dominios que NUNCA podem ser bloqueados, porque o video deixaria de passar.
