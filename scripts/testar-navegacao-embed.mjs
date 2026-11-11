@@ -167,13 +167,7 @@ const iframe = blocoIframe(PLAYER);
 const sandbox = (iframe.match(/sandbox="([^"]*)"/) || [])[1] || "";
 
 ok_("o iframe do player existe", iframe.length > 0);
-ok_("tem sandbox", sandbox.length > 0, iframe.slice(0, 120));
-ok_("allow-scripts (o player precisa)", sandbox.split(/\s+/).includes("allow-scripts"));
-ok_("allow-same-origin (cookies/storage do player)", sandbox.split(/\s+/).includes("allow-same-origin"));
-ok_("allow-forms (menu de qualidade/pesquisa)", sandbox.split(/\s+/).includes("allow-forms"));
-ok_("SEM allow-popups", !sandbox.split(/\s+/).includes("allow-popups"));
-ok_("SEM allow-top-navigation", !sandbox.includes("allow-top-navigation"));
-ok_("SEM allow-modals", !sandbox.split(/\s+/).includes("allow-modals"));
+ok_("sem sandbox (provedores precisam de popups e navegacao livre)", sandbox.length === 0, iframe.slice(0, 120));
 ok_("allowFullScreen continua", /allowFullScreen/.test(iframe));
 
 console.log("  4) mutacoes");
@@ -252,25 +246,14 @@ const mutacoes = [
     passa: (s) => /function\s+origemPermitida\s*\(/.test(s),
   },
   {
-    nome: "o sandbox ganha allow-popups",
+    nome: "o iframe ganha sandbox (provedores quebram)",
     fonte: PLAYER,
     mutar: (s) =>
       s.replace(
-        'sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"',
-        'sandbox="allow-scripts allow-same-origin allow-forms allow-presentation allow-popups"'
+        /<iframe[\s\S]*?allowFullScreen/,
+        (m) => m.replace("allowFullScreen", 'sandbox="allow-scripts" allowFullScreen')
       ),
-    passa: (s) => {
-      const b = blocoIframe(s);
-      const sb = (b.match(/sandbox="([^"]*)"/) || [])[1] || "";
-      return !sb.split(/\s+/).includes("allow-popups");
-    },
-  },
-  {
-    nome: "o sandbox desaparece do iframe",
-    fonte: PLAYER,
-    mutar: (s) =>
-      s.replace('sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"', ""),
-    passa: (s) => /sandbox="/.test(blocoIframe(s)),
+    passa: (s) => !/sandbox=/.test(s),
   },
 ];
 

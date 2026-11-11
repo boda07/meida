@@ -6,6 +6,17 @@
 export const CHANGELOG = [
 
   {
+      version: "1.7.4",
+      items: [
+        "Correção: o leitor de fontes parou de funcionar em todos os provedores (erro 'Sandboxing is not allowed'). O iframe do player deixou de ter o atributo `sandbox`, que bloqueava os provedores de vídeo grátis.",
+        "A proteção contra anúncios que levam a app para fora continua ativa: o `will-redirect` do iframe nunca bloqueia, e o frame principal para fora é bloqueado sem abrir o browser.",
+      ],
+      items_en: [
+        "Fix: the source player stopped working on all providers ('Sandboxing is not allowed'). The player iframe no longer has the `sandbox` attribute, which was blocking free video providers.",
+        "Protection against ads taking the app away remains active: iframe `will-redirect` never blocks, and the main frame going away is blocked without opening the browser.",
+      ],
+    },
+  {
       version: "1.7.3",
       items: [
         "Correção: a app travava com um erro no processo principal ao pedir permissões (ex.: ecrã inteiro do vídeo). Foi o `ReferenceError: origemPermitida is not defined` da 1.7.2.",

@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.7.4
+
+O leitor de fontes parou de funcionar em todos os provedores (erro `Sandboxing is not allowed`). O `<iframe>` do player em `web/src/components/Player.jsx` deixou de ter o atributo `sandbox`, que bloqueava os provedores de vídeo grátis (precisam de abrir popups e navegar livremente dentro do próprio iframe).
+
+A proteção contra anúncios que levam a app para fora continua ativa e é mais correta agora: o `will-redirect` do iframe nunca bloqueia (era o bug do MoviesAPI/VidSpark), e apenas o **frame principal** a sair da origem da app é bloqueado — sem `shell.openExternal`. Os popups continuam negados pelo `setWindowOpenHandler` do Electron.
+
 ## 1.7.3
 
 Correção do crash no processo principal: a 1.7.2 deixara por definir `origemPermitida` (usada pelo `setPermissionCheckHandler` do fullscreen) e a app morria com `ReferenceError: origemPermitida is not defined` sempre que um iframe de provider ou o próprio leitor pediam ecrã inteiro. A função voltou a existir, antes do handler de navegação.

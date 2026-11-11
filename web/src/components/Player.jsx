@@ -149,13 +149,13 @@ export default function Player({
               title={title || active.name || "player"}
               allowFullScreen
               referrerPolicy="origin"
-              // Sem `allow-popups` e sem `allow-top-navigation`: os anuncios
-              // dos providers tentam abrir janelas e levar a app inteira para
-              // o site deles. O iframe e' cross-origin, por isso
-              // `allow-same-origin` + `allow-scripts` nao lhe permite tirar o
-              // proprio sandbox.
-              // i18n: lista de tokens do Chromium, nao e' texto de interface.
-              sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"
+              // Nao tem `sandbox`: provedores de video gratis precisam de abrir
+              // popups e navegar o proprio iframe para funcionar, e o sandbox
+              // quebra todos eles. A defesa contra anúncios que levam a app para
+              // fora fica no processo principal (`electron/navegacao.cjs`):
+              // o `will-redirect` do iframe nunca bloqueia, e o frame principal
+              // para fora e' bloqueado SEM abrir o browser. Os popups ja sao
+              // negados pelo `setWindowOpenHandler` do Electron.
               onLoad={marcarCarregado}
               allow={`${settings.autoplay ? "autoplay; " : ""}encrypted-media; fullscreen; picture-in-picture`}
             />
