@@ -81,7 +81,7 @@ export default function AllRow() {
     t.idioma,
   ]);
 
-  const titulo = tituloPedido || dados?.title || "";
+  const titulo = t(dados?.title || tituloPedido || "");
   const itens = dados?.items || [];
 
   const mudarPagina = (p) => {

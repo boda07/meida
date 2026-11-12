@@ -81,7 +81,7 @@ export default function ContinueWatching() {
               <button
                 className="cw-remove"
                 onClick={(e) => remove(e, it)}
-                title="Remover"
+                title={t("Remover")}
                 aria-label={t("Remover de Continua a ver")}
               >
                 ✕

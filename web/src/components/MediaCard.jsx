@@ -43,7 +43,7 @@ export default function MediaCard({ item, landscape = false }) {
     : imageUrl(item.poster, "w342");
   const [broken, setBroken] = useState(false);
 
-  const subtitle = item.type === "tv" ? `${item.year || ""} · Série` : item.year;
+  const subtitle = item.type === "tv" ? `${item.year || ""} · ${t("Série")}` : item.year;
 
   // Ação do botão de quick-add. O botão so' desenha quando `canQuickAdd`, e esse
   // ja exclui os cartaz vistos — por isso o ramo "visto" abaixo deixou de fazer
@@ -80,9 +80,9 @@ export default function MediaCard({ item, landscape = false }) {
              <path d="M8 5v14l11-7z" />
            </svg>
          </div>
-         {item.new && <div className="card-badge">NOVO</div>}
+         {item.new && <div className="card-badge">{t("NOVO")}</div>}
          {watched && (
-            <div className="card-watched" title="Visto">
+            <div className="card-watched" title={t("Visto")}>
               <CheckIcon />
             </div>
           )}

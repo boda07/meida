@@ -114,7 +114,7 @@ export default function Home({ generos = "" }) {
           // "Ver todos" abre a lista COMPLETA desta linha (paginada), nao a
           // categoria inteira: "Filmes populares" tem de abrir os filmes
           // populares, e nao a pagina de Filmes com as suas proprias rows.
-          <MediaRow key={row.id} title={row.title} items={row.items} href={`/all/${row.id}`} />
+          <MediaRow key={row.id} title={t(row.title)} items={row.items} href={`/all/${row.id}`} />
         ))}
       </div>
     </div>

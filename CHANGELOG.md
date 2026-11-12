@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.7.5
+
+Correção de traduções que ficavam em português com o site em inglês:
+
+- **Títulos das linhas da página inicial e das páginas de Filmes/Séries/Anime** — vinham do servidor hardcoded em português (`server/src/services/catalogRows.js` e `tmdb.js`). Passaram a ser traduzidos no cliente com `t()`: `Home.jsx`, `Category.jsx` e `AllRow.jsx` (o título de recurso do servidor é traduzido como fallback quando o URL não traz o título).
+- **"Série" no cartão dos títulos** — `MediaCard.jsx` mostrava `Série` hardcoded no canto inferior; agora usa `t("Série")` (que já existia no dicionário: "TV show" em inglês).
+- **"NOVO" e "Visto"** — o badge de cartaz novo e o tooltip de visto também passaram por `t()`. "Visto" já tinha tradução; "NOVO" foi acrescentado ao dicionário.
+
+Os títulos das linhas foram acrescentados ao dicionário de traduções (PT e EN): "Em tendencia" → "Trending", "Filmes populares" → "Popular movies", "Series populares" → "Popular TV shows", etc.
+
 ## 1.7.4
 
 O leitor de fontes parou de funcionar em todos os provedores (erro `Sandboxing is not allowed`). O `<iframe>` do player em `web/src/components/Player.jsx` deixou de ter o atributo `sandbox`, que bloqueava os provedores de vídeo grátis (precisam de abrir popups e navegar livremente dentro do próprio iframe).

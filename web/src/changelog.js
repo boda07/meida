@@ -6,6 +6,19 @@
 export const CHANGELOG = [
 
   {
+      version: "1.7.5",
+      items: [
+        "Correção: com o site em inglês, a página inicial mostrava os títulos das linhas em português (\"Em tendência\", \"Filmes populares\", \"Séries populares\", ...). Agora são traduzidos.",
+        "Correção: o cartão dos títulos mostrava \"Série\" em português no canto inferior. Agora diz \"TV show\" em inglês (e \"Série\" em português).",
+        "Correção: o rótulo \"NOVO\" e o título de \"Visto\" do cartão também passam a ser traduzidos.",
+      ],
+      items_en: [
+        "Fix: with the site in English, the home page showed the row titles in Portuguese (\"Em tendência\", \"Filmes populares\", \"Séries populares\", ...). They are now translated.",
+        "Fix: the title card showed \"Série\" in Portuguese at the bottom. It now says \"TV show\" in English (and \"Série\" in Portuguese).",
+        "Fix: the \"NOVO\" badge and the \"Visto\" tooltip on the card are now translated too.",
+      ],
+    },
+  {
       version: "1.7.4",
       items: [
         "Correção: o leitor de fontes parou de funcionar em todos os provedores (erro 'Sandboxing is not allowed'). O iframe do player deixou de ter o atributo `sandbox`, que bloqueava os provedores de vídeo grátis.",

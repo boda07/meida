@@ -205,7 +205,7 @@ export default function Category({ category, title }) {
       ) : (
         <div className="rows">
           {rows.map((row) => (
-            <MediaRow key={row.id} title={row.title} items={row.items} href={`/all/${row.id}`} />
+            <MediaRow key={row.id} title={t(row.title)} items={row.items} href={`/all/${row.id}`} />
           ))}
         </div>
       )}

@@ -395,6 +395,7 @@ export const DICIONARIO = {
     "A carregar o diário": "A carregar o diário",
     "Editar —": "Editar —",
     "Visto": "Visto",
+    "NOVO": "NOVO",
     "A carregar...": "A carregar...",
     "A carregar o perfil": "A carregar o perfil",
     "a ver agora": "a ver agora",
@@ -1044,6 +1045,19 @@ export const DICIONARIO = {
       "Mais tarde podes importar, ligar contas e mudar tudo isto nas Definições.",
     // --- Home: linha dos generos ---
     "Porque escolheste estes": "Porque escolheste estes",
+    // --- titulos das rows do catalogo (vêm do servidor; traduzem-se no cliente) ---
+    "Em tendencia": "Em tendencia",
+    "Filmes populares": "Filmes populares",
+    "Series populares": "Series populares",
+    "Filmes mais bem avaliados": "Filmes mais bem avaliados",
+    "Mais bem avaliados": "Mais bem avaliados",
+    "Mais bem avaliadas": "Mais bem avaliadas",
+    "Agora nos cinemas": "Agora nos cinemas",
+    "A passar agora": "A passar agora",
+    "Anime popular": "Anime popular",
+    "Anime mais bem avaliado": "Anime mais bem avaliado",
+    "Esta epoca": "Esta epoca",
+    "Filmes de anime": "Filmes de anime",
 
     // --- Seguranca: torrents e proxy (2026-10-16) ---
     "infoHash invalido": "infoHash invalido",
@@ -1456,6 +1470,7 @@ export const DICIONARIO = {
     "A carregar o diário": "Loading the diary",
     "Editar —": "Edit —",
     "Visto": "Watched",
+    "NOVO": "NEW",
     "A carregar...": "Loading...",
     "A carregar o perfil": "Loading the profile",
     "a ver agora": "watching now",
@@ -2101,6 +2116,19 @@ export const DICIONARIO = {
       "Later you can import, link accounts and change all of this in Settings.",
     // --- Home: linha dos generos ---
     "Porque escolheste estes": "Because you chose these",
+    // --- titulos das rows do catalogo (vêm do servidor; traduzem-se no cliente) ---
+    "Em tendencia": "Trending",
+    "Filmes populares": "Popular movies",
+    "Series populares": "Popular TV shows",
+    "Filmes mais bem avaliados": "Top rated movies",
+    "Mais bem avaliados": "Top rated",
+    "Mais bem avaliadas": "Top rated",
+    "Agora nos cinemas": "Now in theaters",
+    "A passar agora": "Airing now",
+    "Anime popular": "Popular anime",
+    "Anime mais bem avaliado": "Top rated anime",
+    "Esta epoca": "This season",
+    "Filmes de anime": "Anime movies",
 
     // --- Seguranca: torrents e proxy (2026-10-16) ---
     "infoHash invalido": "invalid infoHash",
