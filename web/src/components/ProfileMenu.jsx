@@ -32,9 +32,10 @@ export default function ProfileMenu() {
     }
   }
 
-  // Fecha ao clicar fora. Fica sempre ligado (o menu não tem estado "aberto"
-// aqui — o `open` decide só o que se desenha).
-  useClickOutside(ref, () => setOpen(false), { escape: false });
+  // Fecha ao clicar fora. Só com o menu aberto: o `open` decide o que se
+  // desenha, e um ouvinte no `document` com o menu fechado e' trabalho a cada
+  // clique da app.
+  useClickOutside(ref, () => setOpen(false), { active: open, escape: false });
 
   // Sem sessao: o MESMO icone abre um menu com as portas de entrada. Antes era
   // um link directo para /login, e as Definicoes (que nao precisam de conta)

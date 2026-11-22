@@ -1115,6 +1115,8 @@ export const DICIONARIO = {
     "A carregar a atividade": "A carregar a atividade",
     "Não foi possível carregar a atividade: {erro}":
       "Não foi possível carregar a atividade: {erro}",
+    "Não foi possível carregar mais atividade: {erro}":
+      "Não foi possível carregar mais atividade: {erro}",
     "Sem título": "Sem título",
     "Alguém": "Alguém",
     "{user} viu o filme {title}": "{user} viu o filme {title}",
@@ -2206,6 +2208,8 @@ export const DICIONARIO = {
     "A carregar a atividade": "Loading activity",
     "Não foi possível carregar a atividade: {erro}":
       "Couldn't load activity: {erro}",
+    "Não foi possível carregar mais atividade: {erro}":
+      "Couldn't load more activity: {erro}",
     "Sem título": "Untitled",
     "Alguém": "Someone",
     "{user} viu o filme {title}": "{user} watched the movie {title}",

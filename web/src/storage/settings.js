@@ -114,11 +114,20 @@ export const settingsStore = {
       // nenhum sinal de porque. Guarda-se o que estava lá (para se recuperar à
       // mão) e escreve-se na consola.
       console.warn(
-        "[settings] stored settings are corrupt and were reset to defaults. " +
-          "Kept a copy under " + SETTINGS_KEY + "_aviso. Detail: " +
+        // Mensagem para quem develope, nao e' interface (o mesmo criterio do
+        // aviso do watch party).
+        // i18n: mensagem de consola, nao e' texto de interface.
+        "[settings] as definições guardadas estão corrompidas e voltaram ao omissão. " +
+          "Ficou uma cópia em " + SETTINGS_KEY + "_aviso. Detalhe: " +
           (e && e.message)
       );
       aviso.set(cru.slice(0, 200000));
+      return { ...DEFAULT_SETTINGS };
+    }
+    // JSON válido mas que não é um objecto de definições (ex.: `"abc"`, `[]`).
+    // Espalhar isto no spread metia chaves `0`, `1`, `2`… no objecto final e o
+    // resultado deixava de ser um conjunto de definições.
+    if (!guardado || typeof guardado !== "object" || Array.isArray(guardado)) {
       return { ...DEFAULT_SETTINGS };
     }
     return { ...DEFAULT_SETTINGS, ...aplicarMigracoes(guardado) };

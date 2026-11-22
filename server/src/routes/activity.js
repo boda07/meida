@@ -37,7 +37,12 @@ function responderPagina(req, res, listar) {
   const { items, hasMore } = listar({ limit, offset });
   const emFalta = localizarTitulos(items, req.query.titleLang);
   res.json({ items, hasMore });
-  preencherTitulosLocalizados(emFalta, req.query.titleLang);
+  // O preenchimento em segundo plano so' acontece com sessao. Estas rotas sao
+  // publicas (`/users/:username/activity` le-se sem conta), e um pedido anonimo
+  // que dispara dezenas de pedidos ao TMDB e' uma forma barata de gastar a quota
+  // de outra pessoa. Sem isto, a resposta fica com os titulos guardados — que
+  // e' o estado de antes do backfill existir.
+  if (req.user) preencherTitulosLocalizados(emFalta, req.query.titleLang);
 }
 
 activityRouter.get("/feed", requireAuth, (req, res) => {

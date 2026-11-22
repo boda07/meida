@@ -13,7 +13,7 @@ import ActivityList from "./ActivityList.jsx";
 
 export default function FeedSection({ username = null, showHeader = false }) {
   const t = useT();
-  const { items, loading, loadingMore, error, hasMore, carregarMais } = useAtividade({
+  const { items, loading, loadingMore, error, errorMais, hasMore, carregarMais } = useAtividade({
     username,
   });
 
@@ -54,6 +54,15 @@ export default function FeedSection({ username = null, showHeader = false }) {
         error={error}
         empty={empty}
       />
+
+      {/* Erro da pagina SEGUINTE: a lista fica, e o botao continua la' para
+          tentar outra vez. Antes, um erro aqui substituia o feed inteiro por
+          uma mensagem e o botao desaparecia. */}
+      {errorMais && (
+        <p className="status error">
+          {t("Não foi possível carregar mais atividade: {erro}", { erro: errorMais })}
+        </p>
+      )}
 
       {hasMore && !loading && !error && (
         <div className="feed-more">

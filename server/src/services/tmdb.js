@@ -6,9 +6,44 @@ const { baseUrl, language, titleLanguage } = config.tmdb;
 
 // Mapeia os codigos curtos das definicoes ("pt"/"en") para os do TMDB.
 const LANG_MAP = { pt: "pt-PT", en: "en-US" };
-function resolveLang(short, fallback) {
-  if (!short) return fallback;
-  return LANG_MAP[short] || (String(short).includes("-") ? short : fallback);
+
+// Idiomas aceites nos parametros de idioma (`?titleLang=`, `?overviewLang=`,
+// `?genreLang=`). Sao valores de QUERY, escritos por quem pede: cada valor novo
+// criava uma chave de cache propria (memoria e disco) e um pedido ao TMDB, por
+// isso um endpoint publico podia encher a cache — e gastar a quota do dono — so'
+// a variar a string. A lista e' a dos idiomas que a app tem.
+const IDIOMAS = new Set(["pt", "en", "pt-PT", "en-US"]);
+
+/** O valor do pedido, se for um dos idiomas suportados; `null` se nao for. */
+function idiomaPermitido(valor) {
+  const v = String(valor ?? "").trim();
+  return IDIOMAS.has(v) ? v : null;
+}
+
+/** O idioma dos titulos reduzido aos que a app suporta (o resto fica em ingles). */
+export function normalizarTitleLang(valor) {
+  return idiomaPermitido(valor) ?? "en-US";
+}
+
+/**
+ * Traduz o codigo curto das definicoes para o do TMDB. O que nao esta' na lista
+ * cai no `fallback` da chamada (nunca vai tal e qual para a URL do TMDB).
+ *
+ * Exportada para o teste poder chamar: e' a porta de entrada de `?overviewLang=`
+ * e `?titleLang=` no catalogo.
+ */
+export function resolveLang(short, fallback) {
+  const idioma = idiomaPermitido(short);
+  if (!idioma) return fallback;
+  return LANG_MAP[idioma] || idioma;
+}
+
+// Alvo no TMDB (`pt-PT`, `en-US`) a partir do valor do pedido, ja' normalizado.
+// E' a unica porta para a URL do TMDB: exportada para o teste poder provar que
+// um idioma fora da lista nao passa.
+export function alvoDeIdioma(titleLang) {
+  const curto = normalizarTitleLang(titleLang);
+  return LANG_MAP[curto] || (curto.includes("-") ? curto : "en-US");
 }
 
 // A partir das opcoes do pedido decide o idioma da sinopse e dos titulos.
@@ -494,8 +529,7 @@ function pickPoster(posters, short) {
 // abrir já com os títulos/cartazes localizados que temos.
 export function getLocalizedMetaCached(type, id, titleLang) {
   if (type !== "movie" && type !== "tv") return null;
-  const target =
-    LANG_MAP[titleLang] || (String(titleLang || "").includes("-") ? titleLang : "en-US");
+  const target = alvoDeIdioma(titleLang);
   const key = `${type}:${id}:${target}`;
   if (localMetaCache.has(key)) return localMetaCache.get(key);
   const disk = cacheGet(`tmeta:${key}`);
@@ -558,8 +592,7 @@ export function preencherTitulosLocalizados(emFalta, titleLang, concorrencia = 1
 const localMetaCache = new Map();
 export async function getLocalizedMeta(type, id, titleLang) {
   if (type !== "movie" && type !== "tv") return null;
-  const target =
-    LANG_MAP[titleLang] || (String(titleLang || "").includes("-") ? titleLang : "en-US");
+  const target = alvoDeIdioma(titleLang);
   const short = target.slice(0, 2);
   const key = `${type}:${id}:${target}`;
   if (localMetaCache.has(key)) return localMetaCache.get(key);
@@ -648,7 +681,9 @@ export async function getExternalImdb(type, id) {
 const genreCache = {};
 export async function getGenres(type, lang) {
   if (type !== "movie" && type !== "tv") throw new Error("type invalido");
-  const target = LANG_MAP[lang] || (String(lang || "").includes("-") ? lang : "en-US");
+  // `lang` vem de `?genreLang=` (ou das sinopses) e vai para a URL do TMDB e
+  // para a chave da cache: mesma allowlist dos titulos, e nao uma copia da regra.
+  const target = alvoDeIdioma(lang);
   const key = `${type}:${target}`;
   if (genreCache[key]) return genreCache[key];
   const data = await tmdbFetch(`/genre/${type}/list`, {}, target);
@@ -763,7 +798,8 @@ const genreVocabCache = {};
  * corrigir maiusculas e traduzir, tudo de uma vez.
  */
 export async function getGenreVocab(lang) {
-  const target = LANG_MAP[lang] || (String(lang || "").includes("-") ? lang : "en-US");
+  // Mesma allowlist dos titulos: `lang` vem de `?genreLang=`.
+  const target = alvoDeIdioma(lang);
   if (genreVocabCache[target]) return genreVocabCache[target];
   try {
     const reqs = [
@@ -804,7 +840,9 @@ const genreMapCache = {};
  * TMDB (+ traducao manual dos de anime). null se o idioma alvo for ingles.
  */
 export async function getGenreMap(lang) {
-  const target = LANG_MAP[lang] || (String(lang || "").includes("-") ? lang : null);
+  // Idem: o que nao esta' na lista conta como ingles (e o ingles devolve null
+  // logo abaixo, porque nao ha nada para traduzir).
+  const target = alvoDeIdioma(lang);
   if (!target || target === "en-US") return null;
   if (genreMapCache[target]) return genreMapCache[target];
   try {

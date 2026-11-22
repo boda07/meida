@@ -23,6 +23,9 @@ export function useAtividade({ username = null, enabled = true, limit = POR_PAGI
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState(null);
+  // Erro do "carregar mais" separado do primeiro carregamento: um falhanco na
+  // pagina seguinte nao pode apagar a lista que ja' esta' no ecra.
+  const [errorMais, setErrorMais] = useState(null);
   const [hasMore, setHasMore] = useState(false);
 
   // Os titulos vem localizados do servidor (o texto guardado e' o do momento em
@@ -44,6 +47,7 @@ export function useAtividade({ username = null, enabled = true, limit = POR_PAGI
     let vivo = true;
     setLoading(true);
     setError(null);
+    setErrorMais(null);
     setItems(null);
     setHasMore(false);
     buscar(0)
@@ -66,7 +70,7 @@ export function useAtividade({ username = null, enabled = true, limit = POR_PAGI
   const carregarMais = useCallback(async () => {
     if (loadingMore || !hasMore || items === null) return;
     setLoadingMore(true);
-    setError(null);
+    setErrorMais(null);
     try {
       const d = await buscar(items.length);
       // A regra de juntar (sem repetir o que ja' esta' a vista) vive num modulo
@@ -74,11 +78,13 @@ export function useAtividade({ username = null, enabled = true, limit = POR_PAGI
       setItems((antes) => juntarPagina(antes, d?.items));
       setHasMore(Boolean(d?.hasMore));
     } catch (e) {
-      setError(e.message);
+      // Fica em `errorMais`: a lista continua a vista e o botao continua a
+      // poder ser carregado outra vez.
+      setErrorMais(e.message);
     } finally {
       setLoadingMore(false);
     }
   }, [buscar, hasMore, items, loadingMore]);
 
-  return { items, loading, loadingMore, error, hasMore, carregarMais };
+  return { items, loading, loadingMore, error, errorMais, hasMore, carregarMais };
 }

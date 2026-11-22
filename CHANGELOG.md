@@ -1,5 +1,20 @@
 # Changelog
 
+## 1.7.8
+
+Endurecimento do feed de atividade e do catálogo (achados de uma revisão da 1.7.6/1.7.7).
+
+- **Idiomas de query com allowlist** — `titleLang`, `overviewLang` e `genreLang` são parâmetros de query e seguiam inteiros para a URL do TMDB. Cada valor novo criava uma chave de cache própria (`tmdb:*` no catálogo, `tmeta:*` no feed) e um pedido por item, por isso um endpoint público podia encher a cache e gastar a quota do dono só a variar a string. O `server/src/services/tmdb.js` ganhou a lista `IDIOMAS` (`pt`, `en`, `pt-PT`, `en-US`) e `idiomaPermitido()`; `normalizarTitleLang()`, `resolveLang()` (catálogo, agora exportada) e `alvoDeIdioma()` (a porta única para a URL do TMDB, exportada) passam todos por ela. O `getGenres()`, o `getGenreVocab()` e o `getGenreMap()` tinham cada um a sua **cópia** da regra antiga (todos alimentados por `?genreLang=`); os três passaram a usar `alvoDeIdioma()`.
+- **Backfill só com sessão** — `/api/users/:username/activity` é público (`optionalAuth`). O `preencherTitulosLocalizados` deixou de correr sem `req.user`: um pedido anónimo já não dispara dezenas de pedidos ao TMDB. A resposta fica com os títulos guardados, que é o estado de antes do backfill existir.
+- **"Carregar mais" não apaga o feed** — o `useAtividade` separou o erro da página seguinte (`errorMais`) do erro da primeira; o `FeedSection` mostra-o **abaixo** da lista e o botão continua a poder ser carregado. Antes, um erro aqui substituía o feed inteiro por uma mensagem e o botão desaparecia.
+- **Cartaz e título do feed** — `recordActivity` (agora em `server/src/store/progress.js`) corta o título a 300 caracteres e só guarda cartazes em caminho TMDB ou nos CDN que a app usa (`image.tmdb.org`, `cdn.myanimelist.net`, `s4.anilist.co`). O `poster` vem do corpo do pedido e é carregado no browser de quem segue: um URL qualquer era um pixel de rastreio.
+- **Guarda DIP alargada** — ESLint (`web/src/**/*.jsx`) e `scripts/testar-solid.mjs` cobrem todo o `web/src` excepto `auth/`, `i18n/`, `storage/` e `main.jsx`, que são donos dessas APIs. O teste passou de 63 para 68 ficheiros `.jsx` analisados, e inclui `activity/fraseAtividade.jsx`.
+- **Definições** — um valor guardado que não seja objecto (`"abc"`, `[]`) volta ao omissão em vez de ser espalhado no `settingsStore.get()`; o aviso de definições corrompidas passou a português.
+- **Nits** — `useClickOutside` com `active` explícito no `ProfileMenu` e no `WatchParty` (ouvintes fechados eram trabalho a cada clique), e a indentação de dois comentários.
+- **Teste frágil** — `scripts/testar-start-pwa.mjs` escrevia em `os.tmpdir()/opencode/`, uma pasta que só existe por acaso nalgumas máquinas (foi outra ferramenta que a criou); nas outras o teste falhava com `ENOENT`. Passou a `mkdtempSync`.
+
+Testes: 5 novos casos em `server/test/activity.test.js` — cartaz de domínio desconhecido, cartazes legítimos preservados, título cortado, allowlist do `titleLang` e allowlist do catálogo (`resolveLang` + `alvoDeIdioma`, o alvo que o `getGenres` usa). Verificação: `npm test` (servidor 88/88; os restantes scripts passam), `npm run lint` 0, `npm run build`, `scripts/auditar-pt-por-traduzir.cjs` limpo, `verificar-cjk` limpo.
+
 ## 1.7.7
 
 Refactor **SRP/DIP** dos dois lados, sem mudança de comportamento. Objectivo: cada ficheiro tem uma responsabilidade e as páginas/componentes deixam de falar com o `localStorage`, com a rede e com listeners globais.

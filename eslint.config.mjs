@@ -64,7 +64,12 @@ export default [
   // `scripts/testar-solid.mjs`, que apanha o que o ESLint não consegue (o
   // `addEventListener`, que é um método do elemento e não uma propriedade global).
   {
-    files: ["web/src/pages/**/*.jsx", "web/src/components/*.jsx"],
+    // Todo o `web/src` é desenho, excepto as camadas que SÃO donas destas APIs:
+    // `storage/` (preferências), `auth/` (sessão) e `i18n/` (idioma da interface)
+    // falam com o `localStorage` por desenho, e o `main.jsx` lê o
+    // runtime-config com `fetch` antes de o React existir.
+    files: ["web/src/**/*.jsx"],
+    ignores: ["web/src/auth/**", "web/src/i18n/**", "web/src/main.jsx"],
     rules: {
       "no-restricted-globals": [
         "error",

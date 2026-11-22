@@ -36,12 +36,17 @@ function extrairDecisao(webDir, { forcar = false } = {}) {
       "if (semBuild) {",
       "if (true) { console.log('DECISAO:' + (motivo || 'NAO CONSTRUIR')); process.exit(0); } else if (semBuild) {"
     );
-  const tmp = path.join(os.tmpdir(), "opencode", "decisao-" + Math.random().toString(36).slice(2) + ".cjs");
+  // `mkdtempSync` cria a pasta e da' um nome unico. Antes escrevia-se em
+  // `os.tmpdir()/opencode/`, uma pasta que so' existe por acaso nalgumas
+  // maquinas (foi outra ferramenta que a criou); nas outras dava ENOENT e o
+  // teste falhava sem ter nada a ver com o `start-pwa`.
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "meida-start-pwa-"));
+  const tmp = path.join(dir, "decisao.cjs");
   fs.writeFileSync(tmp, modificado, "utf8");
   const env = { ...process.env };
   if (forcar) env.MEIDA_FORCE_BUILD = "1";
   const r = spawnSync(process.execPath, [tmp], { cwd: RAIZ, encoding: "utf8", env });
-  fs.rmSync(tmp, { force: true });
+  fs.rmSync(dir, { recursive: true, force: true });
   const m = /DECISAO:(.*)/.exec(r.stdout || "");
   return { decisao: m ? m[1].trim() : "(sem saida)", stdout: r.stdout || "", stderr: r.stderr || "" };
 }

@@ -32,8 +32,8 @@ export default function WatchParty() {
     return n || fallback;
   };
 
-  // Fecha ao clicar fora.
-  useClickOutside(ref, () => setOpen(false), { escape: false });
+  // Fecha ao clicar fora (só com o painel aberto).
+  useClickOutside(ref, () => setOpen(false), { active: open, escape: false });
 
   if (!party?.enabled) return null; // Watch Party não configurado neste build
 

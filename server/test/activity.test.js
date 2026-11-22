@@ -175,3 +175,90 @@ test("paginacao devolve hasMore e nao repete", () => {
   const ids = new Set(primeira.items.map((i) => i.id));
   assert.ok(segunda.items.every((i) => !ids.has(i.id)), "as duas paginas repetiram itens");
 });
+
+/* ===== O que vem do cliente e vai para o feed de OUTRAS pessoas ===== */
+
+test("o feed nao guarda um cartaz de um dominio desconhecido", () => {
+  // O `poster` vem do corpo do pedido e e' carregado no browser de quem segue:
+  // sem filtro, um URL qualquer era um pixel de rastreio.
+  store.finishProgress({
+    userId: bruno,
+    type: "movie",
+    tmdbId: 9001,
+    title: "Rastreio",
+    poster: "https://tracker.example/pixel.gif",
+  });
+  const it = store.listUserActivity(bruno).items.find((x) => x.tmdbId === 9001);
+  assert.ok(it, "falta a atividade");
+  assert.equal(it.poster, null);
+});
+
+test("o feed guarda os cartazes que a app usa (TMDB, MAL, AniList)", () => {
+  store.finishProgress({
+    userId: bruno,
+    type: "movie",
+    tmdbId: 9002,
+    title: "TMDB",
+    poster: "/abc.jpg",
+  });
+  store.finishProgress({
+    userId: bruno,
+    type: "anime",
+    tmdbId: 9003,
+    title: "MAL",
+    poster: "https://cdn.myanimelist.net/images/anime/100.jpg",
+  });
+  const items = store.listUserActivity(bruno).items;
+  assert.equal(items.find((x) => x.tmdbId === 9002).poster, "/abc.jpg");
+  assert.equal(
+    items.find((x) => x.tmdbId === 9003).poster,
+    "https://cdn.myanimelist.net/images/anime/100.jpg"
+  );
+});
+
+test("o titulo do feed e' cortado (o texto vem do cliente)", () => {
+  store.finishProgress({
+    userId: bruno,
+    type: "movie",
+    tmdbId: 9004,
+    title: "x".repeat(2000),
+  });
+  const it = store.listUserActivity(bruno).items.find((x) => x.tmdbId === 9004);
+  assert.equal(it.title.length, 300);
+});
+
+test("o idioma dos titulos vem de uma lista fixa, nao de uma string qualquer", async () => {
+  const { normalizarTitleLang } = await import("../src/services/tmdb.js");
+  assert.equal(normalizarTitleLang("pt"), "pt");
+  assert.equal(normalizarTitleLang("en-US"), "en-US");
+  assert.equal(normalizarTitleLang("pt-PT"), "pt-PT");
+  // Cada valor novo era uma chave de cache propria e um pedido ao TMDB por item:
+  // sem lista, um endpoint publico enchia a cache so' a variar a string.
+  for (const v of ["fr-FR", "x-a", "pt_BR", "", null, undefined]) {
+    assert.equal(normalizarTitleLang(v), "en-US", "aceitou " + String(v));
+  }
+});
+
+test("os idiomas do catalogo (overviewLang/titleLang) tambem vem de uma lista fixa", async () => {
+  // O mesmo buraco do feed existia em `/api/catalog`: `overviewLang=de-DE` ia
+  // inteiro para a URL do TMDB e criava uma entrada de cache por valor.
+  const { resolveLang, alvoDeIdioma } = await import("../src/services/tmdb.js");
+  assert.equal(resolveLang("pt", "en-US"), "pt-PT");
+  assert.equal(resolveLang("en", "pt-PT"), "en-US");
+  assert.equal(resolveLang("en-US", "pt-PT"), "en-US");
+  assert.equal(resolveLang("pt-PT", "en-US"), "pt-PT");
+  assert.equal(resolveLang("", "pt-PT"), "pt-PT", "vazio segue o omissao");
+  assert.equal(resolveLang(undefined, "en-US"), "en-US");
+  for (const v of ["fr-FR", "de-DE", "x-a", "pt_BR", "senha"]) {
+    assert.equal(resolveLang(v, "pt-PT"), "pt-PT", "aceitou " + String(v));
+  }
+  // `alvoDeIdioma` e' a porta unica para a URL do TMDB (`getLocalizedMeta` e
+  // `getGenres`): o que nao esta' na lista fica em ingles, em vez de virar uma
+  // chave de cache nova por cada string inventada.
+  assert.equal(alvoDeIdioma("pt"), "pt-PT");
+  assert.equal(alvoDeIdioma("en"), "en-US");
+  assert.equal(alvoDeIdioma("pt-PT"), "pt-PT");
+  for (const v of ["fr-FR", "x-a", "", null, undefined]) {
+    assert.equal(alvoDeIdioma(v), "en-US", "aceitou " + String(v));
+  }
+});

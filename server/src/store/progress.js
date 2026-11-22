@@ -80,6 +80,37 @@ function toApiActivity(r) {
   };
 }
 
+// Um titulo de feed nao precisa de mais do que isto, e o texto vem do corpo do
+// pedido: sem tecto, uma linha do feed podia trazer dezenas de kB para quem te
+// segue.
+const TITULO_MAX = 300;
+
+// Cartazes que se aceitam mostrar no feed. O `poster` tambem vem do cliente e
+// aparece no browser de OUTRAS pessoas: um URL qualquer era um pixel de
+// rastreio a carregar para quem te segue. Aceita-se o caminho do TMDB (que o
+// cliente junta a `image.tmdb.org`) e os CDN que a app ja' usa para anime.
+const CARTAZ_HOSTS = new Set(["image.tmdb.org", "cdn.myanimelist.net", "s4.anilist.co"]);
+
+function tituloDoFeed(titulo) {
+  if (titulo == null) return null;
+  const t = String(titulo).trim();
+  return t ? t.slice(0, TITULO_MAX) : null;
+}
+
+function cartazDoFeed(poster) {
+  if (poster == null) return null;
+  const p = String(poster).trim();
+  if (!p) return null;
+  if (p.startsWith("/")) return p; // caminho do TMDB
+  try {
+    const u = new URL(p);
+    if (u.protocol !== "https:") return null;
+    return CARTAZ_HOSTS.has(u.hostname.toLowerCase()) ? p : null;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Regista um episodio/filme concluido. Chamado no fim, ANTES de o progresso
  * avancar para o episodio seguinte.
@@ -104,8 +135,8 @@ export function recordActivity(e) {
     e.userId,
     e.type,
     Number(e.tmdbId),
-    e.title ?? null,
-    e.poster ?? null,
+    tituloDoFeed(e.title),
+    cartazDoFeed(e.poster),
     e.season ?? 0,
     e.episode ?? 0,
     e.kind === "episode" ? "episode" : e.kind === "series" ? "series" : "movie",

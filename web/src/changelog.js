@@ -6,6 +6,23 @@
 export const CHANGELOG = [
 
   {
+      version: "1.7.8",
+      items: [
+        "Correção: o catálogo e o feed só pedem títulos em português ou inglês. Um pedido com outro idioma já não faz a app ir buscar e guardar uma cópia nova de cada título.",
+        "Correção: se o \"Carregar mais\" do feed de atividade falhar, a lista que já estava no ecrã mantém-se e podes tentar outra vez. Antes, a mensagem de erro substituía o feed todo.",
+        "Segurança: o cartaz de uma atividade só aparece se vier dos serviços de imagens da própria app, e o título tem um limite de tamanho — os dois vinham do pedido e eram mostrados a quem te segue.",
+        "Correção: uma definição guardada inválida volta ao omissão, em vez de deixar valores estranhos espalhados pela app.",
+        "Manutenção: a regra \"as páginas e os componentes não falam com os dados sozinhos\" passou a cobrir todas as pastas da interface, e não só duas.",
+      ],
+      items_en: [
+        "Fix: the catalog and the feed now only ask for titles in Portuguese or English. A request with another language no longer makes the app fetch and store a fresh copy of every title.",
+        "Fix: if the feed's \"Load more\" fails, the list already on screen stays and you can try again. Before, the error message replaced the whole feed.",
+        "Security: an activity's poster is only shown if it comes from the app's own image services, and the title has a size limit — both came from the request and were shown to the people who follow you.",
+        "Fix: an invalid saved setting falls back to the default instead of leaving odd values around the app.",
+        "Maintenance: the rule \"pages and components don't talk to the data on their own\" now covers every UI folder, not just two.",
+      ],
+    },
+  {
       version: "1.7.7",
       items: [
         "Manutenção: a app foi reorganizada por dentro — cada parte passou a ter o seu ficheiro, com uma só responsabilidade. Nada muda no ecrã; é trabalho de bastidores para as próximas novidades não partirem o que já existe.",

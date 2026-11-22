@@ -74,20 +74,27 @@ const PADROES = [
   { re: /\b(document|window)\.addEventListener\b/, nome: "addEventListener global" },
 ];
 
+// Camadas que SÃO donas destas APIs: preferências (`storage/`), sessão
+// (`auth/`) e idioma da interface (`i18n/`). Todo o resto de `web/src` é desenho
+// e passa pela regra. Antes olhava-se só para `pages/` e `components/`, e as
+// pastas novas (`activity/`, `home/`, `library/`, `settings/`, `watchparty/`)
+// escapavam — inclusive `activity/fraseAtividade.jsx`.
+const IGNORAR = new Set(["auth", "i18n", "storage"]);
+
 function ficheiros(dir) {
   const lista = [];
   for (const e of readdirSync(dir, { withFileTypes: true })) {
     const p = join(dir, e.name);
-    if (e.isDirectory()) lista.push(...ficheiros(p));
-    else if (e.name.endsWith(".jsx")) lista.push(p);
+    if (e.isDirectory()) {
+      if (!IGNORAR.has(e.name)) lista.push(...ficheiros(p));
+    } else if (e.name.endsWith(".jsx") && e.name !== "main.jsx") {
+      lista.push(p);
+    }
   }
   return lista;
 }
 
-const ALVOS = [
-  ...ficheiros(join(RAIZ, "web", "src", "pages")),
-  ...ficheiros(join(RAIZ, "web", "src", "components")),
-].filter((f) => statSync(f).isFile());
+const ALVOS = ficheiros(join(RAIZ, "web", "src")).filter((f) => statSync(f).isFile());
 
 console.log("");
 console.log("  --- solid: páginas e componentes sem acesso directo ---");

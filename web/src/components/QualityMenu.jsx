@@ -22,7 +22,7 @@ export default function QualityMenu({ niveis = [], nivelAuto = true, ativo = -1,
   const [aberto, setAberto] = useState(false);
   const caixaRef = useRef(null);
 
-// Clicar fora fecha, `Escape` fecha. Mesmo comportamento do menu de legendas —
+  // Clicar fora fecha, `Escape` fecha. Mesmo comportamento do menu de legendas —
   // se um deles fechar e o outro não, parece um bug.
   useClickOutside(caixaRef, () => setAberto(false), { active: aberto });
 
