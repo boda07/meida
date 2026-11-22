@@ -10,6 +10,8 @@ import ErrorBoundary from "./components/ErrorBoundary.jsx";
 import LoadingStatus from "./components/LoadingStatus.jsx";
 import { useT } from "./i18n/I18nContext.jsx";
 import { useAuth } from "./auth/AuthContext.jsx";
+import { onboardingStore } from "./storage/onboarding.js";
+import { generosParaDiscover } from "./components/onboarding.js";
 
 const Home = lazy(() => import("./pages/Home.jsx"));
 const Category = lazy(() => import("./pages/Category.jsx"));
@@ -40,28 +42,19 @@ const UserProfile = lazy(() => import("./pages/UserProfile.jsx"));
  * dispensou o wizard nao ganha uma linha de generos que nao escolheu.
  */
 function generosEscolhidos() {
-  try {
-    const v = JSON.parse(localStorage.getItem("meida_onboarding_v1") || "null");
-    if (!v || v.jaDispensado !== true) return "";
-    if (!Array.isArray(v.generos)) return "";
-    /**
-     * **Cada genero e' um `{ id, name }`**, nao uma string: o `/api/discover`
-     * precisa do id e a pessoa precisa do nome. Fazer `join(",")` no array
-     * inteiro mandava `{"id":80,"name":"Crime"},{"id":12,...}` para o TMDB, que
-     * devolvia uma lista vazia **sem erro** — e a linha nunca aparecia.
-     *
-     * Fica o `generosParaDiscover()` do modulo puro a fazer a conversao; aqui
-     * so' se passa o valor guardado, sem duplicar a regra.
-     */
-    return v.generos
-      .filter(Boolean)
-      .map((g) => (g && typeof g === "object" ? g.id : g))
-      .filter((id) => Number.isFinite(Number(id)) && Number(id) > 0)
-      .map((id) => String(Math.trunc(Number(id))))
-      .join(",");
-  } catch {
-    return "";
-  }
+  const v = onboardingStore.get();
+  if (!v || v.jaDispensado !== true) return "";
+  if (!Array.isArray(v.generos)) return "";
+  /**
+   * **Cada genero e' um `{ id, name }`**, nao uma string: o `/api/discover`
+   * precisa do id e a pessoa precisa do nome. Fazer `join(",")` no array
+   * inteiro mandava `{"id":80,"name":"Crime"},{"id":12,...}` para o TMDB, que
+   * devolvia uma lista vazia **sem erro** — e a linha nunca aparecia.
+   *
+   * Fica o `generosParaDiscover()` do modulo puro a fazer a conversao; aqui
+   * so' se passa o valor guardado, sem duplicar a regra.
+   */
+  return generosParaDiscover(v.generos);
 }
 
 export default function App() {

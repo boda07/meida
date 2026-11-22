@@ -4,6 +4,7 @@ import { api, imageUrl } from "../api/client.js";
 import { useAuth } from "../auth/AuthContext.jsx";
 import { useSettings } from "../settings/SettingsContext.jsx";
 import { useT } from "../i18n/I18nContext.jsx";
+import { useAtalhosComparar } from "../components/useAtalhosComparar.js";
 
 // Título a mostrar: para anime respeita a opção ingles/romaji.
 function displayTitle(it, romaji) {
@@ -178,25 +179,7 @@ export default function Compare() {
   }, [seen.length, typeFilter]);
 
   // Teclas de atalho: ↑ aumenta a nota da esquerda, ↓ diminui, Espaço = próximo par.
-  useEffect(() => {
-    if (!pair || busy) return;
-    function onKey(e) {
-      if (e.target.tagName === "INPUT") return; // não interrompe a escrever na caixa
-      if (e.key === "ArrowUp") {
-        e.preventDefault();
-        adjust(pair[0], 1);
-      } else if (e.key === "ArrowDown") {
-        e.preventDefault();
-        adjust(pair[0], -1);
-      } else if (e.key === " ") {
-        e.preventDefault();
-        next();
-      }
-    }
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pair, busy]);
+  useAtalhosComparar({ pair, busy, adjust, next });
 
   async function saveScore(it, score) {
     setBusy(true);

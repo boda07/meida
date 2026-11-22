@@ -150,7 +150,7 @@ if (item && lista) {
 
 // 8) O store tem de gravar o pai verdadeiro. Nao e' o mesmo ficheiro, mas e' a
 //    outra metade do bug e nao ha outro sitio onde ela possa estar.
-const store = readFileSync(join("server", "src", "store.js"), "utf8");
+const store = readFileSync(join("server", "src", "store", "comments.js"), "utf8");
 ok(
   "o store nao achata mais a resposta na raiz",
   !/parentId\s*=\s*\w+\.parent_id\s*\?\?/.test(store)

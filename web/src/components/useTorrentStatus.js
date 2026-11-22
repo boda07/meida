@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { api } from "../api/client.js";
 
 // Polling do status de um stream de torrent (WebTorrent local).
 //
@@ -13,8 +14,7 @@ export function useTorrentStatus({ infoHash, src }) {
     if (!infoHash) return;
     setStatus(null);
     const tick = () =>
-      fetch(`/api/stream/${infoHash}/status`)
-        .then((r) => r.json())
+      api.torrentStatus(infoHash)
         .then((d) => setStatus(d.status))
         .catch(() => {});
     tick();

@@ -58,4 +58,27 @@ export default [
       "react-hooks/exhaustive-deps": "warn",
     },
   },
+  // Web: páginas e componentes são desenho. Os dados (API) e as preferências
+  // (`web/src/storage/`) vêm por ganchos e contextos — não por `fetch` nem
+  // `localStorage` espalhados pelo JSX. É a mesma regra do
+  // `scripts/testar-solid.mjs`, que apanha o que o ESLint não consegue (o
+  // `addEventListener`, que é um método do elemento e não uma propriedade global).
+  {
+    files: ["web/src/pages/**/*.jsx", "web/src/components/*.jsx"],
+    rules: {
+      "no-restricted-globals": [
+        "error",
+        { name: "localStorage", message: "Usa um store de web/src/storage/ (DIP)." },
+        { name: "sessionStorage", message: "Usa um store de web/src/storage/ (DIP)." },
+        { name: "fetch", message: "Usa o api de web/src/api/client.js (DIP)." },
+      ],
+      "no-restricted-properties": [
+        "error",
+        { object: "window", property: "localStorage", message: "Usa um store de web/src/storage/ (DIP)." },
+        { object: "window", property: "fetch", message: "Usa o api de web/src/api/client.js (DIP)." },
+        { object: "document", property: "addEventListener", message: "Usa useClickOutside/useTeclaEsc/... (DIP)." },
+        { object: "window", property: "addEventListener", message: "Usa useClickOutside/useTeclaEsc/... (DIP)." },
+      ],
+    },
+  },
 ];

@@ -1,9 +1,10 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext.jsx";
 import { UserIcon } from "./icons.jsx";
 import Avatar from "./Avatar.jsx";
 import { useT } from "../i18n/I18nContext.jsx";
+import { useClickOutside } from "./useClickOutside.js";
 
 export default function ProfileMenu() {
   const { user, logout } = useAuth();
@@ -31,13 +32,9 @@ export default function ProfileMenu() {
     }
   }
 
-  useEffect(() => {
-    function onClick(e) {
-      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
-    }
-    document.addEventListener("mousedown", onClick);
-    return () => document.removeEventListener("mousedown", onClick);
-  }, []);
+  // Fecha ao clicar fora. Fica sempre ligado (o menu não tem estado "aberto"
+// aqui — o `open` decide só o que se desenha).
+  useClickOutside(ref, () => setOpen(false), { escape: false });
 
   // Sem sessao: o MESMO icone abre um menu com as portas de entrada. Antes era
   // um link directo para /login, e as Definicoes (que nao precisam de conta)

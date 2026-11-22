@@ -5,6 +5,8 @@ import { useAuth } from "../auth/AuthContext.jsx";
 import { useT } from "../i18n/I18nContext.jsx";
 import { NOMES_IDIOMA } from "../i18n/traducoes.js";
 import { api, openExternal } from "../api/client.js";
+import { settingsTabStore } from "../storage/settingsTab.js";
+import { useAoFocarJanela } from "../components/useAoFocarJanela.js";
 import Avatar, { AVATAR_EMOJIS } from "../components/Avatar.jsx";
 import { clearPresence, presenceSupported } from "../discord.js";
 
@@ -31,11 +33,7 @@ function MalSection({ user }) {
   }, [user]);
 
   // Ao voltar a janela (depois do OAuth no browser), reverifica a ligacao.
-  useEffect(() => {
-    const onFocus = () => refresh();
-    window.addEventListener("focus", onFocus);
-    return () => window.removeEventListener("focus", onFocus);
-  }, []);
+  useAoFocarJanela(refresh, { active: !!user });
 
   async function link() {
     setMsg(null);
@@ -147,11 +145,7 @@ function AniListSection({ user }) {
     refresh();
   }, [user]);
 
-  useEffect(() => {
-    const onFocus = () => refresh();
-    window.addEventListener("focus", onFocus);
-    return () => window.removeEventListener("focus", onFocus);
-  }, []);
+  useAoFocarJanela(refresh, { active: !!user });
 
   async function link() {
     setMsg(null);
@@ -598,7 +592,8 @@ const TABS = [
   { id: "dados", label: "Dados" },
   { id: "avancado", label: "Avançado" },
 ];
-const TAB_KEY = "meida:settings-tab";
+// A aba activa vive em `web/src/storage/settingsTab.js` (chave
+// `meida:settings-tab`).
 
 export default function Settings() {
   const { settings, update, erroGuardar, avisoAcento } = useSettings();
@@ -613,7 +608,7 @@ export default function Settings() {
   // (e para não perder o scroll de quem só anda a ver as contas linked).
   const [tab, setTab] = useState(() => {
     try {
-      const saved = localStorage.getItem(TAB_KEY);
+      const saved = settingsTabStore.get();
       return TABS.some((t) => t.id === saved) ? saved : "perfil";
     } catch {
       return "perfil";
@@ -666,11 +661,7 @@ export default function Settings() {
 
   // Persiste a aba activa.
   useEffect(() => {
-    try {
-      localStorage.setItem(TAB_KEY, tab);
-    } catch {
-      /* modo privado sem localStorage: só não fica guardado */
-    }
+    settingsTabStore.set(tab);
   }, [tab]);
 
   async function pickAvatar(value) {

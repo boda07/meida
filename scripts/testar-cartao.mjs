@@ -277,7 +277,7 @@ console.log("  9) o /api/stats e o /api/goals nao podem divergir");
   ok_("o `/api/stats` passa as linhas mapeadas por `toApi`", /const emApi = linhas\.map\(\(r\) => toApi\(r\)\)/.test(stats));
   ok_("e as duas funcoes de `metas.js` recebem `emApi`", /melhoresDoAno\(emApi,/.test(stats) && /contaFilmesPorAno\(emApi,/.test(stats));
   ok_("e `statsFor` nao lhes passa as linhas cruas", !/melhoresDoAno\(linhas,/.test(stats) && !/contaFilmesPorAno\(linhas,/.test(stats));
-  ok_("e o `store.js` exporta `toApi` para isso ser possivel", /export function toApi\(/.test(fs.readFileSync(path.join(RAIZ, "server", "src", "store.js"), "utf8")));
+  ok_("e o `store/library.js` exporta `toApi` para isso ser possivel", /export function toApi\(/.test(fs.readFileSync(path.join(RAIZ, "server", "src", "store", "library.js"), "utf8")));
   ok_("e o /api/stats devolve tambem `topDoAno` (o que da conteudo ao cartao)", /topDoAno:/.test(stats));
 }
 

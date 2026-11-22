@@ -279,7 +279,7 @@ console.log("  7) a componente: cada id tem rotulo, e esta ligada");
   ok_("e o botao do mais diz se esta aberto (aria-expanded)", /aria-expanded=\{maisAberto\}/.test(JSX));
   ok_("a barra tem nome para o leitor de ecra", /aria-label=\{rotulo\.navegacao\}/.test(JSX));
   ok_("navegar fecha a folha", /setMaisAberto\(false\)[\s\S]{0,40}\}, \[location\.pathname\]\)/.test(JSX));
-  ok_("e o Escape tambem", /"Escape"/.test(JSX));
+  ok_("e o Escape tambem", /useTeclaEsc\(\(\) => setMaisAberto\(false\)/.test(JSX));
 }
 
 console.log("");

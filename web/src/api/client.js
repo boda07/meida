@@ -15,6 +15,8 @@
 //
 // As bases sao lidas em cada pedido (e nao no import) porque o `main.jsx` so as
 // define depois de ler o runtime-config.json / falar com o processo Electron.
+import { tokenStore } from "../storage/token.js";
+import { settingsStore } from "../storage/settings.js";
 const LOCAL_API_PREFIXES = [
   "/api/health",
   "/api/catalog",
@@ -65,133 +67,13 @@ function baseFor(path) {
 function fullUrl(path) {
   return `${baseFor(path)}${path}`;
 }
-// O token de login fica em localStorage e e enviado em todos os pedidos.
-const TOKEN_KEY = "streamapp_token";
-export const tokenStore = {
-  get: () => localStorage.getItem(TOKEN_KEY),
-  set: (t) => localStorage.setItem(TOKEN_KEY, t),
-  clear: () => localStorage.removeItem(TOKEN_KEY),
-};
-
-// Definições do utilizador (idiomas, etc.) guardadas em localStorage.
-const SETTINGS_KEY = "streamapp_settings";
-// Marca de "a migracao do titleLang ja correu". Ver `aplicarMigracoes`.
-const MIGRACAO_TITULOS_KEY = "streamapp_migrou_titlang";
-export const DEFAULT_SETTINGS = {
-  // Idioma dos titulos: "auto" | "pt" | "en".
-  //
-  // "auto" e' o omissao de proposito: o titulo segue o idioma da interface. Antes
-  // era "en", e o efeito era o que o utilizador reportou — escolher portugues
-  // na interface nao mexia nos titulos, porque o idioma da interface e o dos
-  // titulos sao duas definicoes e so a segunda mandava no catalogo.
-  titleLang: "auto",
-  overviewLang: "pt", // idioma das sinopses: "en" | "pt"
-  genreLang: "", // idioma dos géneros: "en" | "pt" | "" (segue as sinopses)
-  animeTitleLang: "en", // títulos de anime: "en" (ingles) | "romaji"
-  subtitleLang: "pt", // legenda preferida: "pt" | "en" | "off"
-  // Como as legendas se mostram. O delay e' em segundos (positivo = atrasa).
-  subTamanho: "normal", // "pequeno" | "normal" | "grande" | "muito grande"
-  subOpacidade: 1, // 0 (invisivel) a 1 (opaca)
-  subFonte: "", // "" (a do sistema) | "sistema" | "serifada" | "monoespacada"
-  subDelay: 0, // -10 a +10 segundos
-  defaultTab: "providers", // separador inicial: providers | extract | torrents
-  animeAudio: "sub", // anime: "sub" (legendado) ou "dub" (dobrado)
-  showAdult: false, // mostrar conteudo adulto (anime NSFW/hentai) na pesquisa/filtros
-  accent: "#c90303", // cor de destaque da UI (botoes, realces)
-  bgColor: "#070708", // cor de fundo da app
-  bgStyle: "none", // estilo de fundo: none|glow|aurora|mesh|dots|grid|image
-  bgImage: "", // URL da imagem de fundo (quando bgStyle === "image")
-  recentAccent: [], // últimas cores de destaque escolhidas no picker
-  recentBg: [], // últimas cores de fundo escolhidas no picker
-  cardW: 184, // largura dos cartazes (px)
-  cardH: 272, // altura dos cartazes (px)
-  autoplay: true, // reproduzir automaticamente ao abrir uma fonte
-  autoskip: false, // tentar saltar intro/genericos automaticamente
-  discordPresence: true, // mostrar no Discord o que se está a ver (grátis, local)
-  // A ultima fonte escolhida, POR TIPO de titulo: { movie: "", tv: "", anime: "" }.
-  //
-  // Por tipo e nao por episodio: quem escolheu o MegaPlay porque e' o unico com
-  // legendas nao devia ter de o escolher em cada episodio. E nao por titulo
-  // (tipo:id) porque um provider que serve um filme serve os outros do mesmo
-  // tipo, e uma entrada por titulo enche o localStorage e nunca se limpa.
-  //
-  // `""` = ainda nao escolheu nenhuma, e o Player arranca na primeira fonte como
-  // sempre.
-  lastSource: { movie: "", tv: "", anime: "" },
-};
-export const settingsStore = {
-  get() {
-    const cru = localStorage.getItem(SETTINGS_KEY);
-    if (!cru) return { ...DEFAULT_SETTINGS };
-    let guardado;
-    try {
-      guardado = JSON.parse(cru);
-    } catch (e) {
-      // NAO engolir em silencio. Antes, um `catch { return padroes }` fazia uma
-      // definicao corrompida repor tudo sem avise nenhum: o utilizador perdia a
-      // imagem de fundo, o accent, as legendas... e via um ecra preto sem
-      // nenhum sinal de porque. Guarda-se o que estava la (para se recuperar a
-      // mao) e escreve-se na consola.
-      console.warn(
-        "[settings] stored settings are corrupt and were reset to defaults. " +
-          "Kept a copy under " + SETTINGS_KEY + "_aviso. Detail: " +
-          (e && e.message)
-      );
-      try {
-        localStorage.setItem(SETTINGS_KEY + "_aviso", cru.slice(0, 200000));
-      } catch {
-        /* sem espaco para a copia - segue na mesma */
-      }
-      return { ...DEFAULT_SETTINGS };
-    }
-    return { ...DEFAULT_SETTINGS, ...aplicarMigracoes(guardado) };
-  },
-  set(s) {
-    try {
-      localStorage.setItem(SETTINGS_KEY, JSON.stringify(s));
-      return true;
-    } catch (e) {
-      // O mais comum e' o limite do localStorage (~5 MB): uma imagem de fundo
-      // grande estoura-o. Engolido, o utilizador escolhe a imagem, ve-a no
-      // ecra, e no arranque seguinte volta a nao estar — e conclui que a app
-      // esta partida. Devolver false deixa o aviso aparecer no sitio certo.
-      console.error("[settings] could not save:", e && e.message);
-      return false;
-    }
-  },
-};
-
-// Áudio POR TÍTULO (anime): "dub" ou "sub", guardado à parte das Definições.
-//
-// Porquê não nas Definições: há animes que só existem dobrados e outros que
-// não têm dobrado nenhum. Uma definição global obriga a trocar sempre — que era
-// o que se passava com o Dragon Ball (medido a 2026-10-06).
-//
-// Chave "tipo:id" (ex.: "anime:1234"). Sem entrada = segue a Definição global.
-// Fica em localStorage como o resto das preferências: NÃO vai para o servidor,
-// portanto não acompanha entre PCs. Quando chegar a hora de sincronizar, é este
-// objeto que passa a ser uma coluna na tabela do utilizador.
-const AUDIO_KEY = "streamapp_audio_titulos";
-function lerAudio() {
-  try {
-    const v = JSON.parse(localStorage.getItem(AUDIO_KEY) || "{}");
-    return v && typeof v === "object" ? v : {};
-  } catch {
-    return {};
-  }
-}
-export const audioTituloStore = {
-  get(chave) {
-    const v = lerAudio()[chave];
-    return v === "dub" || v === "sub" ? v : null;
-  },
-  set(chave, audio) {
-    if (audio !== "dub" && audio !== "sub") return;
-    const v = lerAudio();
-    v[chave] = audio;
-    localStorage.setItem(AUDIO_KEY, JSON.stringify(v));
-  },
-};
+// Os stores de preferências vivem em `web/src/storage/` (uma responsabilidade
+// por ficheiro). Re-exportados daqui porque várias partes do código importam
+// `api/client.js` — e `testar-idioma-titulos.mjs`/`testar-fonte-lembrada.mjs`
+// continuam a valer sem mudar.
+export { tokenStore } from "../storage/token.js";
+export { settingsStore, DEFAULT_SETTINGS, migrarTitleLang } from "../storage/settings.js";
+export { audioTituloStore } from "../storage/audioTitulo.js";
 
 // Parametros de idioma (+ conteudo adulto) a juntar aos pedidos de catálogo.
 // O fuso do utilizador, para os endpoints que contam DIAS.
@@ -241,62 +123,6 @@ export function titleLangEfetivo(valor) {
   return valor === "auto" ? idiomaAtual() : valor;
 }
 
-/**
- * Migracao das definicoes guardadas: `titleLang: "en"` passa a `"auto"`.
- *
- * Feita **uma vez**, com uma marca no `localStorage`. Sem a marca, `"auto"` seria
- * reescrito para `"en"` em cada arranque e ninguem poderia escolher ingles de
- * proposito.
- *
- * O custo e' que tambem muda a escolha de quem tinha escolhido ingles a mao. Nao
- * ha forma de distinguir as duas coisas — o valor guardado e' o mesmo. Preferimos
- * errar para o lado de a interface governar os titulos, porque e' o que a maioria
- * espera e o que o omissao novo faz de qualquer maneira.
- *
- * Exportada para o teste poder chamar as duas metades (com e sem a marca).
- */
-export function migrarTitleLang(guardado, jaMigrou) {
-  if (jaMigrou) return guardado;
-  return guardado === "en" ? "auto" : guardado;
-}
-
-/**
- * Aplica as migracoes de Definicoes e grava o resultado.
- *
- * A migracao do `titleLang` e' a unica por agora. Corre **uma vez**: a marca
- * escreve-se no arranque em que a migracao acontece, e a partir dai o valor
- * guardado e' sempre respeitado — senao quem escolhesse "Ingles" a proposito
- * via-se a "auto" em cada arranque, sem forma de o travar.
- */
-function aplicarMigracoes(guardado) {
-  let jaMigrou = false;
-  try {
-    jaMigrou = localStorage.getItem(MIGRACAO_TITULOS_KEY) === "1";
-  } catch {
-    /* sem localStorage: fica sem migrar, que e' o comportamento de antes */
-  }
-  const novo = { ...guardado };
-  let mudou = false;
-  const titulo = migrarTitleLang(guardado?.titleLang, jaMigrou);
-  if (titulo !== guardado?.titleLang) {
-    novo.titleLang = titulo;
-    mudou = true;
-  }
-  if (!jaMigrou) {
-    try {
-      localStorage.setItem(MIGRACAO_TITULOS_KEY, "1");
-    } catch {
-      /* modo privado: a migracao corre outra vez, o que e' inofensivo */
-    }
-  }
-  if (mudou) {
-    // Grava-se para que a migracao fique feita mesmo que o browser feche a
-    // seguir. Se falhar (quota), o `get()` volta a aplica-la — tambem inofensivo.
-    settingsStore.set(novo);
-  }
-  return novo;
-}
-
 // Lista de idiomas (OpenSubtitles) a partir da preferência de legendas.
 function subtitleLangs() {
   const map = { pt: "pt,pt-br,en", en: "en,pt", off: "pt,pt-br,en" };
@@ -308,35 +134,13 @@ function authHeaders() {
   return t ? { Authorization: `Bearer ${t}` } : {};
 }
 
-// A linguagem da interface, lida do localStorage.
+// `traduzir`/`idiomaAtual` vem do mesmo sitio que o resto do i18n. Importado de
+// `traduzir.js` (e nao do contexto) porque este modulo nao e' um componente
+// React e nao pode usar o hook `useT()`.
 //
-// Este ficheiro nao e' um componente React e por isso nao pode usar o `useT()`.
-// Le directamente a mesma chave que o `I18nProvider` grava — e o mesmo que o
-// `detectarIdioma()` escolhe quando ainda nao ha escolha. `t()` aqui e' a funcao
-// pura do dicionario, sem contexto: e' o que traduz a mensagem de erro do
-// servidor, que vem sempre em portugues (o servidor nao sabe o idioma do
-// pedido). A chave e' a propria mensagem, como em todo o resto do i18n.
-function idiomaAtual() {
-  try {
-    const g = localStorage.getItem("meida:idioma");
-    if (g === "en" || g === "pt") return g;
-  } catch {
-    /* modo privado sem localStorage */
-  }
-  // Sem escolha guardada: usa o que o browser pede.
-  if (typeof navigator !== "undefined") {
-    for (const l of navigator.languages || [navigator.language || ""]) {
-      const curto = String(l || "").slice(0, 2).toLowerCase();
-      if (curto === "en" || curto === "pt") return curto;
-    }
-  }
-  return "pt";
-}
-
-// `traduzir` vem do mesmo sitio que o resto do i18n. Importado de `traduzir.js`
-// (e nao do contexto) porque este modulo nao e' um componente React e nao pode
-// usar o hook `useT()`.
-import { traduzir, t as tt } from "../i18n/traduzir.js";
+// A linguagem da interface e' a MESMA regra do `I18nProvider` — ler a chave
+// `meida:idioma` em dois sítios era duas implementações à espera de divergir.
+import { idiomaAtual, traduzir, t as tt } from "../i18n/traduzir.js";
 
 async function handle(res) {
   if (!res.ok) {
@@ -426,6 +230,10 @@ export const api = {
   // descarregar. Um erro engolido aqui e' pior do que um erro visivel: e' uma
   // mentira sobre o disco e a rede.
   stopTorrent: (infoHash) => del(`/api/stream/${encodeURIComponent(infoHash)}`),
+  // Estado de um stream de torrent (WebTorrent local). O `useTorrentStatus`
+  // consulta isto a cada 1,5 s; passa pelo client para levar os cabecalhos de
+  // autenticacao e nao falar com o `fetch` por conta propria.
+  torrentStatus: (infoHash) => get(`/api/stream/${encodeURIComponent(infoHash)}/status`),
   extract: (opts) => get("/api/extract", opts),
   animeEnabled: () => get("/api/anime/enabled"),
   extractEnabled: () => get("/api/extract/enabled"),
@@ -465,6 +273,9 @@ export const api = {
   follow: (id) => post(`/api/users/${id}/follow`, {}),
   unfollow: (id) => del(`/api/users/${id}/follow`),
   userAvatar: (id) => get(`/api/users/${encodeURIComponent(id)}/avatar`),
+
+  // Watch Party: envia um evento para a sala (o servidor difunde aos outros).
+  wpSend: (payload) => post("/api/wp/send", payload),
 
   // Comentarios por episodio
   comments: (opts) => get("/api/comments", opts),

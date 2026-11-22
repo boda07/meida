@@ -12,6 +12,7 @@
 import { useEffect, useRef, useState } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useT } from "../i18n/I18nContext.jsx";
+import { useTeclaEsc } from "./useTeclaEsc.js";
 import { useAuth } from "../auth/AuthContext.jsx";
 import { noBrowser, URL_RELEASE } from "../lib/web.js";
 import { ITENS, activoDe, perfilDe, itensDoMais } from "./navBaixo.js";
@@ -121,17 +122,9 @@ export default function NavBaixo() {
     setMaisAberto(false);
   }, [location.pathname]);
 
-  // Fecha com o Escape. `keydown` na `window` e nao no div: o foco pode estar
-  // num link dentro da folha e o evento nao sobe se nao houver um agrupador com
-  // `tabIndex` — e nao ha, para nao meter um foco invisivel na ordem da tabulacao.
-  useEffect(() => {
-    if (!maisAberto) return undefined;
-    const aoTeclar = (e) => {
-      if (e.key === "Escape") setMaisAberto(false);
-    };
-    window.addEventListener("keydown", aoTeclar);
-    return () => window.removeEventListener("keydown", aoTeclar);
-  }, [maisAberto]);
+  // Fecha com o Escape. O `keydown` fica na `window` (e não no div): o foco pode
+  // estar num link dentro da folha — é o que o `useTeclaEsc` faz.
+  useTeclaEsc(() => setMaisAberto(false), { active: maisAberto });
 
   // Tocar fora fecha. E' o que fecha a folha depois de se escolher um destino.
   const aoTocarFora = (e) => {

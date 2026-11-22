@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.7.7
+
+Refactor **SRP/DIP** dos dois lados, sem mudança de comportamento. Objectivo: cada ficheiro tem uma responsabilidade e as páginas/componentes deixam de falar com o `localStorage`, com a rede e com listeners globais.
+
+- **Servidor — `server/src/store.js` (1471 linhas) para `server/src/store/`** — `users.js`, `tokens.js`, `library.js`, `progress.js`, `lists.js`, `social.js`, `notifications.js`, `comments.js`, `util.js`. O `store.js` ficou **só o ponto de entrada** (`export * from "./store/…"`), por isso as 12 rotas e os `services/auth.js`, `mal.js`, `anilist.js` continuam a importar de `../store.js`. Confirmado que o barrel expõe as **72** funções que o HEAD exportava.
+- **Web — `web/src/storage/`** — `settings.js` (`settingsStore` + `DEFAULT_SETTINGS`), `token.js` (`tokenStore`), `onboarding.js`, `wpNick.js`, `changelog.js`, `audioTitulo.js`, `settingsTab.js` e `criarStore.js`. O `api/client.js` perdeu 211 linhas: os stores saíram de lá e passaram a ser importados.
+- **Ganchos novos** — `useClickOutside`, `useTeclaEsc`, `useEcraInteiro`, `useAoFocarJanela`, `useAoVoltarAba`, `useAtalhosComparar`. Componentes como `QualityMenu`, `AppFullscreen`, `Trailer`, `subtitles`, `WatchParty`, `Onboarding`, `NavBaixo`, `ProfileMenu`, `NotificationBell`, `Settings`, `Library`, `Compare`, `Category` e `AddToList` passaram a compor ganchos em vez de ter `useEffect`+`addEventListener`+`localStorage` no JSX.
+- **Regra nova, com guarda dupla** — ESLint (`no-restricted-globals`/`no-restricted-properties` para `localStorage`, `sessionStorage`, `fetch` e `addEventListener` em `web/src/pages/**` e `web/src/components/*.jsx`) e `scripts/testar-solid.mjs`, que varre o texto e apanha o `addEventListener` (o ESLint não o consegue restringir por nome de propriedade). Excepção declarada com `// solid-ok: motivo`.
+- **Testes** — `testar-solid.mjs` e o já existente `testar-histograma.mjs` (estava fora do `npm test` desde a 1.3.9) entraram na lista. Quatro testes que procuravam código por **texto** no ficheiro errado passaram a ler o módulo certo: `testar-timeline` e `testar-cartao` (`store/library.js`), `testar-metas` (`store/users.js`), `testar-comentarios-fio` (`store/comments.js`). Sem isto, 10 verificações falhavam — e uma passava por acaso, que é o pior dos casos (o teste deixava de provar o que dizia).
+- **Verificação** — `npm test` (exit 0), `npm run lint` (0 erros), `npm run build` (PWA gerada), `scripts/verificar-cjk.mjs` limpo.
+
 ## 1.7.6
 
 **Feed de atividade** (migração 10, tabela `activity`): a página inicial passa a abrir com o que as pessoas que segues andam a ver, e cada perfil ganha a aba **Atividade**.

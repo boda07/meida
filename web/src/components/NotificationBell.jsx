@@ -6,6 +6,8 @@ import { useAuth } from "../auth/AuthContext.jsx";
 import Avatar from "./Avatar.jsx";
 import { haQuanto } from "../lib/tempo.js";
 import { useT } from "../i18n/I18nContext.jsx";
+import { useClickOutside } from "./useClickOutside.js";
+import { useAoVoltarAba } from "./useAoVoltarAba.js";
 
 const INTERVALO_MS = 60 * 1000; // um minuto chega: notifica-se para outra coisa
 
@@ -78,30 +80,10 @@ export default function NotificationBell() {
 
   // Recarrega ao voltar para o separador: se a pessoa deixou a app aberta
   // noutra janela, o sino antigo é pior do que uma espera.
-  useEffect(() => {
-    if (!user) return undefined;
-    const aoVoltar = () => {
-      if (document.visibilityState === "visible") carregar();
-    };
-    document.addEventListener("visibilitychange", aoVoltar);
-    return () => document.removeEventListener("visibilitychange", aoVoltar);
-  }, [user, carregar]);
+  useAoVoltarAba(carregar, { active: !!user });
 
-  useEffect(() => {
-    if (!aberto) return undefined;
-    const fora = (e) => {
-      if (caixaRef.current && !caixaRef.current.contains(e.target)) setAberto(false);
-    };
-    const esc = (e) => {
-      if (e.key === "Escape") setAberto(false);
-    };
-    document.addEventListener("mousedown", fora);
-    document.addEventListener("keydown", esc);
-    return () => {
-      document.removeEventListener("mousedown", fora);
-      document.removeEventListener("keydown", esc);
-    };
-  }, [aberto]);
+  // Clicar fora (ou Escape) fecha o painel.
+  useClickOutside(caixaRef, () => setAberto(false), { active: aberto });
 
   // Abrir o painel marca tudo como lido. É o que toda a gente espera — e o
   // número do sino é o único sítio onde se vê que há algo novo.

@@ -507,9 +507,12 @@ ok_("**a destructuracao do `useSettings` so tem nomes que o contexto expoe**", (
    * devolvia uma lista vazia **sem erro** — e a linha nunca aparecia, sem
    * aviso nenhum. Foi ver no browser: o pedido ao `/api/discover` nem era feito.
    */
-  ok_("**a App extrai o `id` de cada genero**", /\? g\.id : g\)/.test(APP));
+  ok_("**a App usa `generosParaDiscover`**", /generosParaDiscover\(v\.generos\)/.test(APP));
+  // A conversao e' pura e vive em `onboarding.js` — prova-se com valores, nao
+  // com o texto do `App.jsx`.
+  ok_("e extrai o `id` de cada genero", generosParaDiscover([{ id: 80, name: "Crime" }, { id: 12, name: "Aventura" }]) === "80,12");
   ok_("e NAO faz `join` do array inteiro (mandava os objetos inteiros)", !/v\.generos\.filter\(Boolean\)\.join\(","\)/.test(APP));
-  ok_("e descarta o que nao for id numerico", /\.filter\(\(id\) => Number\.isFinite\(Number\(id\)\) && Number\(id\) > 0\)/.test(APP));
+  ok_("e descarta o que nao for id numerico", generosParaDiscover([{ id: "abc" }, { id: 0 }, { id: -3 }, { id: "12" }]) === "12");
 }
 }
 

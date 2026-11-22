@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { api } from "../api/client.js";
 import { useT } from "../i18n/I18nContext.jsx";
+import { useClickOutside } from "./useClickOutside.js";
 
 // Botao "Adicionar a lista": abre um menu com as listas do utilizador (+ criar
 // nova). Ao escolher uma lista, adiciona o titulo atual a essa lista.
@@ -22,19 +23,7 @@ export default function AddToList({ details }) {
   }, [open]);
 
   // Fecha ao clicar fora ou com Escape.
-  useEffect(() => {
-    if (!open) return;
-    const onDown = (e) => {
-      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
-    };
-    const onKey = (e) => e.key === "Escape" && setOpen(false);
-    document.addEventListener("mousedown", onDown);
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("mousedown", onDown);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [open]);
+  useClickOutside(ref, () => setOpen(false), { active: open });
 
   async function add(listId, name) {
     setBusy(true);

@@ -164,7 +164,9 @@ console.log("  7) a migracao 9 e a regra de escrita");
   // meses e anos errados sem ninguem ter como saber.
   ok_("e NAO preenche com updated_at", !/UPDATE library SET watched_at/.test(schema));
 
-  const store = fs.readFileSync(path.join(RAIZ, "server", "src", "store.js"), "utf8");
+  // A regra vive em `store/library.js`; o `store.js` e' so o ponto de entrada
+  // (ver o teste 9), por isso e' aqui que se procura o CASE.
+  const store = fs.readFileSync(path.join(RAIZ, "server", "src", "store", "library.js"), "utf8");
   const upsert = store.slice(store.indexOf("export function upsertLibrary("), store.indexOf("export function upsertLibrarySafe("));
   const seguro = store.slice(store.indexOf("export function upsertLibrarySafe("));
 
@@ -216,7 +218,12 @@ console.log("");
 console.log("  9) os ficheiros do servidor ainda ABREM");
 {
   const { spawnSync } = await import("node:child_process");
-  for (const partes of [["server", "src", "store.js"], ["server", "src", "db", "schema.js"], ["server", "src", "routes", "export.js"]]) {
+  // O `store.js` ficou um ponto de entrada: as regras vivem em `store/*.js`.
+  // As duas coisas têm de abrir, e o ponto de entrada tem de expor o modulo —
+  // senao as rotas importam de la e rebentam no arranque.
+  const entrada = fs.readFileSync(path.join(RAIZ, "server", "src", "store.js"), "utf8");
+  ok_("o `store.js` reexporta o `store/library.js`", /export \* from "\.\/store\/library\.js"/.test(entrada));
+  for (const partes of [["server", "src", "store.js"], ["server", "src", "store", "library.js"], ["server", "src", "db", "schema.js"], ["server", "src", "routes", "export.js"]]) {
     const r = spawnSync(process.execPath, ["--check", path.join(RAIZ, ...partes)], { encoding: "utf8" });
     const primeira = ((r.stderr || "").split("\n").find((x) => x.includes("Error")) || "").trim().slice(0, 70);
     ok_("`" + partes.join("/") + "` faz parse", r.status === 0, "exit=" + r.status + (primeira ? " — " + primeira : ""));

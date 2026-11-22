@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { useT } from "../i18n/I18nContext.jsx";
+import { useClickOutside } from "./useClickOutside.js";
 
 /**
  * Botao de QUALIDADE dentro da barra de controlos, com a lista num popup.
@@ -21,23 +22,9 @@ export default function QualityMenu({ niveis = [], nivelAuto = true, ativo = -1,
   const [aberto, setAberto] = useState(false);
   const caixaRef = useRef(null);
 
-  // Clicar fora fecha, `Escape` fecha. Mesmo comportamento do menu de legendas —
-  // se um deles fechar e o outro nao, parece um bug.
-  useEffect(() => {
-    if (!aberto) return;
-    const fora = (e) => {
-      if (caixaRef.current && !caixaRef.current.contains(e.target)) setAberto(false);
-    };
-    const esc = (e) => {
-      if (e.key === "Escape") setAberto(false);
-    };
-    document.addEventListener("mousedown", fora);
-    document.addEventListener("keydown", esc);
-    return () => {
-      document.removeEventListener("mousedown", fora);
-      document.removeEventListener("keydown", esc);
-    };
-  }, [aberto]);
+// Clicar fora fecha, `Escape` fecha. Mesmo comportamento do menu de legendas —
+  // se um deles fechar e o outro não, parece um bug.
+  useClickOutside(caixaRef, () => setAberto(false), { active: aberto });
 
   // Escolher fecha o popup: ao contrario do das legendas (onde o popup tem
   // ainda as opcoes de tamanho e atraso), aqui nao ha' nada mais para fazer

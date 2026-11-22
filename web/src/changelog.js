@@ -6,6 +6,21 @@
 export const CHANGELOG = [
 
   {
+      version: "1.7.7",
+      items: [
+        "Manutenção: a app foi reorganizada por dentro — cada parte passou a ter o seu ficheiro, com uma só responsabilidade. Nada muda no ecrã; é trabalho de bastidores para as próximas novidades não partirem o que já existe.",
+        "Manutenção: as preferências (idioma dos títulos, cores, legendas, reprodução automática) passaram a ser lidas e guardadas num só sítio, em vez de espalhadas pelo código.",
+        "Manutenção: o servidor teve o mesmo tratamento — biblioteca, progresso, listas, comentários, notificações e perfis têm agora o seu próprio ficheiro, e o antigo ficheiro único passou a ser só a porta de entrada.",
+        "Fica uma regra nova no projeto: páginas e componentes não leem nem guardam preferências sozinhos — isso vive nos ganchos e na camada de dados. Há um teste que falha se alguém o fizer (e apanha o que as regras de lint não conseguem).",
+      ],
+      items_en: [
+        "Maintenance: the app was reorganized internally — each part now has its own file with a single responsibility. Nothing changes on screen; it's behind-the-scenes work so the next features don't break what already exists.",
+        "Maintenance: preferences (title language, colors, subtitles, autoplay) are now read and saved in one place, instead of being scattered across the code.",
+        "Maintenance: the server got the same treatment — library, progress, lists, comments, notifications and profiles each have their own file, and the old single file is now just the entry point.",
+        "New project rule: pages and components don't read or save preferences on their own — that lives in the hooks and the data layer. A test fails if anyone does it (and it catches what the lint rules can't).",
+      ],
+    },
+  {
       version: "1.7.6",
       items: [
         "Novidade: a página inicial começa pelo **feed de atividade** — o que as pessoas que segues andam a ver, com o título, o episódio e a temporada.",

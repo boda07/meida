@@ -15,6 +15,7 @@ import { useT } from "../i18n/I18nContext.jsx";
 import { useSettings } from "../settings/SettingsContext.jsx";
 import { useLibrary } from "../library/LibraryContext.jsx";
 import { api } from "../api/client.js";
+import { onboardingStore } from "../storage/onboarding.js";
 import {
   PASSOS,
   ULTIMO,
@@ -44,24 +45,8 @@ export const CORES = [
   "#06b6d4",
 ];
 
-const CHAVE = "meida_onboarding_v1";
-
-/** Ja se fez, ou ja se dispensou? Ficou neste PC, nao no servidor. */
-function lerEstado() {
-  try {
-    const v = JSON.parse(localStorage.getItem(CHAVE) || "null");
-    return v && typeof v === "object" ? v : {};
-  } catch {
-    return {};
-  }
-}
-function guardarEstado(v) {
-  try {
-    localStorage.setItem(CHAVE, JSON.stringify(v));
-  } catch {
-    /* sem espaco: o onboarding volta a aparecer, que e' melhor do que travar */
-  }
-}
+// O estado (feito/dispensado + géneros) vive em `web/src/storage/onboarding.js`
+// (chave `meida_onboarding_v1`, a mesma que o `App.jsx` lê).
 
 /**
  * @param {object} e
@@ -169,13 +154,13 @@ export default function Onboarding({ forcar = false, onFechar }) {
   // "dispensado" um onboarding que nunca chegou a aparecer.
   useEffect(() => {
     if (!visivel) return;
-    const guardado = lerEstado();
+    const guardado = onboardingStore.get();
     setEstado((v) => ({ ...v, ...guardado, ligacoes: { ...(v.ligacoes || {}), ...(guardado.ligacoes || {}) } }));
   }, [visivel]);
 
   // ---- Porta: importar ---------------------------------------------------
   const fechar = useCallback(() => {
-    guardarEstado({ ...estado, jaDispensado: true });
+    onboardingStore.set({ ...estado, jaDispensado: true });
     onFechar();
   }, [estado, onFechar]);
 
@@ -184,7 +169,7 @@ export default function Onboarding({ forcar = false, onFechar }) {
     if (proximo === null) {
       // A cor ja foi guardada ao carregar nela. Aqui so fica o que ainda nao
       // estava guardado: os generos e a marca de "ja fez".
-      guardarEstado({ ...estado, jaDispensado: true, generos });
+      onboardingStore.set({ ...estado, jaDispensado: true, generos });
       onFechar();
       return;
     }

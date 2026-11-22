@@ -2,8 +2,7 @@ import { useEffect, useState } from "react";
 import { CHANGELOG, getAppVersion, cmpVersion } from "../changelog.js";
 import ChangelogModal from "./ChangelogModal.jsx";
 import { useT } from "../i18n/I18nContext.jsx";
-
-const KEY = "meida_seen_version";
+import { changelogStore } from "../storage/changelog.js";
 
 function MegaphoneIcon() {
   return (
@@ -30,9 +29,9 @@ export default function Changelog() {
       const v = await getAppVersion();
       if (!v || !alive) return;
       setVersion(v);
-      const seen = localStorage.getItem(KEY);
+      const seen = changelogStore.get();
       if (!seen) {
-        localStorage.setItem(KEY, v); // primeira utilizacao -> sem aviso
+        changelogStore.set(v); // primeira utilizacao -> sem aviso
         return;
       }
       if (cmpVersion(v, seen) <= 0) return; // nao atualizou
@@ -48,7 +47,7 @@ export default function Changelog() {
   }, [t]);
 
   function markSeen() {
-    if (version) localStorage.setItem(KEY, version);
+    if (version) changelogStore.set(version);
     setHasNew(false);
   }
 

@@ -8,6 +8,7 @@ import LoadingStatus from "../components/LoadingStatus.jsx";
 import { CheckIcon } from "../components/icons.jsx";
 import { estadoDe } from "../components/profileStats.js";
 import { useT } from "../i18n/I18nContext.jsx";
+import { useTeclaEsc } from "../components/useTeclaEsc.js";
 
 const FILTERS = [
   { id: "all", label: "Tudo" },
@@ -91,17 +92,10 @@ export default function Library() {
   }, [user, selList]);
 
   // Fecha os modais com a tecla Escape.
-  useEffect(() => {
-    if (!genreOpen && !wlOpen) return;
-    const onKey = (e) => {
-      if (e.key === "Escape") {
-        setGenreOpen(false);
-        setWlOpen(false);
-      }
-    };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [genreOpen, wlOpen]);
+  useTeclaEsc(() => {
+    setGenreOpen(false);
+    setWlOpen(false);
+  }, { active: genreOpen || wlOpen });
 
   const toggleGenre = (g) =>
     setGenreSel((prev) => {

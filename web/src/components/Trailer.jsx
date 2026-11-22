@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useT } from "../i18n/I18nContext.jsx";
+import { useTeclaEsc } from "./useTeclaEsc.js";
 
 // Botao "Trailer" nos detalhes: abre um modal com o trailer (YouTube) embutido.
 export default function Trailer({ src }) {
@@ -7,12 +8,7 @@ export default function Trailer({ src }) {
   const [open, setOpen] = useState(false);
 
   // Fecha com Escape.
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e) => e.key === "Escape" && setOpen(false);
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [open]);
+  useTeclaEsc(() => setOpen(false), { active: open });
 
   if (!src) return null;
 

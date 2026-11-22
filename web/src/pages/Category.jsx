@@ -6,6 +6,7 @@ import MediaCard from "../components/MediaCard.jsx";
 import Hero from "../components/Hero.jsx";
 import LoadingStatus from "../components/LoadingStatus.jsx";
 import { useT } from "../i18n/I18nContext.jsx";
+import { useTeclaEsc } from "../components/useTeclaEsc.js";
 
 // "Destaques" = as linhas curadas (estado inicial); as restantes usam /discover.
 const SORTS = [
@@ -66,12 +67,7 @@ export default function Category({ category, title }) {
     });
 
   // Fecha o modal de géneros com Escape.
-  useEffect(() => {
-    if (!genreOpen) return;
-    const onKey = (e) => e.key === "Escape" && setGenreOpen(false);
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [genreOpen]);
+  useTeclaEsc(() => setGenreOpen(false), { active: genreOpen });
 
   // Carrega as linhas curadas.
   useEffect(() => {

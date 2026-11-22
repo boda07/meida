@@ -81,9 +81,9 @@ for (const texto of ["Entrar", "Criar conta", "Definições"]) {
 
 console.log("  5) fechar ao clicar fora");
 ok(
-  "o listener de mousedown continua",
-  /document\.addEventListener\("mousedown"/.test(MENU) &&
-    /setOpen\(false\)/.test(MENU)
+  "o fechar ao clicar fora continua",
+  /useClickOutside\(ref, \(\) => setOpen\(false\)/.test(MENU) &&
+    /escape: false/.test(MENU)
 );
 
 /* ---------- Resumo ---------- */

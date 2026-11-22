@@ -169,7 +169,7 @@ console.log("  6) a migracao guarda o alvo, e a rota so' aceita o que a lista di
   ok_("um alvo fora da lista da 400 e nao e' gravado", /if \(!ALVOS\.includes\(alvo\)\)/.test(rota) && /status\(400\)/.test(rota));
   ok_("um alvo guardado fora da lista cai no omissao ao ler", /ALVOS\.includes\(guardado\) \? guardado : ALVO_OMISSAO/.test(rota));
   // O `setMeta` junta; se substituir, a proxima preferencia a aparecer apaga esta.
-  const store = fs.readFileSync(path.join(RAIZ, "server", "src", "store.js"), "utf8");
+  const store = fs.readFileSync(path.join(RAIZ, "server", "src", "store", "users.js"), "utf8");
   ok_("`setMeta` junta ao que la esta (nao substitui)", /const novo = \{ \.\.\.atual, \.\.\./.test(store));
 
   // **O verbo tem de bater certo com o do cliente, e este teste nasceu de um
@@ -259,7 +259,7 @@ console.log("  8) um `meta` corrompido da objeto vazio em vez de rebentar");
   ok_("uma lista nao serve de preferencias", JSON.stringify(leMeta("[1,2]")) === "{}");
   ok_("um numero nao serve de preferencias", JSON.stringify(leMeta("7")) === "{}");
   ok_("um `null` escrito na coluna nao serve", JSON.stringify(leMeta("null")) === "{}");
-  ok_("e o `store.js` usa essa funcao em vez de um parse proprio", /return leMeta\(r && r\.meta\)/.test(fs.readFileSync(path.join(RAIZ, "server", "src", "store.js"), "utf8")));
+  ok_("e o `store/users.js` usa essa funcao em vez de um parse proprio", /return leMeta\(r && r\.meta\)/.test(fs.readFileSync(path.join(RAIZ, "server", "src", "store", "users.js"), "utf8")));
 }
 
 console.log("  " + ok + " ok, " + falhou + " falha(s)");

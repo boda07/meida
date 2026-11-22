@@ -14,6 +14,7 @@ import {
 } from "./legendas.js";
 import { useSubtitlePreferences } from "./useSubtitlePreferences.js";
 import { useAutoSubtitle } from "./useAutoSubtitle.js";
+import { useClickOutside } from "./useClickOutside.js";
 
 // Normaliza codigos de idioma variados (pt, pt-BR, por, en, eng...).
 // Devolve 0 (nao corresponde), 1 (corresponde) ou 2 (corresponde em
@@ -135,21 +136,7 @@ export function SubtitleMenu({ videoRef, subtitles = [] }) {
   }, [videoRef, subTamanho, subOpacidade, subFonte]);
 
   // Clicar fora fecha o popup. Sem isto ficava aberto por cima do video.
-  useEffect(() => {
-    if (!aberto) return;
-    const fora = (e) => {
-      if (caixaRef.current && !caixaRef.current.contains(e.target)) setAberto(false);
-    };
-    const esc = (e) => {
-      if (e.key === "Escape") setAberto(false);
-    };
-    document.addEventListener("mousedown", fora);
-    document.addEventListener("keydown", esc);
-    return () => {
-      document.removeEventListener("mousedown", fora);
-      document.removeEventListener("keydown", esc);
-    };
-  }, [aberto]);
+  useClickOutside(caixaRef, () => setAberto(false), { active: aberto });
 
   const ligada = val !== "-1";
 

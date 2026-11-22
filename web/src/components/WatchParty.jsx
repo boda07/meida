@@ -1,6 +1,8 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { useWatchParty } from "../watchparty/WatchPartyContext.jsx";
 import { useT } from "../i18n/I18nContext.jsx";
+import { wpNickStore } from "../storage/wpNick.js";
+import { useClickOutside } from "./useClickOutside.js";
 
 function PeopleIcon() {
   return (
@@ -18,7 +20,7 @@ export default function WatchParty() {
   const party = useWatchParty();
   const [open, setOpen] = useState(false);
   // Lembra o nome entre sessoes (para nao o teres de escrever sempre).
-  const [nick, setNick] = useState(() => localStorage.getItem("wp_nick") || "");
+  const [nick, setNick] = useState(() => wpNickStore.get() || "");
   const [code, setCode] = useState("");
   const [copied, setCopied] = useState(false);
   const ref = useRef(null);
@@ -26,18 +28,12 @@ export default function WatchParty() {
   // Guarda o nome e devolve-o ja limpo (com fallback) para criar/entrar.
   const getNick = (fallback) => {
     const n = nick.trim();
-    if (n) localStorage.setItem("wp_nick", n);
+    if (n) wpNickStore.set(n);
     return n || fallback;
   };
 
   // Fecha ao clicar fora.
-  useEffect(() => {
-    const onDoc = (e) => {
-      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
-    };
-    document.addEventListener("mousedown", onDoc);
-    return () => document.removeEventListener("mousedown", onDoc);
-  }, []);
+  useClickOutside(ref, () => setOpen(false), { escape: false });
 
   if (!party?.enabled) return null; // Watch Party não configurado neste build
 

@@ -8,6 +8,7 @@ import {
 } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useT } from "../i18n/I18nContext.jsx";
+import { api, tokenStore } from "../api/client.js";
 
 const WatchPartyContext = createContext(null);
 
@@ -32,13 +33,7 @@ function fullUrl(path) {
 }
 
 // Token de login (mesmo usado nas demais rotas da API).
-function authToken() {
-  try {
-    return localStorage.getItem("streamapp_token");
-  } catch {
-    return null;
-  }
-}
+const authToken = () => tokenStore.get();
 
 // Caminho de navegacao remota: so interno e relativo a raiz.
 //
@@ -80,14 +75,10 @@ export function WatchPartyProvider({ children }) {
   const send = useCallback((kind, data) => {
     const code = roomRef.current;
     if (!code) return;
-    const token = authToken();
-    const headers = { "Content-Type": "application/json" };
-    if (token) headers["Authorization"] = `Bearer ${token}`;
-    fetch(fullUrl("/api/wp/send"), {
-      method: "POST",
-      headers,
-      body: JSON.stringify({ room: code, from: idRef.current, kind, data }),
-    }).catch(() => {});
+    // Passa pelo client (levar o token e a base certa) e engole o erro: a sala
+    // pode fechar-se entre o envio e a resposta, e isso nao e' um erro do
+    // utilizador.
+    api.wpSend({ room: code, from: idRef.current, kind, data }).catch(() => {});
   }, []);
 
   // Subscreve eventos recebidos. Devolve funcao para cancelar.
