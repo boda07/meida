@@ -1,5 +1,27 @@
 # Changelog
 
+## 1.7.6
+
+**Feed de atividade** (migração 10, tabela `activity`): a página inicial passa a abrir com o que as pessoas que segues andam a ver, e cada perfil ganha a aba **Atividade**.
+
+- **Porque não se lê o `progress`** — a `progress` guarda o estado ATUAL de um título e, numa série, avança para o episódio seguinte no momento em que se conclui o anterior. Ler dali daria "viu o episódio 4" a quem acabou o 3, e nunca mostraria dois episódios seguidos. O registo fica no momento do fim (`recordActivity`, chamado no `finishProgress`). `season`/`episode` usam `0` para filmes — não é só estética: o índice único trata NULL como valores distintos, e rever o mesmo filme criaria uma linha nova a cada vez.
+- **Escrita** — `recordActivity()` no fim do progresso (séries e filmes vistos pela ficha) e no `POST /library` ao marcar um filme como visto na biblioteca (com `!existing.watched`, para não repetir). Séries entram só pelo progresso: um "visto" na biblioteca não diz QUAL episódio.
+- **Filmes de anime** — na biblioteca o `type` é `"anime"` para filmes e séries (o id é o do MAL). O cliente passou a mandar `isMovie` (`normalizeAnime`, `normalizeAnilistAnime`, listas de filmes, `MediaCard`, `LibraryControls`, `Details`) e o servidor decide com `eFilme(type, isMovie)`.
+- **Rotas** — `GET /api/feed` (quem segues + tu, exige sessão) e `GET /api/users/:username/activity` (perfil público ou dono; `optionalAuth`). Paginação por `offset` com tectos, `hasMore` calculado com `limit + 1`, títulos localizados em background (`localizarTitulos` + `preencherTitulosLocalizados`). A privacidade é a mesma da biblioteca (`canViewProfile`): perfil privado não entra no feed dos outros e seguir um perfil privado não abre excepção.
+- **Export/import** — a atividade vai no JSON (`export-json.js`) e o import conta-a (`seed.js`).
+- **UI** — `FeedSection` (cabeçalho + lista + "carregar mais") e `ActivityList` (só desenho). A frase e as ligações vivem em `activity/fraseAtividade.jsx` e `lib/atividade.js` (o link de um episódio leva `?s=&e=`, senão a ficha abria sempre no episódio 1). A Home deixou de pedir o catálogo e passou a usar `home/useCatalogo.js`; o estado do feed vive em `activity/useAtividade.js` e a deduplicação de páginas em `activity/itensAtividade.js`.
+
+**Correções**
+
+- `Torrents.jsx` recebia `onAudioChange` e nunca o chamava: mudar DUB/Legendado não gravava a preferência do título (`audioTituloStore`) nem actualizava os botões do separador Fontes.
+- `useAtividade.js` usava `useT()` sem o importar (ReferenceError ao abrir o feed).
+
+**Qualidade**
+
+- Rotas finas: `responderPagina(req, res, listar)` partilha a paginação e a localização das duas rotas de atividade.
+- Lint: 0 erros, 0 warnings.
+- Testes: `server/test/activity.test.js` (11 testes) e `scripts/testar-atividade.mjs`, ambos no `npm test`.
+
 ## 1.7.5
 
 Correção de traduções que ficavam em português com o site em inglês:

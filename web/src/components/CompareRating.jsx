@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { imageUrl } from "../api/client.js";
 import { useAuth } from "../auth/AuthContext.jsx";
 import { useSettings } from "../settings/SettingsContext.jsx";
@@ -102,16 +102,12 @@ export default function CompareRating({ details, onClose }) {
   const [other, setOther] = useState(null);
 
   const {
-    items,
     current,
-    seen,
     refs,
     busy,
     msg,
     saveScore,
     adjust,
-    setCurrent,
-    setMsg,
   } = useCompareRating({ details });
 
   const curItem = {

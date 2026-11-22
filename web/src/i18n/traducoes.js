@@ -821,8 +821,8 @@ export const DICIONARIO = {
       "Cola o teu token do Real-Debrid (obtém-no em {ligacao}){fim}",
     "A ligar a: {destino}": "A ligar a: {destino}",
     "servidor local deste computador": "servidor local deste computador",
-    "Perfil público — qualquer pessoa pode ver a tua biblioteca e listas.{estado}":
-      "Perfil público — qualquer pessoa pode ver a tua biblioteca e listas.{estado}",
+    "Perfil público — qualquer pessoa pode ver a tua biblioteca, listas e atividade.{estado}":
+      "Perfil público — qualquer pessoa pode ver a tua biblioteca, listas e atividade.{estado}",
     "Mostrar anime adulto (NSFW/hentai) na pesquisa, nos filtros de género e no \"Escolhe algo para mim\". Desligado por defeito.":
       "Mostrar anime adulto (NSFW/hentai) na pesquisa, nos filtros de género e no \"Escolhe algo para mim\". Desligado por defeito.",
     "média {media} · mediana {mediana}": "média {media} · mediana {mediana}",
@@ -1106,6 +1106,30 @@ export const DICIONARIO = {
     "Inglês": "Inglês",
     "momento": "momento",
     "Comentar": "Comentar",
+    // --- feed de atividade (Home.jsx / UserProfile.jsx / FeedSection.jsx) ---
+    "Atividade": "Atividade",
+    "A tua rede": "A tua rede",
+    "O que andam a ver": "O que andam a ver",
+    "A atividade recente de quem segues.": "A atividade recente de quem segues.",
+    "Descobrir pessoas": "Descobrir pessoas",
+    "A carregar a atividade": "A carregar a atividade",
+    "Não foi possível carregar a atividade: {erro}":
+      "Não foi possível carregar a atividade: {erro}",
+    "Sem título": "Sem título",
+    "Alguém": "Alguém",
+    "{user} viu o filme {title}": "{user} viu o filme {title}",
+    "{user} viu a série {title}": "{user} viu a série {title}",
+    "{user} viu {title}": "{user} viu {title}",
+    "{user} viu o episódio {ep} da temporada {season} de {title}":
+      "{user} viu o episódio {ep} da temporada {season} de {title}",
+    "{user} viu o episódio {ep} de {title}":
+      "{user} viu o episódio {ep} de {title}",
+    "Ainda não há atividade.": "Ainda não há atividade.",
+    "Ainda não há atividade. Marca um episódio ou um filme como visto e aparece aqui.":
+      "Ainda não há atividade. Marca um episódio ou um filme como visto e aparece aqui.",
+    "Ainda não há atividade por aqui.": "Ainda não há atividade por aqui.",
+    "Segue pessoas para veres o que andam a ver — ou marca um episódio como visto.":
+      "Segue pessoas para veres o que andam a ver — ou marca um episódio como visto.",
     // --- nomes proprios: iguais nos dois idiomas ---
     "Romaji": "Romaji",
     "Igual à interface": "Igual à interface",
@@ -1894,8 +1918,8 @@ export const DICIONARIO = {
     "servidor local deste computador": "this computer's local server",
     "Mostrar anime adulto (NSFW/hentai) na pesquisa, nos filtros de género e no \"Escolhe algo para mim\". Desligado por defeito.":
       'Show adult anime (NSFW/hentai) in search, in the genre filters and in "Pick something for me". Off by default.',
-    "Perfil público — qualquer pessoa pode ver a tua biblioteca e listas.{estado}":
-      "Public profile — anyone can see your library and lists.{estado}",
+    "Perfil público — qualquer pessoa pode ver a tua biblioteca, listas e atividade.{estado}":
+      "Public profile — anyone can see your library, lists and activity.{estado}",
     "média {media} · mediana {mediana}": "average {media} · median {mediana}",
     "A década conta {ano} dos {n} títulos: os restantes ainda não têm ano guardado. Abre a ficha de alguns, ou corre o preenchimento, e este número fica mais firme.":
       "The decade accounts for {ano} of the {n} titles: the rest have no year stored yet. Open a few of them, or run the fill-in, and this number gets more solid.",
@@ -2173,6 +2197,30 @@ export const DICIONARIO = {
     "Inglês": "English",
     "momento": "timestamp",
     "Comentar": "Comment",
+    // --- activity feed (Home.jsx / UserProfile.jsx / FeedSection.jsx) ---
+    "Atividade": "Activity",
+    "A tua rede": "Your circle",
+    "O que andam a ver": "What everyone's watching",
+    "A atividade recente de quem segues.": "Recent activity from the people you follow.",
+    "Descobrir pessoas": "Discover people",
+    "A carregar a atividade": "Loading activity",
+    "Não foi possível carregar a atividade: {erro}":
+      "Couldn't load activity: {erro}",
+    "Sem título": "Untitled",
+    "Alguém": "Someone",
+    "{user} viu o filme {title}": "{user} watched the movie {title}",
+    "{user} viu a série {title}": "{user} watched the series {title}",
+    "{user} viu {title}": "{user} watched {title}",
+    "{user} viu o episódio {ep} da temporada {season} de {title}":
+      "{user} watched season {season}, episode {ep} of {title}",
+    "{user} viu o episódio {ep} de {title}":
+      "{user} watched episode {ep} of {title}",
+    "Ainda não há atividade.": "No activity yet.",
+    "Ainda não há atividade. Marca um episódio ou um filme como visto e aparece aqui.":
+      "No activity yet. Mark an episode or a movie as watched and it will show up here.",
+    "Ainda não há atividade por aqui.": "No activity around here yet.",
+    "Segue pessoas para veres o que andam a ver — ou marca um episódio como visto.":
+      "Follow people to see what they're watching — or mark an episode as watched.",
     "Romaji": "Romaji",
     "Igual à interface": "Same as the interface",
   },

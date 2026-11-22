@@ -140,7 +140,7 @@ ok("mudar de pagina escreve ?page=", /set\("page"/.test(allRow));
 
 const servico = ler("server/src/services/catalogRows.js");
 ok("a pagina chega ao TMDB", /getListPage\(tmdb\.path, page, opts\)/.test(servico));
-ok("a pagina chega ao Jikan", /getAnimeListPage\(anime\.path, page, opts\)/.test(servico));
+ok("a pagina chega ao Jikan", /getAnimeListPage\(anime\.path, page, opts/.test(servico));
 ok("o cliente expoe catalogRow", /catalogRow:/.test(ler("web/src/api/client.js")));
 
 const app = ler("web/src/App.jsx");

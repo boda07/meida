@@ -15,6 +15,8 @@ import {
   deleteList,
   addListTitle,
   removeListTitle,
+  recordActivity,
+  eFilme,
 } from "../store.js";
 import { requireAuth } from "../services/auth.js";
 import { getMeta, getGenreVocab, getLocalizedMetaCached, localizarTitulos, preencherTitulosLocalizados } from "../services/tmdb.js";
@@ -232,7 +234,7 @@ libraryRouter.get("/library/item", (req, res) => {
 
 // Cria/atualiza visto e/ou nota. Faz merge com o estado existente.
 libraryRouter.post("/library", (req, res) => {
-  const { tmdbId, type, title, poster, watched, watchlist, score, genres, rating, year } =
+  const { tmdbId, type, title, poster, watched, watchlist, score, genres, rating, year, isMovie } =
     req.body || {};
   const { status } = req.body || {};
   if (!tmdbId || (type !== "movie" && type !== "tv" && type !== "anime")) {
@@ -274,7 +276,27 @@ libraryRouter.post("/library", (req, res) => {
     status: estadoNovo,
     score: score !== undefined ? score : existing?.score ?? null,
   });
-  res.json({ item: normalizeRow(getLibraryItem(req.user.id, Number(tmdbId), type)) });
+  const item = normalizeRow(getLibraryItem(req.user.id, Number(tmdbId), type));
+  // O feed regista o filme marcado como visto pela biblioteca. So filmes: uma
+  // serie marcada como vista nao diz QUAL episodio, e o feed existe para dizer
+  // o episodio. As series entram pelo `finishProgress`. O `!existing.watched`
+  // evita repetir no feed um filme que ja estava visto.
+  //
+  // `isMovie` e' o caso do anime: la' o `type` e' "anime" para filmes e
+  // series (o id e' o do MAL), e o cliente e' que sabe qual e'. Sem este
+  // campo, um filme de anime marcado pela grelha nunca entrava no feed.
+  const ehFilme = eFilme(type, isMovie);
+  if (ehFilme && item?.watched && !existing?.watched) {
+    recordActivity({
+      userId: req.user.id,
+      type,
+      tmdbId: Number(tmdbId),
+      title: item.title,
+      poster: item.poster,
+      kind: "movie",
+    });
+  }
+  res.json({ item });
 });
 
 // Guarda so' o ano de um titulo que ja esta' na biblioteca.

@@ -132,6 +132,11 @@ export function normalizeAnime(a, romaji = false) {
   return {
     id: a.mal_id,
     type: "anime",
+    // Na biblioteca o `type` e' "anime" para filmes e series (o id e' o do MAL).
+    // Esta marca e' o que permite ao feed dizer "viu o filme" em vez de "viu a
+    // serie" quando alguem marca um cartaz como visto. Vem do `type` do Jikan
+    // ("Movie", "TV", "OVA"...), que e' a mesma informacao que o detalhe usa.
+    isMovie: /movie/i.test(a.type || ""),
     title,
     overview: a.synopsis || "",
     poster: a.images?.jpg?.large_image_url || a.images?.jpg?.image_url || null,
@@ -158,6 +163,9 @@ function normalizeAnilistAnime(a, romaji = false) {
   return {
     id: a.idMal,
     type: "anime",
+    // Mesma marca do normalizador do Jikan: "MOVIE" e' um filme, o resto e'
+    // serie. Vem do `format` do AniList (as queries pedem-no).
+    isMovie: a.format === "MOVIE",
     title,
     overview: stripHtml(a.description),
     poster: a.coverImage?.extraLarge || a.coverImage?.large || null,
@@ -170,7 +178,7 @@ function normalizeAnilistAnime(a, romaji = false) {
 async function searchAnimeAnilist(query, opts = {}) {
   const romaji = isRomaji(opts);
   const adultFilter = opts.adult ? "" : ",isAdult:false";
-  const queryText = `query($q:String){Page(page:1,perPage:10){media(search:$q,type:ANIME,sort:POPULARITY_DESC${adultFilter}){idMal title{romaji english native} description(asHtml:false) coverImage{extraLarge large} bannerImage startDate{year} averageScore meanScore}}}`;
+  const queryText = `query($q:String){Page(page:1,perPage:10){media(search:$q,type:ANIME,sort:POPULARITY_DESC${adultFilter}){idMal format title{romaji english native} description(asHtml:false) coverImage{extraLarge large} bannerImage startDate{year} averageScore meanScore}}}`;
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 4500);
   try {
@@ -251,7 +259,7 @@ function currentAnilistSeason(date = new Date()) {
 
 async function fetchAnilistAnimeList({ sort, format = null, status = null, season = null, seasonYear = null }, opts = {}) {
   const romaji = isRomaji(opts);
-  const query = `query($sort:[MediaSort],$format:MediaFormat,$status:MediaStatus,$season:MediaSeason,$seasonYear:Int,$isAdult:Boolean){Page(page:1,perPage:24){media(type:ANIME,sort:$sort,format:$format,status:$status,season:$season,seasonYear:$seasonYear,isAdult:$isAdult){idMal title{romaji english native} description(asHtml:false) coverImage{extraLarge large} bannerImage startDate{year} averageScore meanScore}}}`;
+  const query = `query($sort:[MediaSort],$format:MediaFormat,$status:MediaStatus,$season:MediaSeason,$seasonYear:Int,$isAdult:Boolean){Page(page:1,perPage:24){media(type:ANIME,sort:$sort,format:$format,status:$status,season:$season,seasonYear:$seasonYear,isAdult:$isAdult){idMal format title{romaji english native} description(asHtml:false) coverImage{extraLarge large} bannerImage startDate{year} averageScore meanScore}}}`;
   const variables = {
     sort: [sort],
     isAdult: opts.adult ? null : false,
@@ -310,15 +318,18 @@ export async function getAnimeCatalog(opts = {}) {
     ["a-top", "Anime popular", "/top/anime?filter=bypopularity&limit=24"],
     ["a-season", "Esta epoca", "/seasons/now?limit=24"],
     ["a-airing", "A passar agora", "/top/anime?filter=airing&limit=24"],
-    ["a-movies", "Filmes de anime", "/top/anime?type=movie&limit=24"],
+    ["a-movies", "Filmes de anime", "/top/anime?type=movie&limit=24", true],
   ];
 
   // Sequencial (com pausa) para respeitar o rate limit do Jikan.
   const rows = [];
-  for (const [id, title, path] of defs) {
+  for (const [id, title, path, filme] of defs) {
     let items;
     try {
       items = dedupe(clean(await jikanFetch(path), romaji));
+      // "Filmes de anime" leva `isMovie` em cada item: e' o que faz o feed
+      // dizer "viu o filme" quando alguem marca um destes cartazes como visto.
+      if (filme) items = comoFilme(items);
     } catch {
       items = [];
     }
@@ -362,20 +373,29 @@ export async function getAnimeCatalog(opts = {}) {
 // Filmes de anime (MAL), para mostrar tambem na pagina de Filmes.
 // Cache em memoria, chaveada por idioma do titulo.
 const animeMoviesCache = {}; // { [key]: { at, items } }
+
+// Uma lista de filmes de anime leva `isMovie` em cada item. Estas listas sao
+// filmes POR DEFINICAO (`/top/anime?type=movie`), portanto a marca fica
+// garantida mesmo que o payload nao traga o `type` que o normalizador le — e e'
+// o que faz o feed dizer "viu o filme X" em vez de "viu a serie X".
+const comoFilme = (items) => items.map((i) => (i ? { ...i, isMovie: true } : i));
+
 export async function getAnimeMovies(opts = {}) {
   const romaji = isRomaji(opts);
   const key = romaji ? "romaji" : "en";
   const cached = animeMoviesCache[key];
   if (cached && Date.now() - cached.at < CATALOG_TTL) return cached.items;
   try {
-    const items = dedupe(
-      clean(await jikanFetch(`/top/anime?type=movie&limit=24`), romaji)
+    const items = comoFilme(
+      dedupe(clean(await jikanFetch(`/top/anime?type=movie&limit=24`), romaji))
     );
     if (items.length) animeMoviesCache[key] = { at: Date.now(), items };
     return items;
   } catch {
     try {
-      const items = await fetchAnilistAnimeList({ sort: "POPULARITY_DESC", format: "MOVIE" }, opts);
+      const items = comoFilme(
+        await fetchAnilistAnimeList({ sort: "POPULARITY_DESC", format: "MOVIE" }, opts)
+      );
       if (items.length) animeMoviesCache[key] = { at: Date.now(), items };
       return items;
     } catch {
@@ -390,12 +410,16 @@ export async function getAnimeMovies(opts = {}) {
  * lista que alimenta as rows de anime — o "Ver todos" continua a ser a mesma
  * coisa, so' que completa.
  */
-export async function getAnimeListPage(path, page = 1, opts = {}) {
+export async function getAnimeListPage(path, page = 1, opts = {}, { isMovie = false } = {}) {
   const p = Math.max(1, Number(page) || 1);
   const sep = path.includes("?") ? "&" : "?";
   const d = await jikanFetch(`${path}${sep}page=${p}`);
   const pag = d?.pagination || {};
-  const items = dedupe(clean(d, isRomaji(opts)));
+  let items = dedupe(clean(d, isRomaji(opts)));
+  // "Filmes de anime" tambem tem "Ver todos": os itens da pagina completa
+  // precisam da mesma marca que os da row, senao metade da lista ficava sem
+  // saber que e' um filme.
+  if (isMovie) items = comoFilme(items);
   // O Tenrai nem sempre manda `pagination`. Sem ela, uma pagina cheia quer
   // dizer "ha' mais"; e' preferivel deixar ir uma pagina a mais (que pode vir
   // vazia) do que esconder titulos que existem.
@@ -522,7 +546,7 @@ async function pickAnimeFromAnilist({ genres = [], exclude = [] }, opts = {}) {
     const genreIn = genres.map((id) => byId.get(String(id))).filter(Boolean);
     const genreNotIn = exclude.map((id) => byId.get(String(id))).filter(Boolean);
     const romaji = isRomaji(opts);
-    const query = `query($genre_in:[String],$genre_not_in:[String],$isAdult:Boolean){Page(page:1,perPage:25){media(type:ANIME,sort:POPULARITY_DESC,genre_in:$genre_in,genre_not_in:$genre_not_in,isAdult:$isAdult){idMal title{romaji english native} description(asHtml:false) coverImage{extraLarge large} bannerImage startDate{year} averageScore meanScore}}}`;
+    const query = `query($genre_in:[String],$genre_not_in:[String],$isAdult:Boolean){Page(page:1,perPage:25){media(type:ANIME,sort:POPULARITY_DESC,genre_in:$genre_in,genre_not_in:$genre_not_in,isAdult:$isAdult){idMal format title{romaji english native} description(asHtml:false) coverImage{extraLarge large} bannerImage startDate{year} averageScore meanScore}}}`;
     const res = await netFetch("https://graphql.anilist.co", {
       method: "POST",
       headers: { "content-type": "application/json", accept: "application/json" },

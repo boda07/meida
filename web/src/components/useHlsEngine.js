@@ -54,7 +54,10 @@ export function useHlsEngine({ src, isM3U8, videoRef, onErro }) {
     try {
       if (n == null) localStorage.removeItem(QUALIDADE_KEY);
       else localStorage.setItem(QUALIDADE_KEY, String(n));
-    } catch (e) {}
+    } catch {
+      // localStorage indisponivel (modo privado, etc.): a escolha fica para
+      // esta sessao, que e' onde ela faz falta.
+    }
   }, []);
 
   useEffect(() => {
@@ -143,7 +146,7 @@ export function useHlsEngine({ src, isM3U8, videoRef, onErro }) {
     // `onErro` de proposito FORA das dependencias: o callback muda de identidade
     // a cada render do `Player`, e cada mudanca destruia e recriava o hls (o
     // video voltava ao inicio). O `onErroRef` ja' serve o valor atualizado.
-  }, [src, isM3U8]);
+  }, [src, isM3U8, videoRef]);
 
   return { hls: hlsRef.current, niveis, nivelAuto, ativo, mudarQualidade, setNiveis };
 }

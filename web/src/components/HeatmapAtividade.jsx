@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useMemo } from "react";
 import { useT } from "../i18n/I18nContext.jsx";
 import {
   DIAS_SEMANA,

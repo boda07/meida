@@ -6,6 +6,23 @@
 export const CHANGELOG = [
 
   {
+      version: "1.7.6",
+      items: [
+        "Novidade: a página inicial começa pelo **feed de atividade** — o que as pessoas que segues andam a ver, com o título, o episódio e a temporada.",
+        "Novidade: cada perfil tem a aba **Atividade**, com o histórico do que a pessoa viu (só o dono a vê, se o perfil for privado).",
+        "Novidade: as atividades levam à ficha no sítio certo (um episódio abre nesse episódio) e mostram o cartaz do título.",
+        "Correção: mudar o áudio (Dobrado/Legendado) na lista de torrents não guardava a preferência — ficava só para aquela lista. Agora guarda e fica igual ao separador Fontes.",
+        "Correção: um filme de anime marcado como visto pela biblioteca não aparecia no feed (só pela ficha). Agora aparece.",
+      ],
+      items_en: [
+        "New: the home page starts with the **activity feed** — what the people you follow are watching, with the title, episode and season.",
+        "New: every profile has an **Activity** tab with the person's history (only the owner sees it, if the profile is private).",
+        "New: activities open the title in the right place (an episode opens on that episode) and show the title poster.",
+        "Fix: changing the audio (Dubbed/Subtitled) in the torrent list didn't save the preference — it only applied to that list. Now it's saved and matches the Sources tab.",
+        "Fix: an anime movie marked as watched from the library didn't show up in the feed (only from the details page). Now it does.",
+      ],
+    },
+  {
       version: "1.7.5",
       items: [
         "Correção: com o site em inglês, a página inicial mostrava os títulos das linhas em português (\"Em tendência\", \"Filmes populares\", \"Séries populares\", ...). Agora são traduzidos.",

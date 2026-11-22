@@ -28,7 +28,9 @@ export default function MediaCard({ item, landscape = false }) {
     if (!canQuickAdd || watched) return;
     try {
       if (watchlist) {
-        await lib.markWatched(item.type, item.id, item.title, item.poster, entry?.score);
+        // `item.isMovie` vem das listas de filmes de anime: sem ele, o servidor
+        // ve "anime" e nao sabe que e' um filme (o feed diria "viu a serie").
+        await lib.markWatched(item.type, item.id, item.title, item.poster, entry?.score, item.isMovie);
       } else {
         await lib.quickAdd(item.type, item.id, item.title, item.poster);
       }

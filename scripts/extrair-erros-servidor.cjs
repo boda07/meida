@@ -49,10 +49,11 @@ for (const rel of ficheiros) {
     const t = texto.trim();
     // Filtros: o que nao e' para o utilizador ver.
     if (CODIGO_INTERNO.test(t)) return;
+    // eslint-disable-next-line no-control-regex -- \x1b e' mesmo o que se quer: e' o inicio de uma cor de consola
     if (/^\x1b|\[\d+m/.test(t)) return;                    // cor de consola
     if (/^[a-z_]+$/.test(t)) return;                       // identificador solto
     if (!/\s/.test(t)) return;                             // palavra unica sem espaco
-    if (/^[.\/\\]/.test(t)) return;                        // caminho
+    if (/^[.\\/]/.test(t)) return;                         // caminho
     if (t.length > 120) return;                            // demasiado longo: nao e' mensagem
     if (!achadas.has(t)) achadas.set(t, { ficheiros: new Set(), linhas: new Set() });
     achadas.get(t).ficheiros.add(ficheiro);

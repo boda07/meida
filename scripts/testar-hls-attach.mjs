@@ -353,8 +353,8 @@ const MUTACOES = [
   ],
   [
     "volta a meter o onErro nas dependencias",
-    "  }, [src, isM3U8]);",
-    "  }, [src, isM3U8, onErro]);",
+    "  }, [src, isM3U8, videoRef]);",
+    "  }, [src, isM3U8, videoRef, onErro]);",
   ],
   [
     "le src.isM3U8 (a string) em vez do parametro",
@@ -363,8 +363,8 @@ const MUTACOES = [
   ],
   [
     "tira o isM3U8 das dependencias",
-    "  }, [src, isM3U8]);",
-    "  }, [src]);",
+    "  }, [src, isM3U8, videoRef]);",
+    "  }, [src, videoRef]);",
   ],
   [
     "a recuperacao de rede nunca desiste (o video fica preso)",

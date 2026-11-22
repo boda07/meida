@@ -671,6 +671,9 @@ api
             poster: details.poster,
             genres: details.genres || [],
             rating: details.rating ?? null,
+            // Filme de anime: o `type` e' "anime", e' este campo que diz ao
+            // servidor que e' um filme (para o feed nao dizer "viu a serie").
+            isMovie: details.isMovie,
             watched: true,
           })
           .catch(() => {});

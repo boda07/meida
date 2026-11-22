@@ -55,10 +55,15 @@ ok_(
   "a ordem attachMedia antes de loadSource é necessária"
 );
 
+// A linha das dependencias tal como esta' no gancho. A verificacao nao fixa a
+// lista exacta (ja' mudou quando o `videoRef` entrou): o que importa e' que
+// `onErro` fique FORA dela.
+const linhaDeps = hlsHook.split("\n").find((l) => l.includes("}, [src,")) || "";
+
 ok_(
   "onErro está fora das dependencias do useEffect",
-  hlsHook.includes("}, [src, isM3U8])"),
-  "onErro nas dependencias recriava o hls"
+  linhaDeps.includes("isM3U8") && !linhaDeps.includes("onErro"),
+  "onErro nas dependencias recriava o hls (linha: " + linhaDeps.trim() + ")"
 );
 
 console.log("");

@@ -14,7 +14,6 @@ import { fileURLToPath } from "node:url";
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const MAIN = fs.readFileSync(path.join(RAIZ, "electron", "main.cjs"), "utf8");
-const ESTE = fileURLToPath(import.meta.url);
 
 let ok = 0;
 let falhou = 0;

@@ -452,6 +452,11 @@ export const api = {
     get(`/api/users/${encodeURIComponent(username)}/lists/${id}`, langParams()),
   userFollowers: (username) => get(`/api/users/${encodeURIComponent(username)}/followers`),
   userFollowing: (username) => get(`/api/users/${encodeURIComponent(username)}/following`),
+  // Feed de atividade: quem segues + tu. `opts` tem limit/offset.
+  feed: (opts = {}) => get("/api/feed", { ...opts, ...langParams() }),
+  // Historico de um perfil (so se o perfil for publico ou for o teu).
+  userActivity: (username, opts = {}) =>
+    get(`/api/users/${encodeURIComponent(username)}/activity`, { ...opts, ...langParams() }),
   searchUsers: (q) => get("/api/users", { q }),
   // Quem sugerir para uma "@mencao". Query vazia e' valida de proposito: e' o que
   // se pede logo apos escrever o "@", e devolve a primeira pagina de toda a gente

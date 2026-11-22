@@ -12,8 +12,6 @@ const fs = require("node:fs");
 const path = require("node:path");
 const { execFileSync } = require("child_process");
 
-const PASTAS = ["web/src/pages", "web/src/components", "web/src/settings", "web/src/library"];
-
 // 1) Recolhe os erros do eslint.
 //
 // O eslint sai com codigo 1 quando ha erros, e neste ambiente o `execFileSync`
@@ -65,8 +63,6 @@ if (!erros.length) {
     }
   }
 }
-lint = ""; // ja extraido
-
 const porFicheiro = new Map();
 for (const e of erros) {
   if (!porFicheiro.has(e.filePath)) porFicheiro.set(e.filePath, []);

@@ -21,6 +21,7 @@ import { exportRouter } from "./routes/export.js";
 import { achievementsRouter } from "./routes/achievements.js";
 import { goalsRouter } from "./routes/goals.js";
 import { socialRouter } from "./routes/social.js";
+import { activityRouter } from "./routes/activity.js";
 import { commentsRouter } from "./routes/comments.js";
 import { watchPartyRouter } from "./routes/watchparty.js";
 import { adminRouter } from "./routes/admin.js";
@@ -86,6 +87,7 @@ app.use("/api", notificationsRouter);
 // progress, export, achievements, library): esses aplicam o login a TUDO o que
 // lhes chega, e os perfis publicos e a leitura de comentarios sao anonimos.
 app.use("/api", socialRouter);
+app.use("/api", activityRouter);
 app.use("/api", commentsRouter);
 app.use("/api", streamRouter);
 app.use("/api", playRouter);
@@ -200,7 +202,6 @@ const PORTA_DO_AMBIENTE = Boolean((process.env.PORT || "").trim());
 const PORTAS = PORTA_DO_AMBIENTE
   ? [config.port]
   : [config.port, config.port + 1, config.port + 2, config.port + 3];
-let portaEscolhida = null;
 
 function tentar(indice) {
   if (indice >= PORTAS.length) {
@@ -225,7 +226,6 @@ function tentar(indice) {
   const servidor = app.listen(porta, config.host);
 
   servidor.once("listening", () => {
-    portaEscolhida = porta;
     // Catalogo do Anikoto: duas paginas em segundo plano, para o catalogo
     // estar em cache quando a primeira pessoa pedir um anime. Nao bloqueia o
     // arranque (e' um `catch` vazio — falhar aqui e' o mesmo que nao ter

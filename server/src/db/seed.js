@@ -33,6 +33,7 @@ export function seedFromJson(raw, { force = false } = {}) {
     users: 0,
     library: 0,
     progress: 0,
+    activity: 0,
     lists: 0,
     listItems: 0,
     tokens: 0,
@@ -136,6 +137,33 @@ export function seedFromJson(raw, { force = false } = {}) {
         r.updated_at || now()
       );
       counts.progress++;
+    }
+
+    /* --- Feed de atividade (opcional: so' existe em exports recentes) --- */
+    // O `INSERT OR REPLACE` assenta no indice unico (user, media, id, season,
+    // episode): reimportar o mesmo JSON nao duplica o feed.
+    const insActivity = db.prepare(
+      `INSERT OR REPLACE INTO activity
+         (user_id, media_type, external_id, title, poster, season, episode,
+          kind, watched_at, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    );
+    for (const a of raw.activity || []) {
+      const uid = idMap.get(a.user_id);
+      if (uid == null || a.tmdb_id == null) continue;
+      insActivity.run(
+        uid,
+        a.media_type,
+        a.tmdb_id,
+        a.title ?? null,
+        a.poster ?? null,
+        a.season ?? 0,
+        a.episode ?? 0,
+        a.kind === "episode" || a.kind === "series" ? a.kind : "movie",
+        a.watched_at || now(),
+        a.created_at || a.watched_at || now()
+      );
+      counts.activity++;
     }
 
     /* --- Listas --- */

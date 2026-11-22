@@ -28,7 +28,6 @@ export default function Torrents({ type, imdb, title, season, episode, anime, de
     codec,
     setCodec,
     audio,
-    setAudio,
     mudarAudio,
   } = useTorrentFilters({ list, debrid, anime, defaultAudio });
 
@@ -103,7 +102,14 @@ export default function Torrents({ type, imdb, title, season, episode, anime, de
               <button
                 key={a.id}
                 className={`tf-chip ${audio === a.id ? "active" : ""}`}
-                onClick={() => mudarAudio(a.id)}
+                onClick={() => {
+                  mudarAudio(a.id);
+                  // Avisa a ficha (Details -> escolherAudio): e' o unico caminho
+                  // que grava a preferencia do titulo no `audioTituloStore` e
+                  // mantem os botoes do separador Fontes em sintonia. Sem esta
+                  // chamada, mudar aqui valia so' para esta lista.
+                  onAudioChange?.(a.id);
+                }}
               >
                 {t(a.label)}
               </button>

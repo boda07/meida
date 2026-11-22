@@ -48,10 +48,11 @@ function mensagensDoServidor() {
             // converte-os noutra mensagem), cor de consola, caminhos, e o que
             // so' o developer ve (falta um parametro).
             if (CODIGO_INTERNO.test(t)) return;
+            // eslint-disable-next-line no-control-regex -- \x1b e' mesmo o que se quer: e' o inicio de uma cor de consola
             if (/^\x1b|\[\d+m/.test(t)) return;
             if (/^[a-z_]+$/.test(t)) return;
             if (!/\s/.test(t)) return;
-            if (/^[.\/\\]/.test(t)) return;
+            if (/^[.\\/]/.test(t)) return;
             if (t.length > 120) return;
             // As de "falta <parametro>" so' chegam ao developer: um cliente
             // nunca as ve porque a chamada e' do proprio site.

@@ -370,4 +370,97 @@ export const MIGRATIONS = [
       `);
     },
   },
+
+  {
+    version: 10,
+    name: "atividade",
+    up(db) {
+      // O feed de atividade: um registo por episodio/filme concluido.
+      //
+      // **Porque nao se le o `progress`.** A tabela `progress` guarda o estado
+      // ATUAL de um titulo e, numa serie, avanca para o episodio SEGUINTE no
+      // momento em que se conclui o anterior (`finishProgress`). Ler dali daria
+      // "viu o episodio 4" a quem acabou o 3 — e nunca mostraria dois episodios
+      // seguidos, porque so existe uma linha por titulo. O feed precisa do
+      // episodio que foi mesmo visto, por isso guarda-se no momento do fim.
+      //
+      // `season` e `episode` usam 0 como "nao se aplica" (um filme). Nao e' so
+      // estetica: o indice unico trata NULLs como valores distintos, e cada vez
+      // que se revê um filme apareceria uma linha nova. Com 0, rever o mesmo
+      // episodio/filme ATUALIZA a data em vez de duplicar.
+      //
+      // O `ON DELETE CASCADE` garante que apagar a conta leva o feed com ela.
+      db.exec(`
+        CREATE TABLE activity (
+          id          INTEGER PRIMARY KEY AUTOINCREMENT,
+          user_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          media_type  TEXT    NOT NULL,
+          external_id INTEGER NOT NULL,
+          title       TEXT,
+          poster      TEXT,
+          season      INTEGER NOT NULL DEFAULT 0,
+          episode     INTEGER NOT NULL DEFAULT 0,
+          kind        TEXT    NOT NULL DEFAULT 'movie',
+          watched_at  TEXT    NOT NULL,
+          created_at  TEXT    NOT NULL
+        );
+
+        CREATE UNIQUE INDEX idx_activity_unique
+          ON activity(user_id, media_type, external_id, season, episode);
+        CREATE INDEX idx_activity_user ON activity(user_id, watched_at DESC);
+        CREATE INDEX idx_activity_recent ON activity(watched_at DESC);
+
+        -- Preenche o feed com o que ja se sabia, para nao abrir vazio depois de
+        -- atualizar. So entra o que e' honesto:
+        --   * filmes concluidos (season/episode vazios), incluindo filmes de
+        --     anime (type 'anime' sem episodio);
+        --   * series cujo progresso esta' "finished" — nesse estado o
+        --     season/episode atual E' o ultimo episodio visto.
+        -- Series a meio ficam de fora de proposito: o progresso ja aponta para
+        -- o episodio seguinte e o feed diria o episodio errado.
+        INSERT OR IGNORE INTO activity
+          (user_id, media_type, external_id, title, poster, season, episode,
+           kind, watched_at, created_at)
+        SELECT user_id, media_type, external_id, title, poster,
+               COALESCE(season, 0), COALESCE(episode, 0),
+               CASE
+                 WHEN media_type = 'movie' THEN 'movie'
+                 WHEN season IS NULL AND episode IS NULL AND media_type = 'anime'
+                   THEN 'movie'
+                 WHEN season IS NULL AND episode IS NULL THEN 'series'
+                 ELSE 'episode'
+               END,
+               COALESCE(finished_at, updated_at),
+               COALESCE(finished_at, updated_at, started_at)
+        FROM progress
+        WHERE finished_at IS NOT NULL
+          AND (
+            media_type = 'movie'
+            OR (season IS NULL AND episode IS NULL)
+            OR status = 'finished'
+          );
+
+        -- Filmes marcados como vistos na biblioteca (sem diario). A data
+        -- watched_at e' a real; quando falta, usa-se a ultima alteracao.
+        -- O INSERT OR IGNORE deixa ganhar o registo do progresso, que tem a
+        -- data de fim exata.
+        --
+        -- So 'movie': na tabela library um filme de anime tem media_type 'anime'
+        -- e nao ha' nada que o distinga de uma serie. Os filmes de anime que
+        -- passaram pela ficha ficam cobertos pelo INSERT acima (progresso sem
+        -- temporada nem episodio); os marcados so' na grelha ficam de fora,
+        -- porque nem o servidor nem a base sabiam que eram filmes (o cliente
+        -- passou a mandar isMovie depois disto).
+        INSERT OR IGNORE INTO activity
+          (user_id, media_type, external_id, title, poster, season, episode,
+           kind, watched_at, created_at)
+        SELECT user_id, media_type, external_id, title, poster, 0, 0,
+               'movie',
+               COALESCE(watched_at, updated_at),
+               COALESCE(watched_at, updated_at)
+        FROM library
+        WHERE media_type = 'movie' AND watched = 1;
+      `);
+    },
+  },
 ];

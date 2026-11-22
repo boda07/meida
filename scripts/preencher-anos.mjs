@@ -35,7 +35,7 @@ const arg = (nome, def) => {
 const LIMITE = Number(arg("--limite", "0")) || 0;
 const SO_USER = arg("--user", "") ? Number(arg("--user", "")) : null;
 
-const { setLibraryYear, listLibrary } = await import(
+const { setLibraryYear } = await import(
   "file://" + RAIZ + "/server/src/store.js"
 );
 const { getDetails } = await import("file://" + RAIZ + "/server/src/services/tmdb.js");

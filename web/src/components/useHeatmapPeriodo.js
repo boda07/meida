@@ -1,11 +1,5 @@
-import { useCallback, useMemo, useState } from "react";
-import {
-  DIAS_SEMANA,
-  PERIODOS,
-  PERIODO_OMISSAO,
-  semanasAte,
-  chaveDia,
-} from "./heatmap.js";
+import { useMemo, useState } from "react";
+import { PERIODOS, PERIODO_OMISSAO, semanasAte } from "./heatmap.js";
 
 // Periodos do mapa de calor (botoes "3 meses", "6 meses", "tudo", etc.).
 //
@@ -21,7 +15,7 @@ export function useHeatmapPeriodo({ dias, semanas = PERIODO_OMISSAO }) {
     const lista = PERIODOS.map((p) => ({ ...p, semanas: Math.min(p.semanas, tudo) }));
     const filtrados = lista.filter((p, i) => i === 0 || p.semanas < lista[i - 1].semanas);
     return [...filtrados, { semanas: tudo, chave: "{n} tudo", n: 0, tudo: true }];
-  }, [dias]);
+  }, [tudo]);
 
   const semanasAtivas = escolhido || semanas;
 

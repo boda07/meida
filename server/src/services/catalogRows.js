@@ -30,9 +30,11 @@ export const ROWS_ANIME = {
   "a-top": { path: "/top/anime?filter=bypopularity&limit=24", title: "Anime popular" },
   "a-season": { path: "/seasons/now?limit=24", title: "Esta epoca" },
   "a-airing": { path: "/top/anime?filter=airing&limit=24", title: "A passar agora" },
-  "a-movies": { path: "/top/anime?type=movie&limit=24", title: "Filmes de anime" },
+  // `isMovie` nao e' so' para o titulo: e' o que faz o feed dizer "viu o filme"
+  // em vez de "viu a serie" quando alguem marca um destes cartazes como visto.
+  "a-movies": { path: "/top/anime?type=movie&limit=24", title: "Filmes de anime", isMovie: true },
   // A row "Filmes de anime" da pagina de Filmes usa a mesma lista do MAL.
-  "m-anime": { path: "/top/anime?type=movie&limit=24", title: "Filmes de anime" },
+  "m-anime": { path: "/top/anime?type=movie&limit=24", title: "Filmes de anime", isMovie: true },
 };
 
 /**
@@ -55,7 +57,7 @@ export async function getCatalogRow(rowId, { page = 1, genres = "" } = {}, opts 
 
   const anime = ROWS_ANIME[rowId];
   if (anime) {
-    const r = await getAnimeListPage(anime.path, page, opts);
+    const r = await getAnimeListPage(anime.path, page, opts, { isMovie: anime.isMovie });
     return { id: rowId, title: anime.title, ...r };
   }
 

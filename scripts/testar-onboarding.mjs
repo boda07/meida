@@ -480,16 +480,23 @@ ok_("**a destructuracao do `useSettings` so tem nomes que o contexto expoe**", (
  */
 {
   const home = fs.readFileSync(path.join(RAIZ, "web", "src", "pages", "Home.jsx"), "utf8");
+  // Os pedidos vivem no gancho (a Home desenha); as verificações de dados
+  // apontam para lá, as de desenho continuam na Home.
+  const catalogo = fs.readFileSync(
+    path.join(RAIZ, "web", "src", "home", "useCatalogo.js"),
+    "utf8"
+  );
   ok_("a Home recebe os generos", /export default function Home\(\{ generos = "" \}\)/.test(home));
+  ok_("e passa-os ao gancho do catalogo", /useCatalogo\(generos\)/.test(home));
   // **O parametro chama-se `genres` e a propriedade `generos`.** Trocar uma
   // pela outra da' `undefined` e a linha desaparece sem erro nenhum.
-  ok_("passa-os ao `/api/discover` com o nome certo", /\.discover\(\{ type: "movie", genres: generos \}\)/.test(home));
-  ok_("e nao com `genres: genres` (que seria `undefined`)", !/\.discover\(\{ type: "movie", genres \}\)/.test(home));
+  ok_("passa-os ao `/api/discover` com o nome certo", /\.discover\(\{ type: "movie", genres: generos \}\)/.test(catalogo));
+  ok_("e nao com `genres: genres` (que seria `undefined`)", !/\.discover\(\{ type: "movie", genres \}\)/.test(catalogo));
   ok_("a linha entra ANTES do catalogo", home.indexOf("porGenero ?") >= 0 && home.indexOf("porGenero ?") < home.indexOf("rows.map("));
-  ok_("e so quando ha generos", /if \(!generos\) \{[\s\S]{0,60}setPorGenero\(null\)/.test(home));
+  ok_("e so quando ha generos", /if \(!generos\) \{[\s\S]{0,60}setPorGenero\(null\)/.test(catalogo));
   // Falha em silencio: um erro de rede no primeiro ecra depois de criar a conta
   // nao pode mostrar a pagina como partida.
-  ok_("e falha em silencio", /\.catch\(\(\) => \{ \/\* a Home fica como estava \*\/ \}\)/.test(home));
+  ok_("e falha em silencio", /\.catch\(\(\) => \{ \/\* a Home fica como estava \*\/ \}\)/.test(catalogo));
   ok_("a App so passa os generos se `jaDispensado`", /if \(!v \|\| v\.jaDispensado !== true\) return ""/.test(APP));
   ok_("e a rota Home recebe o parametro", /<Home generos=\{generosEscolhidos\(\)\} \/>/.test(APP));
   /*

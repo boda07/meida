@@ -222,7 +222,7 @@ console.log("");
 console.log("  7) mudar o idioma da interface recarrega o catalogo");
 {
   const PAGINAS = [
-    "web/src/pages/Home.jsx",
+    "web/src/home/useCatalogo.js",
     "web/src/pages/Search.jsx",
     "web/src/pages/Category.jsx",
     "web/src/pages/Details.jsx",

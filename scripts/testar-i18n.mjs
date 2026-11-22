@@ -33,7 +33,7 @@ function ok(rotulo, cond, extra = "") {
 const i18n = await import(
   "file://" + join(RAIZ, "web/src/i18n/traducoes.js").replace(/\\/g, "/")
 );
-const { DICIONARIO, IDIOMAS, PLURAIS, NOMES_IDIOMA } = i18n;
+const { DICIONARIO, IDIOMAS, PLURAIS } = i18n;
 
 // O `traduzir` esta' no contexto (que e' JSX). Reimplementa-se aqui a MESMA
 // logica para testar sem DOM — se divergir, o teste passa a mentir. Por isso a

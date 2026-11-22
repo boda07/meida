@@ -57,15 +57,6 @@ for (const { pt } of pares) {
     continue;
   }
 
-  // Casos por ordem: o mais especifico primeiro, para nao substituir um
-  // pedaco de um texto maior.
-  const casos = [
-    // title="X", aria-label="X", placeholder="X", alt="X"
-    [`="${pt}"`, `={t("${pt}")}`],
-    // <span>X</span> — so' entre tags, com texto puro dos dois lados
-    [`>${pt}<`, `>{t("${pt}")}<`],
-  ];
-
   let feito = false;
   // 1) Atributos: title="X", aria-label="X", placeholder="X", alt="X".
   //    NOTA: isto apanha tambem `value="X"` e strings em expressoes, que e'

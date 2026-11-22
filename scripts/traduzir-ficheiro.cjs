@@ -10,7 +10,6 @@
 // NAO TRADUZ: classes, ids, rotas, imports, numeros, `t("...")` ja' feito.
 // Preserva o CRLF/LF do ficheiro (o repo tem os dois).
 const fs = require("node:fs");
-const path = require("node:path");
 
 const ficheiro = process.argv[2];
 if (!ficheiro) {
@@ -113,13 +112,11 @@ const TRADUCOES = {
 
 // === Aplica ===
 let src = fs.readFileSync(caminho, "utf8");
-const eol = src.includes("\r\n") ? "\r\n" : "\n";
-const original = src;
 
 let aplicadas = 0;
 const naoEncontradas = [];
 
-for (const [pt, en] of Object.entries(TRADUCOES)) {
+for (const pt of Object.keys(TRADUCOES)) {
   // 1) texto entre tags:  >Biblioteca<
   const reTags = new RegExp(">([^<>{}]*)\\b" + escapar(pt) + "\\b([^<>{}]*)<", "g");
   const antes = src;

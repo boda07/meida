@@ -38,6 +38,9 @@ export default function LibraryControls({ details }) {
         poster: details.poster,
         genres: details.genres || [],
         rating: details.rating ?? null,
+        // Um filme de anime tem `type: "anime"` (o id e' o do MAL) e so' aqui se
+        // sabe que e' um filme: e' o que faz o feed dizer "viu o filme".
+        isMovie: details.isMovie,
         ...patch,
       });
       setEntry(d.item);

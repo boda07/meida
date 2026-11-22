@@ -645,6 +645,229 @@ h2 {
   margin-top: 12px;
 }
 
+/* ===== Feed de atividade (Home + perfil) =====
+   A Home deixou de abrir com um hero e passou a abrir com o feed. O hero
+   continua nas paginas de categoria. O `padding-top` e' o espaco da nav fixa
+   (a mesma medida que as paginas sem hero usam). */
+.home-feed-page {
+  padding-top: 104px;
+}
+
+.feed-home {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 0 clamp(20px, 4vw, 60px);
+}
+
+.feed-profile {
+  max-width: 860px;
+}
+
+.feed-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px 32px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+
+.feed-eyebrow {
+  margin: 0 0 5px;
+  color: var(--accent-text);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+.feed-title {
+  margin: 0;
+  font-family: "Archivo", sans-serif;
+  font-size: clamp(28px, 4vw, 40px);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.06;
+  color: var(--text);
+}
+
+.feed-sub {
+  margin: 8px 0 0;
+  color: var(--text-secondary);
+  font-size: 14.5px;
+}
+
+.feed-people-link {
+  display: inline-flex;
+  align-items: center;
+  padding: 9px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: var(--radius-pill);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.feed-people-link:hover {
+  border-color: var(--accent);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.activity-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.activity-item {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) 54px;
+  align-items: center;
+  gap: 14px;
+  padding: 13px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 10px;
+}
+
+.activity-item:hover {
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.activity-avatar {
+  display: flex;
+  text-decoration: none;
+}
+
+.activity-body {
+  min-width: 0;
+}
+
+.activity-line {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 14.5px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.activity-user-link {
+  color: var(--text);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.activity-user-link:hover {
+  text-decoration: underline;
+}
+
+.activity-title-link {
+  color: var(--text);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.activity-title-link:hover {
+  color: var(--accent-text);
+}
+
+.activity-time {
+  display: block;
+  margin-top: 3px;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.activity-poster {
+  display: block;
+  width: 54px;
+  height: 80px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 7px;
+  background: var(--bg-surface2);
+  transition: border-color 0.15s;
+}
+
+.activity-poster img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.activity-poster:hover {
+  border-color: var(--accent);
+}
+
+.activity-poster-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  font-family: "Archivo", sans-serif;
+  font-size: 22px;
+}
+
+.feed-more {
+  display: flex;
+  justify-content: center;
+  padding: 18px 0 8px;
+}
+
+.feed-empty {
+  padding: 30px 24px;
+  border: 1px dashed rgba(255, 255, 255, 0.16);
+  border-radius: var(--radius-card);
+  text-align: center;
+}
+
+.feed-empty p {
+  margin: 0 0 8px;
+}
+
+.feed-empty p.muted {
+  margin-bottom: 16px;
+  font-size: 13.5px;
+}
+
+.feed-empty .modal-btn {
+  display: inline-flex;
+  text-decoration: none;
+}
+
+@media (max-width: 560px) {
+  .home-feed-page {
+    padding-top: 88px;
+  }
+
+  .feed-head {
+    align-items: flex-start;
+  }
+
+  .activity-item {
+    grid-template-columns: 34px minmax(0, 1fr) 44px;
+    gap: 10px;
+    padding: 12px 4px;
+  }
+
+  .activity-poster {
+    width: 44px;
+    height: 66px;
+  }
+
+  .activity-line {
+    font-size: 13.5px;
+  }
+
+  .activity-time {
+    font-size: 11.5px;
+  }
+}
+
 /* ===== Continua a ver (Home) ===== */
 .cw-card {
   position: relative;

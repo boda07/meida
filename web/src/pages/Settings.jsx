@@ -1478,7 +1478,7 @@ export default function Settings() {
                 onChange={(e) => setIsPublic(e.target.checked)}
               />
               <span>
-                {t("Perfil público — qualquer pessoa pode ver a tua biblioteca e listas.{estado}", {
+                {t("Perfil público — qualquer pessoa pode ver a tua biblioteca, listas e atividade.{estado}", {
                   estado: !isPublic ? t(" (agora está privado: só tu vês)") : "",
                 })}
               </span>

@@ -118,7 +118,7 @@ export default function Player({
     setReloadKey((k) => k + 1);
     setLoaded(false);
     setErroFonte(null);
-  }, [index, lista, deadIds, active, setIndex, setLoaded, setTrocada, setReloadKey]);
+  }, [index, lista, deadIds, active, nextAlive, setIndex, setLoaded, setTrocada, setReloadKey]);
 
   // Estado de erro da fonte nativa (separado do fallback).
   const [erroFonte, setErroFonte] = useState(null);

@@ -84,6 +84,26 @@ const progress = db
     updated_at: r.updated_at,
   }));
 
+// O feed de atividade. Sai com o mesmo nome de campo dos outros arrays
+// (`tmdb_id` para o `external_id`) para o `seed.js` nao ter de saber de duas
+// convencoes. E' o que impede a mudanca para o servidor partilhado de apagar o
+// historico de quem ja tinha visto episodios ca'.
+const activity = db
+  .prepare("SELECT * FROM activity")
+  .all()
+  .map((r) => ({
+    user_id: r.user_id,
+    media_type: r.media_type,
+    tmdb_id: r.external_id,
+    title: r.title,
+    poster: r.poster,
+    season: r.season,
+    episode: r.episode,
+    kind: r.kind,
+    watched_at: r.watched_at,
+    created_at: r.created_at,
+  }));
+
 const lists = db
   .prepare("SELECT id, user_id, name, created_at FROM lists")
   .all()
@@ -117,6 +137,7 @@ const out = {
   users,
   library,
   progress,
+  activity,
   lists,
   follows,
   comments,
@@ -129,7 +150,8 @@ if (outArg) {
   writeFileSync(dest, json, "utf8");
   console.error(
     `Exportado para ${dest}: ${users.length} utilizadores, ${library.length} biblioteca, ` +
-      `${progress.length} diario, ${comments.length} comentarios, ${follows.length} seguir.`
+      `${progress.length} diario, ${activity.length} atividade, ${comments.length} comentarios, ` +
+      `${follows.length} seguir.`
   );
 } else {
   process.stdout.write(json);

@@ -47,6 +47,7 @@ console.log(`Importado de ${SRC} (notas em escala 1-${scoreScale} -> 0-100):`);
 console.log(`  utilizadores: ${counts.users}`);
 console.log(`  biblioteca:   ${counts.library}`);
 console.log(`  diario:       ${counts.progress}`);
+console.log(`  atividade:    ${counts.activity}`);
 console.log(`  listas:       ${counts.lists} (${counts.listItems} titulos)`);
 console.log(`  tokens:       ${counts.tokens}`);
 console.log("Fim.");

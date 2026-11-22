@@ -307,8 +307,6 @@ console.log("  14) o desenho: a coluna dos dias nao desliza com o mapa");
 {
   const JSX = fs.readFileSync(path.join(RAIZ, "web", "src", "components", "HeatmapAtividade.jsx"), "utf8");
   const CSS = fs.readFileSync(path.join(RAIZ, "web", "src", "styles.css"), "utf8");
-  const DESTAQUE = fs.readFileSync(path.join(RAIZ, "web", "src", "components", "useHeatmapDestaque.js"), "utf8");
-  const JSX_TUDO = JSX + "\n" + DESTAQUE;
   ok_("a coluna dos dias existe", /className="heatmap-lateral"/.test(JSX));
   ok_("e escreve as tres abreviaturas", /ROTULOS_DIA\.map/.test(JSX));
   // **O que importa:** o rotulo tem de estar FORA do contentor que desliza, senao

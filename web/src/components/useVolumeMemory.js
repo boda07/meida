@@ -32,7 +32,9 @@ export function useVolumeMemory(videoRef) {
       try {
         localStorage.setItem(VOLUME_KEY, String(video.volume));
         localStorage.setItem(MUDO_KEY, String(video.muted));
-      } catch (e) {}
+      } catch {
+        // localStorage indisponivel (modo privado, etc.): ignora.
+      }
     };
 
     video.addEventListener("volumechange", onVol);

@@ -128,7 +128,7 @@ export function LibraryProvider({ children }) {
 
   // Marca como visto (também tira da watchlist) optimicamente.
   const markWatched = useCallback(
-    async (type, tmdbId, title, poster, existingScore) => {
+    async (type, tmdbId, title, poster, existingScore, isMovie = false) => {
       mergeEntry({
         type,
         tmdbId,
@@ -140,7 +140,17 @@ export function LibraryProvider({ children }) {
         rating: null,
         updatedAt: null,
       });
-      await api.saveLibrary({ tmdbId, type, title, poster, watched: true, watchlist: false });
+      // `isMovie` so' importa para o anime: na biblioteca o `type` e' "anime"
+      // para filmes e series, e o feed precisa de distinguir os dois.
+      await api.saveLibrary({
+        tmdbId,
+        type,
+        title,
+        poster,
+        watched: true,
+        watchlist: false,
+        isMovie,
+      });
     },
     [mergeEntry]
   );

@@ -12,6 +12,7 @@ import Avatar from "../components/Avatar.jsx";
 import LoadingStatus from "../components/LoadingStatus.jsx";
 import { CheckIcon } from "../components/icons.jsx";
 import ProfileStats from "../components/ProfileStats.jsx";
+import FeedSection from "../components/FeedSection.jsx";
 import { statsFrom } from "../components/profileStats.js";
 import { useT } from "../i18n/I18nContext.jsx";
 
@@ -145,7 +146,9 @@ export default function UserProfile() {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [tab, setTab] = useState("library");
+  // A aba inicial e' a atividade: e' o "o que esta pessoa anda a ver", a mesma
+  // pergunta que a Home responde. A biblioteca continua a um clique.
+  const [tab, setTab] = useState("activity");
   const [items, setItems] = useState(null);
   // Quantos titulos a pessoa esta a ver AGORA. Sai do diario (status
   // "watching"), nao da biblioteca: e' o unico sitio onde "a ver"
@@ -167,7 +170,7 @@ export default function UserProfile() {
     setPeople(null);
     setOpenList(null);
     setOpenListItems(null);
-    setTab("library");
+    setTab("activity");
     api
       .userProfile(username)
       .then((d) => alive && setProfile(d))
@@ -372,6 +375,7 @@ export default function UserProfile() {
 
       <div className="profile-tabs" role="tablist">
         {[
+          { id: "activity", label: "Atividade" },
           { id: "library", label: "Biblioteca" },
           { id: "lists", label: "Listas" },
           { id: "stats", label: "Estatísticas" },
@@ -395,6 +399,8 @@ export default function UserProfile() {
           {t("🔒 Este perfil é privado.")}{" "}
           {user ? t("Segue o utilizador, mas a biblioteca só ele a vê.") : t("Entra para o adicionares.")}
         </p>
+      ) : tab === "activity" ? (
+        <FeedSection username={username} />
       ) : tab === "library" ? (
         <PosterGrid items={items} empty={t("A biblioteca está vazia.")} romaji={romaji} />
       ) : tab === "stats" ? (

@@ -37,7 +37,7 @@ export default function HlsPlayer({
   usePlayerShortcuts(videoRef, containerRef); // Atalhos de teclado
 
   // ── Engine hls.js (qualidade + recuperacao de erros) ──
-  const { hls, niveis, nivelAuto, ativo, mudarQualidade } = useHlsEngine({
+  const { niveis, nivelAuto, ativo, mudarQualidade } = useHlsEngine({
     src,
     isM3U8,
     videoRef,

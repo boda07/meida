@@ -519,6 +519,130 @@ export function listProgress(userId) {
     .map((r) => toApiProgress(r));
 }
 
+/* ===== Atividade (feed) ===== */
+
+// O `kind` diz a frase que a interface mostra. Um filme de anime (type
+// "anime", sem episodio) e' um FILME, nao um episodio 0; uma serie sem numero
+// de episodio e' uma serie, nao um filme. So' ha tres frases, e a decisao tem de
+// ser a mesma na migracao (ver db/schema.js, migracao 10) e no codigo novo.
+function tipoDeAtividade(type, season, episode) {
+  if (type === "movie") return "movie";
+  if (season != null || episode != null) return "episode";
+  return type === "anime" ? "movie" : "series";
+}
+
+/**
+ * Um titulo marcado como visto na biblioteca conta como FILME para o feed?
+ *
+ * `movie` e' trivial. O caso dificil e' o anime: na biblioteca o `type` e'
+ * "anime" tanto para um filme como para uma serie (o id e' o do MAL), e o
+ * cliente e' o unico que sabe qual e' — manda `isMovie` (as listas de filmes
+ * de anime levam a marca). Sem isto, um filme de anime visto pela grelha
+ * ficava de fora, porque o servidor ve "anime" e nao pode adivinhar.
+ */
+export function eFilme(type, isMovie) {
+  if (type === "movie") return true;
+  return type === "anime" && isMovie === true;
+}
+
+function toApiActivity(r) {
+  return {
+    id: r.id,
+    user: {
+      id: r.user_id,
+      username: r.username ?? null,
+      avatar: r.avatar ?? null,
+    },
+    type: r.media_type,
+    tmdbId: r.external_id,
+    title: r.title ?? null,
+    poster: r.poster ?? null,
+    // 0 e' o "nao se aplica" do indice unico (ver db/schema.js, migracao 10).
+    season: r.season || null,
+    episode: r.episode || null,
+    kind: r.kind,
+    watchedAt: r.watched_at,
+  };
+}
+
+/**
+ * Regista um episodio/filme concluido. Chamado no fim, ANTES de o progresso
+ * avancar para o episodio seguinte.
+ *
+ * O `ON CONFLICT` e' o que impede o feed de encher com o mesmo episodio quando
+ * a pessoa carrega duas vezes em "terminei": a segunda vez sobe a data, em vez
+ * de criar outra linha.
+ */
+export function recordActivity(e) {
+  const quando = e.watchedAt || now();
+  db.prepare(
+    `INSERT INTO activity
+       (user_id, media_type, external_id, title, poster, season, episode,
+        kind, watched_at, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+     ON CONFLICT(user_id, media_type, external_id, season, episode) DO UPDATE SET
+       title      = COALESCE(excluded.title, activity.title),
+       poster     = COALESCE(excluded.poster, activity.poster),
+       kind       = excluded.kind,
+       watched_at = excluded.watched_at`
+  ).run(
+    e.userId,
+    e.type,
+    Number(e.tmdbId),
+    e.title ?? null,
+    e.poster ?? null,
+    e.season ?? 0,
+    e.episode ?? 0,
+    e.kind === "episode" ? "episode" : e.kind === "series" ? "series" : "movie",
+    quando,
+    quando
+  );
+}
+
+// Feed de quem o utilizador segue + ele proprio.
+//
+// Privacidade: so entram perfis publicos. Seguir um perfil privado NAO da'
+// acesso ao diario — a regra e' a mesma de `canViewProfile`: publico -> todos,
+// privado -> so o dono. O proprio utilizador entra sempre, mesmo que tenha o
+// perfil privado.
+export function listFeedActivity(viewerId, { limit = 20, offset = 0 } = {}) {
+  const rows = db
+    .prepare(
+      `SELECT a.*, u.username, u.avatar
+       FROM activity a
+       JOIN users u ON u.id = a.user_id
+       WHERE a.user_id = ?
+          OR (
+            u.is_public = 1
+            AND a.user_id IN (SELECT followee_id FROM follows WHERE follower_id = ?)
+          )
+       ORDER BY a.watched_at DESC, a.id DESC
+       LIMIT ? OFFSET ?`
+    )
+    .all(viewerId, viewerId, limit + 1, offset);
+  return {
+    items: rows.slice(0, limit).map(toApiActivity),
+    hasMore: rows.length > limit,
+  };
+}
+
+export function listUserActivity(userId, { limit = 20, offset = 0 } = {}) {
+  const rows = db
+    .prepare(
+      `SELECT a.*, u.username, u.avatar
+       FROM activity a
+       JOIN users u ON u.id = a.user_id
+       WHERE a.user_id = ?
+       ORDER BY a.watched_at DESC, a.id DESC
+       LIMIT ? OFFSET ?`
+    )
+    .all(userId, limit + 1, offset);
+  return {
+    items: rows.slice(0, limit).map(toApiActivity),
+    hasMore: rows.length > limit,
+  };
+}
+
 export function getProgress(userId, type, tmdbId) {
   const r = db
     .prepare("SELECT * FROM progress WHERE user_id = ? AND media_type = ? AND external_id = ?")
@@ -625,6 +749,21 @@ export function finishProgress(e) {
     // marcava o anime como acabado ao fim de cada episodio e o tirava do
     // "continua a ver" (medido a 2026-10-06, no Dragon Ball).
     const hasNext = e.nextEpisode != null;
+    // O feed regista o episodio que acabou AGORA, antes de o progresso apontar
+    // para o seguinte. Os valores vem do `e` (o cliente diz o que acabou de
+    // ver), mas manter isto antes do `patchProgress` deixa a ordem do codigo a
+    // contar a mesma historia que a ordem dos factos: primeiro o que se viu,
+    // depois o que fica por ver.
+    recordActivity({
+      userId: e.userId,
+      type: e.type,
+      tmdbId: e.tmdbId,
+      title: e.title ?? cur.title,
+      poster: e.poster ?? cur.poster,
+      season: e.season ?? null,
+      episode: e.episode ?? null,
+      kind: tipoDeAtividade(e.type, e.season, e.episode),
+    });
     patchProgress(e.userId, e.type, e.tmdbId, {
       title: e.title,
       poster: e.poster,
