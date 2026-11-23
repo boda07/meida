@@ -27,7 +27,8 @@ import {
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const SERVICO = path.join(RAIZ, "server/src/services/megaplayNativo.js");
-const ROTA = path.join(RAIZ, "server/src/routes/play.js");
+// A resposta do MegaPlay passou para o handler; a rota e' fina.
+const ROTA = path.join(RAIZ, "server/src/handlers/play.js");
 const HOOK = path.join(RAIZ, "web/src/components/useNativeVideoSource.js");
 const PLAYER = path.join(RAIZ, "web/src/components/Player.jsx");
 const MAPA = path.join(RAIZ, "web/src/components/mensagemNativo.js");
@@ -363,9 +364,9 @@ console.log("  1) cada falha do servidor tem um codigo");
   );
 }
 
-/* ---------- 2. A rota devolve codigo + detalhe (nunca motivo) ---------- */
+/* ---------- 2. O handler devolve codigo + detalhe (nunca motivo) ---------- */
 
-console.log("  2) a rota separa o codigo do detalhe");
+console.log("  2) o handler separa o codigo do detalhe");
 {
   const rota = fs.readFileSync(ROTA, "utf8");
   ok_(
@@ -381,10 +382,10 @@ console.log("  2) a rota separa o codigo do detalhe");
     )
   );
   ok_(
-    "a rota tem try/catch (nao deixa o pedido pendurado)",
+    "o handler tem try/catch (nao deixa o pedido pendurado)",
     /try \{[\s\S]*?catch \(e\) \{/.test(rota)
   );
-  ok_("a rota ja' nao manda motivo", !/motivo:/.test(rota));
+  ok_("o handler ja' nao manda motivo", !/motivo:/.test(rota));
 }
 
 /* ---------- 3. O gancho guarda o codigo e o detalhe ---------- */
@@ -670,7 +671,7 @@ console.log("  6) mutacoes");
   // Mutacoes de texto: a verificacao certa tem de deixar de passar.
   const mutacoesTexto = [
     [
-      "a rota volta a mandar o motivo",
+      "o handler volta a mandar o motivo",
       ROTA,
       'codigo: r?.codigo || "sem_video",',
       'codigo: r?.motivo || "sem_video",',

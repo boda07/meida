@@ -31,7 +31,8 @@ console.log("  1) o frontend manda o `type` no ramo anime");
 // (Isto e' uma verificacao de texto porque o pedido e' feito no browser. O
 // comportamento de VERDADE esta' na seccao 2, contra o servidor a correr.)
 {
-  const f = fs.readFileSync(path.join(RAIZ, "web", "src", "pages", "Details.jsx"), "utf8");
+  // O pedido das fontes mudou de casa: vive no gancho `web/src/details/useFontes.js`.
+  const f = fs.readFileSync(path.join(RAIZ, "web", "src", "details", "useFontes.js"), "utf8");
   const ramo = f.split("if (details.isAnime) {")[1] || "";
   const pedido = ramo.split("api")[1] || "";
   ok_("o ramo anime manda type: 'anime'", /type:\s*"anime"/.test(pedido.split("})")[0] || ramo),
@@ -42,7 +43,7 @@ console.log("  1) o frontend manda o `type` no ramo anime");
 console.log("");
 console.log("  2) o servidor sabe que e' um anime sem depender do `type`");
 {
-  const f = fs.readFileSync(path.join(RAIZ, "server", "src", "routes", "sources.js"), "utf8");
+  const f = fs.readFileSync(path.join(RAIZ, "server", "src", "handlers", "sources.js"), "utf8");
   ok_("o `type` e' derivado quando vem mal/anilist sem type",
     /!tipoCru && \(mal \|\| anilist\)/.test(f));
   ok_("e a mensagem de anime e' a que se chega nesse caso",

@@ -321,7 +321,7 @@ console.log("  9) a ligacao ao resto da app");
    * `--accent` por omissão, e a contagem dava 8 contra 15. Comparar a lista
    * **declaration** e a lista **do declaration** e' o que prova a regra.
    */
-  const defs = fs.readFileSync(path.join(RAIZ, "web", "src", "pages", "Settings.jsx"), "utf8");
+  const defs = fs.readFileSync(path.join(RAIZ, "web", "src", "settings", "aparencia.js"), "utf8");
   const blocoDef = (defs.match(/const ACCENT_PRESETS = \[([\s\S]*?)\]/) || [])[1] || "";
   const blocoOb = (JSX.match(/export const CORES = \[([\s\S]*?)\]/) || [])[1] || "";
   const coresDef = [...blocoDef.matchAll(/"(#[0-9a-f]{6})"/gi)].map((m) => m[1]);

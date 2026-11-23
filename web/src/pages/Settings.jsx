@@ -1,609 +1,75 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useSettings } from "../settings/SettingsContext.jsx";
-import { useAuth } from "../auth/AuthContext.jsx";
 import { useT } from "../i18n/I18nContext.jsx";
 import { NOMES_IDIOMA } from "../i18n/traducoes.js";
-import { api, openExternal } from "../api/client.js";
 import { settingsTabStore } from "../storage/settingsTab.js";
-import { useAoFocarJanela } from "../components/useAoFocarJanela.js";
 import Avatar, { AVATAR_EMOJIS } from "../components/Avatar.jsx";
 import { clearPresence, presenceSupported } from "../discord.js";
-
-// Seccao de ligacao ao MyAnimeList.
-function MalSection({ user }) {
-  const t = useT();
-  const [enabled, setEnabled] = useState(false);
-  const [linked, setLinked] = useState(false);
-  const [username, setUsername] = useState(null);
-  const [busy, setBusy] = useState(false);
-  const [msg, setMsg] = useState(null);
-
-  function refresh() {
-    api.malStatus().then((d) => {
-      setLinked(d.linked);
-      setUsername(d.username);
-    }).catch(() => {});
-  }
-
-  useEffect(() => {
-    if (!user) return;
-    api.malEnabled().then((d) => setEnabled(d.enabled)).catch(() => {});
-    refresh();
-  }, [user]);
-
-  // Ao voltar a janela (depois do OAuth no browser), reverifica a ligacao.
-  useAoFocarJanela(refresh, { active: !!user });
-
-  async function link() {
-    setMsg(null);
-    try {
-      const { authUrl } = await api.malLogin();
-      openExternal(authUrl);
-      setMsg(t("Autoriza no browser e volta a esta janela."));
-    } catch (e) {
-      setMsg(e.message);
-    }
-  }
-
-  async function importList() {
-    setBusy(true);
-    setMsg(null);
-    try {
-      const d = await api.malImport();
-      setMsg(t("Importados {n} animes para a tua lista.", { n: d.imported }));
-    } catch (e) {
-      setMsg(e.message);
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function unlink() {
-    await api.malUnlink().catch(() => {});
-    refresh();
-    setMsg(null);
-  }
-
-  if (!user) {
-    return (
-      <p className="muted">
-        <Link to="/login">{t("Entra")}</Link> {t("para ligares o MyAnimeList.")}
-      </p>
-    );
-  }
-  if (!enabled) {
-    return (
-      <p className="muted">
-        {t("O servidor não tem o MyAnimeList configurado (falta MAL_CLIENT_ID).")}
-      </p>
-    );
-  }
-
-  return (
-    <div>
-      {linked ? (
-        <>
-          <p className="muted">
-            {t("Ligado como {u}. Os episódios de anime que vires são marcados no teu MAL automaticamente.", { u: <b>{username || "?"}</b> })}
-          </p>
-          <div className="set-row">
-            <button className="set-choice active" onClick={importList} disabled={busy}>
-              {busy ? t("A importar...") : t("Importar lista do MAL")}
-            </button>
-            <button className="set-clear" onClick={unlink}>{t("Desligar conta")}</button>
-          </div>
-        </>
-      ) : (
-        <>
-          <p className="muted">
-            {t("Liga a tua conta para importar a tua lista e marcar episódios vistos.")}
-          </p>
-          <button className="set-choice active" onClick={link}>
-            {t("Ligar MyAnimeList")}
-          </button>
-        </>
-      )}
-      {msg && <p className="muted" style={{ marginTop: 10 }}>{msg}</p>}
-    </div>
-  );
-}
-
-// Seccao de ligacao ao AniList (anime). Fonte de verdade da lista quando o MAL
-// nao esta ligado: importa estado/nota/progresso e marca episodios vistos.
-function AniListSection({ user }) {
-  const t = useT();
-  const [enabled, setEnabled] = useState(false);
-  const [linked, setLinked] = useState(false);
-  const [username, setUsername] = useState(null);
-  const [busy, setBusy] = useState(false);
-  const [syncing, setSyncing] = useState(false);
-  const [malLinked, setMalLinked] = useState(false);
-  const [msg, setMsg] = useState(null);
-
-  function refresh() {
-    api
-      .anilistStatus()
-      .then((d) => {
-        setLinked(d.linked);
-        setUsername(d.username);
-      })
-      .catch(() => {});
-    // Verifica tambem se o MAL esta ligado: o cross-sync so faz sentido se sim.
-    api
-      .malStatus()
-      .then((d) => setMalLinked(d.linked))
-      .catch(() => {});
-  }
-
-  useEffect(() => {
-    if (!user) return;
-    api
-      .anilistEnabled()
-      .then((d) => setEnabled(d.enabled))
-      .catch(() => {});
-    refresh();
-  }, [user]);
-
-  useAoFocarJanela(refresh, { active: !!user });
-
-  async function link() {
-    setMsg(null);
-    try {
-      const { authUrl } = await api.anilistLogin();
-      openExternal(authUrl);
-      setMsg(t("Autoriza no browser e volta a esta janela."));
-    } catch (e) {
-      setMsg(e.message);
-    }
-  }
-
-  async function importList() {
-    setBusy(true);
-    setMsg(null);
-    try {
-      const d = await api.anilistImport();
-      setMsg(t("Importados {n} animes para a tua lista.", { n: d.imported }));
-    } catch (e) {
-      setMsg(e.message);
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function unlink() {
-    await api.anilistUnlink().catch(() => {});
-    refresh();
-    setMsg(null);
-  }
-
-  async function syncCross() {
-    setSyncing(true);
-    setMsg(null);
-    try {
-      const d = await api.anilistSync();
-      setMsg(t("Cross-sync concluído: +{m} no MAL, +{a} no AniList.", { m: d.malUpdated, a: d.aniUpdated }));
-    } catch (e) {
-      setMsg(e.message || t("Falha na sincronização."));
-    } finally {
-      setSyncing(false);
-    }
-  }
-
-  if (!user) {
-    return (
-      <p className="muted">
-        <Link to="/login">{t("Entra")}</Link> {t("para ligares o AniList.")}
-      </p>
-    );
-  }
-  if (!enabled) {
-    return (
-      <p className="muted">
-        {t("O servidor não tem o AniList configurado (falta ANILIST_CLIENT_ID).")}
-      </p>
-    );
-  }
-
-  return (
-    <div>
-      {linked ? (
-        <>
-            <p className="muted">
-              {t("Ligado como {u}. Quando não tens o MyAnimeList", { u: <b>{username || "?"}</b> })}
-              ligado, os episódios de anime que vires são marcados no teu AniList
-              automaticamente. Se tens o MAL também ligado, podes fazer cross-sync
-              manual (Sincronizar com MAL) ou ela corre automaticamente ao abrir a
-              Library.
-            </p>
-          <div className="set-row">
-            <button className="set-choice active" onClick={importList} disabled={busy}>
-              {busy ? t("A importar...") : t("Importar lista do AniList")}
-            </button>
-            {malLinked && (
-              <button className="set-choice" onClick={syncCross} disabled={syncing}>
-                {syncing ? t("A sincronizar...") : t("Sincronizar com MAL")}
-              </button>
-            )}
-            <button className="set-clear" onClick={unlink}>{t("Desligar conta")}</button>
-          </div>
-        </>
-      ) : (
-        <>
-          <p className="muted">
-            {t("Liga a tua conta para importar a tua lista e marcar episódios vistos.")}
-          </p>
-          <button className="set-choice active" onClick={link}>
-            {t("Ligar AniList")}
-          </button>
-        </>
-      )}
-      {msg && <p className="muted" style={{ marginTop: 10 }}>{msg}</p>}
-    </div>
-  );
-}
-
-// Seccao de ligacao ao Letterboxd (filmes).
-function LetterboxdSection({ user }) {
-  const t = useT();
-  const [username, setUsername] = useState(null);
-  const [input, setInput] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [msg, setMsg] = useState(null);
-
-  function refresh() {
-    api
-      .letterboxdStatus()
-      .then((d) => setUsername(d.username))
-      .catch(() => {});
-  }
-
-  useEffect(() => {
-    if (user) refresh();
-  }, [user]);
-
-  async function link() {
-    setBusy(true);
-    setMsg(null);
-    try {
-      const d = await api.letterboxdLink(input.trim());
-      setUsername(d.username);
-      setInput("");
-      setMsg(t("Conta ligada. Carrega em Importar para trazer os teus filmes."));
-    } catch (e) {
-      setMsg(e.message);
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function importList(what) {
-    setBusy(true);
-    setMsg(null);
-    try {
-      const d = await api.letterboxdImport(what);
-      if (what === "films") setMsg(t("Importados {n} filmes vistos.", { n: d.imported }));
-      else if (what === "watchlist") setMsg(t("Importados {n} da watchlist.", { n: d.watchlist }));
-      else setMsg(t("Importados {n} vistos + {w} da watchlist.", { n: d.imported, w: d.watchlist }));
-    } catch (e) {
-      setMsg(e.message);
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function unlink() {
-    await api.letterboxdUnlink().catch(() => {});
-    setUsername(null);
-    setMsg(null);
-  }
-
-  if (!user) {
-    return (
-      <p className="muted">
-        <Link to="/login">{t("Entra")}</Link> {t("para ligares o Letterboxd.")}
-      </p>
-    );
-  }
-
-  return (
-    <div>
-      {username ? (
-        <>
-          <p className="muted">
-            {t("Ligado como {u}. A nota da comunidade dos teus filmes", { u: <b>{username}</b> })}
-            (na tua lista) passa a vir do Letterboxd.
-          </p>
-          <div className="set-row">
-            <button className="set-choice active" onClick={() => importList("films")} disabled={busy}>
-              {busy ? t("A importar...") : t("Importar vistos")}
-            </button>
-            <button className="set-choice active" onClick={() => importList("watchlist")} disabled={busy}>
-              {busy ? t("A importar...") : t("Importar watchlist")}
-            </button>
-            <button className="set-choice" onClick={() => importList("all")} disabled={busy}>
-              {busy ? t("A importar...") : t("Importar tudo")}
-            </button>
-          </div>
-          <div className="set-row" style={{ marginTop: 8 }}>
-            <button className="set-clear" onClick={unlink}>
-              {t("Desligar conta")}
-            </button>
-          </div>
-          <p className="muted" style={{ fontSize: 12, marginTop: 8 }}>
-            {t("Importa todos os filmes vistos (com as tuas notas) e/ou a watchlist completa. Em listas grandes pode demorar alguns segundos. Em cada filme tens um botao para o abrir no Letterboxd.")}
-          </p>
-        </>
-      ) : (
-        <>
-          <p className="muted">
-            {t("Indica o teu username do Letterboxd para importar a tua watchlist e os filmes vistos (com as tuas notas), e usar a nota da comunidade do Letterboxd.")}
-          </p>
-          <div className="set-img-url">
-            <input
-              type="text"
-              placeholder={t("username do Letterboxd")}
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && input.trim() && link()}
-            />
-            <button
-              className="lib-watched"
-              onClick={link}
-              disabled={busy || !input.trim()}
-            >
-              {busy ? t("A ligar...") : "Ligar"}
-            </button>
-          </div>
-        </>
-      )}
-      {msg && <p className="muted" style={{ marginTop: 10 }}>{msg}</p>}
-    </div>
-  );
-}
-
-// Seccao de ligacao ao Real-Debrid (streaming de torrents instantaneo).
-function DebridSection({ user }) {
-  const t = useT();
-  const [status, setStatus] = useState(null);
-  const [input, setInput] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [msg, setMsg] = useState(null);
-
-  function refresh() {
-    api
-      .debridStatus()
-      .then((d) => setStatus(d))
-      .catch(() => {});
-  }
-
-  useEffect(() => {
-    if (user) refresh();
-  }, [user]);
-
-  async function link() {
-    setBusy(true);
-    setMsg(null);
-    try {
-      const d = await api.debridLink(input.trim());
-      setStatus({ linked: true, account: d.account });
-      setInput("");
-      setMsg(t("Real-Debrid ligado. Os torrents em cache no DeBrid reproduzem logo."));
-    } catch (e) {
-      setMsg(e.message);
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function unlink() {
-    await api.debridUnlink().catch(() => {});
-    setStatus({ linked: false, account: null });
-    setMsg(null);
-  }
-
-  if (!user) {
-    return (
-      <p className="muted">
-        <Link to="/login">{t("Entra")}</Link> {t("para ligares o Real-Debrid.")}
-      </p>
-    );
-  }
-
-  return (
-    <div>
-      {status?.linked ? (
-        <>
-          <p className="muted">
-            {t("Ligado como {u}. Nos torrents, os que estiverem em cache no Real-Debrid reproduzem {logo} (sem esperar por peers).", {
-              u: <b>{status.account}</b>,
-              logo: <b>logo</b>,
-            })}
-          </p>
-          <div className="set-row" style={{ marginTop: 8 }}>
-            <button className="set-clear" onClick={unlink}>
-              {t("Desligar")}
-            </button>
-          </div>
-        </>
-      ) : (
-        <>
-          <p className="muted">
-            {t("Cola o teu token do Real-Debrid (obtém-no em {ligacao}){fim}", {
-              ligacao: (
-                <a
-                  href="https://real-debrid.com/apitoken"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  real-debrid.com/apitoken
-                </a>
-              ),
-              fim: t("). É um serviço pago (mas barato) que guarda os torrents em cache — por isso o stream começa imediatamente, como no Stremio."),
-            })}
-          </p>
-          <div className="set-img-url">
-            <input
-              type="password"
-              placeholder={t("token do Real-Debrid")}
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && input.trim() && link()}
-            />
-            <button
-              className="lib-watched"
-              onClick={link}
-              disabled={busy || !input.trim()}
-            >
-              {busy ? t("A ligar...") : "Ligar"}
-            </button>
-          </div>
-        </>
-      )}
-      {msg && <p className="muted" style={{ marginTop: 10 }}>{msg}</p>}
-    </div>
-  );
-}
-
-// Le uma imagem do disco e devolve um data URL ja reduzido (cabe no localStorage,
-// que e onde as definicoes ficam guardadas). Reduz a largura maxima e exporta em
-// JPEG para nao ocupar megabytes.
-function imageFileToDataUrl(file, maxW = 1920) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onerror = reject;
-    reader.onload = () => {
-      const img = new Image();
-      img.onerror = reject;
-      img.onload = () => {
-        const scale = Math.min(1, maxW / img.width);
-        const w = Math.round(img.width * scale);
-        const h = Math.round(img.height * scale);
-        const canvas = document.createElement("canvas");
-        canvas.width = w;
-        canvas.height = h;
-        canvas.getContext("2d").drawImage(img, 0, 0, w, h);
-        resolve(canvas.toDataURL("image/jpeg", 0.82));
-      };
-      img.src = reader.result;
-    };
-    reader.readAsDataURL(file);
-  });
-}
-
-// Cores de destaque predefinidas.
-const ACCENT_PRESETS = [
-  "#c90303", // vermelho (default)
-  "#e50914", // netflix
-  "#1db954", // verde
-  "#2563eb", // azul
-  "#8b5cf6", // roxo
-  "#ec4899", // rosa
-  "#f59e0b", // laranja
-  "#06b6d4", // ciano
-];
-
-// Cores de fundo predefinidas (escuras, para o texto branco continuar legível).
-const BG_PRESETS = [
-  "#070708", // preto (default)
-  "#0a1226", // navy (combina com o logo azul/dourado)
-  "#0d1117", // github
-  "#0a0e14", // azul-noite
-  "#12101a", // roxo escuro
-  "#0a0f0d", // verde escuro
-  "#15100f", // castanho escuro
-];
-
-// Junta uma cor ao topo da lista de recentes (sem duplicar, max 6).
-function addRecent(list, color) {
-  const c = (color || "").toLowerCase();
-  if (!c) return list || [];
-  return [c, ...(list || []).filter((x) => x.toLowerCase() !== c)].slice(0, 6);
-}
-
-// Seletor de cor: presets + últimas escolhidas (recentes) + picker livre.
-function ColorField({ presets, value, recent, onPick, onCommit, fallback }) {
-  const norm = (value || "").toLowerCase();
-  const presetSet = new Set(presets.map((c) => c.toLowerCase()));
-  const recentExtra = (recent || []).filter((c) => !presetSet.has(c.toLowerCase()));
-  return (
-    <div className="set-row color-row">
-      {presets.map((c) => (
-        <button
-          key={c}
-          className={`color-swatch ${norm === c.toLowerCase() ? "active" : ""}`}
-          style={{ background: c }}
-          onClick={() => onPick(c)}
-          aria-label={c}
-        />
-      ))}
-      {recentExtra.map((c) => (
-        <button
-          key={c}
-          className={`color-swatch recent ${norm === c.toLowerCase() ? "active" : ""}`}
-          style={{ background: c }}
-          onClick={() => onPick(c)}
-          title={`Recente: ${c}`}
-          aria-label={`Recente ${c}`}
-        />
-      ))}
-      <label className="color-custom" style={{ background: value }}>
-        <input
-          type="color"
-          value={value || fallback}
-          onChange={(e) => onPick(e.target.value)}
-          onBlur={(e) => onCommit(e.target.value)}
-        />
-        <span>+</span>
-      </label>
-    </div>
-  );
-}
-
-// Botoes de escolha unica (estilo pilula).
-function Choice({ value, current, onPick, children }) {
-  return (
-    <button
-      className={`set-choice ${current === value ? "active" : ""}`}
-      onClick={() => onPick(value)}
-    >
-      {children}
-    </button>
-  );
-}
-
-// ============================================================================
-// Abas das Definições
-// ============================================================================
-// Eram 21 secções num scroll só. Agora cada <section className="set-section">
-// diz a que aba pertence (`data-tab="..."`) e o CSS esconde as das outras abas
-// (ver `.settings-page[data-active-tab]` em styles.css) — assim não foi preciso
-// mexer no envelope nem na ordem dos blocos. O `id` de cada aba é o mesmo
-// string nos dois lados, por isso convém não os escrever à mão.
-// O `label` e' o TEXTO EM PORTUGUES, nao um rotulo ja' traduzido. Assim o `t()`
-// consegue traduzi-lo no render (esta' const fora do componente, por isso nao
-// pode chamar o `useT()` aqui).
-const TABS = [
-  { id: "perfil", label: "Perfil" },
-  { id: "aparencia", label: "Aparência" },
-  { id: "reproducao", label: "Reprodução" },
-  { id: "conteudo", label: "Conteúdo" },
-  { id: "contas", label: "Contas" },
-  { id: "dados", label: "Dados" },
-  { id: "avancado", label: "Avançado" },
-];
-// A aba activa vive em `web/src/storage/settingsTab.js` (chave
-// `meida:settings-tab`).
+import {
+  ACCENT_PRESETS,
+  BG_PRESETS,
+  addRecent,
+  imageFileToDataUrl,
+} from "../settings/aparencia.js";
+import ColorField from "../settings/ColorField.jsx";
+import Choice from "../settings/Choice.jsx";
+import { TABS } from "../settings/abas.js";
+import MalSection from "../settings/contas/MalSection.jsx";
+import AniListSection from "../settings/contas/AniListSection.jsx";
+import LetterboxdSection from "../settings/contas/LetterboxdSection.jsx";
+import DebridSection from "../settings/contas/DebridSection.jsx";
+import { usePerfil } from "../settings/usePerfil.js";
+import { useServidor } from "../settings/useServidor.js";
+import { useDados } from "../settings/useDados.js";
+import { useAtualizacao } from "../settings/useAtualizacao.js";
+import { useEstadoProviders } from "../settings/useEstadoProviders.js";
 
 export default function Settings() {
   const { settings, update, erroGuardar, avisoAcento } = useSettings();
   const t = useT();
-  const { user, updateAvatar, updateProfile } = useAuth();
-  const [imgUrl, setImgUrl] = useState("");
-  const [bio, setBio] = useState("");
-  const [isPublic, setIsPublic] = useState(true);
-  const [profileSaving, setProfileSaving] = useState(false);
-  const [profileMsg, setProfileMsg] = useState(null);
+  const {
+    user,
+    imgUrl,
+    setImgUrl,
+    bio,
+    setBio,
+    isPublic,
+    setIsPublic,
+    saving,
+    error,
+    pickAvatar,
+    pickAvatarFicheiro,
+    saveProfile,
+    profileSaving,
+    profileMsg,
+  } = usePerfil();
+  const {
+    desktop,
+    srv,
+    srvMode,
+    setSrvMode,
+    srvUrl,
+    setSrvUrl,
+    srvBusy,
+    srvMsg,
+    srvErr,
+    saveServer,
+  } = useServidor();
+  const { updMsg, updBusy, checkUpdate } = useAtualizacao();
+  const { provHealth, reverAgora } = useEstadoProviders();
+  const {
+    exporting,
+    exportMsg,
+    exportData,
+    importFile,
+    importing,
+    importMsg,
+    importError,
+    onImportPick,
+    runImport,
+  } = useDados();
+
   // Aba activa. Guardada no browser para não voltar ao "Perfil" a cada visita
   // (e para não perder o scroll de quem só anda a ver as contas linked).
   const [tab, setTab] = useState(() => {
@@ -614,122 +80,11 @@ export default function Settings() {
       return "perfil";
     }
   });
-  // Servidor (so no desktop Electron): local vs remoto.
-  const desktop = typeof window !== "undefined" ? window.electronAPI : null;
-  // Procurar actualizacao. Fica aqui, e nao so no menu da conta, porque esse
-  // menu so aparece com sessao iniciada - e quem ainda nao fez login e
-  // precisamente quem mais precisa de actualizar a app.
-  const [updMsg, setUpdMsg] = useState(null);
-  const [updBusy, setUpdBusy] = useState(false);
-  async function checkUpdate() {
-    if (updBusy) return;
-    setUpdBusy(true);
-    setUpdMsg(t("A procurar..."));
-    try {
-      const r = await window.electronAPI.checkForUpdates();
-      if (r?.status === "available")
-        setUpdMsg(t("Nova versão {v} — a descarregar...", { v: r.version }));
-      else if (r?.status === "latest") setUpdMsg(t("Já tens a versão mais recente. ✓"));
-      else if (r?.status === "dev") setUpdMsg(t("Indisponível em desenvolvimento."));
-      else setUpdMsg(t("Não foi possível verificar agora."));
-    } catch {
-      setUpdMsg(t("Não foi possível verificar agora."));
-    } finally {
-      setUpdBusy(false);
-    }
-  }
-  const [srv, setSrv] = useState(null);
-  const [srvMode, setSrvMode] = useState("local");
-  const [srvUrl, setSrvUrl] = useState("");
-  const [srvBusy, setSrvBusy] = useState(false);
-  const [srvMsg, setSrvMsg] = useState(null);
-  const [srvErr, setSrvErr] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState(null);
-  const [provHealth, setProvHealth] = useState(null);
-  const [exporting, setExporting] = useState(null); // "json" | "csv" | null
-  const [exportMsg, setExportMsg] = useState(null);
-  const [importFile, setImportFile] = useState(null); // File ou null
-  const [importing, setImporting] = useState(false);
-  const [importMsg, setImportMsg] = useState(null);
-  const [importError, setImportError] = useState(false);
-
-  // Estado (vivo/morto) dos providers: carregado ao início (refresh manual no botão).
-  useEffect(() => {
-    api.providersHealth().then(setProvHealth).catch(() => {});
-  }, []);
 
   // Persiste a aba activa.
   useEffect(() => {
     settingsTabStore.set(tab);
   }, [tab]);
-
-  async function pickAvatar(value) {
-    setError(null);
-    setSaving(true);
-    try {
-      await updateAvatar(value);
-    } catch (e) {
-      setError(e.message);
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  // Bio/privacidade locais, sincronizadas com o utilizador (ex.: após login).
-  useEffect(() => {
-    setBio(user?.bio || "");
-    setIsPublic(user?.isPublic !== false);
-  }, [user]);
-
-  async function saveProfile() {
-    setProfileSaving(true);
-    setProfileMsg(null);
-    try {
-      await updateProfile({ bio, isPublic });
-      setProfileMsg(t("Perfil atualizado. ✓"));
-    } catch (e) {
-      setProfileMsg(e.message);
-    } finally {
-      setProfileSaving(false);
-    }
-  }
-
-  // Servidor: ler a configuracao atual (so no desktop Electron).
-  useEffect(() => {
-    if (!desktop?.getServerConfig) return;
-    desktop
-      .getServerConfig()
-      .then((c) => {
-        setSrv(c);
-        setSrvMode(c?.mode === "remote" ? "remote" : "local");
-        setSrvUrl(c?.url || "");
-      })
-      .catch(() => {});
-  }, [desktop]);
-
-  async function saveServer() {
-    if (!desktop?.setServerConfig) return;
-    setSrvMsg(null);
-    setSrvErr(false);
-    setSrvBusy(true);
-    let r;
-    try {
-      r = await desktop.setServerConfig({ mode: srvMode, url: srvUrl });
-    } catch {
-      r = null;
-    }
-    if (!r || r.ok === false) {
-      setSrvErr(true);
-      setSrvMsg(r?.error || t("Não foi possível guardar."));
-      setSrvBusy(false);
-      return;
-    }
-    setSrv(r.config);
-    setSrvMsg(t("Guardado. A reiniciar..."));
-    // Deixa a mensagem aparecer antes de reiniciar.
-    setTimeout(() => desktop.restartApp?.(), 600);
-  }
 
   // Mudar as sinopses nao deve arrastar os generos: se estes estao a seguir as
   // sinopses (genreLang vazio), fixa-os no idioma antigo ao trocar as sinopses.
@@ -739,126 +94,6 @@ export default function Settings() {
       patch.genreLang = settings.overviewLang;
     }
     update(patch);
-  }
-
-  // Descarrega a biblioteca + diário em JSON ou CSV. O CSV é gerado aqui no
-  // browser a partir do JSON da API (sem dependências extra no servidor).
-  async function exportData(format) {
-    setExportMsg(null);
-    setExporting(format);
-    try {
-      const { library, diary, exportedAt } = await api.exportData();
-      const stamp = (exportedAt || new Date().toISOString()).slice(0, 10);
-      let blob;
-      let filename;
-      if (format === "csv") {
-        const cell = (v) => {
-          if (v == null) return "";
-          const s = String(v);
-          return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
-        };
-        const csv = (header, rows) =>
-          [header.join(","), ...rows.map((r) => r.map(cell).join(","))].join("\r\n");
-        const libCsv = csv(
-          ["type", "tmdbId", "title", "titleEn", "titleRomaji", "generos", "nota", "media_comunidade", "visto", "watchlist", "atualizado_em", "visto_em"],
-          library.map((i) => [
-            i.type,
-            i.tmdbId,
-            i.title,
-            i.titleEn,
-            i.titleRomaji,
-            (i.genres || []).join(" | "),
-            i.score,
-            i.rating,
-            i.watched ? "sim" : "",
-            i.watchlist ? "sim" : "",
-            i.updatedAt,
-            // Vazio = "nao se sabe quando foi visto". **Nunca** se escreve
-            // aqui o `updatedAt`: a data do ultimo toque nao e' a data em que a
-            // pessoa o viu, e um export/import que as trocasse punha meses e anos
-            // errados na timeline do outro PC sem ninguem ter como saber.
-            i.watchedAt || "",
-          ])
-        );
-        const diaryCsv = csv(
-          ["type", "tmdbId", "title", "temporada", "episodio", "estado", "comecou", "acabou", "atualizado_em"],
-          diary.map((d) => [
-            d.type,
-            d.tmdbId,
-            d.title,
-            d.season,
-            d.episode,
-            d.status,
-            d.startedAt,
-            d.finishedAt,
-            d.updatedAt,
-          ])
-        );
-        blob = new Blob(
-          [`# biblioteca\r\n${libCsv}\r\n# diario\r\n${diaryCsv}`],
-          { type: "text/csv;charset=utf-8" }
-        );
-        filename = `meida-export-${stamp}.csv`; // i18n: nome de ficheiro, igual nos dois idiomas
-      } else {
-        blob = new Blob([JSON.stringify({ exportedAt, library, diary }, null, 2)], {
-          type: "application/json;charset=utf-8",
-        });
-        filename = `meida-export-${stamp}.json`; // i18n: nome de ficheiro, igual nos dois idiomas
-      }
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
-      setExportMsg(t("Ficheiro descarregado. Vai à pasta de downloads do teu sistema."));
-    } catch (e) {
-      setExportMsg(e.message || t("Não foi possível exportar."));
-    } finally {
-      setExporting(null);
-    }
-  }
-
-  // Lê o ficheiro escolhido (JSON ou CSV) como texto para enviar ao backend.
-  function onImportPick(e) {
-    setImportMsg(null);
-    const f = e.target.files?.[0] || null;
-    setImportFile(f);
-    e.target.value = "";
-  }
-
-  // Envia o ficheiro para o backend fazer o merge da library + diário.
-  async function runImport() {
-    if (!importFile) return;
-    setImporting(true);
-    setImportMsg(null);
-    setImportError(false);
-    try {
-      const text = await importFile.text();
-      let payload;
-      const isCsv = importFile.name.toLowerCase().endsWith(".csv") || text.includes("# biblioteca");
-      if (isCsv) {
-        payload = { format: "csv", text };
-      } else {
-        const parsed = JSON.parse(text);
-        payload = { format: "json", library: parsed.library || [], diary: parsed.diary || [] };
-      }
-      const d = await api.importData(payload);
-      setImportMsg(
-      t("Importados {n} títulos e {d} entradas do diário.", {
-        n: d.imported.library,
-        d: d.imported.diary,
-      })
-    );
-      setImportFile(null);
-    } catch (e) {
-      setImportMsg(e.message || t("Não foi possível importar."));
-      setImportError(true);
-    } finally {
-      setImporting(false);
-    }
   }
 
   return (
@@ -1536,15 +771,8 @@ export default function Settings() {
                   type="file"
                   accept="image/*"
                   style={{ display: "none" }}
-                  onChange={async (e) => {
-                    const f = e.target.files?.[0];
-                    if (f) {
-                      try {
-                        await pickAvatar(await imageFileToDataUrl(f, 256));
-                      } catch {
-                        /* imagem invalida -> ignora */
-                      }
-                    }
+                  onChange={(e) => {
+                    pickAvatarFicheiro(e.target.files?.[0]);
                     e.target.value = "";
                   }}
                 />
@@ -1597,17 +825,7 @@ export default function Settings() {
         )}
         {provHealth?.stale && <span className="ph-stale">{t("Atualizado há 24h+")}</span>}
         <div className="set-row" style={{ marginTop: 8 }}>
-          <button
-            className="set-choice"
-            onClick={async () => {
-              setProvHealth({ checking: true, providers: null, stale: false });
-              try {
-                setProvHealth(await api.providersHealth(true));
-              } catch (e) {
-                setProvHealth(null);
-              }
-            }}
-          >
+          <button className="set-choice" onClick={reverAgora}>
             {t("Rever agora")}
           </button>
         </div>

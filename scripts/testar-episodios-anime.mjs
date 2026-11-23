@@ -36,8 +36,10 @@ import {
 } from "../server/src/services/jikan.js";
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
+// O carregamento dos episodios do anime mudou de casa: vive no gancho
+// `web/src/details/useDetalhes.js`.
 const DETAILS = fs.readFileSync(
-  path.join(RAIZ, "web", "src", "pages", "Details.jsx"),
+  path.join(RAIZ, "web", "src", "details", "useDetalhes.js"),
   "utf8"
 );
 

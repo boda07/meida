@@ -266,7 +266,14 @@ console.log("  9) higiene");
 const proxy = fs.readFileSync(path.join(RAIZ, "server", "src", "services", "proxy.js"), "utf8");
 const subs = fs.readFileSync(path.join(RAIZ, "server", "src", "services", "subtitles.js"), "utf8");
 const play = fs.readFileSync(path.join(RAIZ, "server", "src", "routes", "play.js"), "utf8");
-for (const f of ["server/src/services/proxy.js", "server/src/services/megaplayNativo.js", "server/src/services/subtitles.js", "server/src/routes/play.js"]) {
+// O proxy foi dividido em `proxy/*.js`: a fachada so' reexporta, o codigo esta'
+// nos modulos. A higiene e o "sem await" tem de passar por todos eles.
+const PKG_PROXY = path.join(RAIZ, "server", "src", "services", "proxy");
+const MODULOS_PROXY = fs
+  .readdirSync(PKG_PROXY)
+  .filter((f) => f.endsWith(".js"))
+  .map((f) => "server/src/services/proxy/" + f);
+for (const f of ["server/src/services/proxy.js", ...MODULOS_PROXY, "server/src/services/megaplayNativo.js", "server/src/services/subtitles.js", "server/src/routes/play.js"]) {
   const t = fs.readFileSync(path.join(RAIZ, f), "utf8");
   ok_(f.split("/").pop() + " sem CJK", !/[\u2E80-\u9FFF\u3000-\u303F\uFF00-\uFFEF]/.test(t));
   ok_(f.split("/").pop() + " sem caractere de substituicao", !t.includes("\uFFFD"));
@@ -289,6 +296,12 @@ for (const f of ["server/src/services/proxy.js", "server/src/services/megaplayNa
     ok_(nome, maus.length === 0, maus.join(" | "));
   };
   semAwait(proxy, "proxy.js: todas as chamadas com await");
+  for (const f of MODULOS_PROXY) {
+    semAwait(
+      fs.readFileSync(path.join(RAIZ, f), "utf8"),
+      f.split("/").pop() + ": todas as chamadas com await"
+    );
+  }
   semAwait(subs, "subtitles.js: todas as chamadas com await");
   semAwait(play, "play.js: todas as chamadas com await");
 }

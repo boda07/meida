@@ -134,26 +134,44 @@ console.log("  4) Um 404 tem de ser dito logo, nao mais tarde");
 console.log("");
 console.log("  MUTACOES (partir o codigo de proposito)");
 
-// O quarto campo: o texto a procurar tem de ser EXATAMENTE como esta no
-// ficheiro, com a mesma indentacao — por isso esta string e' o que torna a
-// mutacao aplicavel (ou nao) e o harness avisa quando nao aplica.
+// O texto a procurar tem de ser EXATAMENTE como esta no ficheiro, com a mesma
+// indentacao — por isso esta string e' o que torna a mutacao aplicavel (ou nao)
+// e o harness avisa quando nao aplica.
+//
+// `ficheiro` e' o caminho **dentro de `services/`**: o proxy foi dividido em
+// `proxy/` e cada mutacao vive no modulo que tem o codigo, nao na fachada.
 const MUTACOES = [
-  [
-    "o status do site de cima e' ignorado nas playlists (o bug)",
-    "    res.status(upstream.status);\n\n    // E um erro NAO se reescreve",
-    "    // E um erro NAO se reescreve",
-  ],
-  [
-    "o status e' forcado a 200",
-    "    res.status(upstream.status);\n\n    // E um erro NAO se reescreve",
-    "    res.status(200);\n\n    // E um erro NAO se reescreve",
-  ],
-  [
-    "a pagina de erro volta a ser reescrita 'como playlist'",
-    "    if (!upstream.ok) {",
-    "    if (false) {",
-  ],
+  {
+    nome: "o status do site de cima e' ignorado nas playlists (o bug)",
+    ficheiro: "proxy/handler.js",
+    de: "    res.status(upstream.status);\n\n    // E um erro NAO se reescreve",
+    para: "    // E um erro NAO se reescreve",
+  },
+  {
+    nome: "o status e' forcado a 200",
+    ficheiro: "proxy/handler.js",
+    de: "    res.status(upstream.status);\n\n    // E um erro NAO se reescreve",
+    para: "    res.status(200);\n\n    // E um erro NAO se reescreve",
+  },
+  {
+    nome: "a pagina de erro volta a ser reescrita 'como playlist'",
+    ficheiro: "proxy/handler.js",
+    de: "    if (!upstream.ok) {",
+    para: "    if (false) {",
+  },
 ];
+
+// Le com LF, para as strings acima (escritas com `\n`) baterem certo.
+const cacheFontes = new Map();
+function fonteDo(ficheiro) {
+  if (!cacheFontes.has(ficheiro)) {
+    cacheFontes.set(
+      ficheiro,
+      fs.readFileSync(path.join(RAIZ, "server", "src", "services", ficheiro), "utf8").replace(/\r\n/g, "\n")
+    );
+  }
+  return cacheFontes.get(ficheiro);
+}
 
 const CAUDA = `
 console.log("");
@@ -161,34 +179,42 @@ console.log("  " + ok + " ok, " + falhou + " falha(s)");
 process.exit(falhou ? 1 : 0);
 `;
 
-// Normaliza as quebras de linha. O `proxy.js` esta' em CRLF e as strings de
-// mutacao acima estao escritas com `\n` — sem isto nenhuma das duas aplicava e
-// o harness/reportava "mutacao nao aplica" (que e' uma FALHA, para nao passar
-// despercebido). A copia mutada sai com LF, o que ao Node tanto lhe faz.
-const original = fs.readFileSync(MOD, "utf8").replace(/\r\n/g, "\n");
-
-for (const [nome, de, para] of MUTACOES) {
+// A copia tem de reproduzir a arvore a serio: o `proxy.js` e' a fachada e o
+// codigo vive em `proxy/*.js`, que por sua vez importam `../legendas.js` e
+// `../../config.js`. Copiar so a fachada faria o sub-teste carregar os ficheiros
+// ORIGINAIS e a mutacao nunca chegava a correr — o harness dizia "apanhada" sem
+// ter apanhado nada.
+//
+// A pasta e' `server/src/.mutproxy-*` (e nao `server/src/services/`) para o
+// `../../config.js` de `proxy/assinatura.js` resolver para o `config.js` copiado
+// ao lado, e para o `subtitle` de `legendas.js` continuar a vir de
+// `server/node_modules`.
+for (const mutacao of MUTACOES) {
+  const { nome, de, para } = mutacao;
+  const original = fonteDo(mutacao.ficheiro);
   if (!original.includes(de)) {
     ok_("MUTACAO " + nome + " (o codigo mudou, a mutacao nao aplica)", false);
     continue;
   }
 
-  // A pasta tem de ficar AO LADO do original: o `proxy.js` importa `./legendas.js`,
-  // que por sua vez importa o pacote `subtitle` de `server/node_modules`. Com a
-  // pasta fora do repo, o sub-teste rebentava com "Cannot find package" e o
-  // harness dizia "mutacao nao apanhada" sem ser verdade.
-  //
-  // A pasta e' `server/src/.mutproxy-*` e **nao** `server/src/services/`: o
-  // `proxy.js` importa tambem `../config.js`, que a partir de `services/`
-  // resolveria para `services/config.js` (que nao existe) e o sub-teste
-  // rebentava com ERR_MODULE_NOT_FOUND ANTES de imprimir uma verificacao
-  // sequer — o que o harness lia, ao contrario, como "mutacao nao apanhada".
-  // Um nivel acima, `../config.js` da' o `config.js` verdadeiro e `./legendas.js`
-  // continua a ser a copia local.
   const dirMut = fs.mkdtempSync(path.join(RAIZ, "server", "src", ".mutproxy-"));
-  const modMut = path.join(dirMut, "proxy.js");
-  fs.writeFileSync(modMut, original.replace(de, para));
-  fs.copyFileSync(path.join(RAIZ, "server", "src", "services", "legendas.js"), path.join(dirMut, "legendas.js"));
+  const svcMut = path.join(dirMut, "services");
+  const pkgMut = path.join(svcMut, "proxy");
+  fs.mkdirSync(pkgMut, { recursive: true });
+  fs.copyFileSync(path.join(RAIZ, "server", "src", "config.js"), path.join(dirMut, "config.js"));
+  fs.copyFileSync(path.join(RAIZ, "server", "src", "services", "legendas.js"), path.join(svcMut, "legendas.js"));
+  for (const f of fs.readdirSync(path.join(RAIZ, "server", "src", "services", "proxy"))) {
+    if (f.endsWith(".js")) {
+      fs.copyFileSync(
+        path.join(RAIZ, "server", "src", "services", "proxy", f),
+        path.join(pkgMut, f)
+      );
+    }
+  }
+  // A fachada fica igual; so o modulo da mutacao e' que sai alterado.
+  fs.copyFileSync(MOD, path.join(svcMut, "proxy.js"));
+  fs.writeFileSync(path.join(svcMut, mutacao.ficheiro), original.replace(de, para));
+  const modMut = path.join(svcMut, "proxy.js");
 
   const testeMut = path.join(dirMut, "t.mjs");
   const corpo = fs

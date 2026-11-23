@@ -1,48 +1,35 @@
+// Catálogo: filas, pesquisa, detalhes, temporadas e o "escolhe por mim".
+//
+// Rota fina: le os parametros, chama o handler e responde. A regra (que fontes
+// entram, como se juntam, o que acontece quando uma falha) vive em
+// `handlers/catalog.js`.
 import { Router } from "express";
 import {
-  getCatalog,
-  getCategory,
-  search,
-  getDetails,
-  getSeason,
-  getSimilar,
-  getGenres,
-  getGenreVocab,
-  pickRandom,
-  discover,
-} from "../services/tmdb.js";
-import {
-  getAnimeCatalog,
-  getAnimeDetails,
-  getAnimeEpisodes,
-  getAnimeMovies,
-  searchAnime,
-  getAnimeGenres,
-  getAnimeRecommendations,
-  pickAnime,
-  discoverAnime,
-} from "../services/jikan.js";
-import { getRating as getLetterboxdRating } from "../services/letterboxd.js";
-import { getCatalogRow } from "../services/catalogRows.js";
-import { log } from "../services/log.js";
+  catalogo,
+  categoria,
+  linha,
+  descobrir,
+  pesquisar,
+  episodiosAnime,
+  recomendacoes,
+  detalhes,
+  generos,
+  escolher,
+  temporada,
+} from "../handlers/catalog.js";
 
 export const catalogRouter = Router();
 
-// Le as preferencias de idioma (titulo/sinopse) dos parametros do pedido.
-function langOpts(req) {
-  return {
-    titleLang: req.query.titleLang,
-    overviewLang: req.query.overviewLang,
-    // Idioma dos generos: o escolhido ou, se nao houver, segue as sinopses.
-    genreLang: req.query.genreLang || req.query.overviewLang,
-    animeTitleLang: req.query.animeTitleLang,
-    adult: req.query.adult === "1", // mostrar conteudo adulto (anime NSFW)
-  };
+// Os handlers devolvem `{ erro, status }` quando o pedido nao passa; o resto e'
+// o corpo da resposta tal e qual.
+function responder(res, r) {
+  if (r.erro) return res.status(r.status || 400).json({ error: r.erro });
+  return res.json(r);
 }
 
 catalogRouter.get("/catalog", async (req, res, next) => {
   try {
-    res.json({ rows: await getCatalog(langOpts(req)) });
+    responder(res, await catalogo({ query: req.query }));
   } catch (err) {
     next(err);
   }
@@ -50,19 +37,7 @@ catalogRouter.get("/catalog", async (req, res, next) => {
 
 catalogRouter.get("/catalog/:category", async (req, res, next) => {
   try {
-    // Anime vem do Jikan (MyAnimeList), nao do TMDB.
-    if (req.params.category === "anime") {
-      return res.json({ rows: await getAnimeCatalog(langOpts(req)) });
-    }
-    const rows = await getCategory(req.params.category, langOpts(req));
-    // Nos Filmes, junta tambem filmes de anime (vindos do MAL).
-    if (req.params.category === "movies") {
-      const animeMovies = await getAnimeMovies(langOpts(req));
-      if (animeMovies.length) {
-        rows.push({ id: "m-anime", title: "Filmes de anime", items: animeMovies });
-      }
-    }
-    res.json({ rows });
+    responder(res, await categoria({ category: req.params.category, query: req.query }));
   } catch (err) {
     next(err);
   }
@@ -71,14 +46,7 @@ catalogRouter.get("/catalog/:category", async (req, res, next) => {
 // Lista completa de uma row do catalogo ("Ver todos"), pagina a pagina.
 catalogRouter.get("/rows/:id", async (req, res, next) => {
   try {
-    const page = Math.max(1, Number(req.query.page) || 1);
-    const row = await getCatalogRow(
-      req.params.id,
-      { page, genres: req.query.genres },
-      langOpts(req)
-    );
-    if (!row) return res.status(404).json({ error: "linha desconhecida" });
-    res.json(row);
+    responder(res, await linha({ id: req.params.id, query: req.query }));
   } catch (err) {
     next(err);
   }
@@ -87,18 +55,7 @@ catalogRouter.get("/rows/:id", async (req, res, next) => {
 // Grelha filtravel/ordenavel por tipo (Filmes/Series/Anime), com paginacao.
 catalogRouter.get("/discover", async (req, res, next) => {
   try {
-    const { type } = req.query;
-    const genres = String(req.query.genres || "").split(",").filter(Boolean);
-    const sort = req.query.sort || "popularity";
-    const dir = req.query.dir === "asc" ? "asc" : "desc";
-    const page = Math.max(1, Number(req.query.page) || 1);
-    if (type === "anime") {
-      return res.json(await discoverAnime({ genres, sort, dir, page }, langOpts(req)));
-    }
-    if (type === "movie" || type === "tv") {
-      return res.json(await discover({ type, genres, sort, dir, page }, langOpts(req)));
-    }
-    res.status(400).json({ error: "type tem de ser movie, tv ou anime" });
+    responder(res, await descobrir({ query: req.query }));
   } catch (err) {
     next(err);
   }
@@ -106,33 +63,7 @@ catalogRouter.get("/discover", async (req, res, next) => {
 
 catalogRouter.get("/search", async (req, res, next) => {
   try {
-    const q = String(req.query.q || "").trim();
-    if (!q) return res.json({ results: [] });
-    // Filmes/series do TMDB (sem anime) + anime do MAL (Jikan). Se um provider
-    // falhar temporariamente, a pesquisa devolve o que o outro conseguiu obter.
-    const [mediaResult, animeResult] = await Promise.allSettled([
-      search(q, langOpts(req)),
-      searchAnime(q, langOpts(req)),
-    ]);
-
-    const media = mediaResult.status === "fulfilled" ? mediaResult.value : [];
-    const anime = animeResult.status === "fulfilled" ? animeResult.value : [];
-    if (mediaResult.status === "rejected") {
-      log.warn("search", "TMDB falhou", { error: String(mediaResult.reason?.message || mediaResult.reason) });
-    }
-    if (animeResult.status === "rejected") {
-      log.warn("search", "Jikan/Tenrai falhou", { error: String(animeResult.reason?.message || animeResult.reason) });
-    }
-    if (
-      !media.length &&
-      !anime.length &&
-      mediaResult.status === "rejected" &&
-      animeResult.status === "rejected"
-    ) {
-      throw mediaResult.reason || animeResult.reason;
-    }
-
-    res.json({ results: [...media, ...anime] });
+    responder(res, await pesquisar({ query: req.query }));
   } catch (err) {
     next(err);
   }
@@ -140,9 +71,7 @@ catalogRouter.get("/search", async (req, res, next) => {
 
 catalogRouter.get("/anime/episodes", async (req, res, next) => {
   try {
-    const mal = String(req.query.mal || "");
-    if (!mal) return res.status(400).json({ error: "falta mal" });
-    res.json({ seasons: await getAnimeEpisodes(mal) });
+    responder(res, await episodiosAnime({ query: req.query }));
   } catch (err) {
     next(err);
   }
@@ -150,14 +79,7 @@ catalogRouter.get("/anime/episodes", async (req, res, next) => {
 
 catalogRouter.get("/recommendations", async (req, res, next) => {
   try {
-    const { type, id } = req.query;
-    if (!type || !id) {
-      return res.status(400).json({ error: "faltam parametros type e id" });
-    }
-    if (type === "anime") {
-      return res.json({ items: await getAnimeRecommendations(String(id), langOpts(req)) });
-    }
-    res.json({ items: await getSimilar(String(type), String(id), langOpts(req)) });
+    responder(res, await recomendacoes({ query: req.query }));
   } catch (err) {
     next(err);
   }
@@ -165,27 +87,7 @@ catalogRouter.get("/recommendations", async (req, res, next) => {
 
 catalogRouter.get("/details", async (req, res, next) => {
   try {
-    const { type, id } = req.query;
-    if (!type || !id) {
-      return res.status(400).json({ error: "faltam parametros type e id" });
-    }
-    // Anime: detalhes 100% MyAnimeList (Jikan).
-    if (type === "anime") {
-      return res.json(await getAnimeDetails(String(id), langOpts(req)));
-    }
-    const details = await getDetails(String(type), String(id), langOpts(req));
-    // Filmes: a nota da comunidade vem do Letterboxd (mais fiavel que o
-    // vote_average do TMDB, sobretudo em estreias com poucos votos). Se o
-    // Letterboxd nao tiver media, fica a do TMDB.
-    if (type === "movie") {
-      try {
-        const lb = await getLetterboxdRating(Number(id));
-        if (lb != null) details.rating = lb;
-      } catch {
-        /* fica com a nota do TMDB */
-      }
-    }
-    res.json(details);
+    responder(res, await detalhes({ query: req.query }));
   } catch (err) {
     next(err);
   }
@@ -194,21 +96,7 @@ catalogRouter.get("/details", async (req, res, next) => {
 // Lista de generos para o "Escolhe algo para mim", no idioma escolhido.
 catalogRouter.get("/genres", async (req, res, next) => {
   try {
-    const type = req.query.type;
-    const lang = req.query.genreLang || req.query.overviewLang;
-    if (type === "anime") {
-      // Os nomes vem do Jikan em ingles -> traduz pelo vocabulario (TMDB + MAL).
-      const list = await getAnimeGenres();
-      const vocab = await getGenreVocab(lang);
-      const genres = vocab
-        ? list.map((g) => ({ id: g.id, name: vocab.get(String(g.name).toLowerCase()) || g.name }))
-        : list;
-      return res.json({ genres });
-    }
-    if (type === "movie" || type === "tv") {
-      return res.json({ genres: await getGenres(type, lang) });
-    }
-    res.status(400).json({ error: "type tem de ser movie, tv ou anime" });
+    responder(res, await generos({ query: req.query }));
   } catch (err) {
     next(err);
   }
@@ -217,18 +105,7 @@ catalogRouter.get("/genres", async (req, res, next) => {
 // Escolhe um titulo aleatorio segundo generos a incluir/excluir.
 catalogRouter.get("/pick", async (req, res, next) => {
   try {
-    const { type } = req.query;
-    const genres = String(req.query.genres || "").split(",").filter(Boolean);
-    const exclude = String(req.query.exclude || "").split(",").filter(Boolean);
-    let item = null;
-    if (type === "anime") {
-      item = await pickAnime({ genres, exclude }, langOpts(req));
-    } else if (type === "movie" || type === "tv") {
-      item = await pickRandom({ type, genres, without: exclude }, langOpts(req));
-    } else {
-      return res.status(400).json({ error: "type tem de ser movie, tv ou anime" });
-    }
-    res.json({ item });
+    responder(res, await escolher({ query: req.query }));
   } catch (err) {
     next(err);
   }
@@ -236,11 +113,7 @@ catalogRouter.get("/pick", async (req, res, next) => {
 
 catalogRouter.get("/season", async (req, res, next) => {
   try {
-    const { id, season } = req.query;
-    if (!id || season == null) {
-      return res.status(400).json({ error: "faltam parametros id e season" });
-    }
-    res.json({ episodes: await getSeason(String(id), Number(season), langOpts(req)) });
+    responder(res, await temporada({ query: req.query }));
   } catch (err) {
     next(err);
   }

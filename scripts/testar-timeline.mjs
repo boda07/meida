@@ -184,7 +184,7 @@ console.log("  7) a migracao 9 e a regra de escrita");
 
   // O export/import tem de levar a data, senao nao volta de um PC para o outro.
   const exportJs = fs.readFileSync(path.join(RAIZ, "server", "src", "routes", "export.js"), "utf8");
-  const settings = fs.readFileSync(path.join(RAIZ, "web", "src", "pages", "Settings.jsx"), "utf8");
+  const settings = fs.readFileSync(path.join(RAIZ, "web", "src", "settings", "useDados.js"), "utf8");
   ok_("o CSV de export escreve `visto_em`", /"visto_em"/.test(settings));
   ok_("e escreve o watchedAt, nunca o updatedAt", /i\.watchedAt \|\| ""/.test(settings));
   ok_("o import de CSV le `visto_em`", /watchedAt: o\.visto_em \|\| null/.test(exportJs));

@@ -25,6 +25,12 @@ import { DEFAULT_SETTINGS } from "../web/src/api/client.js";
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const DETAILS = fs.readFileSync(path.join(RAIZ, "web", "src", "pages", "Details.jsx"), "utf8");
+// A logica da fonte mudou de casa: vive no gancho `web/src/details/useFontes.js`.
+// A pagina so' a chama e desenha os dois seletores.
+const FONTES = fs.readFileSync(
+  path.join(RAIZ, "web", "src", "details", "useFontes.js"),
+  "utf8"
+);
 const CLIENT = fs.readFileSync(path.join(RAIZ, "web", "src", "api", "client.js"), "utf8");
 const SETTINGS = fs.readFileSync(path.join(RAIZ, "web", "src", "settings", "SettingsContext.jsx"), "utf8");
 
@@ -33,6 +39,25 @@ let falhou = 0;
 function ok_(nome, cond, extra = "") {
   if (cond) { ok++; console.log("  OK    " + nome); }
   else { falhou++; console.log("  FALHA " + nome + (extra ? "  ->  " + extra : "")); }
+}
+
+// Tira o corpo de uma funcao do gancho: tanto `function x(...) { ... }` como
+// `const x = useCallback(\n  (...) => {\n ... \n  );`. Conta chaves em vez de
+// procurar o fecho na coluna 0 — dentro do gancho tudo esta' indentado.
+function corpoDe(texto, assinatura) {
+  const i = texto.indexOf(assinatura);
+  if (i < 0) return "";
+  const abre = texto.indexOf("{", i + assinatura.length);
+  if (abre < 0) return "";
+  let n = 0;
+  for (let j = abre; j < texto.length; j++) {
+    if (texto[j] === "{") n++;
+    else if (texto[j] === "}") {
+      n--;
+      if (n === 0) return texto.slice(i, j + 1);
+    }
+  }
+  return texto.slice(i);
 }
 
 console.log("");
@@ -53,14 +78,14 @@ console.log("  1) a definicao: uma fonte por TIPO");
 console.log("");
 console.log("  2) a chave antiga, com o episodio dentro, foi embora");
 {
-  ok_("nao ha nenhuma chave `meida:last-source`", !/meida:last-source/.test(DETAILS));
+  ok_("nao ha nenhuma chave `meida:last-source`", !/meida:last-source/.test(DETAILS + FONTES));
   // A chave com o episodio era a causa do sintoma, e voltar a escreve-la em
   // silencio repete o bug sem dar erro.
   ok_("nem nenhuma escrita directa em localStorage pela fonte",
-    !/localStorage\.setItem\(\s*`?meida:/.test(DETAILS));
+    !/localStorage\.setItem\(\s*`?meida:/.test(DETAILS + FONTES));
   // E a leitura tem de ser pelas Definicoes.
-  ok_("a fonte guardada vem das Definicoes", /settings\.lastSource/.test(DETAILS));
-  ok_("indexada pelo tipo do titulo", /porTipo\[tipo\]/.test(DETAILS),
+  ok_("a fonte guardada vem das Definicoes", /settings\.lastSource/.test(FONTES));
+  ok_("indexada pelo tipo do titulo", /porTipo\[tipo\]/.test(FONTES),
     "a fonte tem de ser lida pela chave do TIPO, e nao do episodio nem do titulo");
 }
 
@@ -68,18 +93,17 @@ console.log("");
 console.log("  3) o `playerIndex` anda com o `active` (o bug invisivel)");
 {
   // A funcao que abre: tem de posicionar o player E ativo.
-  const fn = DETAILS.slice(DETAILS.indexOf("function abrirEscolhendo"));
-  const corpo = fn.slice(0, fn.indexOf("\n}"));
-  ok_("existe `abrirEscolhendo`", !!fn);
+  const corpo = corpoDe(FONTES, "const abrirEscolhendo");
+  ok_("existe `abrirEscolhendo`", !!corpo);
   ok_("escolhe a fonte", /pickDefault\(embedsList,/.test(corpo));
   ok_("ativa essa fonte", /setActive\(escolhido\)/.test(corpo));
   ok_("**e posiciona o player nela**", /setPlayerIndex\(idx >= 0 \? idx : 0\)/.test(corpo),
     "o Player arrancava no indice 0 e o video comecava noutra fonte");
-  // E os dois sítios onde as fontes chegam tem de a usar, senao um dos dois
+  // E os dois sitios onde as fontes chegam tem de a usar, senao um dos dois
   // caminhos (anime e filme/serie) fica com o bug e o outro nao.
-  const usos = DETAILS.split("abrirEscolhendo(d.embeds)").length - 1;
+  const usos = FONTES.split("abrirEscolhendo(d.embeds)").length - 1;
   ok_("e usada nos dois sitios onde as fontes chegam", usos === 2, usos + " uso(s)");
-  ok_("e nao sobra nenhum `setActive(pickDefault(...))", !/setActive\(pickDefault/.test(DETAILS));
+  ok_("e nao sobra nenhum `setActive(pickDefault(...))", !/setActive\(pickDefault/.test(FONTES));
 
   // **O bug do fecho de caixa.** `fonteSalva` era um VALOR calculado no render a
   // partir do `embeds` do estado. Quando as fontes chegam, dentro do `.then`,
@@ -88,39 +112,36 @@ console.log("  3) o `playerIndex` anda com o `active` (o bug invisivel)");
   // desenhado num render seguinte com a lista ja cheia — "esta' marcada mas o
   // video e' outro", que e' a situacao mais enganadora que ha.
   ok_("a fonte guardada e' uma funcao, nao um valor do render",
-    /function fonteGuardada\(tipo, lista\)/.test(DETAILS),
+    /function fonteGuardada\(porTipo, tipo, lista\)/.test(FONTES),
     "se for um valor calculado no render, a lista ainda esta' vazia quando as fontes chegam");
   ok_("e recebe a lista a usar, em vez de a ir buscar ao fecho",
-    /fonteGuardada\(details\?\.type, embedsList\)/.test(DETAILS));
+    /fonteGuardada\(settings\.lastSource, details\?\.type, embedsList\)/.test(FONTES));
   // E tem de USAR o argumento: reescreve-lo com o valor do fecho (que e' o
   // mesmo bug com outra roupa) passava o teste anterior.
-  const corpoPick = DETAILS.slice(DETAILS.indexOf("function pickDefault"))
-    .slice(0, DETAILS.indexOf("function pickDefault") + 700)
-    .split("\n}")[0];
+  const corpoPick = corpoDe(FONTES, "const pickDefault");
   ok_("pickDefault NAO reescreve o argumento `saved` com o do fecho",
     !/saved\s*=/.test(corpoPick), "esta a ignorar o que lhe passou");
   ok_("pickDefault recebe a fonte guardada como argumento",
-    /function pickDefault\(embedsList, saved\)/.test(DETAILS) &&
-    /pickDefault\(embedsList, fonteGuardada/.test(DETAILS),
+    /\(embedsList, saved\) =>/.test(FONTES) &&
+    /pickDefault\(embedsList, fonteGuardada/.test(FONTES),
     "sem o argumento, volta a ler a do render");
 }
 
 console.log("");
 console.log("  4) escolher guarda, e a escolha nao se perde nos outros tipos");
 {
-  const fn = DETAILS.slice(DETAILS.indexOf("function escolherFonte"));
-  const corpo = fn.slice(0, fn.indexOf("\n}"));
+  const fn = corpoDe(FONTES, "function escolherFonte");
   ok_("existe `escolherFonte`", !!fn);
-  ok_("abre na fonte escolhida", /setActive\(e\)/.test(corpo));
-  ok_("posiciona o player", /setPlayerIndex\(idx >= 0 \/ 0|setPlayerIndex\(idx >= 0 \? idx : 0\)/.test(corpo));
-  ok_("tranca o auto-fallback", /setFonteManual\(true\)/.test(corpo));
-  ok_("guarda nas Definicoes", /update\(\{/.test(corpo) && /lastSource/.test(corpo));
+  ok_("abre na fonte escolhida", /setActive\(e\)/.test(fn));
+  ok_("posiciona o player", /setPlayerIndex\(idx >= 0 \? idx : 0\)/.test(fn));
+  ok_("tranca o auto-fallback", /setFonteManual\(true\)/.test(fn));
+  ok_("guarda nas Definicoes", /update\(\{/.test(fn) && /lastSource/.test(fn));
   // **O que se perde aqui e' o que o utilizador vai reclamar:** escolher o
   // MegaPlay para anime nao pode apagar a fonte escolhida para filmes.
-  ok_("funde com o que ja estava gravado", /\.\.\.\(settings\.lastSource \|\| \{\}\)/.test(corpo),
+  ok_("funde com o que ja estava gravado", /\.\.\.\(settings\.lastSource \|\| \{\}\)/.test(fn),
     "sem isto, escolher para anime apaga o que foi escolhido para filme");
-  ok_("e escreve so' na chave do tipo deste titulo", /\[\s*tipo\s*\]:\s*e\.provider/.test(corpo));
-  ok_("as tres chaves ficam garantidas", /movie:\s*""[\s\S]*tv:\s*""[\s\S]*anime:\s*""/.test(corpo));
+  ok_("e escreve so' na chave do tipo deste titulo", /\[\s*tipo\s*\]:\s*e\.provider/.test(fn));
+  ok_("as tres chaves ficam garantidas", /movie:\s*""[\s\S]*tv:\s*""[\s\S]*anime:\s*""/.test(fn));
 }
 
 console.log("");
@@ -135,23 +156,23 @@ console.log("");
 console.log("  6) o que continua a ser verdade depois disto");
 {
   ok_("a fonte guardada so' vale se o provider ainda existir",
-    /\(lista \|\| \[\]\)\.some\(\(e\) => e\.provider === v\)/.test(DETAILS));
-  ok_("um tipo sem fonte guardada da null (primeira viva)", /return null;/.test(DETAILS));
-  ok_("a tranca do auto-fallback solta-se ao mudar de titulo", /setFonteManual\(false\)/.test(DETAILS));
+    /\(lista \|\| \[\]\)\.some\(\(e\) => e\.provider === v\)/.test(FONTES));
+  ok_("um tipo sem fonte guardada da null (primeira viva)", /return null;/.test(FONTES));
+  ok_("a tranca do auto-fallback solta-se ao mudar de titulo", /setFonteManual\(false\)/.test(FONTES));
   ok_("o guarda da watch party tem prioridade sobre a guardada",
-    /want && \(alive\.find/.test(DETAILS));
+    /want &&/.test(FONTES) && /alive\.find\(\(e\) => e\.provider === want\)/.test(FONTES));
   // A fonte da watch party e' do HOST, nao da pessoa: nao se deve ir para as
   // Definicoes. Se alguem mexer aqui, esta assercao da pelo dente.
-  const fn = DETAILS.slice(DETAILS.indexOf("function escolherFonte"));
+  const fn = corpoDe(FONTES, "function escolherFonte");
   ok_("a escolha da watch party nao e' gravada como escolha da pessoa",
-    !/wantedSourceRef/.test(fn.slice(0, fn.indexOf("\n}"))));
+    !/wantedSourceRef/.test(fn));
 }
 
 console.log("");
 console.log("  7) higiene");
 {
   ok_("as Definicoes savam o que recebe", /function update\(patch\)/.test(SETTINGS) || /settingsStore\.set/.test(SETTINGS));
-  const todo = DETAILS + CLIENT;
+  const todo = DETAILS + FONTES + CLIENT;
   ok_("sem caracteres CJK", !/[\u2E80-\u9FFF\u3000-\u303F\uFF00-\uFFEF]/.test(todo));
   ok_("sem caractere de substituicao", !/[\uFFFD]/.test(todo));
 }

@@ -6,6 +6,21 @@
 export const CHANGELOG = [
 
   {
+      version: "1.7.8",
+      items: [
+        "Manutenção: as páginas de detalhe e de definições passaram a ser montadas a partir de peças pequenas — cada uma trata de uma coisa (episódios, progresso, legendas, presença, perfis, ligações a serviços). Nada muda no ecrã.",
+        "Manutenção: o servidor teve o mesmo tratamento — cada endereço passou a ter uma linha que valida e chama a regra, e a regra vive no seu próprio ficheiro.",
+        "Manutenção: os três ficheiros maiores do servidor (TMDB, AniList/Jikan e o proxy de vídeo) foram divididos por assunto; o ficheiro antigo passou a ser só a porta de entrada.",
+        "Fica uma regra nova: quando se divide um ficheiro, os testes que o procuravam por texto passam a ler o sítio certo — e há um teste que parte o código de propósito para provar que as verificações ainda apanham os erros.",
+      ],
+      items_en: [
+        "Maintenance: the details and settings pages are now built from small pieces — each one handles a single thing (episodes, progress, subtitles, presence, profiles, service connections). Nothing changes on screen.",
+        "Maintenance: the server got the same treatment — every endpoint now has a one-line route that validates and calls the rule, and the rule lives in its own file.",
+        "Maintenance: the server's three largest files (TMDB, AniList/Jikan and the video proxy) were split by subject; the old file is now just the entry point.",
+        "New project rule: when a file is split, the tests that searched it by text read the right place — and one test breaks the code on purpose to prove the checks still catch the errors.",
+      ],
+    },
+  {
       version: "1.7.7",
       items: [
         "Manutenção: a app foi reorganizada por dentro — cada parte passou a ter o seu ficheiro, com uma só responsabilidade. Nada muda no ecrã; é trabalho de bastidores para as próximas novidades não partirem o que já existe.",

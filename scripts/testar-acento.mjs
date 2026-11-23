@@ -72,7 +72,7 @@ const css = ler("web/src/styles.css");
  */
 const cssSemComentarios = css.replace(/\/\*[\s\S]*?\*\//g, "");
 const settings = ler("web/src/settings/SettingsContext.jsx");
-const settingsJsx = ler("web/src/pages/Settings.jsx");
+const settingsJsx = ler("web/src/settings/aparencia.js");
 const acento = ler("web/src/settings/acento.js");
 
 const FUNDO = "#070708";

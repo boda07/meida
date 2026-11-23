@@ -94,7 +94,12 @@ ok("passados 30 s volta a perguntar", (() => {
 // ---- O codigo real tem as duas protecoes? ---------------------------------------
 // Um teste que so reimplementa a logica prova a logica, nao o codigo. Estas
 // verificacoes leem o ficheiro e confirmam que as protecoes estao la.
-const fonte = readFileSync(new URL("../server/src/services/jikan.js", import.meta.url), "utf8");
+// O `malToAnilist` mudou de casa: vive em `server/src/services/jikan/anilist.js`
+// (o `jikan.js` e' agora so a fachada).
+const fonte = readFileSync(
+  new URL("../server/src/services/jikan/anilist.js", import.meta.url),
+  "utf8"
+);
 const inicio = fonte.indexOf("export async function malToAnilist");
 // 2600 e' folgado de proposito: com o comentario em cima da funcao, um slice curto
 // cortava o fim dela e o teste dava falta onde nao falta nada.
@@ -127,7 +132,7 @@ ok("uma resposta 200 com 'errors' conta como falha", /j\?\.errors\?\.length/.tes
 ok("um id invalido nao chega a ser perguntado", /Number\.isFinite\(key\)/.test(corpo));
 
 // ---- E a mensagem de erro ja nao fala de tmdb num anime? -----------------------
-const fontes = readFileSync(new URL("../server/src/routes/sources.js", import.meta.url), "utf8");
+const fontes = readFileSync(new URL("../server/src/handlers/sources.js", import.meta.url), "utf8");
 const bloco = fontes.slice(fontes.indexOf('if (!tmdb) {'), fontes.indexOf('if (!tmdb) {') + 900);
 ok("num anime a mensagem ja nao e' sobre o tmdb", /type === "anime"/.test(bloco));
 ok("num anime a mensagem diz para tentar outra vez", /Tenta outra vez/.test(bloco));

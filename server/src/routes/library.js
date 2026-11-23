@@ -1,398 +1,111 @@
+// Biblioteca e listas pessoais.
+//
+// Rota fina: valida o essencial, chama o handler e responde. Toda a regra
+// (backfill, fusao com o estado guardado, feed, generos) vive em
+// `handlers/library.js`.
 import { Router } from "express";
-import {
-  listLibrary,
-  getLibraryItem,
-  upsertLibrary,
-  setLibraryRating,
-  setLibraryGenres,
-  setLibraryYear,
-  clearWatchlist,
-  deleteLibrary,
-  listLists,
-  getList,
-  createList,
-  renameList,
-  deleteList,
-  addListTitle,
-  removeListTitle,
-  recordActivity,
-  eFilme,
-} from "../store.js";
 import { requireAuth } from "../services/auth.js";
-import { getMeta, getGenreVocab, getLocalizedMetaCached, localizarTitulos, preencherTitulosLocalizados } from "../services/tmdb.js";
-import { getAnimeRatingsBatch } from "../services/jikan.js";
-import { status as malStatus, getMeanScores, shouldAutoSync, markAutoSync, unmarkAutoSync, importMalList } from "../services/mal.js";
-import { status as anilistStatus, shouldAutoSync as shouldAutoSyncAni, markAutoSync as markAutoSyncAni, unmarkAutoSync as unmarkAutoSyncAni, importAnilistList, syncCrossWithMal, shouldAutoSyncCross, markAutoSyncCross, unmarkAutoSyncCross } from "../services/anilist.js";
-import { getCachedRating, getCachedRatings, getRatings as getLetterboxdRatings } from "../services/letterboxd.js";
-import { isOnline, pMap } from "../services/net.js";
-import { cacheGet, cacheSet } from "../services/cache.js";
-
-// Estados que um item pode ter na coluna `status` da biblioteca. NULL = usa as
-// flags watched/watchlist (ver estadoDe() em server/src/store.js).
-const ESTADOS_OK = new Set(["paused", "dropped"]);
+import {
+  listarBiblioteca,
+  obterItem,
+  guardarItem,
+  guardarAno,
+  limparWatchlist,
+  removerItem,
+  listarListas,
+  criarLista,
+  obterLista,
+  renomearLista,
+  apagarLista,
+  acrescentarTitulo,
+  removerTitulo,
+} from "../handlers/library.js";
 
 export const libraryRouter = Router();
 libraryRouter.use(requireAuth);
 
-function normalizeRow(row) {
-  if (!row) return null;
-  return { ...row, watched: Boolean(row.watched), watchlist: Boolean(row.watchlist) };
+// Os handlers devolvem `{ erro, status }` quando o pedido nao passa; o resto e'
+// o corpo da resposta tal e qual.
+function responder(res, r) {
+  if (r.erro) return res.status(r.status || 400).json({ error: r.erro });
+  return res.json(r);
 }
 
-// Guarda a nota e atualiza o item em memoria (para a resposta).
-function applyRating(userId, item, rating) {
-  if (rating == null) return;
-  setLibraryRating(userId, item.tmdbId, item.type, rating);
-  item.rating = rating;
-}
-
-// Guarda nota e/ou generos vindos do TMDB (so o que estiver em falta no item).
-function applyMeta(userId, item, meta) {
-  if (!meta) return;
-  if (item.rating == null) applyRating(userId, item, meta.rating);
-  if ((!item.genres || !item.genres.length) && meta.genres?.length) {
-    setLibraryGenres(userId, item.tmdbId, item.type, meta.genres);
-    item.genres = meta.genres;
-  }
-}
-
-// O `pMap` (concurrencia limitada) vive em `services/net.js`: o `tmdb.js` tambem
-// precisa dele para o preenchimento dos titulos localizados, e as rotas nao se
-// importam entre si.
-
-// Lista completa da biblioteca do utilizador. Faz backfill (uma vez) da media da
-// comunidade E dos generos dos itens antigos que ainda nao os tenham (ex.: filmes
-// importados do Letterboxd vieram sem generos). Em lote, para aguentar listas
-// grandes (centenas de titulos) em poucos segundos.
-//
-// A resposta usa o que ja esta em cache (memoria/disco) e dispara o que falta
-// (scraping do Letterboxd, TMDB por item) em background — assim a lista abre
-// sempre imediatamente e as notas aparecem no pedido seguinte (`pending` diz ao
-// frontend para voltar a pedir daqui a pouco).
+// Lista completa da biblioteca (com backfill em segundo plano).
 libraryRouter.get("/library", async (req, res) => {
-  const items = listLibrary(req.user.id).map(normalizeRow);
-  // Sem internet: serve só o que já está em cache (sem pedidos externos, sem
-  // esperas de timeout) — a lista abre na mesma, com os dados guardados.
-  const online = isOnline();
-
-  // Indice titulo -> id para o fallback TVMaze (series cujo detalhe nunca foi
-  // aberto nao passaram pelo catalogo; a library tem o titulo guardado).
-  for (const i of items) {
-    if ((i.type === "movie" || i.type === "tv") && i.title) {
-      const idxKey = `tvidx:${i.type}:${i.tmdbId}`;
-      if (!cacheGet(idxKey)) cacheSet(idxKey, { title: i.title, year: "" });
-    }
-  }
-
-  // Anime: media EXATA do MAL (1 pedido) e o resto via AniList em lote.
-  const animeMissing = items.filter((i) => i.type === "anime" && i.rating == null);
-  if (online && animeMissing.length && malStatus(req.user.id).linked) {
-    try {
-      const means = await getMeanScores(req.user.id);
-      for (const i of animeMissing) applyRating(req.user.id, i, means.get(Number(i.tmdbId)));
-    } catch {
-      /* sem conta MAL valida -> cai no AniList */
-    }
-  }
-  const stillAnime = animeMissing.filter((i) => i.rating == null);
-  if (online && stillAnime.length) {
-    const map = await getAnimeRatingsBatch(stillAnime.map((i) => i.tmdbId));
-    for (const i of stillAnime) applyRating(req.user.id, i, map.get(Number(i.tmdbId)));
-  }
-
-  // MAL ligado: sincroniza a lista (estado preciso: visto/ver, nota pessoal,
-  // progresso, diario) no maximo de 6 em 6 horas. Em background — a resposta
-  // nao espera; a proxima abertura ja vem com o estado do MAL aplicado.
-  if (online && malStatus(req.user.id).linked && shouldAutoSync(req.user.id)) {
-    markAutoSync(req.user.id);
-    importMalList(req.user.id).catch(() => {
-      // Sem sucesso (rede/MAL em baixo, conta invalida): desmarca para a
-      // proxima abertura voltar a tentar, em vez de esperar as 6h.
-      unmarkAutoSync(req.user.id);
-    });
-  } else if (online && !malStatus(req.user.id).linked && anilistStatus(req.user.id).linked && shouldAutoSyncAni(req.user.id)) {
-    // Sem MAL mas com AniList ligado: usa o AniList como fonte de verdade da lista.
-    markAutoSyncAni(req.user.id);
-    importAnilistList(req.user.id).catch(() => {
-      unmarkAutoSyncAni(req.user.id);
-    });
-  }
-
-  // Cross-sync MAL <-> AniList: se as duas estiverem ligadas, empurra o maior
-  // progresso para a conta atrasada (background, sem bloquear a resposta).
-  if (online && malStatus(req.user.id).linked && anilistStatus(req.user.id).linked && shouldAutoSyncCross(req.user.id)) {
-    markAutoSyncCross(req.user.id);
-    syncCrossWithMal(req.user.id).catch(() => {
-      unmarkAutoSyncCross(req.user.id);
-    });
-  }
-
-  // Filmes: aplica ja as notas Letterboxd conhecidas (memoria/disco, sem scraping).
-  const movies = items.filter((i) => i.type === "movie");
-  const lbKnown = getCachedRatings(movies.map((i) => i.tmdbId));
-  for (const i of movies) applyRating(req.user.id, i, lbKnown.get(Number(i.tmdbId)));
-
-  // Titulos E cartazes de filmes/series no idioma escolhido (ex.: watchlist
-  // importada do Letterboxd vinha em ingles) — os ja conhecidos, sem pedidos.
-  const titleLang = req.query.titleLang;
-  const localizable = items.filter((i) => i.type === "movie" || i.type === "tv");
-  const semTituloLocalizado = localizarTitulos(items, titleLang);
-
-  // Valida + traduz os generos: so mostra generos conhecidos (TMDB + MAL), corrige
-  // maiusculas, traduz para o idioma escolhido e remove duplicados. Assim some o
-  // lixo que ficou guardado em listas antigas (ex.: titulos parados nos generos).
-  // Offline: salta (faria pedidos ao TMDB); os generos ja validados ficam como estao.
-  const vocab = online ? await getGenreVocab(req.query.genreLang || req.query.overviewLang) : null;
-  if (vocab) {
-    for (const i of items) {
-      const seen = new Set();
-      const out = [];
-      for (const g of i.genres || []) {
-        const canon = vocab.get(String(g).toLowerCase());
-        if (canon && !seen.has(canon)) {
-          seen.add(canon);
-          out.push(canon);
-        }
-      }
-      i.genres = out;
-    }
-  }
-
-  // O que falta preencher vai para background (não bloqueia a resposta):
-  //  - notas Letterboxd dos filmes ainda não conhecidas;
-  //  - generos do TMDB dos itens em falta (a nota em falta eterna — filme sem
-  //    nota em lado nenhum — não mantém `pending` para sempre);
-  //  - titulo/cartaz localizados em falta.
-  const pending = Boolean(
-    movies.some((i) => !getCachedRating(Number(i.tmdbId)).known) ||
-    items.some(
-      (i) =>
-        (i.type === "movie" || i.type === "tv") &&
-        (!i.genres || !i.genres.length)
-    ) ||
-    localizable.some((i) => !getLocalizedMetaCached(i.type, i.tmdbId, titleLang))
+  responder(
+    res,
+    await listarBiblioteca({
+      userId: req.user.id,
+      titleLang: req.query.titleLang,
+      genreLang: req.query.genreLang,
+      overviewLang: req.query.overviewLang,
+    })
   );
-  if (pending && online) {
-    // Sem await: corre em paralelo e a proxima abertura ja vem completa.
-    runBackfill(req.user.id, items, titleLang, semTituloLocalizado);
-  }
-
-  res.json({ items, pending, online });
 });
-
-// Preenchimento em background do que a lista ainda nao tinha em cache.
-// `semTituloLocalizado` vem do `localizarTitulos` desta mesma resposta: sao os
-// itens que ficaram sem titulo no idioma pedido.
-async function runBackfill(userId, items, titleLang, semTituloLocalizado) {
-  try {
-    // Filmes: scraping do Letterboxd so para os que nao tem nota conhecida.
-    const movies = items.filter((i) => i.type === "movie");
-    const missingLb = movies.filter(
-      (i) => !getCachedRating(Number(i.tmdbId)).known
-    );
-    if (missingLb.length) {
-      const lb = await getLetterboxdRatings(missingLb.map((i) => i.tmdbId));
-      for (const i of missingLb) applyRating(userId, i, lb.get(Number(i.tmdbId)));
-    }
-
-    // Filmes/series: TMDB preenche nota em falta E/OU generos em falta.
-    const needMeta = items.filter(
-      (i) =>
-        (i.type === "movie" || i.type === "tv") &&
-        (i.rating == null || !i.genres || !i.genres.length)
-    );
-    if (needMeta.length) {
-      await pMap(needMeta, 12, async (i) =>
-        applyMeta(userId, i, await getMeta(i.type, i.tmdbId))
-      );
-    }
-
-    // Titulo/cartaz localizados em falta. A lista ja foi calculada no pedido
-    // anterior (`semTituloLocalizado`); recalcular aqui cobre o caso de o
-    // pedido ter respondido sem cache nenhum.
-    const needLoc = semTituloLocalizado?.length
-      ? semTituloLocalizado
-      : items.filter(
-          (i) =>
-            (i.type === "movie" || i.type === "tv") &&
-            !getLocalizedMetaCached(i.type, i.tmdbId, titleLang)
-        );
-    if (needLoc.length) {
-      await preencherTitulosLocalizados(needLoc, titleLang);
-    }
-  } catch {
-    /* best-effort: a proxima abertura tenta outra vez */
-  }
-}
 
 // Estado de um titulo (para a pagina de detalhe saber visto/nota atuais).
 libraryRouter.get("/library/item", (req, res) => {
-  const { type, tmdb } = req.query;
-  if (!type || !tmdb) return res.status(400).json({ error: "faltam type e tmdb" });
-  res.json({ item: normalizeRow(getLibraryItem(req.user.id, Number(tmdb), type)) });
+  responder(res, obterItem({ userId: req.user.id, type: req.query.type, tmdb: req.query.tmdb }));
 });
 
-// Cria/atualiza visto e/ou nota. Faz merge com o estado existente.
+// Cria/atualiza visto e/ou nota.
 libraryRouter.post("/library", (req, res) => {
-  const { tmdbId, type, title, poster, watched, watchlist, score, genres, rating, year, isMovie } =
-    req.body || {};
-  const { status } = req.body || {};
-  if (!tmdbId || (type !== "movie" && type !== "tv" && type !== "anime")) {
-    return res.status(400).json({ error: "tmdbId e type (movie|tv|anime) sao obrigatorios" });
-  }
-  if (score != null && (score < 1 || score > 100)) {
-    return res.status(400).json({ error: "score tem de estar entre 1 e 100" });
-  }
-  // "paused" / "dropped" / null. Qualquer outro valor e' erro de corpo, nao um
-  // estado desconhecido guardado em silencio.
-  if (status !== undefined && status !== null && !ESTADOS_OK.has(status)) {
-    return res.status(400).json({ error: "status invalido (paused|dropped|null)" });
-  }
-
-  const existing = getLibraryItem(req.user.id, Number(tmdbId), type);
-
-  // Um item "em pausa" ou "abandonado" nao pode continuar a contar como "para
-  // ver" — era isso que fazia o perfil dizer 389 quando a pessoa via 2. Por isso
-  // marcar um destes estados limpa as flags; o estado passa a ser o `status`.
-  // Tirar o `status` (voltar a null) NAO repõe a watchlist: quem despausa um
-  // titulo decide de novo o que quer com ele, em vez de o app adivinhar.
-  const estadoNovo = status === undefined ? (existing?.status ?? null) : status;
-  const temEstado = estadoNovo === "paused" || estadoNovo === "dropped";
-
-  upsertLibrary({
-    userId: req.user.id,
-    tmdbId: Number(tmdbId),
-    type,
-    title: title ?? existing?.title ?? null,
-    poster: poster ?? existing?.poster ?? null,
-    genres: Array.isArray(genres) ? genres : existing?.genres ?? [],
-    // O ano, quando vem. Sem isto, marcar um titulo como visto perderia o ano que
-    // a ficha tinha gravado — o `COALESCE` no store protege o valor guardado, mas
-    // sem o campo a chegar aqui nunca se escrevia pela primeira vez.
-    year: year ?? existing?.year ?? null,
-    rating: rating != null ? Number(rating) : existing?.rating ?? null,
-    watched: temEstado ? 0 : watched != null ? (watched ? 1 : 0) : existing?.watched ?? 0,
-    watchlist: temEstado ? 0 : watchlist != null ? (watchlist ? 1 : 0) : existing?.watchlist ?? 0,
-    status: estadoNovo,
-    score: score !== undefined ? score : existing?.score ?? null,
-  });
-  const item = normalizeRow(getLibraryItem(req.user.id, Number(tmdbId), type));
-  // O feed regista o filme marcado como visto pela biblioteca. So filmes: uma
-  // serie marcada como vista nao diz QUAL episodio, e o feed existe para dizer
-  // o episodio. As series entram pelo `finishProgress`. O `!existing.watched`
-  // evita repetir no feed um filme que ja estava visto.
-  //
-  // `isMovie` e' o caso do anime: la' o `type` e' "anime" para filmes e
-  // series (o id e' o do MAL), e o cliente e' que sabe qual e'. Sem este
-  // campo, um filme de anime marcado pela grelha nunca entrava no feed.
-  const ehFilme = eFilme(type, isMovie);
-  if (ehFilme && item?.watched && !existing?.watched) {
-    recordActivity({
-      userId: req.user.id,
-      type,
-      tmdbId: Number(tmdbId),
-      title: item.title,
-      poster: item.poster,
-      kind: "movie",
-    });
-  }
-  res.json({ item });
+  responder(res, guardarItem({ userId: req.user.id, body: req.body }));
 });
 
 // Guarda so' o ano de um titulo que ja esta' na biblioteca.
-//
-// Rota separada do POST /library de proposito: aquele faz
-// `watched = excluded.watched`, portanto um pedido so' para gravar o ano
-// desmarcaria o titulo como visto. Aqui so' o ano e' tocado.
 libraryRouter.patch("/library/year", (req, res) => {
-  const { tmdbId, type, year } = req.body || {};
-  if (!tmdbId || (type !== "movie" && type !== "tv" && type !== "anime")) {
-    return res.status(400).json({ error: "tmdbId e type (movie|tv|anime) sao obrigatorios" });
-  }
-  const written = setLibraryYear(req.user.id, Number(tmdbId), type, year);
-  res.json({ ok: true, written });
+  responder(res, guardarAno({ userId: req.user.id, body: req.body }));
 });
 
 // Limpa a watchlist por tipo (movie|tv|anime|all).
 libraryRouter.delete("/library/watchlist", (req, res) => {
-  const type = req.query.type || "all";
-  if (!["movie", "tv", "anime", "all"].includes(type)) {
-    return res.status(400).json({ error: "type invalido" });
-  }
-  const cleared = clearWatchlist(req.user.id, type);
-  res.json({ ok: true, cleared });
+  responder(res, limparWatchlist({ userId: req.user.id, type: req.query.type || "all" }));
 });
 
 // Remove um titulo da biblioteca.
 libraryRouter.delete("/library/item", (req, res) => {
-  const { type, tmdb } = req.query;
-  if (!type || !tmdb) return res.status(400).json({ error: "faltam type e tmdb" });
-  deleteLibrary(req.user.id, Number(tmdb), type);
-  res.json({ ok: true });
+  responder(res, removerItem({ userId: req.user.id, type: req.query.type, tmdb: req.query.tmdb }));
 });
 
 /* ===== Listas personalizadas ===== */
 
-// Lista das listas do utilizador (com contagem de titulos).
 libraryRouter.get("/lists", (req, res) => {
-  res.json({ lists: listLists(req.user.id) });
+  responder(res, listarListas({ userId: req.user.id }));
 });
 
-// Cria uma lista.
 libraryRouter.post("/lists", (req, res) => {
-  const name = String(req.body?.name || "").trim().slice(0, 60);
-  if (!name) return res.status(400).json({ error: "a lista precisa de um nome" });
-  res.json({ list: createList(req.user.id, name) });
+  responder(res, criarLista({ userId: req.user.id, body: req.body }));
 });
 
-// Conteudo de uma lista. Os titulos localized-se ao sair, como na biblioteca: a
-// lista guarda o titulo do momento em que o titulo foi acrescentado.
 libraryRouter.get("/lists/:id", (req, res) => {
-  const list = getList(req.user.id, Number(req.params.id));
-  if (!list) return res.status(404).json({ error: "lista nao encontrada" });
-  const titleLang = req.query.titleLang;
-  const emFalta = localizarTitulos(list.items, titleLang);
-  res.json({ list });
-  // Em segundo plano: a proxima abertura ja vem completa.
-  preencherTitulosLocalizados(emFalta, titleLang);
+  responder(
+    res,
+    obterLista({ userId: req.user.id, id: req.params.id, titleLang: req.query.titleLang })
+  );
 });
 
-// Renomeia uma lista.
 libraryRouter.patch("/lists/:id", (req, res) => {
-  const name = String(req.body?.name || "").trim().slice(0, 60);
-  if (!name) return res.status(400).json({ error: "a lista precisa de um nome" });
-  const list = renameList(req.user.id, Number(req.params.id), name);
-  if (!list) return res.status(404).json({ error: "lista nao encontrada" });
-  res.json({ list });
+  responder(res, renomearLista({ userId: req.user.id, id: req.params.id, body: req.body }));
 });
 
-// Apaga uma lista (e os titulos dela).
 libraryRouter.delete("/lists/:id", (req, res) => {
-  const ok = deleteList(req.user.id, Number(req.params.id));
-  if (!ok) return res.status(404).json({ error: "lista nao encontrada" });
-  res.json({ ok: true });
+  responder(res, apagarLista({ userId: req.user.id, id: req.params.id }));
 });
 
-// Adiciona um titulo a uma lista.
 libraryRouter.post("/lists/:id/titles", (req, res) => {
-  const { tmdbId, type, title, poster } = req.body || {};
-  if (!tmdbId || (type !== "movie" && type !== "tv" && type !== "anime")) {
-    return res.status(400).json({ error: "tmdbId e type (movie|tv|anime) sao obrigatorios" });
-  }
-  const list = addListTitle(req.user.id, Number(req.params.id), {
-    tmdbId: Number(tmdbId),
-    type,
-    title,
-    poster,
-  });
-  if (!list) return res.status(404).json({ error: "lista nao encontrada" });
-  res.json({ list });
+  responder(res, acrescentarTitulo({ userId: req.user.id, id: req.params.id, body: req.body }));
 });
 
-// Remove um titulo de uma lista.
 libraryRouter.delete("/lists/:id/titles", (req, res) => {
-  const { tmdbId, type } = req.query;
-  if (!tmdbId || !type) return res.status(400).json({ error: "faltam tmdbId e type" });
-  removeListTitle(req.user.id, Number(req.params.id), Number(tmdbId), type);
-  res.json({ ok: true });
+  responder(
+    res,
+    removerTitulo({
+      userId: req.user.id,
+      id: req.params.id,
+      tmdbId: req.query.tmdbId,
+      type: req.query.type,
+    })
+  );
 });

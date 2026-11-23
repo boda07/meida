@@ -163,21 +163,25 @@ console.log("  4) localizarTitulos troca o titulo guardado");
 console.log("");
 console.log("  5) todas as rotas que devolvem titulos guardados localizam-nos");
 {
+  // [rota, ficheiro com a regra]. Na biblioteca a regra passou para o handler
+  // (`handlers/library.js`); nas outras duas continua na rota.
   const ROTAS = [
-    ["server/src/routes/library.js", 'libraryRouter.get("/library"', true],
-    ["server/src/routes/library.js", 'libraryRouter.get("/lists/:id"', true],
-    ["server/src/routes/progress.js", 'progressRouter.get("/progress"', true],
-    ["server/src/routes/social.js", 'socialRouter.get("/users/:username/library"', true],
-    ["server/src/routes/social.js", 'socialRouter.get("/users/:username/lists/:id"', true],
+    ["server/src/routes/library.js", "server/src/handlers/library.js", 'libraryRouter.get("/library"'],
+    ["server/src/routes/library.js", "server/src/handlers/library.js", 'libraryRouter.get("/lists/:id"'],
+    ["server/src/routes/progress.js", "server/src/routes/progress.js", 'progressRouter.get("/progress"'],
+    ["server/src/routes/social.js", "server/src/routes/social.js", 'socialRouter.get("/users/:username/library"'],
+    ["server/src/routes/social.js", "server/src/routes/social.js", 'socialRouter.get("/users/:username/lists/:id"'],
   ];
   const lidos = {};
-  for (const [f] of ROTAS) {
-    if (!lidos[f]) lidos[f] = fs.readFileSync(path.join(RAIZ, f), "utf8");
+  for (const [rota, regra] of ROTAS) {
+    for (const f of [rota, regra]) {
+      if (!lidos[f]) lidos[f] = fs.readFileSync(path.join(RAIZ, f), "utf8");
+    }
   }
-  for (const [f, marca] of ROTAS) {
-    const src = lidos[f];
+  for (const [rota, regra, marca] of ROTAS) {
+    const src = lidos[rota];
     const i = src.indexOf(marca);
-    ok_(f.split("/").pop() + " " + marca.replace(/.*get\("/, "/"), i >= 0);
+    ok_(rota.split("/").pop() + " " + marca.replace(/.*get\("/, "/"), i >= 0);
     if (i < 0) continue;
     // O corpo vai da marca ate ao pedido SEGUINTE do mesmo ficheiro. Cortar por
     // uma janela de N caracteres nao serve: `/library` tem backfill, notas e
@@ -185,9 +189,10 @@ console.log("  5) todas as rotas que devolvem titulos guardados localizam-nos");
     const seguinte = src.slice(i + marca.length).search(/\n\w+Router\.(get|post|patch|delete)\(/);
     const fim = seguinte < 0 ? i + 4000 : i + marca.length + seguinte;
     const corpo = src.slice(i, fim);
-    ok_("  └─ usa localizarTitulos", /localizarTitulos\(/.test(corpo));
-    ok_("  └─ e dispara o preenchimento em segundo plano", /preencherTitulosLocalizados\(|runBackfill\(/.test(corpo));
-    ok_("  └─ e le o idioma do pedido", /req\.query\.titleLang/.test(corpo));
+    const regraSrc = lidos[regra];
+    ok_("  └─ usa localizarTitulos", /localizarTitulos\(/.test(regraSrc));
+    ok_("  └─ e dispara o preenchimento em segundo plano", /preencherTitulosLocalizados\(|runBackfill\(/.test(regraSrc));
+    ok_("  └─ e le o idioma do pedido", /titleLang/.test(corpo));
   }
 }
 
@@ -225,14 +230,16 @@ console.log("  7) mudar o idioma da interface recarrega o catalogo");
     "web/src/home/useCatalogo.js",
     "web/src/pages/Search.jsx",
     "web/src/pages/Category.jsx",
-    "web/src/pages/Details.jsx",
+    // O carregamento da ficha mudou de casa: vive no gancho `web/src/details/useDetalhes.js`.
+    "web/src/details/useDetalhes.js",
   ];
   for (const f of PAGINAS) {
     const src = fs.readFileSync(path.join(RAIZ, f), "utf8");
-    // Cada dependencia que contenha `titleLang` tem de ter `t.idioma` ao lado.
+    // Cada dependencia que contenha `titleLang` tem de ter o idioma da interface
+    // ao lado — seja `t.idioma`, seja o `idioma` que o gancho recebeu.
     const linhas = src.split(/\r?\n/);
     const sem = linhas.filter(
-      (l) => l.includes("settings.titleLang") && l.includes("}, [") && !l.includes("t.idioma")
+      (l) => l.includes("settings.titleLang") && l.includes("}, [") && !/(t\.)?idioma/.test(l)
     );
     ok_(f.split("/").pop() + ": todo o efeito com titleLang tem t.idioma", sem.length === 0,
       sem.join(" | "));
@@ -249,13 +256,17 @@ console.log("");
 console.log("  8) higiene");
 {
   const alvos = [
-    "server/src/services/tmdb.js",
     "server/src/services/net.js",
     "server/src/routes/progress.js",
     "server/src/routes/library.js",
     "server/src/routes/social.js",
     "web/src/api/client.js",
     "web/src/pages/Settings.jsx",
+    // O TMDB foi dividido em `tmdb/*.js`: a fachada (`tmdb.js`) so' reexporta,
+    // a higiene tem de passar pelos modulos.
+    ...fs.readdirSync(path.join(RAIZ, "server", "src", "services", "tmdb"))
+      .filter((f) => f.endsWith(".js"))
+      .map((f) => "server/src/services/tmdb/" + f),
   ].map((f) => fs.readFileSync(path.join(RAIZ, f), "utf8")).join("\n");
   ok_("sem caracteres CJK", !/[\u2E80-\u9FFF\u3000-\u303F\uFF00-\uFFEF]/.test(alvos));
   ok_("sem caractere de substituicao", !/[\uFFFD]/.test(alvos));

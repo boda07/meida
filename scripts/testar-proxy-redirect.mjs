@@ -253,7 +253,11 @@ console.log("  7) video e legendas tambem seguem");
 console.log("");
 console.log("  8) higiene");
 {
-  const t = fs.readFileSync(path.join(RAIZ, "server/src/services/proxy.js"), "utf8");
+  // O proxy foi dividido: a fachada (`proxy.js`) so' reexporta e os `fetch` e o
+  // limite de saltos vivem em `proxy/redirecionamentos.js`.
+  const t =
+    fs.readFileSync(path.join(RAIZ, "server/src/services/proxy.js"), "utf8") +
+    fs.readFileSync(path.join(RAIZ, "server/src/services/proxy/redirecionamentos.js"), "utf8");
   ok_("proxy.js sem caracteres CJK", !/[\u2E80-\u9FFF\u3000-\u303F\uFF00-\uFFEF]/.test(t));
   ok_("proxy.js sem caractere de substituicao", !t.includes("\uFFFD"));
   // `fetch(` tambem aparece escrito em COMENTARIOS (o ficheiro explica o `fetch`

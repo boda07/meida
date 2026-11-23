@@ -95,11 +95,13 @@ ok("uma row desconhecida devolve null (e a rota responde 404)", /return null;/.t
 
 console.log("  3) rota /api/rows/:id");
 const rotas = ler("server/src/routes/catalog.js");
+// A regra passou para o handler; a rota so regista o endpoint.
+const regra = ler("server/src/handlers/catalog.js");
 ok("a rota esta' registada", /catalogRouter\.get\("\/rows\/:id"/.test(rotas));
-ok("le a pagina do pedido", /req\.query\.page/.test(rotas));
-ok("le os generos do pedido", /req\.query\.genres/.test(rotas));
-ok("serve a row pelo servico", /getCatalogRow\(/.test(rotas));
-ok("row desconhecida responde 404", /status\(404\)/.test(rotas));
+ok("le a pagina do pedido", /query\.page/.test(regra));
+ok("le os generos do pedido", /query\.genres/.test(regra));
+ok("serve a row pelo servico", /getCatalogRow\(/.test(regra));
+ok("row desconhecida responde 404", /status: 404/.test(regra));
 
 const index = ler("server/src/index.js");
 const posCatalog = index.indexOf('app.use("/api", catalogRouter)');

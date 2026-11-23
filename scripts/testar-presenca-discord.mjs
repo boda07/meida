@@ -72,16 +72,16 @@ ok("main.cjs repassa 'estado' ao processo principal", /estado:\s*data\?\.estado/
 
 // ---- 6) O frontend tem os tres estados --------------------------------------------
 // Indiferente ao tipo de aspas: o que interessa e' que o estado exista, nao como
-// esta escrito.
-const details = readFileSync(new URL("../web/src/pages/Details.jsx", import.meta.url), "utf8");
+// esta escrito. A presenca mudou de casa: vive no gancho `web/src/details/usePresenca.js`.
+const details = readFileSync(new URL("../web/src/details/usePresenca.js", import.meta.url), "utf8");
 for (const e of ["a-ver", "pausa", "sem-dados"]) {
-  ok("Details.jsx conhece o estado " + e, details.includes(`"${e}"`) || details.includes(`'${e}'`));
+  ok("usePresenca.js conhece o estado " + e, details.includes(`"${e}"`) || details.includes(`'${e}'`));
 }
-ok("Details.jsx ja nao usa o booleano antigo (presencaPausada)", !details.includes("presencaPausada"));
+ok("usePresenca.js ja nao usa o booleano antigo (presencaPausada)", !details.includes("presencaPausada"));
 // O `viuProgressoRef` e' o que separa "parou" de "nunca soube". Sem ele, um
 // player nosso que arranca devagar seria marcado como pausa.
-ok("Details.jsx so marca 'viuProgresso' quando ha progresso", /viuProgressoRef\.current = true/.test(details));
-ok("Details.jsx so passa a 'pausa' se ja viu progresso", /if \(!viuProgressoRef\.current\) return/.test(details));
+ok("usePresenca.js so marca 'viuProgresso' quando ha progresso", /viuProgressoRef\.current = true/.test(details));
+ok("usePresenca.js so passa a 'pausa' se ja viu progresso", /if \(!viuProgressoRef\.current\) return/.test(details));
 
 // O efeito que envia o estado nao pode levar `position`: a posicao vem do
 // `reportPos`, e mandar `undefined` faria o `subLine` escrever "undefined".
