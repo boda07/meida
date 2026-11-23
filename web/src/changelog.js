@@ -6,6 +6,15 @@
 export const CHANGELOG = [
 
   {
+      version: "1.7.9",
+      items: [
+        "Correção: o site público (a versão web) podia ficar preso na versão anterior — a publicação automática falhava depois de tudo estar pronto. Passou a ser feita em dois passos, para não voltar a acontecer.",
+      ],
+      items_en: [
+        "Fix: the public site (the web version) could stay stuck on the previous version — the automatic publish failed after everything was ready. It now happens in two steps, so it doesn't happen again.",
+      ],
+    },
+  {
       version: "1.7.8",
       items: [
         "Manutenção: as páginas de detalhe e de definições passaram a ser montadas a partir de peças pequenas — cada uma trata de uma coisa (episódios, progresso, legendas, presença, perfis, ligações a serviços). Nada muda no ecrã.",

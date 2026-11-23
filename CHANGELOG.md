@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.7.9
+
+**Workflow de Pages dividida em dois jobs** (`build` → `deploy`), sem mudança na app.
+
+- **O que falhou** — na run `45176071825` (push da 1.7.8) o `deploy-pages` deu `No artifacts named "github-pages" were found`, com o build verde e o upload verde: o `upload-pages-artifact` finalizou o artefacto às `12:37:59.643` e o `deploy-pages` listou os artefactos às `12:38:00.09` — 14 ms depois, 0 resultados. É propagação da API do GitHub, não é o build: o artefacto `github-pages` (ID `14819850835`) existia e não estava expirado. Re-correr o job (`gh run rerun 45176071825 --failed`) passou em 44 s e o site ficou a servir o bundle da 1.7.8.
+- **A correção** — `build` (checkout, Node, `npm --prefix web run build`, `configure-pages`, `upload-pages-artifact`) e `deploy` (`needs: build`, `deploy-pages`), que é a template oficial. Num job só não há nada entre "artefacto finalizado" e "deploy lista artefactos"; com o `needs` há um passo de maquinaria entre as duas coisas. Bónus: uma segunda tentativa falhada passa a ser só o `deploy`, sem reconstruir.
+- **Permissões** — `contents: read` no `build`; `pages: write` + `id-token: write` no `deploy` (são do job que carrega o site, não do que compila).
+- **Verificação** — YAML validado (`jobs: build,deploy`, `deploy.needs: build`); site público a servir `assets/index-D-qiOrak.js` com `1.7.8` la dentro.
+
 ## 1.7.8
 
 Continuation of the **SRP** refactor started in 1.7.7, on the two flanks that were still open: **thin routes** and the **three largest services/pages**. Zero behaviour change; `npm test`, `npm run lint`, `npm run build` and the PWA smoke are green before and after.
