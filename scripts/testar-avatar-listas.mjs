@@ -4,6 +4,7 @@
 //   - toUserCard / toApiComment / toApiNotification nao devolvem avatar inline
 //   - listComments com 20 comentarios responde com menos de 100 KB
 //   - GET /api/users/:id/avatar serve o avatar separado
+//   - os corpos acima dos 100 KB do parser global chegam as rotas que os pedem
 import path from "node:path";
 import os from "node:os";
 // a pasta temporaria nao pode ficar ao lado do projeto: no CI o repositorio pode estar numa pasta so-de-leitura.
@@ -138,6 +139,42 @@ try {
     const meuId = (await me.json()).user.id;
     const avatarResp = await pedir(`/api/users/${meuId}/avatar`);
     ok_("GET /api/users/:id/avatar devolve 200 ou 404", avatarResp.status === 200 || avatarResp.status === 404, "status " + avatarResp.status);
+
+    // ---------- 4) corpo grande chega as rotas que o pedem ----------
+    // O parser global de 100 KB corre ANTES das rotas. Sem a excepcao em
+    // `server/src/index.js`, um avatar ou um export com mais de 100 KB levava
+    // 413 antes de a rota o ver — e a rota declarava `limit: "4mb"` para nada.
+    // Este passo fixa as DUAS rotas que o pedem: se alguem voltar a meter um
+    // `express.json` unico, aparece aqui em vez de aparecer a um utilizador a
+    // importar um ficheiro grande. (O avatar tem o teste do `testar-avatar-etag`.)
+    const exportGrande = JSON.stringify({
+      format: "json",
+      library: Array.from({ length: 2500 }, (_, i) => ({
+        title: "Titulo de teste numero " + i, type: "movie", tmdb: i, visto: true, nota: 80,
+      })),
+    });
+    const kB = Math.round(exportGrande.length / 1024);
+    const importComToken = await pedir("/api/export/import", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...headers },
+      body: exportGrande,
+    });
+    ok_(`import de ${kB} KB (acima dos 100 KB do parser global) e' aceite`,
+      importComToken.status === 200, "status " + importComToken.status);
+    const importSemToken = await pedir("/api/export/import", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: exportGrande,
+    });
+    ok_("e sem token e' 401, nao 413 (o router autentica antes do parser)",
+      importSemToken.status === 401, "status " + importSemToken.status);
+    // O limite global nao subiu: o login continua a fechar-se aos 100 KB.
+    const loginGrande = await pedir("/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username: "x", password: "b".repeat(1024 * 1024) }),
+    });
+    ok_("e o login com 1 MB continua a dar 413", loginGrande.status === 413, "status " + loginGrande.status);
 
     ok_("o servidor nao morreu a meio do teste", !servidorMorto, servidorMorto ? "morreu com " + servidorMorto : "");
   }
