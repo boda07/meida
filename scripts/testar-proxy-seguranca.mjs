@@ -4,6 +4,8 @@
 // passou a ser derivada, os dois testes que a reimplementavam partiram ao
 // mesmo tempo sem dar erro).
 import path from "node:path";
+import os from "node:os";
+// a pasta temporaria nao pode ficar ao lado do projeto: no CI o repositorio pode estar numa pasta so-de-leitura.
 import { pathToFileURL } from "node:url";
 import fs from "node:fs";
 
@@ -31,7 +33,7 @@ function proxyUrl(targetUrl, adulterarSig = false, ts = String(Date.now())) {
 }
 
 const PORTA = 5600 + (process.pid % 90);
-const dbDir = fs.mkdtempSync(path.join(RAIZ, "..", "meida-test-proxy-"));
+const dbDir = fs.mkdtempSync(path.join(os.tmpdir(), "meida-test-proxy-"));
 const { spawn } = await import("node:child_process");
 const filho = spawn(process.execPath, [path.join(RAIZ, "server", "src", "index.js")], {
   cwd: RAIZ,

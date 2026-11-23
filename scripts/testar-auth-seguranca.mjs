@@ -3,6 +3,8 @@
 //   - 11.º login falho em 15 min -> 429
 //   - POST /auth/login com body de 1 MB -> 413
 import path from "node:path";
+import os from "node:os";
+// a pasta temporaria nao pode ficar ao lado do projeto: no CI o repositorio pode estar numa pasta so-de-leitura.
 import fs from "node:fs";
 
 const RAIZ = path.join(process.cwd());
@@ -15,7 +17,7 @@ function ok_(nome, cond, extra = "") {
 }
 
 const PORTA = 5800 + (process.pid % 90);
-const dbDir = fs.mkdtempSync(path.join(RAIZ, "..", "meida-test-auth-"));
+const dbDir = fs.mkdtempSync(path.join(os.tmpdir(), "meida-test-auth-"));
 const { spawn } = await import("node:child_process");
 const filho = spawn(process.execPath, [path.join(RAIZ, "server", "src", "index.js")], {
   cwd: RAIZ,

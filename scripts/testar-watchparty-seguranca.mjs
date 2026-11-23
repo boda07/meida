@@ -7,6 +7,8 @@
 //   - `from` do cliente, sem verificacao -> aceite
 //   - `\\evil.com`, `//evil.com` e `https://evil.com` -> todos 200
 import path from "node:path";
+import os from "node:os";
+// TEMP/TMP so existe no Windows; `os.tmpdir()` da' a pasta temporaria em qualquer sistema.
 import fs from "node:fs";
 import { spawn } from "node:child_process";
 
@@ -59,7 +61,7 @@ const RE = /^\/(?![/\\])[^\s\\]{0,300}$/;
 }
 
 // ---------------------------------------------------------------------------
-const dbDir = fs.mkdtempSync(path.join(process.env.TEMP, "meida-test-wp-"));
+const dbDir = fs.mkdtempSync(path.join(os.tmpdir(), "meida-test-wp-"));
 const filho = spawn(process.execPath, [path.join(RAIZ, "server", "src", "index.js")], {
   cwd: RAIZ,
   env: { ...process.env, PORT: String(PORTA), DB_DIR: dbDir, HOST: "127.0.0.1", JWT_SECRET: "t-wp" },

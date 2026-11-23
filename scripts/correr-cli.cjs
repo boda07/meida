@@ -38,17 +38,22 @@ function caminhoCli(pacote) {
  * nunca chegou a haver release para reparar.
  */
 function rodar(caminho, args, rotulo) {
+  const faltou = () => {
+    console.error(
+      `  ERRO: nao encontrei ${rotulo} (${caminho}).\n` +
+        "        Corre `npm install` na raiz antes de publicar."
+    );
+    return 127;
+  };
+  // Falta ANTES de tentar: sem isto, o `node` arrancava com um ficheiro
+  // inexistente, escrevia "Cannot find module" no terminal e so' depois se
+  // concluia 127 — ruido que parece a causa quando nao e'.
+  if (!fs.existsSync(caminho)) return faltou();
   try {
     execFileSync(process.execPath, [caminho, ...args], { stdio: "inherit", cwd: RAIZ });
     return 0;
   } catch (e) {
-    if (e.code === "ENOENT" || !fs.existsSync(caminho)) {
-      console.error(
-        `  ERRO: nao encontrei ${rotulo} (${caminho}).\n` +
-          "        Corre `npm install` na raiz antes de publicar."
-      );
-      return 127;
-    }
+    if (e.code === "ENOENT") return faltou();
     return e.status ?? 1;
   }
 }

@@ -78,7 +78,11 @@ console.log("  1) o caminho do electron-builder existe mesmo");
 {
   const cli = caminhoCli("electron-builder");
   ok_("o cli.js esta onde o modulo diz", fs.existsSync(cli), cli);
-  ok_("e o nome do pacote bate certo com o bin (electron-builder.cmd)", fs.existsSync(path.join(RAIZ, "node_modules", ".bin", "electron-builder.cmd")));
+  // No Windows o que esta' no PATH e' um `.cmd`; nos outros sistemas e' um
+  // shim sem extensao. O teste confirma o nome que ESTE sistema usa — antes
+  // exigia sempre o `.cmd` e falhava em qualquer maquina que nao fosse Windows.
+  const bin = process.platform === "win32" ? "electron-builder.cmd" : "electron-builder";
+  ok_("e o nome do pacote bate certo com o bin (" + bin + ")", fs.existsSync(path.join(RAIZ, "node_modules", ".bin", bin)));
   ok_("o modulo aponta para a raiz do repositorio", raizModulo === path.resolve(RAIZ));
 }
 

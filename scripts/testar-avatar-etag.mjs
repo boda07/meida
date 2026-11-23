@@ -11,6 +11,8 @@
 // `fetch` nenhuma revalidacao chegava a dar 304 e o bug parecia nao existir. Foi
 // o que aconteceu na primeira reproducao deste bug.
 import path from "node:path";
+import os from "node:os";
+// TEMP/TMP so existe no Windows; `os.tmpdir()` da' a pasta temporaria em qualquer sistema.
 import fs from "node:fs";
 import http from "node:http";
 import { createHash } from "node:crypto";
@@ -51,7 +53,7 @@ const lerAvatar = (corpo) => {
   try { return JSON.parse(corpo || "{}").avatar; } catch { return null; }
 };
 
-const dbDir = fs.mkdtempSync(path.join(process.env.TEMP, "meida-test-avatar-"));
+const dbDir = fs.mkdtempSync(path.join(os.tmpdir(), "meida-test-avatar-"));
 const filho = spawn(process.execPath, [path.join(RAIZ, "server", "src", "index.js")], {
   cwd: RAIZ,
   env: { ...process.env, PORT: String(PORTA), DB_DIR: dbDir, HOST: "127.0.0.1", JWT_SECRET: "teste-avatar" },
@@ -137,18 +139,30 @@ try {
     // -----------------------------------------------------------------------
     console.log("");
     console.log("  7) data URL grande (o caso em que o SHA-1 custava ~6 ms)");
-    const grande = "data:image/png;base64," + "A".repeat(300 * 1024);
-    const t0 = Date.now();
-    await porAvatar(grande);
+    // **280 KB e nao 300**: o `normalizeAvatar` rejeita (>300 000 caracteres =
+    // 400) e o valor antigo ficava na base de dados sem ninguem dar por isso —
+    // a seccao 7 dizia testar o avatar grande e testava o que la' estava antes.
+    const grande = "data:image/png;base64," + "A".repeat(280 * 1024);
+    const envioGrande = await porAvatar(grande);
+    ok_("o avatar grande e' mesmo aceite (senao isto testa outro valor)",
+      envioGrande.status === 200, "status " + envioGrande.status);
     const g = await avatar();
-    const t1 = Date.now();
-    await avatar();
-    const t2 = Date.now();
     ok_("ETag do avatar grande: " + g.cabecalhos.etag.slice(0, 20) + "...", /^[A-Za-z0-9+/=]+$/.test(g.cabecalhos.etag.replace(/"/g, "")));
     ok_("revalidar com ele da 304 (o valor nao mudou)", (await avatar({ "if-none-match": g.cabecalhos.etag })).status === 304);
-    // A segunda vez tem de vir do memo: o `===` de uma string de 300 KB e' imediato.
-    ok_("a segunda leitura e' mais rapida que a primeira (memo)", t2 - t1 < Math.max(1, t1 - t0),
-      `1a ${t1 - t0} ms, 2a ${t2 - t1} ms`);
+    // A verificacao de TEMPO saiu daqui. Medida: uma leitura de 300 KB e'
+    // dominada pelo HTTP e pela serializacao do JSON, nao pelo SHA-1 — a 1.a
+    // dava 5 ms e a 2.a 8 ms sem memo nenhum que explicasse a diferenca, e o
+    // teste falhava ao sabor da maquina. O que se prova agora e' a propriedade
+    // que o memo tem de garantir: com o MESMO tamanho e valor diferente, o
+    // ETag muda; e voltar ao valor original devolve o ETag original (o memo
+    // compara o valor, nao so' o id).
+    const grande2 = "data:image/png;base64," + "A".repeat(280 * 1024 - 1) + "B";
+    await porAvatar(grande2);
+    const g2 = await avatar();
+    ok_("mesmo tamanho e valor diferente -> ETag diferente", g2.cabecalhos.etag !== g.cabecalhos.etag);
+    await porAvatar(grande);
+    const g3 = await avatar();
+    ok_("e voltar ao valor original devolve o ETag original", g3.cabecalhos.etag === g.cabecalhos.etag);
 
     // -----------------------------------------------------------------------
     console.log("");

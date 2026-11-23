@@ -11,6 +11,8 @@
 // cada arranque. Um reinicio (o Render hiberna) invalidava todas as URLs
 // assinadas e cortava a reproducao em curso.
 import path from "node:path";
+import os from "node:os";
+// a pasta temporaria nao pode ficar ao lado do projeto: no CI o repositorio pode estar numa pasta so-de-leitura.
 import fs from "node:fs";
 import { pathToFileURL } from "node:url";
 
@@ -128,7 +130,7 @@ ok_("e a assinatura bate com a derivacao documentada", assinar(ALVO, ts) === cre
 console.log("");
 console.log("  7) no servidor REAL: assinado passa, sem assinatura nao");
 const PORTA = 5750 + (process.pid % 90);
-const dbDir = fs.mkdtempSync(path.join(RAIZ, "..", "meida-test-validade-"));
+const dbDir = fs.mkdtempSync(path.join(os.tmpdir(), "meida-test-validade-"));
 const { spawn } = await import("node:child_process");
 const filho = spawn(process.execPath, [path.join(RAIZ, "server", "src", "index.js")], {
   cwd: RAIZ,
@@ -157,11 +159,20 @@ try {
   ok_("o servidor arrancou", acordou, saida.slice(-300));
 
   if (acordou) {
-    // Assinado, com 11 minutos: era 403, tem de dar 200.
+    // O que este passo prova e' o PORTAO DA ASSINATURA, nao o `example.com`
+    // responder. No servidor ha' TRES fontes de 403 em `/api/proxy`: a
+    // assinatura, o `alvoSeguro` (o DNS do nome falhou ou resolveu para um IP
+    // bloqueado) e o proprio site la' em cima. Exigir 200 fazia o teste
+    // depender da rede — falhou a correr a suite inteira com um 403 do
+    // `alvoSeguro`, sem nada de errado no codigo. O 403 da assinatura tem
+    // corpo proprio; e' esse que nao pode aparecer com uma assinatura de 11 min.
+    const recusadaPelaAssinatura = (r) => r.status === 403 && /assinatura valid/i.test(r.corpo || "");
     const p11 = new URLSearchParams({ url: "https://example.com/", ts: String(Date.now() - 11 * MIN) });
     p11.set("sig", assinar("https://example.com/", p11.get("ts")));
     const r11 = await pedir(`/api/proxy?${p11.toString()}`);
-    ok_("no servidor real: segmento de ha 11 min da 200", r11.status === 200, "status " + (r11.status ?? r11.erro));
+    ok_("no servidor real: segmento de ha 11 min passa o portao da assinatura",
+      !recusadaPelaAssinatura(r11),
+      "status " + (r11.status ?? r11.erro) + (r11.corpo ? " " + r11.corpo.slice(0, 60) : ""));
 
     // E a porta de entrada continua fechada.
     const semAssinatura = await pedir("/api/proxy?url=" + encodeURIComponent("https://example.com/"));
@@ -170,7 +181,10 @@ try {
     const p13 = new URLSearchParams({ url: "https://example.com/", ts: ts13 });
     p13.set("sig", assinar("https://example.com/", ts13));
     const r13 = await pedir(`/api/proxy?${p13.toString()}`);
-    ok_("com 13 h continua a dar 403", r13.status === 403, "status " + (r13.status ?? r13.erro));
+    // Aqui o 403 tem de ser o DA ASSINATURA (nao um do `alvoSeguro`, que
+    // acontece depois e nao diria nada sobre a validade de 12 h).
+    ok_("com 13 h continua a dar 403 (pela assinatura)", recusadaPelaAssinatura(r13),
+      "status " + (r13.status ?? r13.erro) + (r13.corpo ? " " + r13.corpo.slice(0, 60) : ""));
     const vivo = await pedir("/api/health");
     ok_("o servidor continua vivo", vivo.status === 200, "status " + (vivo.status ?? vivo.erro));
     ok_("e nao morreu", codigoSaida === null, "codigo " + codigoSaida);

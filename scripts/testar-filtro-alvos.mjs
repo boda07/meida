@@ -10,6 +10,8 @@
 //  4. O `/api/anime/megaplay` aceitava qualquer URL e fazia `fetch` ao que o
 //     cliente mandasse (SSRF cego).
 import path from "node:path";
+import os from "node:os";
+// TEMP/TMP so existe no Windows; `os.tmpdir()` da' a pasta temporaria em qualquer sistema.
 import fs from "node:fs";
 import { pathToFileURL } from "node:url";
 
@@ -185,7 +187,7 @@ console.log("  7b) a ROTA responde 400 (servidor real, nao o handler)");
 {
   const { spawn } = await import("node:child_process");
   const PORTA = 5760 + (process.pid % 90);
-  const dbDir = fs.mkdtempSync(path.join(process.env.TEMP, "meida-test-filtro-"));
+  const dbDir = fs.mkdtempSync(path.join(os.tmpdir(), "meida-test-filtro-"));
   let escritas = 0;
   const http = await import("node:http");
   const segredo = http.createServer((req, res) => {

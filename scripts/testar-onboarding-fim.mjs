@@ -20,9 +20,15 @@ const DIR = fs.mkdtempSync(path.join(os.tmpdir(), "meida-onboarding-e2e-"));
 
 let ok = 0;
 let falhou = 0;
+let saltou = 0;
 function ok_(nome, cond, extra = "") {
   if (cond) { ok++; console.log("  OK    " + nome); }
   else { falhou++; console.log("  FALHA " + nome + (extra ? "  ->  " + extra : "")); }
+}
+/** Passo que esta' maquina nao consegue validar (e que nao e' uma falha). */
+function salta(nome, motivo) {
+  saltou++;
+  console.log("  SALTA " + nome + "  (" + motivo + ")");
 }
 
 function portaLivre() {
@@ -55,9 +61,13 @@ const parar = () => {
 console.log("");
 console.log("  1) o servidor arranca");
 let arrancou = false;
+let saude = null;
 for (let i = 0; i < 80; i++) {
   if (morreu !== null) break;
-  try { if ((await fetch(BASE + "/api/health")).status === 200) { arrancou = true; break; } } catch { /* ainda */ }
+  try {
+    const r = await fetch(BASE + "/api/health");
+    if (r.status === 200) { arrancou = true; saude = await r.json(); break; }
+  } catch { /* ainda */ }
   await dormir(500);
 }
 if (!arrancou) {
@@ -67,6 +77,16 @@ if (!arrancou) {
   process.exit(1);
 }
 ok_("`/api/health` responde", true);
+
+// O `tmdbConfigured` decide o que este ficheiro consegue validar. Sem chave do
+// TMDB, o `/api/genres` e o `/api/discover` respondem 500 por desenho (nao ha
+// dados para devolver) — e' uma limitacao da maquina, nao do onboarding. Os
+// passos que dependem do TMDB passam a SALTA com o motivo, em vez de falharem
+// e fazer o `npm test` parecer partido numa maquina sem `server/.env`.
+const temTmdb = Boolean(saude?.tmdbConfigured);
+console.log(
+  "  (TMDB " + (temTmdb ? "configurado" : "NAO configurado: os passos de generos sao saltados") + ")"
+);
 
 const H = { "content-type": "application/json" };
 const criar = async (nome) => {
@@ -113,6 +133,10 @@ try {
   // e' o `Promise.all` todo com `.catch()` em cada um. Se algum devolvesse 500
   // sem o `.catch`, a folha nunca aparecia.
   for (const rota of ["/api/genres?type=movie", "/api/mal/enabled", "/api/anilist/enabled", "/api/letterboxd/status", "/api/letterboxd/status"]) {
+    if (!temTmdb && rota.startsWith("/api/genres")) {
+      salta(rota, "TMDB nao configurado nesta maquina");
+      continue;
+    }
     const r = await fetch(BASE + rota, { headers: T1 });
     ok_(rota + " responde sem rebentar", r.status < 500, "=" + r.status);
   }
@@ -136,18 +160,25 @@ try {
   console.log("");
   console.log("  6) `/api/genres` da a lista de que o passo dos generos vive");
   const g = await (await fetch(BASE + "/api/genres?type=movie")).json();
-  ok_("devolve `genres`", Array.isArray(g.genres));
-  ok_("com `id` numerico e `name`", g.genres.length > 0 && g.genres.every((x) => Number.isFinite(Number(x.id)) && String(x.name || "").trim()), "n=" + (g.genres || []).length);
+  // As quatro assercoes seguintes so' fazem sentido com o TMDB configurado.
+  const okTmdb = (nome, cond, extra) =>
+    temTmdb ? ok_(nome, cond, extra) : salta(nome, "TMDB nao configurado nesta maquina");
+  okTmdb("devolve `genres`", Array.isArray(g.genres), JSON.stringify(g).slice(0, 80));
+  okTmdb("com `id` numerico e `name`", Array.isArray(g.genres) && g.genres.length > 0 && g.genres.every((x) => Number.isFinite(Number(x.id)) && String(x.name || "").trim()), "n=" + ((g.genres || []).length));
   // **`generosParaOferecer` e' alimentado por isto.** Se o TMDB nao responde, a
   // lista fica vazia e o passo e' saltado — nunca um wizard com zero opcoes.
-  ok_("ha generos suficientes para escolher (o passo nao fica vazio)", g.genres.length > 4, "n=" + g.genres.length);
+  okTmdb("ha generos suficientes para escolher (o passo nao fica vazio)", Array.isArray(g.genres) && g.genres.length > 4, "n=" + ((g.genres || []).length));
 
   console.log("");
   console.log("  7) o `/api/discover` aceita os generos escolhidos");
   // E o consumidor da escolha: se isto nao aceitar `genres`, os generos do
   // onboarding eram uma preferencia morta.
   const dsc = await (await fetch(BASE + "/api/discover?type=movie&genres=28")).json();
-  ok_("responde com itens", dsc && Array.isArray(dsc.items || dsc), "keys=" + Object.keys(dsc || {}).join(","));
+  if (temTmdb) {
+    ok_("responde com itens", dsc && Array.isArray(dsc.items || dsc), "keys=" + Object.keys(dsc || {}).join(","));
+  } else {
+    salta("/api/discover com generos", "TMDB nao configurado nesta maquina");
+  }
 } catch (e) {
   falhou++;
   console.log("  FALHA o teste rebentou: " + e.message);
@@ -156,5 +187,7 @@ try {
 }
 
 console.log("");
-console.log("  " + ok + " ok, " + falhou + " falha(s)");
+console.log(
+  "  " + ok + " ok, " + falhou + " falha(s)" + (saltou ? ", " + saltou + " saltado(s)" : "")
+);
 process.exit(falhou ? 1 : 0);

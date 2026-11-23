@@ -19,6 +19,8 @@
 // Este teste arranca o servidor DE VERDADE e faz-lhe os pedidos. Nao le o
 // codigo para ver se a expressao parece certa — le o que o servidor responde.
 import path from "node:path";
+import os from "node:os";
+// a pasta temporaria nao pode ficar ao lado do projeto: no CI o repositorio pode estar numa pasta so-de-leitura.
 import fs from "node:fs";
 import { fileURLToPath } from "node:url";
 // Import ESTATICO e relativo: um `import()` com caminho absoluto do Windows da'
@@ -118,7 +120,7 @@ console.log("");
 console.log("  4) o que o servidor responde mesmo");
 
 const PORTA = 5400 + (process.pid % 90);
-const dbDir = fs.mkdtempSync(path.join(RAIZ, "..", "meida-test-stream-"));
+const dbDir = fs.mkdtempSync(path.join(os.tmpdir(), "meida-test-stream-"));
 const { spawn } = await import("node:child_process");
 const filho = spawn(process.execPath, [path.join(RAIZ, "server", "src", "index.js")], {
   cwd: RAIZ,

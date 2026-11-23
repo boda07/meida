@@ -13,6 +13,8 @@
 // e' exportado, e nao vale a pena abrir um gancho so' para olhar. O sinal que
 // interessa e' "o IP consegue continuar a criar salas".
 import path from "node:path";
+import os from "node:os";
+// TEMP/TMP so existe no Windows; `os.tmpdir()` da' a pasta temporaria em qualquer sistema.
 import fs from "node:fs";
 import { spawn } from "node:child_process";
 
@@ -33,7 +35,7 @@ const dormir = (ms) => new Promise((r) => setTimeout(r, ms));
 // "trust proxy" e' o que da' dois IPs a partir da mesma maquina: com o
 // omissao a 0 (a correccao do N5) o `X-Forwarded-For` seria ignorado e os dois
 // seriam o mesmo 127.0.0.1, e o bug nao aparecia.
-const dbDir = fs.mkdtempSync(path.join(process.env.TEMP, "meida-test-wpip-"));
+const dbDir = fs.mkdtempSync(path.join(os.tmpdir(), "meida-test-wpip-"));
 const filho = spawn(process.execPath, [path.join(RAIZ, "server", "src", "index.js")], {
   cwd: RAIZ,
   env: { ...process.env, PORT: String(PORTA), DB_DIR: dbDir, HOST: "127.0.0.1", JWT_SECRET: "t-wpip", TRUST_PROXY: "1" },

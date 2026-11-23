@@ -12,6 +12,8 @@
 // (`toLocaleDateString` a cada `dayOf`) constroi um formatador POR LINHA —
 // 45,96 us em vez de 1,19 us, medido, ou seja 689 ms num pedido de 15 000 datas.
 import path from "node:path";
+import os from "node:os";
+// TEMP/TMP so existe no Windows; `os.tmpdir()` da' a pasta temporaria em qualquer sistema.
 import fs from "node:fs";
 import { spawn } from "node:child_process";
 import { DatabaseSync } from "node:sqlite";
@@ -260,7 +262,7 @@ console.log("  4) ha UMA fonte de verdade, e o cliente envia o fuso");
 // ---------------------------------------------------------------------------
 console.log("");
 console.log("  5) contra o servidor real");
-const dbDir = fs.mkdtempSync(path.join(process.env.TEMP, "meida-test-tz-"));
+const dbDir = fs.mkdtempSync(path.join(os.tmpdir(), "meida-test-tz-"));
 const filho = spawn(process.execPath, [path.join(RAIZ, "server", "src", "index.js")], {
   cwd: RAIZ,
   env: { ...process.env, PORT: String(PORTA), DB_DIR: dbDir, HOST: "127.0.0.1", JWT_SECRET: "t-tz" },

@@ -5,6 +5,8 @@
 //   - listComments com 20 comentarios responde com menos de 100 KB
 //   - GET /api/users/:id/avatar serve o avatar separado
 import path from "node:path";
+import os from "node:os";
+// a pasta temporaria nao pode ficar ao lado do projeto: no CI o repositorio pode estar numa pasta so-de-leitura.
 import fs from "node:fs";
 
 const RAIZ = path.join(process.cwd());
@@ -71,7 +73,7 @@ ok_("toApiNotification actor nao tem avatar", !("avatar" in notificacao.actor), 
 console.log("");
 console.log("  3) listComments com 20 comentarios responde com menos de 100 KB");
 const PORTA = 5900 + (process.pid % 90);
-const dbDir = fs.mkdtempSync(path.join(RAIZ, "..", "meida-test-avatar-"));
+const dbDir = fs.mkdtempSync(path.join(os.tmpdir(), "meida-test-avatar-"));
 const { spawn } = await import("node:child_process");
 const filho = spawn(process.execPath, [path.join(RAIZ, "server", "src", "index.js")], {
   cwd: RAIZ,

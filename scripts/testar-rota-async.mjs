@@ -14,6 +14,8 @@
 // Cada seccao diz o que prova. Onde nao da para provar por comportamento (se a
 // proteccao esta' ligada no servidor real) o teste diz isso em vez de fingir.
 import path from "node:path";
+import os from "node:os";
+// a pasta temporaria nao pode ficar ao lado do projeto: no CI o repositorio pode estar numa pasta so-de-leitura.
 import fs from "node:fs";
 import { pathToFileURL } from "node:url";
 
@@ -195,7 +197,7 @@ try {
 console.log("");
 console.log("  3) o SERVIDOR REAL aguenta o pedido que o derrubava");
 const PORTA = 5700 + (process.pid % 90);
-const dbDir = fs.mkdtempSync(path.join(RAIZ, "..", "meida-test-async-"));
+const dbDir = fs.mkdtempSync(path.join(os.tmpdir(), "meida-test-async-"));
 const { spawn } = await import("node:child_process");
 const filho = spawn(process.execPath, [path.join(RAIZ, "server", "src", "index.js")], {
   cwd: RAIZ,

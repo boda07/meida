@@ -66,7 +66,20 @@ if (trustProxyBruto && !/^\d+$/.test(trustProxyBruto)) {
 // tentem falar com o servidor local atraves do browser.
 if (process.env.SERVE_WEB !== "1") app.use(cors());
 // Limite generoso para o body: o avatar pode vir como imagem (data URL).
-app.use(express.json({ limit: "100kb" }));
+//
+// **Este parser corre ANTES das rotas**, por isso os `limit: "4mb"` das rotas
+// que recebem corpos grandes nunca se aplicavam: um corpo com mais de 100 KB
+// recebia 413 antes de a rota o ver (medido com 280 KB no avatar). Sao so' duas
+// — o avatar (`/auth/profile`) e a importacao de um export (`/export/import`) —
+// e cada uma tem o seu parser com o limite certo, depois do `requireAuth` do
+// respectivo router. Sao essas as unicas que ficam de fora deste; o resto
+// continua a 100 KB — e' o que faz o `POST /auth/login` com 1 MB responder 413
+// (testado em `testar-auth-seguranca`).
+const CORPOS_GRANDES = new Set(["/api/auth/profile", "/api/export/import"]);
+const jsonPequeno = express.json({ limit: "100kb" });
+app.use((req, res, next) =>
+  CORPOS_GRANDES.has(req.path) ? next() : jsonPequeno(req, res, next)
+);
 
 // Healthcheck + aviso se o TMDB nao estiver configurado.
 app.get("/api/health", (req, res) => {

@@ -10,6 +10,8 @@
 // pelo `type` que nunca chegava. A mensagem de anime, posta no servidor
 // precisamente para este caso (2026-10-08, o Dragon Ball), era INALCANCAVEL.
 import path from "node:path";
+import os from "node:os";
+// TEMP/TMP so existe no Windows; `os.tmpdir()` da' a pasta temporaria em qualquer sistema.
 import fs from "node:fs";
 import { spawn } from "node:child_process";
 
@@ -49,7 +51,7 @@ console.log("  2) o servidor sabe que e' um anime sem depender do `type`");
     /type === "anime"/.test(f));
 }
 
-const dbDir = fs.mkdtempSync(path.join(process.env.TEMP, "meida-test-anime-"));
+const dbDir = fs.mkdtempSync(path.join(os.tmpdir(), "meida-test-anime-"));
 const filho = spawn(process.execPath, [path.join(RAIZ, "server", "src", "index.js")], {
   cwd: RAIZ,
   env: { ...process.env, PORT: String(PORTA), DB_DIR: dbDir, HOST: "127.0.0.1", JWT_SECRET: "t-anime" },

@@ -9,6 +9,8 @@
 //     BEM-SUCEDIDO seguido dava 429 — o que parte uma casa, uma escola ou quem
 //     troque de conta.
 import path from "node:path";
+import os from "node:os";
+// TEMP/TMP so existe no Windows; `os.tmpdir()` da' a pasta temporaria em qualquer sistema.
 import fs from "node:fs";
 import { spawn } from "node:child_process";
 import { pathToFileURL } from "node:url";
@@ -58,7 +60,7 @@ console.log("  1) o ambiente e' lido, e o omissao e' 0");
 // ---------------------------------------------------------------------------
 async function comServador(envExtra, accao) {
   const PORTA = 5850 + Math.floor(Math.random() * 40);
-  const dbDir = fs.mkdtempSync(path.join(process.env.TEMP, "meida-test-proxy-"));
+  const dbDir = fs.mkdtempSync(path.join(os.tmpdir(), "meida-test-proxy-"));
   const filho = spawn(process.execPath, [path.join(RAIZ, "server", "src", "index.js")], {
     cwd: RAIZ,
     env: { ...process.env, PORT: String(PORTA), DB_DIR: dbDir, HOST: "127.0.0.1", JWT_SECRET: SEGREDO_JWT, ...envExtra },

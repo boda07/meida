@@ -10,6 +10,8 @@
 //     a assinatura e o filtro de IPs do proxy, sem exigir nada. Agora so'
 //     funcionam com `NODE_ENV=test`, e **atiram** em vez de falhar em silencio.
 import path from "node:path";
+import os from "node:os";
+// TEMP/TMP so existe no Windows; `os.tmpdir()` da' a pasta temporaria em qualquer sistema.
 import fs from "node:fs";
 import { spawn } from "node:child_process";
 import { pathToFileURL } from "node:url";
@@ -62,7 +64,7 @@ console.log("  1) os ganchos de teste nao funcionam sem NODE_ENV=test");
 console.log("");
 console.log("  2) o login nao denuncia mais o nome pelo tempo");
 
-const dbDir = fs.mkdtempSync(path.join(process.env.TEMP, "meida-test-timing-"));
+const dbDir = fs.mkdtempSync(path.join(os.tmpdir(), "meida-test-timing-"));
 const envServidor = { ...process.env, PORT: String(PORTA), DB_DIR: dbDir, HOST: "127.0.0.1", JWT_SECRET: "teste-timing" };
 delete envServidor.NODE_ENV; // o servidor corre como em producao
 const filho = spawn(process.execPath, [path.join(RAIZ, "server", "src", "index.js")], {
