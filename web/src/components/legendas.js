@@ -10,9 +10,15 @@
 // tamanho, sombra). Nao ha' biblioteca para isso.
 //
 // Este modulo e' PURO (sem React, sem DOM) para se poder partir por mutacao.
-import { OPACIDADE_MIN, OPACIDADE_MAX, DELAY_MIN, DELAY_MAX } from "./legendasOpcoes.js";
+import {
+  OPACIDADE_MIN,
+  OPACIDADE_MAX,
+  OPACIDADE_DEF,
+  DELAY_MIN,
+  DELAY_MAX,
+} from "./legendasOpcoes.js";
 
-export { OPACIDADE_MIN, OPACIDADE_MAX, DELAY_MIN, DELAY_MAX };
+export { OPACIDADE_MIN, OPACIDADE_MAX, OPACIDADE_DEF, DELAY_MIN, DELAY_MAX };
 
 // O tamanho e' um ESCALA do tamanho que o browser escolhe, nao pixels: o
 // tamanho nativo das legendas depende do tamanho do video, e um valor fixo em
@@ -48,6 +54,59 @@ export const ROTULO_FONTE = {
   monoespacada: "Monoespaçada", // i18n: rotulo de fonte de legenda
 };
 
+// As cores do texto (`color` do `::cue`). Poucas e de alto contraste: um
+// seletor de cores livre aqui dava texto escuro sobre caixa escura sem
+// ninguem perceber porque.
+export const CORES_TEXTO = [
+  { id: "branco", cor: "#ffffff" },
+  { id: "amarelo", cor: "#ffe680" },
+  { id: "preto", cor: "#000000" },
+];
+
+// As cores da CAIXA (`background` do `::cue`). O `rgb` vai como texto para
+// entrar numa `rgba(...)` montada em JS — ver `fundoRgba`.
+export const CORES_FUNDO = [
+  { id: "preto", rgb: "0, 0, 0" },
+  { id: "cinza", rgb: "38, 38, 44" },
+  { id: "branco", rgb: "255, 255, 255" },
+  { id: "azul", rgb: "8, 32, 64" },
+];
+
+// O "contorno" das legendas de TV (Character Edge do ExoPlayer): o `::cue`
+// aceita `text-shadow`, e e' com varias sombras deslocadas de 1 px que se faz
+// um contorno. "Realcado" e' uma sombra dura para baixo (o Raised da
+// screenshot), "sombra" e' a suave que ja existia.
+export const CONTORNOS = [
+  { id: "", sombra: "none" },
+  { id: "sombra", sombra: "0 1px 3px rgba(0, 0, 0, 0.95)" },
+  {
+    id: "contorno",
+    sombra:
+      "1px 0 0 #000, -1px 0 0 #000, 0 1px 0 #000, 0 -1px 0 #000, 1px 1px 0 #000, -1px 1px 0 #000, 1px -1px 0 #000, -1px -1px 0 #000",
+  },
+  { id: "realcado", sombra: "0 2px 0 #000, 0 4px 8px rgba(0, 0, 0, 0.9)" },
+];
+
+export const ROTULO_COR_TEXTO = {
+  branco: "Branco", // i18n: rotulo de cor de legenda
+  amarelo: "Amarelo", // i18n: rotulo de cor de legenda
+  preto: "Preto", // i18n: rotulo de cor de legenda
+};
+
+export const ROTULO_COR_FUNDO = {
+  preto: "Preto", // i18n: rotulo de cor de legenda
+  cinza: "Cinza", // i18n: rotulo de cor de legenda
+  branco: "Branco", // i18n: rotulo de cor de legenda
+  azul: "Azul", // i18n: rotulo de cor de legenda
+};
+
+export const ROTULO_CONTORNO = {
+  "": "Nenhum", // i18n: rotulo de contorno de legenda
+  sombra: "Sombra", // i18n: rotulo de contorno de legenda
+  contorno: "Contorno", // i18n: rotulo de contorno de legenda
+  realcado: "Realçado", // i18n: rotulo de contorno de legenda
+};
+
 /** Limita um numero ao intervalo [min, max]. Devolve `porOmissao` se nao for numero. */
 export function limitar(valor, min, max, porOmissao) {
   const n = Number(valor);
@@ -65,6 +124,35 @@ export function tamanhoEscala(valor) {
 export function fontePilha(valor) {
   const achado = FONTES.find((f) => f.id === valor);
   return achado ? achado.pilha : "";
+}
+
+/** A cor do texto do `::cue`. Desconhecida -> branco. */
+export function corTextoHex(valor) {
+  const achado = CORES_TEXTO.find((c) => c.id === valor);
+  return achado ? achado.cor : "#ffffff";
+}
+
+/**
+ * A cor da caixa de fundo, ja' com a opacidade embutida (`rgba(...)`).
+ *
+ * E' uma string montada aqui, e nao `rgb(var(--x) / var(--y))` no CSS, porque
+ * o `::cue` do Chromium e' o sitio onde uma sintaxe mais nova falha em
+ * silencio: a legenda ficava sem caixa e ninguem sabia por que. Uma `rgba()`
+ * com numeros montados em JS e' testavel sem browser.
+ */
+export function fundoRgba(valor, opacidade) {
+  const achado = CORES_FUNDO.find((c) => c.id === valor);
+  const rgb = achado ? achado.rgb : "0, 0, 0";
+  const op = limitar(opacidade, OPACIDADE_MIN, OPACIDADE_MAX, OPACIDADE_DEF);
+  // Duas casas bastam: o `::cue` nao distingue 0,333 de 0,33 e o slider da'
+  // passos de 0,05 — assim o valor no CSS nao tem 17 digitos.
+  return `rgba(${rgb}, ${Math.round(op * 100) / 100})`; // i18n: CSS, nao e' texto de interface
+}
+
+/** A sombra (contorno) do `::cue`. Desconhecido -> sem contorno. */
+export function sombraContorno(valor) {
+  const achado = CONTORNOS.find((c) => c.id === valor);
+  return achado ? achado.sombra : "none";
 }
 
 /**
@@ -91,15 +179,24 @@ export function urlComAtraso(url, atraso) {
  * um valor estragado nas Definicoes (ou escrito a mao no localStorage) nao pode
  * tornar a legenda invisivel ou ocupar o ecra inteiro.
  */
-export function cssLegendas({ tamanho = "normal", opacidade = 1, fonte = "" } = {}) {
+export function cssLegendas({
+  tamanho = "normal",
+  opacidade = OPACIDADE_DEF,
+  fonte = "",
+  contorno = "sombra",
+  corTexto = "branco",
+  corFundo = "preto",
+} = {}) {
   const escala = tamanhoEscala(tamanho);
-  const op = limitar(opacidade, OPACIDADE_MIN, OPACIDADE_MAX, 1);
   const pilha = fontePilha(fonte);
   return {
     // O `font-size` do `::cue` e' uma percentagem da ALTURA do video. O 5% e' o
     // valor por omissao do Chrome, para que "normal" seja o que era antes.
     "--sub-tamanho": String(escala),
-    "--sub-opacidade": String(op),
+    // O TEXTO e' sempre opaco: a opacidade agora e' a da caixa.
+    "--sub-cor": corTextoHex(corTexto),
+    "--sub-fundo": fundoRgba(corFundo, opacidade),
+    "--sub-sombra": sombraContorno(contorno),
     ...(pilha ? { "--sub-fonte": pilha } : {}),
   };
 }

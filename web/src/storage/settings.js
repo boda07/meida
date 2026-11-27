@@ -28,7 +28,12 @@ export const DEFAULT_SETTINGS = {
   subtitleLang: "pt", // legenda preferida: "pt" | "en" | "off"
   // Como as legendas se mostram. O delay é em segundos (positivo = atrasa).
   subTamanho: "normal", // "pequeno" | "normal" | "grande" | "muito grande"
-  subOpacidade: 1, // 0 (invisivel) a 1 (opaca)
+  // Opacidade da CAIXA DE FUNDO (nao do texto): 0 (invisivel) a 1 (opaca).
+  // 0,6 e' o que o CSS antigo dava na pratica, por isso ninguem nota a mudanca.
+  subOpacidade: 0.6,
+  subCorTexto: "branco", // "branco" | "amarelo" | "preto"
+  subCorFundo: "preto", // "preto" | "cinza" | "branco" | "azul"
+  subContorno: "sombra", // "" (nenhum) | "sombra" | "contorno" | "realcado"
   subFonte: "", // "" (a do sistema) | "sistema" | "serifada" | "monoespacada"
   subDelay: 0, // -10 a +10 segundos
   defaultTab: "providers", // separador inicial: providers | extract | torrents
@@ -82,6 +87,19 @@ export function migrarTitleLang(guardado, jaMigrou) {
  * guardado é sempre respeitado — senão quem escolhesse "Inglês" à propósito
  * via-se a "auto" em cada arranque, sem forma de o travar.
  */
+/**
+ * A opacidade do TEXTO da versao anterior vista como opacidade da CAIXA.
+ *
+ * Antes de 1.7.8 a opacidade era do texto e a caixa levava `0,6 * opacidade`.
+ * Guardar 1 (o omissao de entao) e passar a ler 1 como "caixa opaca" dava um
+ * bloco preto onde havia uma caixa a 60% — por isso a conversao.
+ */
+function opacidadeDaCaixa(valor) {
+  const n = Number(valor);
+  if (!Number.isFinite(n)) return 1;
+  return Math.round(0.6 * Math.min(1, Math.max(0, n)) * 100) / 100;
+}
+
 function aplicarMigracoes(guardado) {
   const jaMigrou = migracao.get() === "1";
   const novo = { ...guardado };
@@ -89,6 +107,17 @@ function aplicarMigracoes(guardado) {
   const titulo = migrarTitleLang(guardado?.titleLang, jaMigrou);
   if (titulo !== guardado?.titleLang) {
     novo.titleLang = titulo;
+    mudou = true;
+  }
+  // 1.7.8: a opacidade passou do texto para a caixa. Uma definicao sem
+  // `subCorFundo` e' de antes disso; grava-se a conversao **e** as chaves
+  // novas, porque e' a presenca de `subCorFundo` que marca a migracao como
+  // feita. Sem isso, 0,6 virava 0,36 no arranque seguinte e 0,216 no outro.
+  if (!("subCorFundo" in guardado)) {
+    novo.subOpacidade = opacidadeDaCaixa(guardado.subOpacidade);
+    novo.subCorFundo = DEFAULT_SETTINGS.subCorFundo;
+    novo.subCorTexto = DEFAULT_SETTINGS.subCorTexto;
+    novo.subContorno = DEFAULT_SETTINGS.subContorno;
     mudou = true;
   }
   if (!jaMigrou) migracao.set("1");

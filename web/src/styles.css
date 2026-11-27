@@ -3908,7 +3908,17 @@ h2 {
    O `::cue` e' o mecanismo que o MDN documenta para dar estilo as legendas de
    um `<video>` — e' CSS puro, nao ha' biblioteca para isto. O que o browser
    permite mexer e' pouco (cor, fundo, fonte, tamanho, sombra), e e' o suficiente
-   para o que se pede: opacidade, fonte e tamanho.
+   para o que se pede.
+
+   A OPACIDADE E' A DA CAIXA, nao a do texto (`--sub-fundo`). Antes as duas
+   andavam juntas e a meia opacidade tornava o texto cinzento por cima de um
+   fundo quase nenhum — o pior dos dois mundos para ler. Agora o texto fica
+   sempre opaco e quem fica translucido e' o fundo.
+
+   O que NAO existe aqui: a "janela" (Window Color/Window Opacity dos players
+   nativos). E' o `::cue-region`, que o Chromium nao implementa — as regras
+   ficavam no ficheiro e nao pintavam nada. O Chromium pinta uma caixa por
+   linha de legenda e e' isso que o `background` do `::cue` alcanca.
 
    Os valores chegam por variaveis de CSS posto no `<video>` pela pagina
    (ver `legendas.js`, `cssLegendas()`), para a pagina poder mudar as preferencias
@@ -3924,12 +3934,15 @@ h2 {
    ja escolhe). */
 .player video::cue {
   font-size: calc(100% * var(--sub-tamanho, 1));
-  color: rgba(255, 255, 255, var(--sub-opacidade, 1));
-  /* A caixa de fundo tambem segue a opacidade, mas mais suave: a 0.5 o texto
-     fica a meia opacidade e o fundo quase transparente, que e' o que se quer
-     quando se poe legendas por cima de uma cena clara. */
-  background: rgba(0, 0, 0, calc(0.6 * var(--sub-opacidade, 1)));
-  text-shadow: 0 1px 2px rgba(0, 0, 0, calc(0.9 * var(--sub-opacidade, 1)));
+  color: var(--sub-cor, #fff);
+  /* A caixa: cor + opacidade vem numa `rgba()` ja' montada em JS
+     (`legendas.js`, `fundoRgba`), porque o `::cue` e' o sitio onde uma sintaxe
+     mais nova falha em silencio. */
+  background: var(--sub-fundo, rgba(0, 0, 0, 0.6));
+  /* O contorno (Character Edge): uma sombra suave, um contorno de 8 sombras de
+     1 px, uma sombra dura para baixo, ou nada — ver `CONTORNOS` em
+     `legendas.js`. */
+  text-shadow: var(--sub-sombra, 0 1px 3px rgba(0, 0, 0, 0.95));
 }
 
 /* As legendas (caixa de texto do browser) ficam no fundo do video, exatamente
@@ -3950,10 +3963,10 @@ h2 {
   font-family: var(--sub-fonte);
 }
 
-/* O Firefox e' mais picuinhas com `::cue` e ignora `background`; a sombra serve
-   de fallback la (o texto continua legivel sem a caixa). */
+/* O Firefox e' mais picuinhas com `::cue` e ignora `background`; o contorno
+   serve de fallback la (o texto continua legivel sem a caixa). */
 .player video::cue(:focus) {
-  color: rgba(255, 255, 255, var(--sub-opacidade, 1));
+  color: var(--sub-cor, #fff);
 }
 
 /* Botao de legendas DENTRO da barra de controlos, com a lista num popup.

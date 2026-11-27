@@ -245,6 +245,7 @@ Ideias fechadas por medição ou por decisão. Ficam com o motivo, para não vol
 
 - **Modo cinema** (fullscreen com UI limpa e auto-hide) — o fullscreen/auto-hide nativo do `<video>` chega; um modo próprio duplicaria o que o browser já faz.
 - **Sagas e ordem de visionamento via `relations` do AniList** — as relations são ruidosas e inconsistentes; "por onde começar" derivado delas dá recomendações erradas com mais confiança do que a informação merece. Se se quiser, fazer com uma lista curada à mão.
+- **"Window Color" / "Window Opacity" das legendas** (como nos players de TV) — é o `::cue-region`, que o Chromium não implementa: a regra aceitaria os valores e não pintava nada. O Chromium pinta **uma caixa por linha** e é isso que o `background` do `::cue` alcança; as opções que existem (cor e opacidade do fundo) são as que se veem. Não voltar a tentar sem um browser que suporte `::cue-region`.
 - **Menu de qualidade no player nativo** — medido em 5 episódios a 2026-10-12: o `master.m3u8` do MegaPlay traz **uma só variante jogável** (1080p) mais um `#EXT-X-I-FRAME-STREAM-INF` (360p, que é para saltar no vídeo). O `hls.js` reporta `levels.length === 1` e o menu esconde-se — o que está certo. Só passa a fazer sentido se a fonte der mais variantes; aí o menu aparece sozinho (`niveis.length > 1`).
 
 ## O que **não** há que ir buscar lá (anotado para não voltar)
@@ -323,6 +324,7 @@ O que já está na app, com a decisão que não se reconstrói a ler o código.
 - **Mostrar o estado das fontes** — as mortas ficam riscadas com a etiqueta "em baixo" e o `Player` salta-as na escolha automática.
 - **Avisar no Watch Party quando a fonte não sincroniza** — nas fontes em iframe aparece um aviso na barra da sala e na página do título: o `postMessage` não atravessa o cross-origin. O aviso diz que Torrents e "Sem anúncios" sincronizam, em vez de parecer que a app está partida.
 - **Picture-in-Picture** — botão no player (`requestPictureInPicture`), com saída por `exitPictureInPicture`. Onde o browser não suporta, o erro é ignorado em silêncio. Feito na 1.6.2.
+- **Aparência das legendas** (`SubtitleMenu`) — tamanho, fonte, contorno (nenhum/sombra/contorno/realçado), cor do texto, cor e **opacidade do fundo**. A opacidade é a da **caixa**, não a do texto: a meia opacidade alivia o fundo em vez de apagar a legenda. Quem tinha uma definição antiga ganha a conversão uma vez (1 → 0,6, o aspeto de antes); a chave `subCorFundo` é a marca de "já migrou". Tudo em variáveis CSS (`--sub-*`) postas no `<video>`.
 - **Real-Debrid** — token em Definições; torrents em cache no RD reproduzem logo. Sem cache, cai para o WebTorrent local. Badge "⚡ Debrid", filtro só cache e os instant no topo. Rotas `/api/debrid/*`.
 - **Multi-provider de torrents** — agregador no backend (`server/src/services/providers/`) que junta Torrentio + YTS. Adicionar um provider = criar um ficheiro na pasta `providers/` e registá-lo no `index.js`. Badge da fonte em cada torrent.
 - **Links para sites externos** — abrir no RidoMovies (slug exato por série/época/episódio ou filme) e pesquisa no Google quando os providers internos falham ou a pedido.
