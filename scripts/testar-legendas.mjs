@@ -137,20 +137,85 @@ console.log("  7) O CSS das legendas");
 {
   const normal = cliente.cssLegendas({});
   ok_("normal = escala 1", normal["--sub-tamanho"] === "1");
-  ok_("normal = opacidade 1", normal["--sub-opacidade"] === "1");
   ok_("sem fonte nao poe a variavel", normal["--sub-fonte"] === undefined);
+  // A opacidade deixou de ser do TEXTO: se a variavel antiga voltasse, o texto
+  // apagava-se em vez de a caixa aliviar.
+  ok_("a opacidade antiga do texto ja nao existe", !("--sub-opacidade" in normal));
+  ok_("o texto comeca opaco (branco)", normal["--sub-cor"] === "#ffffff");
+  ok_("a caixa comeca a 60% de preto", normal["--sub-fundo"] === "rgba(0, 0, 0, 0.6)", normal["--sub-fundo"]);
+  ok_("o contorno por omissao e' a sombra", String(normal["--sub-sombra"]).startsWith("0 1px 3px"), normal["--sub-sombra"]);
 
   const grande = cliente.cssLegendas({ tamanho: "muito grande", opacidade: 0.5, fonte: "serifada" });
   ok_("muito grande = 1.8", grande["--sub-tamanho"] === "1.8");
-  ok_("meia opacidade", grande["--sub-opacidade"] === "0.5");
+  ok_("meia opacidade e' meia CAIXA", grande["--sub-fundo"] === "rgba(0, 0, 0, 0.5)", grande["--sub-fundo"]);
+  ok_("o texto continua opaco a meia opacidade", grande["--sub-cor"] === "#ffffff");
   ok_("a fonte vai no CSS", String(grande["--sub-fonte"]).includes("Georgia"));
 
+  // As cores e o contorno escolhidos.
+  const cinza = cliente.cssLegendas({ corFundo: "branco", opacidade: 0.5, corTexto: "amarelo" });
+  ok_("a cor do fundo entra na rgba", cinza["--sub-fundo"] === "rgba(255, 255, 255, 0.5)", cinza["--sub-fundo"]);
+  ok_("a cor do texto entra no color", cinza["--sub-cor"] === "#ffe680", cinza["--sub-cor"]);
+  ok_("contorno nenhum = text-shadow none", cliente.cssLegendas({ contorno: "" })["--sub-sombra"] === "none");
+  ok_("contorno = 8 sombras de 1 px", (cliente.cssLegendas({ contorno: "contorno" })["--sub-sombra"].match(/0 #000/g) || []).length === 8);
+
   // Valores estragados (escritos a mao no localStorage) nao podem partir nada.
-  const lixo = cliente.cssLegendas({ tamanho: "nao existe", opacidade: 99, fonte: "nao existe" });
+  const lixo = cliente.cssLegendas({ tamanho: "nao existe", opacidade: 99, fonte: "nao existe", contorno: "nao existe", corTexto: "nao existe", corFundo: "nao existe" });
   ok_("tamanho desconhecido da 1", lixo["--sub-tamanho"] === "1");
-  ok_("opacidade fora do intervalo e' cortada", lixo["--sub-opacidade"] === "1");
+  ok_("opacidade fora do intervalo e' cortada", lixo["--sub-fundo"] === "rgba(0, 0, 0, 1)", lixo["--sub-fundo"]);
+  ok_("opacidade negativa vai a 0", cliente.cssLegendas({ opacidade: -5 })["--sub-fundo"] === "rgba(0, 0, 0, 0)");
   ok_("fonte desconhecida nao poe nada", lixo["--sub-fonte"] === undefined);
-  ok_("valor NaN nao parte", cliente.cssLegendas({ opacidade: NaN })["--sub-opacidade"] === "1");
+  ok_("cor desconhecida cai no branco", lixo["--sub-cor"] === "#ffffff");
+  ok_("fundo desconhecido cai no preto", lixo["--sub-fundo"] === "rgba(0, 0, 0, 1)");
+  ok_("contorno desconhecido nao poe sombra", lixo["--sub-sombra"] === "none");
+  ok_("valor NaN nao parte", cliente.cssLegendas({ opacidade: NaN })["--sub-fundo"] === "rgba(0, 0, 0, 0.6)");
+  ok_("a opacidade e' arredondada a 2 casas", cliente.cssLegendas({ opacidade: 0.3333 })["--sub-fundo"] === "rgba(0, 0, 0, 0.33)");
+}
+
+console.log("");
+console.log("  8) O `::cue` consome as variaveis certas");
+{
+  // Este teste e' por TEXTO e vale a pena: o bug estava na regra CSS (a cor do
+  // texto e a caixa partilhavam a opacidade). Um teste de comportamento exigia
+  // um video a dar e um `.vtt`; a regra em si e' o que nao pode voltar atras.
+  const css = fs.readFileSync(path.join(RAIZ, "web", "src", "styles.css"), "utf8");
+  const regra = (css.split(".player video::cue {")[1] || "").split("}")[0];
+  ok_("a regra do `::cue` existe", regra.length > 0);
+  ok_("a cor do texto vem de --sub-cor", /color:\s*var\(--sub-cor/.test(regra), regra.trim().slice(0, 120));
+  ok_("o fundo vem de --sub-fundo", /background:\s*var\(--sub-fundo/.test(regra));
+  ok_("o texto ja nao segue a opacidade", !/var\(--sub-opacidade/.test(regra));
+  ok_("o contorno vem de --sub-sombra", /text-shadow:\s*var\(--sub-sombra/.test(regra));
+}
+
+console.log("");
+console.log("  9) A opacidade guardada antes desta versao e' convertida UMA vez");
+{
+  // A opacidade mudou de dono: quem tinha 1 (o omissao antigo) ve a caixa a
+  // 60%, como via antes, e nao um bloco preto. O risco desta migracao e' ela
+  // voltar a correr em cada arranque (0,6 -> 0,36 -> 0,216): por isso se le a
+  // segunda vez.
+  const valores = new Map();
+  globalThis.localStorage = {
+    getItem: (k) => (valores.has(k) ? valores.get(k) : null),
+    setItem: (k, v) => valores.set(k, String(v)),
+    removeItem: (k) => valores.delete(k),
+  };
+  valores.set(
+    "streamapp_settings",
+    JSON.stringify({ subOpacidade: 1, subTamanho: "grande" })
+  );
+  const settingsMod = await import(
+    "file:///" +
+      path.join(RAIZ, "web", "src", "storage", "settings.js").replace(/\\/g, "/") +
+      "?v=" +
+      Date.now()
+  );
+  const primeira = settingsMod.settingsStore.get();
+  ok_("opacidade 1 da versao antiga vira 0.6 (o aspeto de antes)", primeira.subOpacidade === 0.6, String(primeira.subOpacidade));
+  ok_("as opcoes novas ficam com o omissao", primeira.subCorFundo === "preto" && primeira.subCorTexto === "branco" && primeira.subContorno === "sombra");
+  ok_("o que estava guardado nao se perde", primeira.subTamanho === "grande");
+  const segunda = settingsMod.settingsStore.get();
+  ok_("a conversao nao volta a correr", segunda.subOpacidade === 0.6, String(segunda.subOpacidade));
+  delete globalThis.localStorage;
 }
 
 /* ---------- MUTACOES ---------- */
@@ -200,6 +265,18 @@ const MUTACOES = [
     "o tamanho desconhecido passa a dar 0 (legenda invisivel)",
     "  return achado ? achado.valor : 1;",
     "  return achado ? achado.valor : 0;",
+  ],
+  [
+    "cliente",
+    "o fundo deixa de ser limitado (uma opacidade de 99 pinta opaco)",
+    "  const op = limitar(opacidade, OPACIDADE_MIN, OPACIDADE_MAX, OPACIDADE_DEF);",
+    "  const op = Number(opacidade);",
+  ],
+  [
+    "cliente",
+    "a cor de texto desconhecida vira vazia (legenda sem cor)",
+    '  return achado ? achado.cor : "#ffffff";',
+    '  return achado ? achado.cor : "";',
   ],
 ];
 

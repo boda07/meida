@@ -5,10 +5,17 @@ import {
   urlComAtraso,
   ROTULO_TAMANHO,
   ROTULO_FONTE,
+  ROTULO_COR_TEXTO,
+  ROTULO_COR_FUNDO,
+  ROTULO_CONTORNO,
   TAMANHOS,
   FONTES,
+  CORES_TEXTO,
+  CORES_FUNDO,
+  CONTORNOS,
   OPACIDADE_MIN,
   OPACIDADE_MAX,
+  OPACIDADE_DEF,
   DELAY_MIN,
   DELAY_MAX,
 } from "./legendas.js";
@@ -84,9 +91,12 @@ export function SubtitleTracks({ subtitles = [], delay = 0 }) {
  * tomada ali mesmo.
  *
  * O popup tem duas partes: a LISTA (que legenda, ou "desligadas") e as OPCOES
- * (tamanho, opacidade, fonte, atraso). Sao as quatro coisas que se pode mudar
- * sem sair do video — o resto seria um Formulario nas Definicoes, e o atraso
- * so' faz sentido a mexer aqui, com o video a dar.
+ * (tamanho, fonte, contorno, cor do texto, cor e opacidade do fundo, atraso).
+ * Sao as coisas que se muda sem sair do video — o resto seria um formulario nas
+ * Definicoes, e o atraso so' faz sentido a mexer aqui, com o video a dar.
+ *
+ * A opacidade mudou de dono: agora e' a da CAIXA (`--sub-fundo`), nao a do
+ * texto. A meia opacidade alivia o fundo em vez de apagar a legenda.
  *
  * Monta-se dentro da barra de controlos (`PlayerControls.jsx`), por isso e'
  * posicionado em absoluto.
@@ -102,6 +112,9 @@ export function SubtitleMenu({ videoRef, subtitles = [] }) {
     subTamanho,
     subOpacidade,
     subFonte,
+    subContorno,
+    subCorTexto,
+    subCorFundo,
     subDelay,
     updateSubtitles,
   } = useSubtitlePreferences();
@@ -128,12 +141,15 @@ export function SubtitleMenu({ videoRef, subtitles = [] }) {
       tamanho: subTamanho,
       opacidade: subOpacidade,
       fonte: subFonte,
+      contorno: subContorno,
+      corTexto: subCorTexto,
+      corFundo: subCorFundo,
     });
     for (const [k, v] of Object.entries(vars)) video.style.setProperty(k, v);
     // A fonte precisa de uma classe porque nao da para meter uma pilha com
     // virgulas numa variavel e usa-la em `font-family` sem a classe.
     video.classList.toggle("legenda-fonte", Boolean(vars["--sub-fonte"]));
-  }, [videoRef, subTamanho, subOpacidade, subFonte]);
+  }, [videoRef, subTamanho, subOpacidade, subFonte, subContorno, subCorTexto, subCorFundo]);
 
   // Clicar fora fecha o popup. Sem isto ficava aberto por cima do video.
   useClickOutside(caixaRef, () => setAberto(false), { active: aberto });
@@ -146,8 +162,11 @@ export function SubtitleMenu({ videoRef, subtitles = [] }) {
 
   const podeRepor =
     (subTamanho && subTamanho !== "normal") ||
-    subOpacidade !== 1 ||
+    subOpacidade !== OPACIDADE_DEF ||
     subFonte ||
+    subContorno !== "sombra" ||
+    subCorTexto !== "branco" ||
+    subCorFundo !== "preto" ||
     subDelay !== 0;
 
   return (
@@ -213,7 +232,54 @@ export function SubtitleMenu({ videoRef, subtitles = [] }) {
             </label>
 
             <label className="pc-pop-linha">
-              <span>{t("Opacidade")}</span>
+              <span>{t("Fonte")}</span>
+              <select value={subFonte} onChange={(e) => updateSubtitles("subFonte", e.target.value)}>
+                {FONTES.map((f) => (
+                  <option key={f.id || "sistema-padrao"} value={f.id}>
+                    {t(ROTULO_FONTE[f.id])}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            {/* Character Edge dos players de TV: um contorno e' o que salva o
+                texto branco em cima de uma parede branca. */}
+            <label className="pc-pop-linha">
+              <span>{t("Contorno do texto")}</span>
+              <select value={subContorno} onChange={(e) => updateSubtitles("subContorno", e.target.value)}>
+                {CONTORNOS.map((c) => (
+                  <option key={c.id || "sem-contorno"} value={c.id}>
+                    {t(ROTULO_CONTORNO[c.id])}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="pc-pop-linha">
+              <span>{t("Cor do texto")}</span>
+              <select value={subCorTexto} onChange={(e) => updateSubtitles("subCorTexto", e.target.value)}>
+                {CORES_TEXTO.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {t(ROTULO_COR_TEXTO[c.id])}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="pc-pop-linha">
+              <span>{t("Cor do fundo")}</span>
+              <select value={subCorFundo} onChange={(e) => updateSubtitles("subCorFundo", e.target.value)}>
+                {CORES_FUNDO.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {t(ROTULO_COR_FUNDO[c.id])}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            {/* A opacidade e' do FUNDO: o texto fica sempre opaco. */}
+            <label className="pc-pop-linha pc-pop-linha-slider">
+              <span>{t("Opacidade do fundo")}</span>
               <input
                 type="range"
                 min={OPACIDADE_MIN}
@@ -225,18 +291,7 @@ export function SubtitleMenu({ videoRef, subtitles = [] }) {
               <em>{Math.round(subOpacidade * 100)}%</em>
             </label>
 
-            <label className="pc-pop-linha">
-              <span>{t("Fonte")}</span>
-              <select value={subFonte} onChange={(e) => updateSubtitles("subFonte", e.target.value)}>
-                {FONTES.map((f) => (
-                  <option key={f.id || "sistema-padrao"} value={f.id}>
-                    {t(ROTULO_FONTE[f.id])}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <label className="pc-pop-linha">
+            <label className="pc-pop-linha pc-pop-linha-slider">
               <span>{t("Atraso")}</span>
               <input
                 type="range"
@@ -256,12 +311,18 @@ export function SubtitleMenu({ videoRef, subtitles = [] }) {
               <button
                 type="button"
                 className="sub-cc-repor"
-                onClick={() =>
-                  updateSubtitles("subTamanho", "normal") ||
-                  updateSubtitles("subOpacidade", 1) ||
-                  updateSubtitles("subFonte", "") ||
-                  updateSubtitles("subDelay", 0)
-                }
+                onClick={() => {
+                  // Um `update` por campo: `update` junta um patch parcial as
+                  // definicoes, e mandar tudo num so' obrigaria a repetir aqui
+                  // valores que nao sao destes controlos.
+                  updateSubtitles("subTamanho", "normal");
+                  updateSubtitles("subOpacidade", OPACIDADE_DEF);
+                  updateSubtitles("subFonte", "");
+                  updateSubtitles("subContorno", "sombra");
+                  updateSubtitles("subCorTexto", "branco");
+                  updateSubtitles("subCorFundo", "preto");
+                  updateSubtitles("subDelay", 0);
+                }}
               >
                 {t("Repor")}
               </button>
