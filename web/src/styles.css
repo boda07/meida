@@ -3731,11 +3731,13 @@ h2 {
 .pc-seek-trilho {
   position: relative;
   height: 4px;
-  border-radius: 2px;
-  background: rgba(255, 255, 255, 0.28);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.26);
+  transition: height 0.12s ease;
 }
 
-.pc-seek:hover .pc-seek-trilho {
+.pc-seek:hover .pc-seek-trilho,
+.pc-seek:focus-visible .pc-seek-trilho {
   height: 6px;
 }
 
@@ -3756,12 +3758,14 @@ h2 {
   inset: 0 auto 0 0;
   width: 0;
   height: 4px;
-  border-radius: 2px;
-  background: rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.16);
   pointer-events: none;
+  transition: height 0.12s ease;
 }
 
-.pc-seek:hover .pc-seek-carregado {
+.pc-seek:hover .pc-seek-carregado,
+.pc-seek:focus-visible .pc-seek-carregado {
   height: 6px;
 }
 
@@ -3769,13 +3773,16 @@ h2 {
   position: absolute;
   top: 50%;
   left: 0;
-  width: 12px;
-  height: 12px;
-  margin-left: -6px;
+  width: 13px;
+  height: 13px;
+  margin-left: -6.5px;
   border-radius: 50%;
   background: var(--accent, #c90303);
+  /* Anel escuro a volta da bolinha: sem ele, no canto de um video claro, a
+     bolinha vermelha confundia-se com a imagem por tras. */
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.4), 0 1px 6px rgba(0, 0, 0, 0.45);
   transform: translateY(-50%) scale(0);
-  transition: transform 0.15s;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
 .pc-seek:hover .pc-seek-bolinha,
@@ -3792,6 +3799,8 @@ h2 {
   display: flex;
   align-items: center;
   gap: 6px;
+  /* Arrastar o slider do volume nao pode seleccionar o texto da barra. */
+  user-select: none;
 }
 
 .pc-btn {
@@ -3802,15 +3811,21 @@ h2 {
   justify-content: center;
   flex: none;
   border: none;
-  border-radius: 8px;
+  border-radius: 9px;
   background: transparent;
   color: #fff;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: background 0.15s ease, color 0.15s ease, transform 0.1s ease;
 }
 
 .pc-btn:hover {
-  background: rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.16);
+}
+
+/* Feedback de pressao: num ecra sensivel ao toque nao ha' hover, por isso sem
+   isto o botao nao responde ao dedo (e parece que o toque se perdeu). */
+.pc-btn:active {
+  transform: scale(0.92);
 }
 
 .pc-btn:focus-visible {
@@ -3852,8 +3867,7 @@ h2 {
 }
 
 .pc-tempo-de {
-  opacity: 0.65;
-  margin-left: 4px;
+  opacity: 0.6;
 }
 
 /* Empurra o volume e o ecra inteiro para a direita. */
@@ -3869,16 +3883,29 @@ h2 {
 
 .pc-volume-tilho {
   width: 72px;
+  height: 18px;
   accent-color: var(--accent, #c90303);
   cursor: pointer;
+}
+
+/* Num player estreito o slider do volume rouba o espaco aos botoes que fazem
+   falta (play, legendas, ecra inteiro); o botao do mudo continua a existir. */
+@media (max-width: 560px) {
+  .pc-volume-tilho {
+    display: none;
+  }
 }
 
 /* O botao de qualidade: mostra a RESOLUCAO em texto ("1080p") em vez de um
    icone de engrenagem. Um icone obriga a abrir o menu para saber em que se
    esta'; o numero diz logo, e cabe nos 34 px de altura da barra. O texto e'
    menor que o dos botoes com icone para nao parecer um botao diferente. */
+/* `static` de proposito: o popup (`pc-pop`) passa a ser posicionado contra a
+   BARRA, e nao contra o botao. Ancorado ao botao, um popup de 268 px num player
+   estreito saia pela esquerda do ecra (o botao esta' a meio da barra). Assim
+   fica sempre encostado a' direita do player, como no YouTube/Netflix. */
 .pc-qual {
-  position: relative;
+  position: static;
   display: flex;
   align-items: center;
 }
@@ -3900,7 +3927,8 @@ h2 {
 /* O popup da qualidade fica alinhado pela DIREITA do botao (como o das
    legendas) para nao sair do ecra quando o botao esta' a meio da barra. */
 .pc-qual-pop {
-  min-width: 132px;
+  width: auto;
+  min-width: 168px;
 }
 
 /* ===== Estilo das legendas (o `::cue` do <video>) ==========================
@@ -3974,7 +4002,8 @@ h2 {
    (`PlayerControls.jsx`), que o mete entre o tempo e o volume. E' o que
    resolvia o problema original — estar a chocar com os botoes do browser. */
 .sub-cc {
-  position: relative;
+  /* Ver o comentario em `.pc-qual`: o popup ancora a' barra. */
+  position: static;
   display: flex;
   align-items: center;
 }
@@ -3986,15 +4015,19 @@ h2 {
   align-items: center;
   justify-content: center;
   border: none;
-  border-radius: 8px;
+  border-radius: 9px;
   background: transparent;
   color: #fff;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: background 0.15s ease, color 0.15s ease, transform 0.1s ease;
 }
 
 .sub-cc-btn:hover {
-  background: rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.sub-cc-btn:active {
+  transform: scale(0.92);
 }
 
 .sub-cc-btn:focus-visible {
@@ -4005,7 +4038,8 @@ h2 {
 /* Legenda ligada: fundo marcado com a cor de destaque, para se ver sem abrir
    o menu. */
 .sub-cc-btn.on {
-  background: rgba(255, 255, 255, 0.14);
+  background: rgba(201, 3, 3, 0.18);
+  color: var(--accent-text, #dc5b5b);
   box-shadow: inset 0 -2px 0 var(--accent, #c90303);
 }
 
@@ -4023,108 +4057,225 @@ h2 {
 .pc-pop {
   position: absolute;
   bottom: calc(100% + 10px);
-  right: 0;
-  min-width: 190px;
-  max-height: 60vh;
+  right: 10px;
+  width: 268px;
+  /* Num player estreito o popup nao pode sair do ecra pela esquerda. */
+  max-width: calc(100vw - 28px);
+  max-height: 62vh;
   overflow-y: auto;
+  overscroll-behavior: contain;
   display: flex;
   flex-direction: column;
-  padding: 4px;
-  border-radius: 8px;
-  background: rgba(18, 18, 24, 0.97);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.55);
+  padding: 6px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  background: rgba(15, 15, 19, 0.97);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.62), 0 2px 8px rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(16px);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.22) transparent;
+  /* 0,14 s: entra sem se fazer esperar. Chega para o olho perceber de onde veio. */
+  animation: pc-pop-entrar 0.14s ease-out;
+}
+
+.pc-pop::-webkit-scrollbar {
+  width: 8px;
+}
+
+.pc-pop::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+@keyframes pc-pop-entrar {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 .pc-pop button {
-  padding: 8px 10px;
+  /* `flex` + `space-between`: o visto da opcao escolhida fica na direita, como
+     numa lista de menu, sem precisar de um elemento so' para ele. */
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 32px;
+  padding: 7px 10px;
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
   background: transparent;
   color: #fff;
   cursor: pointer;
   text-align: left;
+  font: inherit;
   font-size: 13px;
+  line-height: 1.25;
   white-space: nowrap;
+  transition: background 0.12s ease, color 0.12s ease;
 }
 
 .pc-pop button:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.09);
 }
 
-/* A legenda escolhida. O ponto e' para se ver qual esta' ligada sem ler. */
+/* A legenda escolhida. O fundo tingido diz qual esta' ligada mesmo sem ler o
+   texto, e o visto fica na direita (ver o `flex` acima). */
 .pc-pop button.on {
-  color: var(--accent-text, #dc5b5b);
+  color: #fff;
   font-weight: 700;
+  background: rgba(201, 3, 3, 0.18);
+}
+
+.pc-pop button.on:hover {
+  background: rgba(201, 3, 3, 0.26);
 }
 
 .pc-pop button.on::after {
-  content: " \2713";
+  content: "\2713";
+  color: var(--accent-text, #dc5b5b);
+  font-size: 12px;
 }
 
 /* O popup divide-se em duas secoes: a lista de legendas e as opcoes de como
    mostrar. O divisor e' fino e semMargem — o popup ja tem o seu padding. */
 .pc-pop-sec + .pc-pop-sec {
-  border-top: 1px solid rgba(255, 255, 255, 0.12);
-  margin-top: 4px;
-  padding-top: 4px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  margin-top: 6px;
+  padding-top: 6px;
 }
 
 .pc-pop-titulo {
-  margin: 4px 10px 2px;
+  margin: 7px 10px 4px;
   font-size: 10px;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.09em;
   text-transform: uppercase;
-  opacity: 0.55;
-  font-weight: 700;
+  opacity: 0.45;
+  font-weight: 800;
 }
 
 /* Cada opcao e' uma linha: nome a esquerda, controlo a direita. */
 .pc-pop-linha {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   padding: 5px 10px;
+  border-radius: 8px;
   font-size: 12.5px;
   white-space: nowrap;
   cursor: pointer;
 }
 
+/* A linha realca ao passar o rato: sem isto nao se percebia que o nome e' o
+   rotulo do controlo que esta' ao lado. */
+.pc-pop-linha:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
 .pc-pop-linha > span {
   flex: 1;
-  min-width: 62px;
+  min-width: 0;
+  color: rgba(255, 255, 255, 0.9);
 }
 
+/* O `<select>` do sistema traz a caixa do Windows e um triangulo cinzento que
+   nao combinam com o popup escuro. Aqui perde o desenho nativo e ganha o mesmo
+   setao do resto da app (SVG na `background-image`). */
 .pc-pop-linha select {
-  padding: 4px 6px;
-  border-radius: 4px;
-  background: var(--bg-surface, #1a1a22);
+  appearance: none;
+  -webkit-appearance: none;
+  width: 108px;
+  max-width: 46%;
+  padding: 5px 22px 5px 9px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background-color: rgba(255, 255, 255, 0.06);
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8' fill='none' stroke='%23ffffff' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  background-size: 9px;
   color: #fff;
-  border: 1px solid #444;
+  font: inherit;
   font-size: 12px;
-  max-width: 110px;
+  cursor: pointer;
+  text-overflow: ellipsis;
+  transition: background-color 0.12s ease, border-color 0.12s ease;
 }
 
-/* O "cursor" (slider) e' branco para se ver sobre a caixa escura. */
+.pc-pop-linha select:hover {
+  border-color: rgba(255, 255, 255, 0.26);
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* A lista aberta e' do sistema, mas o fundo das opcoes pode ser escuro. */
+.pc-pop-linha select option {
+  background: #16161c;
+  color: #fff;
+}
+
+/* O slider continua o nativo (`accent-color`), que ja' pinta a parte andada e
+   combina com o acento; so' cresce em altura para o dedo o apanhar. */
 .pc-pop-linha input[type="range"] {
   width: 96px;
+  height: 18px;
   accent-color: var(--accent, #c90303);
   cursor: pointer;
+}
+
+/* Opacidade e atraso: o nome e o valor ficam na primeira linha e o slider ocupa
+   a segunda, inteiro. Na mesma linha, "Opacidade do fundo" (o nome mais longo)
+   ficava cortado pelo slider, e um slider de 96 px num menu de 268 e' dificil de
+   acertar com o dedo. */
+.pc-pop-linha-slider {
+  flex-wrap: wrap;
+  row-gap: 1px;
+}
+
+.pc-pop-linha-slider > span {
+  flex: 1 1 auto;
+}
+
+.pc-pop-linha-slider > em {
+  order: 2;
+}
+
+.pc-pop-linha-slider > input[type="range"] {
+  order: 3;
+  flex: 1 1 100%;
+  width: auto;
+  margin: 1px 0 2px;
 }
 
 .pc-pop-linha em {
   font-style: normal;
   font-variant-numeric: tabular-nums;
-  min-width: 34px;
+  min-width: 40px;
   text-align: right;
-  opacity: 0.8;
+  opacity: 0.75;
 }
 
 .sub-cc-repor {
-  margin: 4px 10px 6px;
-  padding: 4px 8px !important;
-  font-size: 11.5px !important;
-  opacity: 0.7;
-  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+  justify-content: center;
+  margin: 8px 10px 4px;
+  padding: 7px 10px !important;
+  font-size: 12px !important;
+  font-weight: 600;
+  opacity: 0.85;
+  border: 1px solid rgba(255, 255, 255, 0.16) !important;
+  border-radius: 8px !important;
+  background: rgba(255, 255, 255, 0.04) !important;
+  transition: background 0.15s ease, border-color 0.15s ease, opacity 0.15s ease;
+}
+
+.sub-cc-repor:hover {
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.09) !important;
+  border-color: rgba(255, 255, 255, 0.26) !important;
 }
 
 /* O seletor de qualidade que vivia aqui (`Qualidade:` + `<select>`, por baixo do

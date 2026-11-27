@@ -6,6 +6,23 @@
 export const CHANGELOG = [
 
   {
+      version: "1.7.9",
+      items: [
+        "Novidade: o menu das legendas ganhou as opções que faltavam — contorno do texto (nenhum, sombra, contorno, realçado), cor do texto e cor do fundo, além do tamanho e da fonte.",
+        "Correção: a opacidade das legendas passou a ser a do fundo. Antes, a meia opacidade apagava o texto e a caixa ao mesmo tempo; agora a legenda fica sempre nítida e o que se esbate é o preto por trás. Quem já tinha uma opacidade escolhida fica com o mesmo aspeto de antes.",
+        "Melhoria: o menu das legendas ficou mais fácil de usar — fundo mais definido, a opção escolhida realçada com um visto, cada opção com o seu controlo na mesma linha, e os sliders de opacidade e atraso com a largura toda.",
+        "Correção: o menu das legendas saía pela esquerda do ecrã quando o leitor era estreito. Agora abre sempre encostado à direita do leitor.",
+        "Melhoria: a barra do leitor responde ao toque (os botões afundam ao carregar), a bolinha da barra de progresso tem um contorno que se vê sobre imagens claras, e numa janela estreita o volume esconde-se para dar lugar aos botões que fazem falta.",
+      ],
+      items_en: [
+        "New: the subtitle menu has the options that were missing — text edge (none, shadow, outline, raised), text colour and background colour, on top of size and font.",
+        "Fix: subtitle opacity now applies to the background. Before, half opacity faded the text and the box together; now the subtitle stays sharp and only the black behind it fades. Anyone who had already picked an opacity keeps the same look as before.",
+        "Improvement: the subtitle menu is easier to use — a more defined surface, the selected option highlighted with a check, each option with its control on the same row, and the opacity and delay sliders using the full width.",
+        "Fix: the subtitle menu ran off the left of the screen on a narrow player. It now always opens against the player's right edge.",
+        "Improvement: the player bar responds to touch (buttons sink when pressed), the progress knob has an outline that shows over bright scenes, and on a narrow window the volume slider hides to make room for the buttons that matter.",
+      ],
+    },
+  {
       version: "1.7.8",
       items: [
         "Correção: o catálogo e o feed só pedem títulos em português ou inglês. Um pedido com outro idioma já não faz a app ir buscar e guardar uma cópia nova de cada título.",

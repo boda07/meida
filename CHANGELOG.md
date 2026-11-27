@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.7.9
+
+Aparência das legendas e acabamento do player.
+
+- **A opacidade é a da caixa** — a antiga `--sub-opacidade` (que pintava texto e caixa em conjunto) saiu. A opacidade entra agora na `rgba()` do `--sub-fundo`, montada em JS por `fundoRgba()` (`web/src/components/legendas.js`), e o texto ficou sempre opaco. O motivo de ser string montada em JS e não `rgb(var(--x) / var(--y))` no CSS: no `::cue` do Chromium uma sintaxe mais nova falha em silêncio, e a legenda ficava sem caixa sem ninguém saber porquê. `OPACIDADE_DEF` passou a **0,6** — o CSS antigo dava `0,6 × 1`, portanto quem nunca mexeu vê o mesmo.
+- **Migração única** — em `web/src/storage/settings.js`, um JSON sem `subCorFundo` significa definições antigas: `subOpacidade = 0,6 × antiga` e grava as três chaves novas. A própria chave é a marca de "já migrou"; sem ela, cada arranque voltava a multiplicar (0,6 → 0,36 → 0,216).
+- **Opções novas** — `subContorno` (nenhum/sombra/contorno/realçado), `subCorTexto` (branco/amarelo/preto) e `subCorFundo` (preto/cinza/branco/azul), com o `<select>` correspondente no menu. `cssLegendas()` devolve `--sub-tamanho`, `--sub-cor`, `--sub-fundo`, `--sub-sombra` e, quando há fonte escolhida, `--sub-fonte` — que precisa da classe `legenda-fonte` no `<video>` porque uma pilha de fontes com vírgulas não entra numa variável usada em `font-family`.
+- **Window Color/Opacity ficou de fora** — é o `::cue-region`, que o Chromium não implementa: as regras ficariam no ficheiro sem pintar nada. Registado em `IDEIAS.md` → "Decidido não fazer".
+- **O popup ancora à barra, não ao botão** — `.sub-cc` e `.pc-qual` passaram a `position: static` e o `.pc-pop` a `right: 10px`. Com os 268 px novos, ancorado ao botão o menu saía pela esquerda do ecrã num player estreito (apanhado no laboratório, com a posição medida: `x 102..370` dentro de um player `x 20..380`).
+- **Acabamento do menu** — `.pc-pop` com 268 px, canto 12, borda de 1 px, `backdrop-filter`, sombra em duas camadas e entrada de 0,14 s; opção escolhida com fundo do acento e ✓ à direita (o `::after` é um item flex, por isso alinha sozinho); `<select>` com `appearance: none` e setão SVG embutido; opacidade e atraso em linha própria (nome e valor em cima, slider a 100% da largura — na mesma linha, "Opacidade do fundo" ficava cortado pelo slider de 96 px); scrollbar fina; "Repor" como ghost button.
+- **Acabamento da barra** — seek com cantos redondos e transição de altura (4 → 6 px) também no foco, bolinha de 13 px com anel escuro (o vermelho desaparecia sobre imagem clara), botões com `:active` (num ecrã sem hover não havia resposta ao toque), slider do volume com 18 px de altura e escondido abaixo de 560 px, e o tempo passou a `0:01/0:04` (havia um espaço a mais antes da barra).
+- **Laboratório de dev** — `web/laboratorio/` monta os componentes reais (`SubtitleMenu`, `PlayerControls`) com um `.vtt` local e um vídeo gerado por `canvas` + `MediaRecorder` (não há ffmpeg nem root na máquina). `medir.cjs` compara os pixels das capturas a 60% e a 10%: caixa 49 → 110, texto 253 nas duas, razão 2,24 (a teoria dá 0,9/0,4 = 2,25). `recorte.cjs` corta a faixa da legenda. Só existe em dev — o `vite build` só usa o `index.html` da raiz, por isso nada disto entra no `dist` nem no instalador.
+- **Testes** — `testar-legendas.mjs` passou a 72 verificações (secções 7–9 reescritas: cores, contornos e migração) e a 8 mutações apanhadas; `testar-barra-player` 27 ok e `testar-icone-velocidade` 25 ok continuam a guardar a barra.
+
+Verificação: `npm test` (exit 0), `npm run lint` 0, `npm run build`, `scripts/auditar-pt-por-traduzir.cjs` limpo e `verificar-cjk` limpo.
+
 ## 1.7.8
 
 Endurecimento do feed de atividade e do catálogo (achados de uma revisão da 1.7.6/1.7.7).

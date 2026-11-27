@@ -278,7 +278,7 @@ export function SubtitleMenu({ videoRef, subtitles = [] }) {
             </label>
 
             {/* A opacidade e' do FUNDO: o texto fica sempre opaco. */}
-            <label className="pc-pop-linha">
+            <label className="pc-pop-linha pc-pop-linha-slider">
               <span>{t("Opacidade do fundo")}</span>
               <input
                 type="range"
@@ -291,7 +291,7 @@ export function SubtitleMenu({ videoRef, subtitles = [] }) {
               <em>{Math.round(subOpacidade * 100)}%</em>
             </label>
 
-            <label className="pc-pop-linha">
+            <label className="pc-pop-linha pc-pop-linha-slider">
               <span>{t("Atraso")}</span>
               <input
                 type="range"
